@@ -1,14 +1,10 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.threadPoolManager
-import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.threadPoolManager
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.StorageInterface
-import com.simiacryptus.cognotik.platform.model.Principal
-import com.simiacryptus.cognotik.platform.model.ResourceRef
-import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -19,11 +15,12 @@ import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
 
 abstract class SocketManager(
   val sessionId: Session,
-  val dataStorage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  val dataStorage: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
   val owner: User,
   private val applicationClass: Class<*>,
 ) {
@@ -131,7 +128,7 @@ abstract class SocketManager(
       session.remoteAddress
     )
 
-    if (!ApplicationServices.authorizationManager.isAuthorized(
+    if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
         ResourceRef.of(applicationClass = applicationClass),
         Principal.of(user = user),
         operationType = OperationType.Read
@@ -158,9 +155,9 @@ abstract class SocketManager(
   fun newTask(
     root: Boolean = true,
     cancelable: Boolean = false,
-  ): SessionTask {
+  ): ISessionTask {
     try {
-      val operationID = randomID(root)
+      val operationID = newMessageID(root)
       val responseContents = divInitializer(operationID, cancelable)
 //            log.debug(
 //                "Creating new task with operationID: {}\n\t{}",
@@ -341,7 +338,7 @@ abstract class SocketManager(
     }
   }
 
-  private fun setMessage(key: String, value: String) : Int = synchronized(stateLock) {
+  private fun setMessage(key: String, value: String): Int = synchronized(stateLock) {
     val existingValue = messageStates[key] ?: ""
     if (existingValue == value) {
       log.debug("Skipping update for key: {}, content is identical ({} bytes)", key, value.length)
@@ -379,7 +376,7 @@ abstract class SocketManager(
         "Message too long from socket: {}, length: {} bytes, limit: {} bytes",
         socket, message.length, maxMessageLength
       )
-      send("""${randomID()},<div class="error">Message too long (${message.length} bytes). Maximum allowed: $maxMessageLength bytes.</div>""")
+      send("""${newMessageID()},<div class="error">Message too long (${message.length} bytes). Maximum allowed: $maxMessageLength bytes.</div>""")
       return
     }
 
@@ -411,7 +408,7 @@ abstract class SocketManager(
         "Unauthorized message from socket: {} (id: {}), user: {}",
         socket, System.identityHashCode(socket), socket.user.name
       )
-      send("""${randomID()},<div class="error">Unauthorized message</div>""")
+      send("""${newMessageID()},<div class="error">Unauthorized message</div>""")
       return
     }
 
@@ -422,7 +419,7 @@ abstract class SocketManager(
         "Failed to submit message processing task for socket: {} (id: {})",
         socket, System.identityHashCode(socket), e
       )
-      send("""${randomID()},<div class="error">Failed to process message: ${e.message}</div>""")
+      send("""${newMessageID()},<div class="error">Failed to process message: ${e.message}</div>""")
     }
   }
 
@@ -434,7 +431,7 @@ abstract class SocketManager(
         System.identityHashCode(socket),
         message.length
       )
-      val opCmdPattern = """![a-z]{3,7},.*""".toRegex()
+      val opCmdPattern = """![a-z01-9]{3,7},.*""".toRegex()
       if (opCmdPattern.matches(message)) {
         val commaIndex = message.indexOf(",")
         if (commaIndex == -1 || commaIndex == message.length - 1) {
@@ -473,14 +470,14 @@ abstract class SocketManager(
         e.message
       )
       try {
-        send("""${randomID()},<div class="error">${e.message ?: "Unknown error".renderMarkdown()}</div>""")
+        send("""${newMessageID()},<div class="error">${e.message ?: "Unknown error".renderMarkdown()}</div>""")
       } catch (sendError: Exception) {
         log.error("Failed to send error message", sendError)
       }
     }
   }
 
-  open fun canWrite(user: User?) = ApplicationServices.authorizationManager.isAuthorized(
+  open fun canWrite(user: User?) = ApplicationServicesImpl.authorizationManager.isAuthorized(
     ResourceRef.of(applicationClass = applicationClass),
     Principal.of(user = user),
     operationType = OperationType.Write
@@ -535,7 +532,7 @@ abstract class SocketManager(
   ): String {
     log.debug("Creating href link with text: {}", linkText)
     trafficLog.trace("Creating href link with text: {}", linkText)
-    val operationID = randomID()
+    val operationID = newMessageID()
     linkTriggers[operationID] = handler
     return """<a class="$classname" data-id="$operationID"${
       when {
@@ -549,7 +546,7 @@ abstract class SocketManager(
 
     log.debug("Creating text input")
     trafficLog.trace("Creating text input field")
-    val operationID = randomID()
+    val operationID = newMessageID()
     txtTriggers[operationID] = handler
 
     return """<div class="reply-form">
@@ -585,8 +582,25 @@ abstract class SocketManager(
     }
   }
 
-
   fun linkToSession(label: String): String = sessionId.linkToSession(label)
+
+  private val idGenerator = AtomicLong(0)
+
+  fun newMessageID(root: Boolean = true) = isString(root, idGenerator.incrementAndGet())
+
+  private fun isString(
+    root: Boolean,
+    id: Long,
+    length: Int = 5
+  ): String = if (root) {
+    id.toString(16).padStart(length + 1, '0')
+  } else {
+    "z${id.toString(16).padStart(length, '0')}"
+  }
+
+  fun divInitializer(operationID: String = newMessageID(), cancelable: Boolean): String =
+    if (!cancelable) """$operationID,""" else
+      """$operationID,<button class="cancel-button" data-id="$operationID">&times;</button>"""
 
   companion object {
     private val log = LoggerFactory.getLogger(SocketManager::class.java)
@@ -595,21 +609,11 @@ abstract class SocketManager(
     private val range1 = ('a'..'y').toList().toTypedArray()
     private val range2 = range1 + 'z'
 
-    fun randomID(root: Boolean = true): String {
-      val random = Random()
-      val joinToString = (if (root) range1[random.nextInt(range1.size)] else "z").toString() +
-          (0..4).map { range2[random.nextInt(range2.size)] }.joinToString("")
-      return joinToString
-    }
-
-    fun divInitializer(operationID: String = randomID(), cancelable: Boolean): String =
-      if (!cancelable) """$operationID,""" else
-        """$operationID,<button class="cancel-button" data-id="$operationID">&times;</button>"""
 
     fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {
       log.debug("Getting user from session: {}", session)
       trafficLog.trace("Getting user from session: {}", session.remoteAddress)
-      return ApplicationServices.authenticationManager.getUser(
+      return ApplicationServicesImpl.authenticationManager.getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
           ?.value) ?: throw RuntimeException("User must be authenticated to connect to WebSocket")
@@ -620,7 +624,7 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
   newSession: Session,
-  storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
   owner: User,
   clazz: Class<*>
 ) : SocketManager(
@@ -642,7 +646,7 @@ class ReadonlySocketManager(
 class ServerlessSocketManager(
   session: Session,
   val messageEvents: OutputStream? = null,
-  storageInterface: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
   owner: User,
   clazz: Class<*>
 ) : SocketManager(

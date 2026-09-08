@@ -5,7 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.models.ServiceProviders.Google
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.User
 import java.net.URI
 import java.net.URLEncoder
@@ -32,7 +32,7 @@ class GoogleSearch : SeedMethodFactory {
       val resultCount = 20 // Ensure we don't exceed API limits
       val searchLimit = resultCount // Reduced from 20 to be more conservative
       SeedMethod.log.debug("Fetching user settings for Google Search API")
-      val userSettings = ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(
+      val userSettings = ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(
         user
       )
       val key = userSettings
@@ -124,7 +124,7 @@ class GoogleSearch : SeedMethodFactory {
     override fun isEnabled(): Boolean {
       return user?.let {
         val userSettings =
-          ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it)
+          ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(it)
         userSettings.apis.any { api -> api.provider == Google && api.key?.decrypt?.isNotBlank() == true } &&
             Google.base?.isNotBlank() == true
       } ?: false

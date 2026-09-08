@@ -15,10 +15,10 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.image.ImageModel
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
+import com.simiacryptus.cognotik.platform.model.ImageModel
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
 import com.simiacryptus.cognotik.util.BrowseUtil
 import org.slf4j.LoggerFactory
 import java.awt.*

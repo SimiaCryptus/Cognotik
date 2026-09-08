@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.GraphTraversalSource
 import org.apache.tinkerpop.gremlin.process.traversal.dsl.graph.__
@@ -157,14 +157,14 @@ IterativeGraphGeneration - Build knowledge graphs incrementally
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
 
 
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         val config = executionConfig!!
         log.info("Starting IterativeGraphGenerationTask for goal: ${config.goal_prompt}")

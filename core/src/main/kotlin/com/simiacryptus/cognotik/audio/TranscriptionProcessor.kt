@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.audio
 
 import com.simiacryptus.cognotik.TranscriptionClient
+import com.simiacryptus.cognotik.platform.model.AudioModels
 import org.slf4j.LoggerFactory
 import java.util.*
 

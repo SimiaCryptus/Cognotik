@@ -20,6 +20,8 @@ repositories {
 val projectPrefix = if (rootProject.name == "Cognotik") "" else ":Cognotik"
 dependencies {
 
+  implementation(project("$projectPrefix:lwcore"))
+
   implementation(libs.hsqldb)
   implementation(libs.antlr.runtime)
   implementation(libs.commons.text)

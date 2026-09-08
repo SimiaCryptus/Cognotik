@@ -40,7 +40,7 @@ class EphemeralMonitorServer(
   @Synchronized
   fun start(): String {
     if (jetty == null) {
-      val server = CognotikAppServer(localName = host, port = port)
+      val server = CognotikAppServer(hostInterface = host, port = port)
       jetty = server.start()
       appServer = server
     }

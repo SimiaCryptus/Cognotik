@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
@@ -349,7 +349,7 @@ class TechnicalExplanationTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -358,7 +358,7 @@ class TechnicalExplanationTask(
     val transcript = task.newUserFileStream(transcriptFile())
     val resultBuilder = StringBuilder()
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         val startTime = System.currentTimeMillis()
         val config = executionConfig ?: throw RuntimeException("No configuration provided")

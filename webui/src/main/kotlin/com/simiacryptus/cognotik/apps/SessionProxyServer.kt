@@ -1,16 +1,14 @@
 package com.simiacryptus.cognotik.apps
 
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.servlet.UserInfoServlet
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import jakarta.servlet.Servlet
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -111,11 +109,11 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
     private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
 
     fun setParentSession(child: Session, parent: Session) {
-      ApplicationServices.fileApplicationServices().usageDB.setParentSession(child, parent)
+      ApplicationServicesImpl.fileApplicationServices().usageDB.setParentSession(child, parent)
     }
 
     var OWNER_ID = "localhost:12345"
-    val metadataStorage by lazy { ApplicationServices.fileApplicationServices().metadataDB }
+    val metadataStorage by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
 
     private fun registerSessionOwner(session: Session) {
       try {

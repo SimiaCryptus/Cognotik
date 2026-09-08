@@ -6,11 +6,11 @@ import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.models.ModelSchema.ChatMessage
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
-import com.simiacryptus.cognotik.models.ModelSchema.Role
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatMessage
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.toContentList
 import java.io.File

@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.cli
 
     import com.simiacryptus.cognotik.CoreProviders
-    import com.simiacryptus.cognotik.models.APIProvider
-    import com.simiacryptus.cognotik.platform.ApplicationServices
+    import com.simiacryptus.cognotik.platform.model.APIProvider
+    import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
     import com.simiacryptus.cognotik.platform.ApiData
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.platform.UserSettingsInterface
@@ -191,7 +191,7 @@ package com.simiacryptus.cognotik.cli
         val secure = SecureString(key)
         val base = baseUrl?.takeIf { it.isNotBlank() } ?: provider.base.ifBlank { null }
         if (verify) verify(provider, secure, base ?: "")
-        val manager = ApplicationServices.fileApplicationServices().userSettingsManager
+        val manager = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
         val settings = manager.getUserSettings(user)
         val apis = settings.apis.filterNot { it.provider == provider }.toMutableList()
         apis.add(
@@ -207,7 +207,7 @@ package com.simiacryptus.cognotik.cli
       }
 
       private fun remove(user: User, provider: APIProvider): Int {
-        val manager = ApplicationServices.fileApplicationServices().userSettingsManager
+        val manager = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
         val settings = manager.getUserSettings(user)
         val remaining = settings.apis.filterNot { it.provider == provider }.toMutableList()
         if (remaining.size == settings.apis.size) {
@@ -284,7 +284,7 @@ package com.simiacryptus.cognotik.cli
         .sortedBy { it.name.lowercase() }
 
       private fun configured(user: User): Map<APIProvider, ApiData> =
-        ApplicationServices.fileApplicationServices().userSettingsManager
+        ApplicationServicesImpl.fileApplicationServices().userSettingsManager
           .getUserSettings(user).apis
           .mapNotNull { data -> data.provider?.let { it to data } }
           .toMap()

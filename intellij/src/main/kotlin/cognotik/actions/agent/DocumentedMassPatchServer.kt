@@ -4,13 +4,13 @@ import com.google.common.util.concurrent.Futures
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath

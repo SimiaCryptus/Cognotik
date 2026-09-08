@@ -7,12 +7,13 @@ import com.google.genai.types.Content.builder
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.chat.model.ChatMessageModality
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.UsageListener
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
 import okio.ByteString.Companion.decodeBase64
@@ -214,7 +215,10 @@ class GeminiSdkChatClient(
         throw e
       }
       val elapsed = System.currentTimeMillis() - startTime
-      log.debug("Request {}: Gemini API responded in {} ms", requestID, elapsed)
+      when (response.finishReason().toString()) {
+        "MALFORMED_FUNCTION_CALL" -> throw IllegalStateException("Gemini API returned MALFORMED_FUNCTION_CALL for request $requestID")
+        else -> log.debug("Request {}: Gemini API responded in {} ms with finish reason {}", requestID, elapsed, response.finishReason())
+      }
       // Log response
       log(
         "\n<details>\n<summary>Gemini SDK Response (${requestID})</summary>\n\n${

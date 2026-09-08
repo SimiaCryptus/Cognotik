@@ -102,7 +102,7 @@ interface GiftedCreditsInterface {
    * Default implementation filters [listGifts]; backends should push the filter down.
    */
   fun listGifts(createdBy: String?): List<Gift> =
-    if (createdBy == null) listGifts() else listGifts().filter { it.createdBy == createdBy }
+    if (createdBy == null) listGifts() else listGifts().filter { it.createdBy?.id == createdBy }
 
   /** Paged variant of [listGifts]; default pages in memory. */
   fun listGifts(createdBy: String?, page: Page): PageResult<Gift> = listGifts(createdBy).paginate(page)

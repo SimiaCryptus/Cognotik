@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.online
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.models.ServiceProviders
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -10,10 +10,10 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -78,7 +78,7 @@ class GitHubSearchTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -101,20 +101,20 @@ class GitHubSearchTask(
       executionConfig?.order?.let { appendLine("- **Order**: $it") }
     }
 
-    task.expandable("Search Configuration", MarkdownUtil.renderMarkdown(configDesc, ui = task.ui))
+    task.expandable("Search Configuration", MarkdownUtil.renderMarkdown(configDesc))
     transcriptStream?.write("# GitHub Search Task\n\n## Configuration\n\n$configDesc\n\n## Search Results\n\n".toByteArray())
 
     try {
       val searchResults = performGitHubSearch(
         agent.user
-          .let { ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(it) }
+          .let { ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(it) }
           .apis.firstOrNull { it.provider == ServiceProviders.Github }?.key?.decrypt?.trim()
           ?: throw RuntimeException("GitHub API token is required")
       )
       val actorAnswerText = formatSearchResults(searchResults)
       transcriptStream?.write(actorAnswerText.toByteArray())
 
-      task.add(MarkdownUtil.renderMarkdown(actorAnswerText, ui = task.ui))
+      task.add(MarkdownUtil.renderMarkdown(actorAnswerText))
 
       val transcriptLinks =
         "Transcript: <a href='$link' target='_blank'>Markdown</a> | <a href='${link.removeSuffix(".md")}.html' target='_blank'>HTML</a> | <a href='${

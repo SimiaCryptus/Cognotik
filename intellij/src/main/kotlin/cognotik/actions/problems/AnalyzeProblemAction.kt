@@ -26,7 +26,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -34,7 +34,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -161,7 +161,7 @@ class AnalyzeProblemAction : AnAction() {
         }
 
         private fun analyzeProblem(
-            task: SessionTask, socketManager: SocketManager
+            task: ISessionTask, socketManager: SocketManager
         ) {
             try {
               Retryable(task) {
@@ -222,7 +222,7 @@ class AnalyzeProblemAction : AnAction() {
         }
 
         private fun generateAndAddResponse(
-            task: SessionTask,
+            task: ISessionTask,
             error: ParsedError,
             summary: String,
             socketManager: SocketManager

@@ -1,13 +1,14 @@
 package com.simiacryptus.cognotik.util
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.FileApplicationServices
+import com.simiacryptus.cognotik.platform.IFileApplicationServices
 import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
@@ -20,8 +21,8 @@ import java.util.concurrent.Executors
 
 object CognotikUtils {
   @JvmStatic
-  fun fileApplicationServices(): FileApplicationServices {
-    return ApplicationServices.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot)
+  fun fileApplicationServices(): IFileApplicationServices {
+    return ApplicationServicesImpl.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot)
   }
 
   @JvmStatic
@@ -93,7 +94,7 @@ object CognotikUtils {
   fun configureEnvironmentalKeys() {
     check(!APIProvider.values().isEmpty()) { "No API providers configured" }
     val userSettingsManager =
-      ApplicationServices.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).userSettingsManager
+      ApplicationServicesImpl.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).userSettingsManager
     val user = user()
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false

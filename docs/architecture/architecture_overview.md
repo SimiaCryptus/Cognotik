@@ -215,7 +215,7 @@ authorization, and resource isolation.
 * **User Settings** — Manages API credentials and local tool paths with secure key masking.
 * **Cloud Integration** — Optional AWS S3 sharing and KMS encryption.
 
-`ApplicationServices` acts as the central registry for all these services.
+`ApplicationServicesImpl` acts as the central registry for all these services.
 
 **See:** [Platform Documentation](../platform/platform.md),
 [User Settings](../platform/user_settings.md).

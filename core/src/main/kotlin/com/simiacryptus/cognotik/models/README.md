@@ -6,13 +6,13 @@ providers.
 
 ## Core Abstractions
 
-### [AIModel](AIModel.kt)
+### [AIModel](../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/AIModel.kt)
 
 The base interface for all AI models. It defines the basic properties:
 
 - `provider`: The `APIProvider` that hosts the model.
 
-### [APIProvider](APIProvider.kt)
+### [APIProvider](../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/APIProvider.kt)
 
 An abstract base class and registry for AI service providers. It handles:
 
@@ -36,7 +36,7 @@ Provider registration follows the `DynamicEnum` pattern: each provider (e.g. in
 `DynamicEnum.register(APIProvider::class.java, instance)`, allowing lookups through
 `APIProvider.valueOf(name)` and `APIProvider.values()`.
 
-### [LLMModel](LLMModel.kt)
+### [LLMModel](../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/LLMModel.kt)
 
 A base class for Large Language Models that includes:
 
@@ -44,7 +44,7 @@ A base class for Large Language Models that includes:
 - **Pricing**: A `pricing(Usage)` method to calculate costs based on token consumption.
 - **Serialization**: Custom Jackson serializers to handle model references by name.
 
-### [ModelSchema](ModelSchema.kt)
+### [ModelSchema](../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/ModelSchema.kt)
 
 A comprehensive collection of data classes representing the JSON structures used by various AI APIs. This includes:
 
@@ -102,7 +102,7 @@ combined.writeAudio(Paths.get("output.wav"))
 ```
 - `modelId`: The identifier for the model.
 - `pricing(usage)`: Computes the cost for a given `ModelSchema.Usage` (defaults to `0.0`).
-### [AudioSegment](AudioSegment.kt)
+### [AudioSegment](../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/AudioSegment.kt)
 A data class representing an audio payload (Base64-encoded) with associated format metadata
 (`format`, `sampleRate`, `channels`, `bitsPerSample`). It supports:
 - **Format Conversion**: `convert(targetFormat)` handles WAV/PCM (`L16`) conversions natively and

@@ -1,0 +1,43 @@
+{
+  "name": "Cognotik — AI Coding Agents & Autonomous Development Platform",
+  "short_name": "Cognotik",
+  "description": "Open, extensible AI development platform: autonomous coding agents, multi-step AI task pipelines and multi-provider LLM chat.",
+  "id": "/",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#ffffff",
+  "theme_color": "#007bff",
+  "categories": ["developer", "productivity", "utilities"],
+  "lang": "en-US",
+  "dir": "ltr",
+  "icons": [
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/logo.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any"
+    }
+  ],
+  "screenshots": [
+    {
+      "src": "/social.png",
+      "sizes": "1200x630",
+      "type": "image/png",
+      "label": "Cognotik application directory"
+    }
+  ]
+}

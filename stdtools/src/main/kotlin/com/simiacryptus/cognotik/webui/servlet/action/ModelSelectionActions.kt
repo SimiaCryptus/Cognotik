@@ -1,11 +1,18 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
+import com.simiacryptus.cognotik.fileserver.action.ActionMenu
+import com.simiacryptus.cognotik.fileserver.action.ActionOption
+import com.simiacryptus.cognotik.fileserver.action.ActionParam
+import com.simiacryptus.cognotik.fileserver.action.ActionSelection
+import com.simiacryptus.cognotik.fileserver.action.ActionUi
+import com.simiacryptus.cognotik.fileserver.action.FsAction
+import com.simiacryptus.cognotik.fileserver.action.FsActionContext
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
-import com.simiacryptus.cognotik.webui.servlet.handler.FsException
-import com.simiacryptus.cognotik.webui.servlet.util.FsJson
+import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+import com.simiacryptus.cognotik.fileserver.handler.FsErrors
+import com.simiacryptus.cognotik.fileserver.handler.FsException
+import com.simiacryptus.cognotik.fileserver.util.FsJson
 import jakarta.servlet.http.HttpServletResponse
 
 /**
@@ -18,9 +25,9 @@ import jakarta.servlet.http.HttpServletResponse
  *   -> { "kind": "toast", ..., "smart": "...", "fast": "..." }
  * ```
  *
- * The POST carries an [ActionUi], so `GET /.fsapi/v1/actions` advertises it and the
+ * The POST carries an [com.simiacryptus.cognotik.fileserver.action.ActionUi], so `GET /.fsapi/v1/actions` advertises it and the
  * SPA registers it as a first-class action - Tools menu, command palette, Alt+Enter -
- * with **no client-side code**. Both parameters are [ActionParam.dynamic], so the
+ * with **no client-side code**. Both parameters are [com.simiacryptus.cognotik.fileserver.action.ActionParam.dynamic], so the
  * generated dialog's two dropdowns are filled by calling this same endpoint with
  * `?resolveParam=<name>` when it opens; the list is therefore always the set of
  * models *the calling user's* API keys actually expose (the user is resolved from the

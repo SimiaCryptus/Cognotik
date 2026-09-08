@@ -56,7 +56,7 @@ class DocOps<K : DocTaskKind, S : Any>(
   planner: DocPlanner<K>? = null,
   runner: DocTaskRunner<K, S>? = null,
 ) {
-  private val statusStoreOverride: DocStatusStore? = statusStore
+  private val statusStoreOverride: DocStatusStore = statusStore
   private val loaderOverride: DocSpecLoader? = loader
   private val resourcesOverride: ResourceResolver? = resources
   private val plannerOverride: DocPlanner<K>? = planner
@@ -74,7 +74,7 @@ class DocOps<K : DocTaskKind, S : Any>(
     plannerOverride ?: defaultPlanner(config, hostTaskKinds())
   }
   val runner: DocTaskRunner<K, S> by lazy {
-    runnerOverride ?: DocTaskRunner(config, host, statusStore ?: throw IllegalStateException("statusStore is null"))
+    runnerOverride ?: DocTaskRunner(config, host, statusStore)
   }
 
   /**
@@ -171,10 +171,6 @@ class DocOps<K : DocTaskKind, S : Any>(
     cancelFlag: AtomicBoolean = AtomicBoolean(false),
     onNewSession: (S) -> Unit = { },
   ): List<S> = runner.run(plan, scheduler, cancelFlag, onNewSession)
-
-  /** Declared `{{ VAR }}` defaults across the given docs (useful for prompting a UI). */
-  fun templateVarKeys(files: Iterable<File> = markdownFiles()): Map<String, String> =
-    TemplateEngine.listKeys(files)
 
   companion object {
     private val log = LoggerFactory.getLogger(DocOps::class.java)

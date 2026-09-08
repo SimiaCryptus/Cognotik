@@ -5,14 +5,14 @@ specifically Google Gemini (Imagen) and OpenAI (DALL-E).
 
 ## Core Components
 
-### [ImageClientInterface.kt](./ImageClientInterface.kt)
+### [ImageClientInterface.kt](../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/ImageClientInterface.kt)
 
 The base interface for all image generation clients. It defines two primary methods:
 
 - `createImage(request: ImageGenerationRequest)`: Generates images based on the provided prompt and configuration.
 - `getModels()`: Returns a list of supported image models for the client.
 
-### [ImageModel.kt](./ImageModel.kt)
+### [ImageModel.kt](../../../../../../../../platform-model/src/main/kotlin/com/simiacryptus/cognotik/platform/model/ImageModel.kt)
 
 A data class representing an image generation model. It includes:
 

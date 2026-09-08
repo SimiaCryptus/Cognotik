@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.FileSystems
@@ -70,7 +70,7 @@ FileSearch - Search for patterns in files and provide results with context
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -79,7 +79,7 @@ FileSearch - Search for patterns in files and provide results with context
 
 
     log.info("Starting FileSearchTask with pattern: ${executionConfig?.search_pattern}")
-    task.ui.pool.submit {
+    task.pool.submit {
       val transcript = task.newUserFileStream(transcriptFile())
       try {
         val searchResults = performSearch()

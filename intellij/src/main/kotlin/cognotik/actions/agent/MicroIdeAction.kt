@@ -3,44 +3,52 @@ package cognotik.actions.agent
 import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.application.ApplicationManager
-import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.text.patch.PatchProcessor
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.Role
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.fileserver.handler.FsApiHandler
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
-import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
-import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
-import com.simiacryptus.cognotik.webui.session.SocketManager
+import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
+import com.simiacryptus.cognotik.webui.servlet.action.ExtractUtilsFsAction
+import com.simiacryptus.cognotik.webui.servlet.action.ModelSelection
+import com.simiacryptus.cognotik.webui.servlet.action.ModelSelectionActions
+import com.simiacryptus.cognotik.webui.servlet.action.ModifyFilesFsAction
+import com.simiacryptus.cognotik.webui.servlet.action.SessionFsRoots
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
-import java.nio.file.Path
+import java.net.URI
 import java.text.SimpleDateFormat
-import java.util.UUID
-import java.util.concurrent.Semaphore
-import java.util.concurrent.atomic.AtomicReference
 
 class MicroIdeAction : BaseAction() {
+    init {
+        @Suppress("SENSELESS_COMPARISON") require(FsApiHandler.javaClass != null) { "FsApiHandler class not found" }
+        ModelSelection.install { localUser }
+        ModelSelectionActions.install()
+        val localName = AppSettingsState.instance.listeningEndpoint
+        val port = AppSettingsState.instance.listeningPort
+        ModifyFilesFsAction.install(
+            ModifyFilesFsAction.Config(
+                root = SessionFsRoots::rootOf,
+                user = SessionFsRoots::userOf,
+                chatUri = {
+                    URI("http://$localName:$port")
+                },
+            )
+        )
+//        DocOpsFsActions.install(
+//            DocOpsFsActions.Config(
+//                root = SessionFsRoots::rootOf,
+//                user = SessionFsRoots::userOf,
+//            )
+//        )
+    }
     override fun getActionUpdateThread() = ActionUpdateThread.BGT
 
     val path = "/μIDE"
@@ -58,6 +66,9 @@ class MicroIdeAction : BaseAction() {
                 val selectedFile = e.getSelectedFolder()
                 if (null != selectedFile) {
                     DataStorage.userPaths[session] = selectedFile.toFile
+//                    ExtractUtilsFsAction.install(
+//                        ExtractUtilsFsAction.Config { selectedFile.toFile }
+//                    )
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
                     null,
@@ -95,17 +106,10 @@ class MicroIdeAction : BaseAction() {
         applicationName = applicationName,
         path = "/μIDE",
         showMenubar = false,
-    ) {
-        companion object {
-        }
-    }
-
+    )
 
     companion object {
         private val log = getLogger(MicroIdeAction::class.java)
         val root: File get() = File(AppSettingsState.pluginHome, "code_chat")
-
-
-
     }
 }

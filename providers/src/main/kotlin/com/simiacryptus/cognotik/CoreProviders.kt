@@ -1,20 +1,8 @@
 package com.simiacryptus.cognotik
 
-import com.simiacryptus.cognotik.models.APIProvider
 import com.simiacryptus.cognotik.platform.CognotikPlugin
-import com.simiacryptus.cognotik.providers.AnthropicProvider
-import com.simiacryptus.cognotik.providers.BedrockProvider
-import com.simiacryptus.cognotik.providers.DeepSeekProvider
-import com.simiacryptus.cognotik.providers.ElevenLabsProvider
-import com.simiacryptus.cognotik.providers.GeminiProvider
-import com.simiacryptus.cognotik.providers.GroqProvider
-import com.simiacryptus.cognotik.providers.MistralProvider
-import com.simiacryptus.cognotik.providers.ModelsLabProvider
-import com.simiacryptus.cognotik.providers.OllamaProvider
-import com.simiacryptus.cognotik.providers.OpenAIProvider
-import com.simiacryptus.cognotik.providers.PerplexityProvider
-import com.simiacryptus.cognotik.providers.QwenProvider
-import com.simiacryptus.cognotik.providers.XAIProvider
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.providers.*
 import com.simiacryptus.cognotik.util.DynamicEnum
 import org.slf4j.LoggerFactory
 
@@ -51,13 +39,19 @@ object CoreProviders : CognotikPlugin {
 
   @JvmStatic
   val DeepSeek: APIProvider = DeepSeekProvider()
-   @JvmStatic
-   val XAI: APIProvider = XAIProvider()
-   @JvmStatic
-   val Qwen: APIProvider = QwenProvider()
 
-   @JvmStatic
-   val ElevenLabs: APIProvider = ElevenLabsProvider()
+  @JvmStatic
+  val XAI: APIProvider = XAIProvider()
+
+  /*ZAI*/
+  @JvmStatic
+  val ZAI: APIProvider = com.simiacryptus.cognotik.providers.ZAIProvider()
+
+  @JvmStatic
+  val Qwen: APIProvider = QwenProvider()
+
+  @JvmStatic
+  val ElevenLabs: APIProvider = ElevenLabsProvider()
 
 
   override fun init() {
@@ -72,8 +66,9 @@ object CoreProviders : CognotikPlugin {
     DynamicEnum.register(APIProvider::class.java, Mistral)
     DynamicEnum.register(APIProvider::class.java, DeepSeek)
     DynamicEnum.register(APIProvider::class.java, Ollama)
-     DynamicEnum.register(APIProvider::class.java, XAI)
-     DynamicEnum.register(APIProvider::class.java, Qwen)
-     DynamicEnum.register(APIProvider::class.java, ElevenLabs)
+    DynamicEnum.register(APIProvider::class.java, XAI)
+    DynamicEnum.register(APIProvider::class.java, ZAI)
+    DynamicEnum.register(APIProvider::class.java, Qwen)
+    DynamicEnum.register(APIProvider::class.java, ElevenLabs)
   }
 }

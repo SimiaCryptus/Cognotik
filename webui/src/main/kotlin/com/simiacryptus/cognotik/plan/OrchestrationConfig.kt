@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
@@ -13,13 +13,12 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
-import com.simiacryptus.cognotik.platform.ApplicationServices.fileApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import java.io.File
 import java.util.Locale.getDefault
 import kotlin.io.path.Path
@@ -90,7 +89,7 @@ class OrchestrationConfig(
 
   fun planningActor(
     describer: TypeDescriber,
-    task: SessionTask
+    task: ISessionTask
   ): ParsedAgent<TaskBreakdownResult> {
     val availableTaskTypes = TaskType.getAvailableTaskTypes(this)
     return planningActor(

@@ -1,16 +1,16 @@
 package com.simiacryptus.cognotik.providers
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.platform.model.AudioModels
 import com.simiacryptus.cognotik.chat.OpenAIChatClient
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OpenAIEmbeddingClient
 import com.simiacryptus.cognotik.embedding.OpenAIEmbeddingModels
-import com.simiacryptus.cognotik.image.ImageClientInterface
-import com.simiacryptus.cognotik.image.ImageModel
+import com.simiacryptus.cognotik.platform.model.ImageClientInterface
+import com.simiacryptus.cognotik.platform.model.ImageModel
 import com.simiacryptus.cognotik.image.OpenAIImageClient
 import com.simiacryptus.cognotik.image.OpenAIImageModels
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level

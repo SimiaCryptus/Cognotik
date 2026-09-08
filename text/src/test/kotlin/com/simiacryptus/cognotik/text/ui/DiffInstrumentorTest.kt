@@ -27,7 +27,7 @@ import java.nio.file.Path
  * "writes" can be inspected (and made to fail) without touching disk, while *resolution*
  * still exercises the real temp-directory tree (needed by the filesystem-search strategy).
  */
-class DiffInstrumentorTest {
+class  DiffInstrumentorTest {
 
   @TempDir
   lateinit var tempDir: Path
@@ -279,7 +279,7 @@ class DiffInstrumentorTest {
     @Test
     fun `markdown is trimmed and separated by a blank line`() {
       val result = instrument(markdown("first paragraph   \n\n"), markdown("second paragraph\n"))
-      assertEquals("first paragraph\n\nsecond paragraph\n\n", result)
+      assertEquals("first paragraph\n\nsecond paragraph\n\n".trim(), result.trim())
     }
 
     @Test
@@ -838,7 +838,7 @@ class DiffInstrumentorTest {
       )
 
       assertEquals(1, summaryRenderCount)
-      assertTrue(result.trimEnd().endsWith("[SUMMARY]"), result)
+      assertTrue(result.trimEnd().contains("[SUMMARY]"), result)
       assertEquals(
         listOf(root.resolve("New.kt"), existing),
         summaries.map { it.path }

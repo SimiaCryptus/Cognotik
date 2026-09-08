@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.MethodTypeDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -42,7 +42,7 @@ open class CodingMode(
 
   inner class TaskFunctionImpl<T : TaskExecutionConfig, U : TaskTypeConfig>(
     private val taskType: TaskType<*, *>?,
-    private val task: SessionTask
+    private val task: ISessionTask
   ) : TaskFunction<T>(
     executionConfigClass = taskType?.executionConfigClass as Class<out T>
   ) {
@@ -63,9 +63,9 @@ open class CodingMode(
             agent = TaskOrchestrator(
               user = user,
               session = session,
-              dataStorage = task.ui.dataStorage,
+              dataStorage = task.dataStorage,
               root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-                ?: task.ui.dataStorage.getUserDir(user, session).toPath()
+                ?: task.dataStorage.getUserDir(user, session).toPath()
                 ?: File(".").toPath()
             ),
             messages = listOf(message),
@@ -97,7 +97,7 @@ open class CodingMode(
     abstract fun call(executionConfig: Any, messages: String): String
   }
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
      val transcript = transcriptStream
     try {
@@ -168,10 +168,10 @@ open class CodingMode(
     }
   }
 
-  open fun plan(task: SessionTask) = generateCode(task, history)
+  open fun plan(task: ISessionTask) = generateCode(task, history)
 
   private fun generateCode(
-    task: SessionTask,
+    task: ISessionTask,
     messages: List<Pair<String, ModelSchema.Role>>
   ): CodeAgent.CodeResult {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
@@ -195,7 +195,7 @@ open class CodingMode(
 
   open val describer: TypeDescriber = AbbrevWhitelistYamlDescriber("com.simiacryptus")
 
-  open fun symbols(task: SessionTask): Map<String, Any> =
+  open fun symbols(task: ISessionTask): Map<String, Any> =
     orchestrationConfig.taskSettings.map { (name, taskTypeConfig) ->
       Pair(
         name.replace("[^a-zA-Z01-9_]".toRegex(), "_"),

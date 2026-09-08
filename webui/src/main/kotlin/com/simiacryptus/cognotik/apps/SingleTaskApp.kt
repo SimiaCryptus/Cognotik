@@ -1,20 +1,20 @@
 package com.simiacryptus.cognotik.apps
 
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -109,7 +109,7 @@ ${taskConfig.toJson()}
     user: User
   ): OrchestrationConfig = initSettings(session, user)
 
-  protected open fun onTaskComplete(result: String, task: SessionTask) {}
+  protected open fun onTaskComplete(result: String, task: ISessionTask) {}
   protected open fun onTaskError(e: Throwable) {}
 
   protected open fun executeTask(

@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.cognitive
 import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -59,7 +59,7 @@ open class AdaptivePlanningMode(
   private var isRunning = false
   private var transcriptStream: OutputStream? = null
   private val expansionExpressionPattern = Regex("""\{([^|}{]+(?:\|[^|}{\n<>()\[\]]+))}""")
-  override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+  override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
     log.debug("Handling user message: $userMessage")
     if (!isRunning) {
       isRunning = true
@@ -72,7 +72,7 @@ open class AdaptivePlanningMode(
     }
   }
 
-  private fun startAutoPlanChat(task: SessionTask, userMessage: String, transcriptStream: OutputStream?) {
+  private fun startAutoPlanChat(task: ISessionTask, userMessage: String, transcriptStream: OutputStream?) {
     log.debug("Starting auto plan chat with initial message: $userMessage")
     task.echo(userMessage.renderMarkdown())
     this.transcriptStream = transcriptStream
@@ -82,7 +82,7 @@ open class AdaptivePlanningMode(
     /*
      * Run the planning loop synchronously on the calling thread.
      * handleUserMessage() must not return until the session is complete, and running inline
-     * (rather than submitting to task.ui.pool) also avoids holding a pool thread while this
+     * (rather than submitting to task.pool) also avoids holding a pool thread while this
      * loop blocks on the futures of the sub-tasks it submits to that same pool.
      */
     run {
@@ -91,13 +91,13 @@ open class AdaptivePlanningMode(
         log.debug("Starting main execution loop")
         task.complete()
 
-        val coordinator = task.ui.dataStorage.let {
+        val coordinator = task.dataStorage.let {
           TaskOrchestrator(
             user = user,
             session = session,
             dataStorage = it,
             root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-              ?: task.ui.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
+              ?: task.dataStorage.getUserDir(user, session).toPath() ?: File(".").toPath()
           )
         }
         log.debug("Created plan coordinator")
@@ -122,7 +122,6 @@ open class AdaptivePlanningMode(
           writeToTranscript("## Iteration $iteration\n\n")
 
           val task = task.linkedTask("Iteration $iteration")
-          val ui = task.ui
           val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
           iterationTabbedDisplay.newTask("Inputs").apply {
@@ -189,7 +188,7 @@ open class AdaptivePlanningMode(
             )
             iterationTabbedDisplay["Task Execution $currentTaskId"] = taskExecutionTask.placeholder
 
-            val future = ui.pool.submit<String> {
+            val future = task.pool.submit<String> {
               try {
                 if (coordinator != null) {
                   runTask(
@@ -285,7 +284,7 @@ open class AdaptivePlanningMode(
     coordinator: TaskOrchestrator,
     currentTask: TaskExecutionConfig,
     userMessage: String,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     val currentThinkingStatus =
@@ -310,7 +309,7 @@ open class AdaptivePlanningMode(
   private fun getNextTask(
     userMessage: String,
     reasoningState: Any,
-    task: SessionTask
+    task: ISessionTask
   ): List<TaskData>? {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     Tasks.initDescriber(orchestrationConfig, describer)
@@ -391,7 +390,7 @@ open class AdaptivePlanningMode(
       ).call()?.text
     }
 
-    val executor = task.ui.pool
+    val executor = task.pool
       ?: throw IllegalStateException("SocketManager or its pool is null for expansion processing")
     val processor = FixedConcurrencyProcessor(executor, 4)
 
@@ -443,7 +442,7 @@ open class AdaptivePlanningMode(
    */
   private fun processTaskExpansionRecursive(
     currentText: String,
-    task: SessionTask,
+    task: ISessionTask,
     parsedActor: ParsedAgent<Tasks>,
     processor: FixedConcurrencyProcessor
   ): List<TaskData> {

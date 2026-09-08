@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.session
 
 
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import io.github.bonigarcia.wdm.WebDriverManager
 import jakarta.servlet.http.Cookie
 import org.openqa.selenium.chrome.ChromeDriver
@@ -167,7 +167,7 @@ class SeleniumSessionTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -191,7 +191,7 @@ class SeleniumSessionTask(
 
 
 
-    task.ui.pool.submit {
+    task.pool.submit {
       var selenium: Selenium? = null
       var transcript: FileOutputStream? = null
       try {
@@ -293,7 +293,7 @@ class SeleniumSessionTask(
             executionConfig.commands.forEach { append("* Execute: `$it`\n") }
           }
           task.add(proposal.renderMarkdown())
-          task.add(acceptButtonFooter(task.ui) {
+          task.add(acceptButtonFooter(task) {
             runLogic()
           })
         }

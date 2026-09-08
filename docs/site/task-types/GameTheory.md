@@ -105,7 +105,7 @@ Per-invocation parameters described in the Documentation Tab above — scenario,
 
 **Initialization**
 1. `run()` resolves `game_scenario` and `players` from `executionConfig`; either being null/blank/empty triggers an immediate `CONFIGURATION ERROR` completion via `task.safeComplete(...)` and early return — no LLM calls are made.
-2. A background job is submitted to `task.ui.pool`; a transcript file stream and a `TabbedDisplay` are opened for structured, incremental UI updates.
+2. A background job is submitted to `task.pool`; a transcript file stream and a `TabbedDisplay` are opened for structured, incremental UI updates.
 
 **Execution**
 1. **Context assembly** — prior orchestration state and any `additional_context` are merged into a context string injected into subsequent prompts.

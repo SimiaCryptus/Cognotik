@@ -4,7 +4,7 @@
 Illustrate the runtime foundation provided by the Cognotik Platform Layer:
 session management, user identity, persistence, authorization, resource
 isolation, and optional cloud integration — all coordinated by
-`ApplicationServices`.
+`ApplicationServicesImpl`.
 
 ## Format
 - Rendered as a "hub-and-spoke" diagram with a central registry hub.
@@ -14,7 +14,7 @@ isolation, and optional cloud integration — all coordinated by
 ## Layout & Content
 
 ### Central Hub
-- A large central node labeled **`ApplicationServices`** (fill: #50E3C2)
+- A large central node labeled **`ApplicationServicesImpl`** (fill: #50E3C2)
 annotated: "Central registry for all platform services."
 
 ### Spoke Services (radiating from the hub)
@@ -51,7 +51,7 @@ Small inset box showing the Session ID format:
 - `YYYY-MM-DD-XXXX`    → Legacy (treated as global)          [chip: #9B9B9B]
 
 ## Directed Edges / Relationships
-- `ApplicationServices` ↔ each service (registry provides/locates service).
+- `ApplicationServicesImpl` ↔ each service (registry provides/locates service).
 - `Session` → `Storage` (session content persisted).
 - `Auth` → `Session` (permission checks gate session access).
 - `ThreadPoolManager` → wraps execution of Application/Cognitive work

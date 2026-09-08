@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServices.authenticationManager
-import com.simiacryptus.cognotik.platform.ApplicationServices.authorizationManager
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authenticationManager
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authorizationManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
@@ -15,8 +15,11 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.fileserver.FileServlet
+import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
-import com.simiacryptus.cognotik.platform.web.AbstractHttpServletResponse
+import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
+import com.simiacryptus.cognotik.platform.UserProvider
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -46,7 +49,7 @@ abstract class ApplicationServer(
       return sessionOwner == null || sessionOwner == user?.id
     }
   }
-  private val metadataDB by lazy { ApplicationServices.fileApplicationServices().metadataDB }
+  private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
 
 
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
@@ -62,7 +65,7 @@ abstract class ApplicationServer(
   }.toMap()
 
   final override val dataStorage: StorageInterface by lazy {
-    ApplicationServices.fileApplicationServices().dataStorageFactory
+    ApplicationServicesImpl.fileApplicationServices().dataStorageFactory
   }
   protected open val appInfoServlet by lazy {
     ServletHolder("appInfo", AppInfoServlet { session, user ->
@@ -327,7 +330,7 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
     )
   }
 
-class UserProviderImpl : com.simiacryptus.cognotik.platform.web.UserProvider {
+class UserProviderImpl : UserProvider {
   override fun authenticate(
     request: HttpServletRequest,
     response: AbstractHttpServletResponse?
@@ -341,7 +344,7 @@ class UserProviderImpl : com.simiacryptus.cognotik.platform.web.UserProvider {
     }
     if (null != claimedUser) {
       val userSettings =
-        ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
+        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
       val token = request.getCookie() ?: ""
       val passwordHash = userSettings.passwordHash
       val internalToken = userSettings.internalToken

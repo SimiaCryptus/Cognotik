@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.chat.model
 
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 
 
 // ⚠️ Unverified: Maintainer has no API access.
@@ -14,207 +16,207 @@ import com.simiacryptus.cognotik.CoreProviders
 )
 object OpenAIModels {
   val GPT4Turbo = ChatModel(
-      name = "GPT4Turbo",
-      modelId = "gpt-4-turbo",
-      maxTotalTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.010,
-      outputTokenPricePerK = 0.030,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT4Turbo",
+    modelId = "gpt-4-turbo",
+    maxTotalTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.010,
+    outputTokenPricePerK = 0.030,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val GPT4o = ChatModel(
-      name = "GPT4o",
-      modelId = "gpt-4o",
-      maxTotalTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.0025,
-      outputTokenPricePerK = 0.010,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT4o",
+    modelId = "gpt-4o",
+    maxTotalTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.0025,
+    outputTokenPricePerK = 0.010,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val GPT45 = ChatModel(
-      name = "GPT45",
-      modelId = "gpt-4.5-preview-2025-02-27",
-      maxTotalTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.075,
-      outputTokenPricePerK = 0.150,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT45",
+    modelId = "gpt-4.5-preview-2025-02-27",
+    maxTotalTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.075,
+    outputTokenPricePerK = 0.150,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val GPT4oMini = ChatModel(
-      name = "GPT4oMini",
-      modelId = "gpt-4o-mini",
-      maxTotalTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.00015,
-      outputTokenPricePerK = 0.00060,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT4oMini",
+    modelId = "gpt-4o-mini",
+    maxTotalTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.00015,
+    outputTokenPricePerK = 0.00060,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
   val O1Preview = ChatModel(
-      name = "O1Preview",
-      modelId = "o1-preview",
-      maxTotalTokens = 128 * 1024,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.0005,
-      outputTokenPricePerK = 0.0015,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "O1Preview",
+    modelId = "o1-preview",
+    maxTotalTokens = 128 * 1024,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.0005,
+    outputTokenPricePerK = 0.0015,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
 
   val O1 = ChatModel(
-      name = "O1",
-      modelId = "o1",
-      maxTotalTokens = 128 * 1024,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.015,
-      outputTokenPricePerK = 0.060,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "O1",
+    modelId = "o1",
+    maxTotalTokens = 128 * 1024,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.015,
+    outputTokenPricePerK = 0.060,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
 
   val O1Mini = ChatModel(
-      name = "O1Mini",
-      modelId = "o1-mini",
-      maxTotalTokens = 128 * 1024,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.00110,
-      outputTokenPricePerK = 0.00440,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "O1Mini",
+    modelId = "o1-mini",
+    maxTotalTokens = 128 * 1024,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.00110,
+    outputTokenPricePerK = 0.00440,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
 
   val O3Mini = ChatModel(
-      name = "O3Mini",
-      modelId = "o3-mini",
-      maxTotalTokens = 128 * 1024,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.00110,
-      outputTokenPricePerK = 0.00440,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "O3Mini",
+    modelId = "o3-mini",
+    maxTotalTokens = 128 * 1024,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.00110,
+    outputTokenPricePerK = 0.00440,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
   val O4Mini = ChatModel(
-      name = "O4Mini",
-      modelId = "o4-mini",
-      maxTotalTokens = 200000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.00110,
-      outputTokenPricePerK = 0.00440,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "O4Mini",
+    modelId = "o4-mini",
+    maxTotalTokens = 200000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.00110,
+    outputTokenPricePerK = 0.00440,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
   val O3 = ChatModel(
-      name = "O3",
-      modelId = "o3",
-      maxTotalTokens = 200000,
-      provider = CoreProviders.OpenAI,
-      outputTokenPricePerK = 0.010,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "O3",
+    modelId = "o3",
+    maxTotalTokens = 200000,
+    provider = CoreProviders.OpenAI,
+    outputTokenPricePerK = 0.010,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
   val GPT52 = ChatModel(
-      name = "GPT-5.2",
-      modelId = "gpt-5.2",
-      maxTotalTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 1.75 / 1000,
-      outputTokenPricePerK = 14.00 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT-5.2",
+    modelId = "gpt-5.2",
+    maxTotalTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 1.75 / 1000,
+    outputTokenPricePerK = 14.00 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val GPT52Pro = ChatModel(
-      name = "GPT-5.2 Pro",
-      modelId = "gpt-5.2-pro",
-      maxTotalTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 21.00 / 1000,
-      outputTokenPricePerK = 168.00 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT-5.2 Pro",
+    modelId = "gpt-5.2-pro",
+    maxTotalTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 21.00 / 1000,
+    outputTokenPricePerK = 168.00 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val GPT5Mini = ChatModel(
-      name = "GPT-5 Mini",
-      modelId = "gpt-5-mini",
-      maxTotalTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.25 / 1000,
-      outputTokenPricePerK = 2.00 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT-5 Mini",
+    modelId = "gpt-5-mini",
+    maxTotalTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.25 / 1000,
+    outputTokenPricePerK = 2.00 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val GPT54 = ChatModel(
-      name = "GPT-5.4",
-      modelId = "gpt-5.4",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 2.50 / 1000,
-      outputTokenPricePerK = 15.00 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT-5.4",
+    modelId = "gpt-5.4",
+    maxTotalTokens = 1048576,
+    maxOutTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 2.50 / 1000,
+    outputTokenPricePerK = 15.00 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val GPT54Mini = ChatModel(
-      name = "GPT-5.4 Mini",
-      modelId = "gpt-5.4-mini",
-      maxTotalTokens = 400000,
-      maxOutTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.75 / 1000,
-      outputTokenPricePerK = 4.50 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT-5.4 Mini",
+    modelId = "gpt-5.4-mini",
+    maxTotalTokens = 400000,
+    maxOutTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.75 / 1000,
+    outputTokenPricePerK = 4.50 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
   val GPT54Nano = ChatModel(
-      name = "GPT-5.4 Nano",
-      modelId = "gpt-5.4-nano",
-      maxTotalTokens = 400000,
-      maxOutTokens = 128000,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.20 / 1000,
-      outputTokenPricePerK = 1.25 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+    name = "GPT-5.4 Nano",
+    modelId = "gpt-5.4-nano",
+    maxTotalTokens = 400000,
+    maxOutTokens = 128000,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.20 / 1000,
+    outputTokenPricePerK = 1.25 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT)
   )
 
 
   val GPT41 = ChatModel(
-      name = "GPT 4.1",
-      modelId = "gpt-4.1-2025-04-14",
-      maxTotalTokens = 1048576,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 2.00 / 1000,
-      outputTokenPricePerK = 8.00 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "GPT 4.1",
+    modelId = "gpt-4.1-2025-04-14",
+    maxTotalTokens = 1048576,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 2.00 / 1000,
+    outputTokenPricePerK = 8.00 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
 
   val GPT41Mini = ChatModel(
-      name = "GPT 4.1 Mini",
-      modelId = "gpt-4.1-mini-2025-04-14",
-      maxTotalTokens = 1048576,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.40 / 1000,
-      outputTokenPricePerK = 1.60 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "GPT 4.1 Mini",
+    modelId = "gpt-4.1-mini-2025-04-14",
+    maxTotalTokens = 1048576,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.40 / 1000,
+    outputTokenPricePerK = 1.60 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
 
   val GPT41Nano = ChatModel(
-      name = "GPT 4.1 Nano",
-      modelId = "gpt-4.1-nano-2025-04-14",
-      maxTotalTokens = 1048576,
-      provider = CoreProviders.OpenAI,
-      inputTokenPricePerK = 0.10 / 1000,
-      outputTokenPricePerK = 0.40 / 1000,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT),
+    name = "GPT 4.1 Nano",
+    modelId = "gpt-4.1-nano-2025-04-14",
+    maxTotalTokens = 1048576,
+    provider = CoreProviders.OpenAI,
+    inputTokenPricePerK = 0.10 / 1000,
+    outputTokenPricePerK = 0.40 / 1000,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
   )
 
   val values: Map<String, ChatModel> = mapOf(

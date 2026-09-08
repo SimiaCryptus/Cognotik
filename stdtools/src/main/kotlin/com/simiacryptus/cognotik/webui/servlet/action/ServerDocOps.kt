@@ -8,6 +8,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
     import com.simiacryptus.cognotik.docops.status.DocOpsStatus
     import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
     import com.simiacryptus.cognotik.docops.status.TaskStatus
+    import com.simiacryptus.cognotik.platform.model.ChatModel
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
@@ -237,7 +238,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
       private fun resolveDocFiles(req: Request): List<File> =
         DocProcessorServlet.resolveDocFiles(req.root, req.docsFolder, req.paths)
 
-      private fun availableModels(req: Request): Map<String, com.simiacryptus.cognotik.chat.model.ChatModel> = try {
+      private fun availableModels(req: Request): Map<String, ChatModel> = try {
         req.servlet.availableModels(req.user)
       } catch (e: Exception) {
         println("warning: could not read user model settings: ${e.message}")

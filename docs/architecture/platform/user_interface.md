@@ -32,7 +32,7 @@ The `SessionTask` is your primary canvas. It manages a buffer of HTML content an
 
 The `SocketManager` handles the connection between the server and the browser. You rarely instantiate this directly;
 instead, you access it via `task.ui`. It is used to create new tasks, handle file paths, and manage interactivity.
-It also provides access to session-specific thread pools via `task.ui.pool` and `task.ui.scheduledThreadPoolExecutor`.
+It also provides access to session-specific thread pools via `task.pool` and `task.ui.scheduledThreadPoolExecutor`.
 
 ### Creating Sub-Tasks
 
@@ -45,7 +45,7 @@ You can create nested tasks to organize output. There are two main ways to do th
    parallel processing or updating a specific section of the UI while the main thread continues.
 
 2. **Manual Placement (Inner Tasks):**
-   Calling `task.ui.newTask(false)` creates a "detached" task. It is **not** rendered automatically. Instead, you must
+   Calling `task.newTask(false)` creates a "detached" task. It is **not** rendered automatically. Instead, you must
    use the task's `placeholder` property (a string containing a `div` with the specific `messageID`) to place it within
    the UI.
    This is essential for complex layouts, such as putting a streaming task inside a table cell or a specific HTML
@@ -62,7 +62,7 @@ subTask.add("I am a sub-task, appearing in my reserved spot")
 subTask.complete()
 
 // 2. Manual: Must be placed explicitly
-val innerTask = task.ui.newTask(false)
+val innerTask = task.newTask(false)
 // Inject the placeholder into a custom layout
 task.add(innerTask.placeholder)
 // Now content added to innerTask appears inside the .custom-box div
@@ -74,7 +74,7 @@ innerTask.add("I am inside the box")
 ```kotlin
 // Create a cancelable task (renders with a close button)
 // If the user clicks 'X', the task element is removed from the DOM.
-val closableTask = task.ui.newTask(root = true, cancelable = true)
+val closableTask = task.newTask(root = true, cancelable = true)
 ```
 
 ---
@@ -217,7 +217,7 @@ Instead of navigating to a URL, links trigger server-side code.
 ```kotlin
 // Creates an <a> tag. When clicked, the lambda executes.
 // You can optionally specify a CSS class and an ID.
-val linkHtml = task.ui.hrefLink("Click Me") {
+val linkHtml = task.hrefLink("Click Me") {
   log.info("Link was clicked!")
   // You can trigger new UI updates here
 }
@@ -229,7 +229,7 @@ task.add("Please $linkHtml to continue.")
 To get text from the user, use the `SocketManager`.
 
 ```kotlin
-val inputHtml = task.ui.textInput { userResponse: String ->
+val inputHtml = task.textInput { userResponse: String ->
   task.add("You typed: $userResponse")
 }
 task.add(inputHtml)
@@ -439,7 +439,7 @@ subTask.add("Welcome to the sub-agent.")
 You can generate a link to the current session using `linkToSession`.
 
 ```kotlin
-val link = task.ui.linkToSession("Open this session in new tab")
+val link = task.linkToSession("Open this session in new tab")
 task.add(link)
 ```
 
@@ -470,7 +470,7 @@ task.add(link)
 * `Discussable` is **blocking**. Do not call it on the main server thread if you are handling high throughput
   synchronously (though usually, you are running inside a `SessionTask` thread pool).
 * `Retryable` submits work to a thread pool automatically.
-* You can access the session's thread pool via `task.ui.pool` to offload heavy computations.
+* You can access the session's thread pool via `task.pool` to offload heavy computations.
 * For delayed or periodic execution, use `task.ui.scheduledThreadPoolExecutor`.
 
 5. **Security:**

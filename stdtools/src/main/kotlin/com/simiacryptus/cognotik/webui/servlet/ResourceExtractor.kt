@@ -41,7 +41,8 @@ package com.simiacryptus.cognotik.webui.servlet
         if (prefix.isEmpty()) return emptyList()
         targetDir.mkdirs()
         val written = mutableListOf<File>()
-        classLoader.getResource(prefix)?.let { url ->
+        val resource = classLoader.getResource(prefix)
+        resource?.let { url ->
           written += runCatching { extractFromUrl(url, prefix, targetDir, overwrite, skipDemoFolders) }
             .onFailure { log.debug("Failed to extract {} from {}: {}", prefix, url, it.message) }
             .getOrDefault(emptyList())

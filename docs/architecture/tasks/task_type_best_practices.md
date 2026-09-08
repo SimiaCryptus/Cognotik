@@ -465,7 +465,7 @@ val dataFile = getOutputFile(".md")?.let {
 
 * **Offloading:** Do not block the main execution thread with heavy computations or I/O.
 * **Standard Pools:**
-    * **Async Processing:** Access `task.ui.pool` (ExecutorService) for heavy lifting.
+    * **Async Processing:** Access `task.pool` (ExecutorService) for heavy lifting.
     * **Scheduling:** Access `task.ui.scheduledThreadPoolExecutor` for delayed checks, timeouts, or periodic polling.
 * **Logging:** Ensure runtime progress of async threads is logged to SLF4J.
 
@@ -506,7 +506,7 @@ When reviewing a specific Task file (e.g., `MyNewTask.kt`), apply the following 
 | **R6**   | **Docs**     | Is there a `tooltipHtml` or `description` provided in the `TaskType` definition?                         | **Fail** if null or empty.                                                                                                                                                    |
 | **R7**   | **Debug**    | Is the transcript used with `<details>` for verbose data?                                                | **Fail** if raw dumps clutter the main view or if transcript is missing.                                                                                                      |
 | **R16**  | **Output**   | Does the transcript use tabbed `<div>` sections to separate final output from work details?              | **Warn** if a long transcript has no structural organization. **Fail** if final results are buried at the end of a long process log with no way to navigate directly to them. |
-| **R8**   | **Async**    | Are heavy ops offloaded to `task.ui.pool`?                                                               | **Fail** if `Thread.sleep` or blocking I/O occurs on the main thread.                                                                                                         |
+| **R8**   | **Async**    | Are heavy ops offloaded to `task.pool`?                                                               | **Fail** if `Thread.sleep` or blocking I/O occurs on the main thread.                                                                                                         |
 | **R9**   | **Data**     | Do all `ParsedAgent` target classes have no-arg constructors (all fields defaulted)?                     | **Fail** if any field lacks a default value.                                                                                                                                  |
 | **R10**  | **Data**     | Are all fields in data classes annotated with `@Description`?                                            | **Fail** if any public field used in LLM schema generation lacks `@Description`.                                                                                              |
 | **R11**  | **Data**     | Are data class fields `var` (not `val`)?                                                                 | **Fail** if `val` is used on fields that need deserialization or canonicalization.                                                                                            |
@@ -560,7 +560,7 @@ class ExampleTask(
         
         try {
             // 6. Offload heavy work to session pool
-            task.ui.pool.submit {
+            task.pool.submit {
                 try {
                     log.info("Starting ExampleTask analysis...")
                     
@@ -588,7 +588,7 @@ class ExampleTask(
                     
 
                     // Switch back to UI thread for interaction if needed, or handle logic here
-                    acceptButtonFooter(task.ui) {
+                    acceptButtonFooter(task) {
                         File(executionConfig?.path).writeText(output)
                         log.info("ExampleTask completed successfully.")
                         resultFn("File updated.")
@@ -693,7 +693,7 @@ are satisfied with the state of the workspace and ready to move to the next task
 
 ```kotlin
 // Example from FileModificationTask.kt
-val footer = acceptButtonFooter(task.ui) {
+val footer = acceptButtonFooter(task) {
     task.complete()
     semaphore.release() // Unblocks the TaskOrchestrator
 }

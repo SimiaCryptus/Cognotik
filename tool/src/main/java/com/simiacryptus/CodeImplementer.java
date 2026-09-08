@@ -1,6 +1,6 @@
 package com.simiacryptus;
 
-import com.simiacryptus.cognotik.chat.model.ChatModel;
+import com.simiacryptus.cognotik.platform.model.ChatModel;
 import com.simiacryptus.cognotik.plan.OrchestrationConfig;
 import com.simiacryptus.cognotik.plan.cognitive.WaterfallMode.WaterfallModeConfig;
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig;

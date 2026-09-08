@@ -103,7 +103,7 @@ Set per task instance via `FiniteStateMachineTaskExecutionConfigData`: `concept_
 ### Lifecycle
 
 **Initialization**
-- Task is submitted to `task.ui.pool` as an async job; a transcript file (`transcriptFile()`) is opened for a
+- Task is submitted to `task.pool` as an async job; a transcript file (`transcriptFile()`) is opened for a
   full audit log.
 - Validates `concept_to_model` is non-blank — fails fast with a logged error and `task.error(...)` if not.
 - Resolves `defaultSmart` chat API; throws `IllegalStateException` if unavailable.

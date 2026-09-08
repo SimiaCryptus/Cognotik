@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
-    import com.simiacryptus.cognotik.platform.ApplicationServices
+    import com.simiacryptus.cognotik.fileserver.action.FsActionContext
+    import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.webui.application.getCookie
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsApiRoute
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+    import com.simiacryptus.cognotik.fileserver.handler.FsApiRoute
+    import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+    import com.simiacryptus.cognotik.fileserver.handler.FsException
     import java.io.File
 
     /**
@@ -19,7 +20,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
      */
     object SessionFsRoots {
 
-      private val dataStorage by lazy { ApplicationServices.fileApplicationServices().dataStorageFactory }
+      private val dataStorage by lazy { ApplicationServicesImpl.fileApplicationServices().dataStorageFactory }
 
       fun sessionOf(ctx: FsActionContext): Session {
         val raw = FsApiRoute.parse(ctx.req.pathInfo ?: ctx.req.servletPath)?.prefix
@@ -31,7 +32,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
       fun userOf(ctx: FsActionContext): User {
         val session = sessionOf(ctx)
-        return ApplicationServices.authenticationManager.getUser(ctx.req.getCookie())
+        return ApplicationServicesImpl.authenticationManager.getUser(ctx.req.getCookie())
           ?: throw FsException(
             FsErrorCode.EACCES, "fsapi", null,
             "not authenticated for session '${session.sessionId}'; log in and retry"
@@ -40,7 +41,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
       fun rootOf(ctx: FsActionContext): File {
         val session = sessionOf(ctx)
-        val user = ApplicationServices.authenticationManager.getUser(ctx.req.getCookie())
+        val user = ApplicationServicesImpl.authenticationManager.getUser(ctx.req.getCookie())
         if (user == null && !session.isGlobal()) {
           throw FsException(
             FsErrorCode.EACCES, "fsapi", null,

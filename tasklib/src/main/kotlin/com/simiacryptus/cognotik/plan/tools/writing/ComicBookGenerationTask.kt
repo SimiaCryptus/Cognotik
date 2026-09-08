@@ -4,7 +4,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.transcriptFilter
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
@@ -209,12 +209,12 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
-    task.ui.pool.submit {
+    task.pool.submit {
       val dataDir = (getOutputFile(".md")?.let {
         if (it.endsWith(".md")) it.removeSuffix(".md") else null
       } ?: "comic").apply {
@@ -348,7 +348,7 @@ open class ComicBookGenerationTask<T : ComicBookGenerationTask.ComicBookGenerati
         if (executionConfig?.generate_images == true) {
           if (!orchestrationConfig.autoFix) {
             val semaphore = Semaphore(0)
-            val footer = acceptButtonFooter(task.ui) {
+            val footer = acceptButtonFooter(task) {
               statusBuffer?.setLength(0)
               statusBuffer?.append("✅ Script Approved. Generating visuals...".renderMarkdown())
               overviewTask.update()

@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.text.SimpleDateFormat
@@ -47,7 +48,7 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
             filename = "working_copy_changes.diff",
             model = AppSettingsState.instance.smartChatClient,
             fastModel = AppSettingsState.instance.fastChatClient,
-            storage = ApplicationServices.fileApplicationServices().dataStorageFactory
+            storage = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",

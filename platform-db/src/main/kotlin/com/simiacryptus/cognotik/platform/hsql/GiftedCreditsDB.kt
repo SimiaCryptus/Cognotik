@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.hsql
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
@@ -132,9 +132,9 @@ class GiftedCreditsDB(
     }
 
     // Check creator has sufficient credit balance
-    val usageManager = ApplicationServices.fileApplicationServices().usageDB
+    val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
     val creatorBalance = try {
-      usageManager.getUserBalance(creator.id)
+      usageManager.getUserBalance(creator)
     } catch (e: Exception) {
       log.error("Failed to retrieve balance for creator={}", creatorId, e)
       throw RuntimeException("Unable to verify creator credit balance", e)
@@ -146,7 +146,7 @@ class GiftedCreditsDB(
         creatorId, creatorBalance, totalBudget
       )
       throw IllegalArgumentException(
-        "Insufficient credit balance: have ${"%.2f".format(creatorBalance)}, need ${"%.2f".format(totalBudget)}"
+        "Insufficient credit balance for ${creator.id}: have ${"%.2f".format(creatorBalance)}, need ${"%.2f".format(totalBudget)}"
       )
     }
 
@@ -194,7 +194,7 @@ class GiftedCreditsDB(
         grantDuration = grantDuration,
         totalBudget = totalBudget,
         spentBudget = 0.0,
-        createdBy = creatorId,
+        createdBy = creator,
         theme = theme
       )
     } catch (e: Exception) {
@@ -260,14 +260,14 @@ class GiftedCreditsDB(
         }
 
         // 4. Verify the creator's balance (safety check; non-fatal)
-        val creatorId = gift.createdBy
-        if (!creatorId.isNullOrBlank()) {
+        val creator = gift.createdBy
+        if (creator != null) {
           try {
             val creatorBalance =
-              ApplicationServices.fileApplicationServices().usageDB.getUserBalance(creatorId)
+              ApplicationServicesImpl.fileApplicationServices().usageDB.getUserBalance(creator)
             log.debug(
               "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
-              creatorId, creatorBalance, gift.amountGranted
+              creator.id, creatorBalance, gift.amountGranted
             )
           } catch (e: Exception) {
             log.warn("Failed to verify creator balance for gift id={} (non-fatal): {}", giftId, e.message)
@@ -417,7 +417,7 @@ class GiftedCreditsDB(
       grantDuration = Duration.ofSeconds(grantSeconds),
       totalBudget = totalBudget,
       spentBudget = claimants * amountGranted,
-      createdBy = createdBy,
+      createdBy = User(email = createdBy!!),
       theme = theme
     )
   }

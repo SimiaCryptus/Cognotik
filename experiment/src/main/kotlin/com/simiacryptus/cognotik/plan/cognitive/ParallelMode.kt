@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -55,7 +55,7 @@ open class ParallelMode(
     val mode: ParallelModeConfig.CombinationMode = ParallelModeConfig.CombinationMode.CrossJoin
   )
 
-   override fun handleUserMessage(userMessage: String, task: SessionTask, transcriptStream: OutputStream?) {
+   override fun handleUserMessage(userMessage: String, task: ISessionTask, transcriptStream: OutputStream?) {
      val transcript = transcriptStream
     try {
       task.echo(userMessage.renderMarkdown(true))
@@ -63,7 +63,7 @@ open class ParallelMode(
       transcript?.write("User Message: $userMessage\n".toByteArray())
 
       val root = orchestrationConfig.absoluteWorkingDir?.let { File(it).toPath() }
-        ?: task.ui.dataStorage?.getUserDir(user, session)?.toPath()
+        ?: task.dataStorage?.getUserDir(user, session)?.toPath()
         ?: File(".").toPath()
       val parser = createParserAgent(task)
       val plan = if (orchestrationConfig.autoFix) {
@@ -104,7 +104,7 @@ open class ParallelMode(
       task.header("Running ${combinations.size} tasks (Concurrency: ${plan.concurrency})", level = 3)
 
       val tabs = TabbedDisplay(task)
-      val processor = FixedConcurrencyProcessor(task.ui.pool, plan.concurrency)
+      val processor = FixedConcurrencyProcessor(task.pool, plan.concurrency)
 
       val futures = combinations.map { combination ->
         val label = combination.values.joinToString(",") { it.toString() }
@@ -125,7 +125,7 @@ open class ParallelMode(
             val coordinator = TaskOrchestrator(
               user = user,
               session = session,
-              dataStorage = task.ui.dataStorage!!,
+              dataStorage = task.dataStorage,
               root = root
             )
             val impl = orchestrationConfig.getImpl(chosenTask)
@@ -169,7 +169,7 @@ open class ParallelMode(
     }
   }
 
-  private fun createParserAgent(task: SessionTask): ParsedAgent<ParallelPlan> {
+  private fun createParserAgent(task: ISessionTask): ParsedAgent<ParallelPlan> {
     val config = config ?: throw IllegalStateException("CognitiveModeConfig is null")
     val availableTaskTypes = TaskType.getAvailableTaskTypes(orchestrationConfig)
     val taskDescriptions = availableTaskTypes.joinToString("\n") { taskType ->

@@ -1,0 +1,1 @@
+Basic idea: a complete UI for git operations on this session's filesystem

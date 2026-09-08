@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.UsageInterface
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -22,7 +22,7 @@ class UsageServlet : HttpServlet() {
     public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
         response.status = HttpServletResponse.SC_OK
         val useJson = isJsonRequested(request)
-        val usageManager = ApplicationServices.fileApplicationServices().usageDB
+        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
 
         if (request.parameterMap.containsKey("sessionId")) {
             handleSessionUsage(request, response, useJson, usageManager)

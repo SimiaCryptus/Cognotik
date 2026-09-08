@@ -4,20 +4,20 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.docs.getDocumentReader
-import com.simiacryptus.cognotik.models.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ISessionTask
+import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Discussable
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.ui.TabbedDisplay
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -217,7 +217,7 @@ class CustomFileSetPatchServer(
     }
   }
 
-  private fun finalizeSingleOutputFile(outputFile: Path, session: Session, task: SessionTask) {
+  private fun finalizeSingleOutputFile(outputFile: Path, session: Session, task: ISessionTask) {
     val message =
       "<a href='fileIndex/$session/${_selectedDirectory?.relativize(outputFile) ?: outputFile}'>Generated: ${
         _selectedDirectory?.relativize(
@@ -320,8 +320,7 @@ class CustomFileSetPatchServer(
 
             try {
               // Create a subsession for this file set
-              val subSession = task.newSession()
-              val subTask = subSession.newTask()
+              val subTask = task.newTask()
 
               processFileSet(
                 fileSet = fileSet,
@@ -567,7 +566,7 @@ class CustomFileSetPatchServer(
     contextSummary: String,
     userMessage: String,
     tabs: TabbedDisplay?,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     singleOutputFile: Path?,
     useBigDataMode: Boolean = false,
@@ -595,10 +594,10 @@ class CustomFileSetPatchServer(
         }
 
         else -> {
-          val newSession = task.newSession()
+          val newSession = task.newTask()
           status =
             task.add("""Processing <a href="#${newSession.sessionId}" target="_blank" class="linked-task-link">${fileSet.name}</a>...<br/>""")!!
-          newSession.newTask()
+          newSession
         }
       }
       fileTask.header("Processing ${fileSet.name}")
@@ -731,7 +730,7 @@ class CustomFileSetPatchServer(
   private fun handleAutoApplyMode(
     fileSet: CustomFileSetPatchAction.FileSet,
     userMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     toInput: (String) -> List<String>
   ) {
@@ -763,7 +762,7 @@ class CustomFileSetPatchServer(
   private fun handleGenerationMode(
     fileSet: CustomFileSetPatchAction.FileSet,
     userMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     singleOutputFile: Path?,
     toInput: (String) -> List<String>
@@ -798,7 +797,7 @@ class CustomFileSetPatchServer(
   private fun handleInteractiveMode(
     fileSet: CustomFileSetPatchAction.FileSet,
     userMessage: String,
-    task: SessionTask,
+    task: ISessionTask,
     session: Session,
     toInput: (String) -> List<String>
   ) {
@@ -831,7 +830,7 @@ class CustomFileSetPatchServer(
     design: String,
     session: Session,
     fileSet: CustomFileSetPatchAction.FileSet,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     return when (outputMode) {
       CustomFileSetPatchAction.OutputMode.EDIT_FILES -> {

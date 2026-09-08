@@ -5,7 +5,9 @@ import com.google.genai.Client
 import com.google.genai.types.GenerateImagesConfig
 import com.google.genai.types.GenerateImagesResponse
 import com.simiacryptus.cognotik.HttpClientManager
-import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.platform.model.ImageClientInterface
+import com.simiacryptus.cognotik.platform.model.ImageModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema.*
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level

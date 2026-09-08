@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
@@ -131,7 +131,7 @@ class CodeRuntimes(
             }
             listOf(
               string.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-                ?: throw IllegalArgumentException("Executable '${string}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+                ?: throw IllegalArgumentException("Executable '${string}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
             )
           }
         )
@@ -144,7 +144,7 @@ class CodeRuntimes(
           lang = "javascript",
           commandResolver = { listOf(
             "node".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"node"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+              ?: throw IllegalArgumentException("Executable '${"node"}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
           ) }
         )
       }
@@ -156,7 +156,7 @@ class CodeRuntimes(
           lang = "ruby",
           commandResolver = { listOf(
             "ruby".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"ruby"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+              ?: throw IllegalArgumentException("Executable '${"ruby"}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
           ) }
         )
       }
@@ -168,7 +168,7 @@ class CodeRuntimes(
           lang = "perl",
           commandResolver = { listOf(
             "perl".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"perl"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+              ?: throw IllegalArgumentException("Executable '${"perl"}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
           ) }
         )
       }
@@ -180,7 +180,7 @@ class CodeRuntimes(
           lang = "r",
           commandResolver = { listOf(
             "Rscript".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"Rscript"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+              ?: throw IllegalArgumentException("Executable '${"Rscript"}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
           ) }
         )
       }
@@ -192,7 +192,7 @@ class CodeRuntimes(
           lang = "php",
           commandResolver = { listOf(
             "php".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"php"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+              ?: throw IllegalArgumentException("Executable '${"php"}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
           ) }
         )
       }
@@ -204,7 +204,7 @@ class CodeRuntimes(
           lang = "lua",
           commandResolver = { listOf(
             "lua".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"lua"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+              ?: throw IllegalArgumentException("Executable '${"lua"}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
           ) }
         )
       }
@@ -236,7 +236,7 @@ class CodeRuntimes(
           lang = "scala",
           commandResolver = { listOf(
             "scala".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"scala"}' not found relative to root '${ApplicationServices.fileApplicationServices().rootDir}' or on system PATH")
+              ?: throw IllegalArgumentException("Executable '${"scala"}' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
           ) }
         )
       }

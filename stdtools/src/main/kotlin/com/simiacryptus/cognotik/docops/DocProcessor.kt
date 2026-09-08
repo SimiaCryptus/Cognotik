@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.docops
 
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.docops.exec.DocExecutionContext
 import com.simiacryptus.cognotik.docops.exec.DocTaskCallbacks
 import com.simiacryptus.cognotik.docops.exec.DocTaskInferenceRequest
@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.docops.model.DocSpec
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.docops.spec.TemplateEngine
 import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
-import com.simiacryptus.cognotik.docops.status.NullDocStatusStore
 import com.simiacryptus.cognotik.plan.cognitive.ConversationalMode
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
@@ -22,7 +21,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -30,8 +29,7 @@ import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.asChatInterface
 import com.simiacryptus.cognotik.util.jsonCast
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.CompletableFuture
@@ -201,6 +199,12 @@ class DocProcessor(
       request: DocTaskInferenceRequest<PlatformTaskKind>
     ): Map<String, Any> {
       request.patchProcessor?.apply { harness.processor = this }
+      val resolvedTaskType = request.taskKind.taskType.resolveTaskType(request.frontmatter)
+      val customExecutionConfig = resolvedTaskType.resolveExecutionConfig(request.frontmatter)
+      if (customExecutionConfig != null) {
+        return customExecutionConfig.jsonCast<Map<String, Any>>()
+      }
+      val customTypeConfig = resolvedTaskType.resolveTaskTypeConfig(request.frontmatter)
       val model = chatInterface()
       val (_, taskConfig) = ConversationalMode.requestToTask(
         defaultModel = model,
@@ -209,13 +213,13 @@ class DocProcessor(
         orchestrationConfig = harness.createSettings(
           session = Session.newUserID(),
           autoFix = true,
-          typeConfig = request.typeConfig.toTypeConfig(request.taskKind),
+          typeConfig = customTypeConfig ?: request.typeConfig.toTypeConfig(PlatformTaskKind(resolvedTaskType)),
           workingDir = request.workingDir.toString(),
         ),
         prompt = request.prompt,
         history = request.history,
         singleStage = true,
-        taskTypes = listOf(request.taskKind.taskType)
+        taskTypes = listOf(resolvedTaskType)
       )
       return taskConfig.jsonCast<Map<String, Any>>()
     }
@@ -224,15 +228,19 @@ class DocProcessor(
       request: DocTaskRequest<PlatformTaskKind>,
       callbacks: DocTaskCallbacks<Session>
     ) {
+      val resolvedTaskType = request.taskKind.taskType.resolveTaskType(request.frontmatter)
+      val resolvedTypeConfig = resolvedTaskType.resolveTaskTypeConfig(request.frontmatter)
+        ?: request.typeConfig.toTypeConfig(PlatformTaskKind(resolvedTaskType))
+      val executionConfig = resolvedTaskType.resolveExecutionConfig(request.frontmatter)
+        ?: request.executionConfig.jsonCast(resolvedTaskType.executionConfigClass)
       harness.runTask(
-        taskType = request.taskKind.taskType,
+        taskType = resolvedTaskType,
         timeoutMinutes = request.timeoutMinutes.toLong(),
         message = request.message,
-        executionConfig = request.executionConfig
-          .jsonCast(request.taskKind.taskType.executionConfigClass),
+        executionConfig = executionConfig,
         parentSession = parentSession,
-        onComplete = { _: String, task: SessionTask ->
-          callbacks.onCompleted(task.ui.sessionId.toString())
+        onComplete = { _: String, task: ISessionTask ->
+          callbacks.onCompleted(task.sessionId.toString())
         },
         onError = { error: Throwable ->
           callbacks.onFailed(error)
@@ -242,7 +250,7 @@ class DocProcessor(
         harness.createSettings(
           session = session,
           autoFix = autoFix,
-          typeConfig = request.typeConfig.toTypeConfig(request.taskKind),
+          typeConfig = resolvedTypeConfig,
           workingDir = request.workingDir.toString()
         ).apply {
           processor = request.patchProcessor ?: processor
@@ -276,7 +284,7 @@ class DocProcessor(
       session: Session = Session.newUserID(), concurrency: Int = 4, user: User
     ): FixedConcurrencyProcessor =
       FixedConcurrencyProcessor(
-        ApplicationServices.threadPoolManager.getPool(
+        ApplicationServicesImpl.threadPoolManager.getPool(
           session,
           user
         ), concurrency

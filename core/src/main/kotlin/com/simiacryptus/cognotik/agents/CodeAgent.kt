@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.OutputInterceptor
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
-import com.simiacryptus.cognotik.models.ModelSchema.*
+import com.simiacryptus.cognotik.platform.model.ModelSchema.*
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.util.toContentList

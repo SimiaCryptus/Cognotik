@@ -10,6 +10,10 @@ import {bus, Events} from '../core/bus.js';
  * reverse-spec §4.3 render loop, §5 reference expansion, §7 delegated interactive
   * controls. Nodes are reconciled by id/version — no virtual DOM, no re-mount.
   *
+   * Order is NOT arrival order: `store.rendered()` returns messages in intrinsic id
+   * order (§4.1), so a frame that arrives late for an earlier id is moved into place
+   * by the cursor walk below instead of being appended at the bottom.
+   *
   * NOTE: the client renders NO input affordances of its own. Every textbox/button/link
   * is part of the server-emitted HTML; we only delegate its clicks/keys back over the
   * socket (§7). Anything else duplicates server UI on every message.
@@ -120,6 +124,7 @@ export class MessageListView {
             }
 
             if (!node.parentNode || node.previousElementSibling !== cursor) {
+                 // Either a fresh node or one whose intrinsic id order moved it.
                 if (cursor) cursor.after(node);
                 else this.list.prepend(node);
             }

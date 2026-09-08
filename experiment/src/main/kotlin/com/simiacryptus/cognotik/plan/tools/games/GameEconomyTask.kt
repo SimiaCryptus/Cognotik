@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.games
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -15,7 +15,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
@@ -487,7 +487,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -503,7 +503,6 @@ GameEconomy - Design complete game economic systems with progression and monetiz
     }
     val transcript = task.newUserFileStream(transcriptFile())
 
-    val ui = task.ui
     val api = defaultSmart ?: return
     // Create tabbed display for organized output
     val tabs = TabbedDisplay(task)
@@ -511,7 +510,7 @@ GameEconomy - Design complete game economic systems with progression and monetiz
     // Overview tab
     val overviewTask = task.newTask()
     tabs["Overview"] = overviewTask.placeholder
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         log.info("Starting GameEconomy task for: $gameTitle")
         val toInput = { it: String -> messages + listOf(getInputFileCode(), it).filter { it.isNotBlank() } }

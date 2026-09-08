@@ -73,14 +73,15 @@ class TaskBuilder<K : DocTaskKind>(
           related_files = relatedFiles.map { runCatching { it.canonicalFile }.getOrDefault(it.absoluteFile) }
             .distinct(),
           doc_files = contributions.map { it.spec.docFile.absoluteFile }.distinct(),
-           // The description names the target relative to the *effective* root, which is also the
-           // working directory handed to the host - otherwise `folder:` tasks write to the wrong place.
-           task_description = descriptions.compose(contributions, target, kind, effectiveRoot),
+          // The description names the target relative to the *effective* root, which is also the
+          // working directory handed to the host - otherwise `folder:` tasks write to the wrong place.
+          task_description = descriptions.compose(contributions, target, kind, effectiveRoot),
           taskConfigOverrides = taskConfigPolicy.resolve(contributions),
         ),
         taskType = kind,
         message = messages.compose(kind, relatedFiles),
         patchProcessor = preparation.patchProcessor,
+        frontmatter = contributions.map { it.spec }.mergedFrontmatter(),
       )
       BuildOutcome.Planned(
         PlannedTask(

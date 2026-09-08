@@ -7,7 +7,7 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.getExternalConfigurationDir
 import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.apps.ResourceApps
-import com.simiacryptus.cognotik.chat.ChatInterface.Companion.ENABLE_LOGS
+import com.simiacryptus.cognotik.platform.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
@@ -17,6 +17,7 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
@@ -45,7 +46,7 @@ class PluginStartupActivity : ProjectActivity {
         //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
-        ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        ApplicationServicesImpl.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
     }
 
@@ -130,7 +131,7 @@ class PluginStartupActivity : ProjectActivity {
         }
         OrchestrationConfig.instanceFn =
             { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
-        ApplicationServices.authorizationManager = object : AuthorizationInterface {
+        ApplicationServicesImpl.authorizationManager = object : AuthorizationInterface {
             override fun isAuthorized(
                 resource: ResourceRef?,
                 principal: Principal,
@@ -139,7 +140,7 @@ class PluginStartupActivity : ProjectActivity {
                 return true
             }
         }
-        ApplicationServices.authenticationManager = object : AuthenticationInterface {
+        ApplicationServicesImpl.authenticationManager = object : AuthenticationInterface {
             override fun getUser(accessToken: String?) = AppSettingsState.localUser
             override fun putUser(accessToken: String, user: User) = user
         }

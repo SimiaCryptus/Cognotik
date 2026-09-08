@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
@@ -81,24 +81,24 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
         val user =
           UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
-          val isAuthorized = ApplicationServices.authorizationManager.isAuthorized(
+          val isAuthorized = ApplicationServicesImpl.authorizationManager.isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Read
           )
             isAuthorized
         }.map {
-          val canRead = ApplicationServices.authorizationManager.isAuthorized(
+          val canRead = ApplicationServicesImpl.authorizationManager.isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Read
           )
-          val canWrite = ApplicationServices.authorizationManager.isAuthorized(
+          val canWrite = ApplicationServicesImpl.authorizationManager.isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Write
           )
-          val canWritePublic = ApplicationServices.authorizationManager.isAuthorized(
+          val canWritePublic = ApplicationServicesImpl.authorizationManager.isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Public

@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan.tools.social
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -185,7 +185,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -314,7 +314,7 @@ LLMPollSimulation - Simulate polls and surveys with diverse AI personas
 
       // Submit all surveys to thread pool
       val futures = respondents.map { respondent ->
-        task.ui.pool.submit {
+        task.pool.submit {
           try {
             val response = conductSurvey(respondent, questions, api, temperature)
             responses[respondent.id] = response
@@ -1334,7 +1334,7 @@ Also provide an overall sentiment classification: Positive, Negative, or Neutral
     return sqrt(variance)
   }
 
-  private fun createTranscriptFile(task: SessionTask): Pair<String, FileOutputStream?> {
+  private fun createTranscriptFile(task: ISessionTask): Pair<String, FileOutputStream?> {
     val reportFile = "poll_simulation_report_${SimpleDateFormat("yyyyMMddHHmmss").format(Date())}.md"
     val (link, file) = Pair(task.linkTo(reportFile), task.resolveUserFile(reportFile))
     val outputStream = file?.outputStream()

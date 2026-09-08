@@ -2,12 +2,12 @@ package com.simiacryptus.cognotik.agents
 
 import com.fasterxml.jackson.module.kotlin.isKotlinClass
 import com.google.gson.reflect.TypeToken
-import com.simiacryptus.cognotik.chat.ChatInterface
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.DescriptorUtil
 import com.simiacryptus.cognotik.describe.TypeDescriber
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.toContentList
@@ -157,7 +157,7 @@ open class ProxyAgent<T : Any>(
 
   fun complete(prompt: ProxyRequest, vararg examples: RequestResponse): String {
     log.info("Starting completion with prompt: {}", prompt.toString())
-    var request = ModelSchema.ChatRequest()
+    var request = ChatRequest()
     val exampleMessages = examples.flatMap {
       listOf(
         ModelSchema.ChatMessage(

@@ -1,9 +1,15 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
+    import com.simiacryptus.cognotik.fileserver.action.ActionMenu
+    import com.simiacryptus.cognotik.fileserver.action.ActionParam
+    import com.simiacryptus.cognotik.fileserver.action.ActionSelection
+    import com.simiacryptus.cognotik.fileserver.action.ActionUi
+    import com.simiacryptus.cognotik.fileserver.action.FsAction
+    import com.simiacryptus.cognotik.fileserver.action.FsActionContext
     import com.simiacryptus.cognotik.webui.servlet.ResourceExtractor
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrorCode
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsErrors
-    import com.simiacryptus.cognotik.webui.servlet.handler.FsException
+    import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+    import com.simiacryptus.cognotik.fileserver.handler.FsErrors
+    import com.simiacryptus.cognotik.fileserver.handler.FsException
     import java.io.File
     import java.util.concurrent.atomic.AtomicBoolean
 
@@ -55,8 +61,6 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
 
       data class Config(
-        /** Project root for the request (served dir, `--task-root`, or session dir). */
-        val root: (FsActionContext) -> File,
         val readOnly: Boolean = false,
         /** Default value of `?dir=`; must stay inside the root. */
         val defaultDir: String = DEFAULT_DIR,
@@ -64,6 +68,8 @@ package com.simiacryptus.cognotik.webui.servlet.action
         val resourcePath: String = ResourceExtractor.UTIL_RESOURCE_PATH,
         /** Where to read the resources from (never the workspace). */
         val classLoader: ClassLoader = ExtractUtilsFsAction::class.java.classLoader,
+        /** Project root for the request (served dir, `--task-root`, or session dir). */
+        val root: (FsActionContext) -> File,
       )
 
       @Volatile

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.cli
 
-import com.simiacryptus.cognotik.webui.servlet.FilesystemServlet
-import com.simiacryptus.cognotik.webui.servlet.handler.FsApiConfig
+import com.simiacryptus.cognotik.fileserver.FilesystemServlet
+import com.simiacryptus.cognotik.fileserver.handler.FsApiConfig
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import java.io.File

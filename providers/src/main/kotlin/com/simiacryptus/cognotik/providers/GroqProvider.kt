@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.providers
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.audio.AudioModels
+import com.simiacryptus.cognotik.platform.model.AudioModels
 import com.simiacryptus.cognotik.chat.GroqChatClient
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level

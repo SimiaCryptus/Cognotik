@@ -1,6 +1,7 @@
 package icons
 
 import com.intellij.openapi.util.IconLoader
+import kotlin.jvm.java
 
 object MyIcons {
 
@@ -14,7 +15,7 @@ object MyIcons {
     val micInactive = IconLoader.getIcon("/icons/Microphone_1.svg", MyIcons::class.java)
 
     @JvmField
-    val icon = IconLoader.getIcon("/icons/toolbarIcon.svg", javaClass)
+    val icon = IconLoader.getIcon("/icons/toolbarIcon.svg", MyIcons::class.java)
     /*
     IconLoader.findIcon(
         url = classLoader.getResource("./icons/toolbarIcon.svg"),

@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.plan
 
-import com.simiacryptus.cognotik.chat.model.ChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApiData
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 
 /**
@@ -26,7 +26,7 @@ fun String.truncateForDisplay(maxLength: Int = 10000): String {
  * Ensures the UI spinner is removed even if rendering fails.
  * Follows Cognotik IO Best Practices for UI output.
  */
-fun SessionTask.safeComplete(message: String, log: Logger) {
+fun ISessionTask.safeComplete(message: String, log: Logger) {
   try {
     // Use renderMarkdown extension as per Cognotik IO Best Practices
     this.complete(message.renderMarkdown())
@@ -36,14 +36,14 @@ fun SessionTask.safeComplete(message: String, log: Logger) {
     try {
       this.complete(message)
     } catch (e2: Exception) {
-      log.error("Critical failure in SessionTask.complete", e2)
+      log.error("Critical failure in ISessionTask.complete", e2)
     }
   }
 }
 
 fun ChatModel.toApiChatModel(user: User): ApiChatModel {
   val apis =
-    ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis
+    ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user).apis
   return ApiChatModel(
     model = this, provider = ApiData(
       key = apis.find { it.provider == this.provider }?.key

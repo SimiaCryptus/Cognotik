@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan.tools.reasoning
 
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.FileSystems
@@ -109,7 +109,7 @@ class ChainOfThoughtTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -133,7 +133,7 @@ class ChainOfThoughtTask(
     val maxSteps = executionConfig.reasoning_depth.coerceIn(1, 20)
     val validateSteps = executionConfig.validate_steps
 
-    task.ui.pool.submit {
+    task.pool.submit {
       try {
         val startTime = System.currentTimeMillis()
         log.info("Starting ChainOfThoughtTask. Problem: ${executionConfig.problem_statement?.take(50)}...")
@@ -425,7 +425,7 @@ class ChainOfThoughtTask(
   }
 
   private fun generateReasoningStep(
-      task: SessionTask,
+      task: ISessionTask,
       question: String,
       priorSteps: List<ReasoningStep>,
       priorContext: String,
@@ -506,7 +506,7 @@ class ChainOfThoughtTask(
   }
 
   private fun validateStep(
-    task: SessionTask,
+    task: ISessionTask,
     step: ReasoningStep,
     priorSteps: List<ReasoningStep>,
     api: ChatInterface
@@ -554,7 +554,7 @@ class ChainOfThoughtTask(
   }
 
   private fun generateSummary(
-    task: SessionTask,
+    task: ISessionTask,
     reasoningChain: List<ReasoningStep>,
     originalProblem: String,
     api: ChatInterface

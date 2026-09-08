@@ -80,7 +80,7 @@ If `orchestrationConfig.autoFix` is `false`, an **"Accept Audio Files"** link/bu
     - Resolves `outputDir`, `audioFormat`, `baseName`, and `metadataFile` (defaulting to `<output_directory>/metadata.json`).
     - Opens a transcript stream and logs a header in the session UI.
 
-2. **Execution** (submitted to `task.ui.pool` as an async job)
+2. **Execution** (submitted to `task.pool` as an async job)
     - Resolves audio and (optionally) text models via `orchestrationConfig.defaultAudio` / `typeConfig`/`defaultSmart`.
     - Picks available voices (`pickVoices`) and resolves `default_voice`, falling back to the first available voice or `"Callirrhoe"`.
     - Builds the LLM prompt from `task_description`, plus context files and prior task results.

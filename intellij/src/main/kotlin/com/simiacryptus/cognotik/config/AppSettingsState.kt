@@ -18,17 +18,18 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.log
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
-import com.simiacryptus.cognotik.embedding.EmbeddingModel
-import com.simiacryptus.cognotik.image.ImageModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApiData
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
+import com.simiacryptus.cognotik.platform.model.ImageClientInterface
+import com.simiacryptus.cognotik.platform.model.ImageModel
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
@@ -101,7 +102,7 @@ data class AppSettingsState(
     val recentCommandsJson: MutableMap<String, String>? = mutableMapOf(),
     val recentArguments: MutableList<String>? = mutableListOf(),
     val recentWorkingDirs: MutableList<String>? = mutableListOf(),
-) : PersistentStateComponent<SimpleEnvelope> {
+) : PersistentStateComponent<com.simiacryptus.cognotik.config.SimpleEnvelope> {
 
     @get:JsonIgnore
     val smartChatClient: ChatInterface
@@ -117,7 +118,7 @@ data class AppSettingsState(
 
 
     @get:JsonIgnore
-    val imageClient: com.simiacryptus.cognotik.image.ImageClientInterface?
+    val imageClient: ImageClientInterface?
         get() = imageModel?.instance()
 
 
@@ -290,7 +291,7 @@ data class AppSettingsState(
             //ResourceApps("/apps/disabled_apps.json").init()
             CoreProviders.init()
             CoreTasks.init()
-            ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            ApplicationServicesImpl.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
             initDynamicEnums()
         }
 
@@ -308,7 +309,7 @@ data class AppSettingsState(
         }
 
         val currentSession = Session.Companion.newUserID()
-      val workPool = ApplicationServices.threadPoolManager.getPool(currentSession, AppSettingsState.localUser)
+      val workPool = ApplicationServicesImpl.threadPoolManager.getPool(currentSession, AppSettingsState.localUser)
         val pluginHome: File by lazy {
             run {
                 var logPath: String? = null
@@ -324,10 +325,8 @@ data class AppSettingsState(
 
 
 fun ApiChatModel.instance(): ChatInterface? {
-    val usageManager = ApplicationServices.fileApplicationServices(AppSettingsState.Companion.pluginHome).usageDB
     val model = model
     if (model == null) {
-        log.warn("Model not configured for ${provider?.provider?.name}")
         return null
     }
     return model.instance(
@@ -336,7 +335,7 @@ fun ApiChatModel.instance(): ChatInterface? {
             ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
         workPool = AppSettingsState.workPool,
         temperature = AppSettingsState.instance.temperature,
-        scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+        scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(
             AppSettingsState.currentSession,
           AppSettingsState.localUser
         ),
@@ -350,17 +349,16 @@ data class ApiImageModel(
     val provider: ApiData?
 )
 
-fun ApiImageModel.instance(): com.simiacryptus.cognotik.image.ImageClientInterface? {
+fun ApiImageModel.instance(): ImageClientInterface? {
     val model = model
     if (model == null) {
-        log.warn("Model not configured for ${provider?.provider?.name}")
         return null
     }
     return provider?.provider?.getImageClient(
         key = provider.key ?: throw IllegalArgumentException("API key is not set"),
         base = provider.apiBase,
         workPool = AppSettingsState.workPool,
-        scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(
+        scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(
             AppSettingsState.currentSession,
           AppSettingsState.localUser
         ),

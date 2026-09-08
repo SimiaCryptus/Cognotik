@@ -19,7 +19,7 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.chat.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docops.DocProcessor
@@ -28,6 +28,7 @@ import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -307,7 +308,7 @@ class DocProcessorAction : BaseAction() {
         val scheduledFutures = mutableListOf(scheduledPool.scheduleAtFixedRate({
             if (indicator.isCanceled && !cancelFlag.get()) {
                 cancelFlag.set(true)
-                val threadPoolManager = ApplicationServices.threadPoolManager
+                val threadPoolManager = ApplicationServicesImpl.threadPoolManager
                 sessions.toList().forEach {
                     try {
                         threadPoolManager.getPool(it, localUser).shutdown()

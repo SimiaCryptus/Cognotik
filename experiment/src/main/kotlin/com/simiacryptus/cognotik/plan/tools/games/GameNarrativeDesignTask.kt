@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ImageAndText
 import com.simiacryptus.cognotik.agents.ImageProcessingAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.session.transcriptFilter
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -382,12 +382,12 @@ GameNarrativeDesign - Create interactive game narratives with branching storylin
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
 
-    task.ui.pool.submit {
+    task.pool.submit {
       val startTime = System.currentTimeMillis()
       val gameConfig = executionConfig!!
       log.info("Starting GameNarrativeDesignTask for game: '${gameConfig?.game_title}'")
@@ -1349,7 +1349,7 @@ Provide specific examples and recommendations for improvement.
   }
 
   private fun generateCharacterPortrait(
-    task: SessionTask,
+    task: ISessionTask,
     tabs: TabbedDisplay,
     character: GameCharacter,
     index: Int,

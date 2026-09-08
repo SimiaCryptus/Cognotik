@@ -28,7 +28,7 @@ data class Gift(
   val grantDuration: Duration,
   val totalBudget: Double,
   val spentBudget: Double,
-  val createdBy: String? = null,
+  val createdBy: User? = null,
   val theme: String? = null,
   val expiresAt: Instant? = null,
   val maxClaimsPerUser: Int? = null,

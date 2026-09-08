@@ -49,6 +49,12 @@ package com.simiacryptus.cognotik.docops.exec
           }
 
           else -> {
+             val frontmatter = task.resolvedFrontmatter
+             if (frontmatter.isEmpty()) {
+               log.warn(
+                 "No frontmatter available for task {} (doc_files={}) - inference will run without it",
+                 kind.name, data.doc_files.map { it.name })
+             }
             val inferred = ctx.inferTaskConfig(
               DocTaskInferenceRequest(
                 taskKind = kind,
@@ -58,6 +64,7 @@ package com.simiacryptus.cognotik.docops.exec
                 workingDir = workingDir,
                 patchProcessor = task.patchProcessor,
                 typeConfig = task.typeConfig,
+                 frontmatter = frontmatter,
               )
             )
             JsonUtil.merge(inferred, overrides ?: emptyMap<String, Any>())

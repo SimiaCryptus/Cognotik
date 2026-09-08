@@ -91,7 +91,7 @@ task text, and the primary cost is the image-generation call itself rather than 
    (`png|jpg|jpeg`, case-insensitive); otherwise the task configuration is rejected before execution.
 2. **Execution:**
    * A transcript stream is opened and a two-tab UI (`Preview`, `Prompt`) is created.
-   * Work is submitted to `task.ui.pool` asynchronously.
+   * Work is submitted to `task.pool` asynchronously.
    * Reference images are loaded from `related_files` via `ImageIO.read`; missing files are silently skipped.
    * The final prompt is assembled from `task_description` + context from related non-image files
      (`getInputFileCode()`) + prior task output (`getPriorCode()`), and logged to both the Prompt tab and transcript.

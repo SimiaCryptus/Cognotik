@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.apps
 import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
-import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -174,7 +174,7 @@ ${settings?.toJson()}
     }
   }
 
-  open fun onComplete(mode: CognitiveMode<*>, task: SessionTask) {
+  open fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
     // No-op by default
   }
 
@@ -204,7 +204,7 @@ ${settings?.toJson()}
     session: Session,
     currentMessage: String,
     ui: SocketManager,
-    task: SessionTask,
+    task: ISessionTask,
     processor: FixedConcurrencyProcessor,
     orchestrationConfig: OrchestrationConfig,
     user: User,
@@ -254,7 +254,7 @@ ${settings?.toJson()}
     session: Session,
     currentMessage: String,
     ui: SocketManager,
-    task: SessionTask,
+    task: ISessionTask,
     processor: FixedConcurrencyProcessor,
     rangeMatch: MatchResult,
     user: User
@@ -288,7 +288,7 @@ ${settings?.toJson()}
     session: Session,
     currentMessage: String,
     ui: SocketManager,
-    task: SessionTask,
+    task: ISessionTask,
     processor: FixedConcurrencyProcessor,
     sequenceMatch: MatchResult,
     user: User
@@ -314,7 +314,7 @@ ${settings?.toJson()}
     session: Session,
     currentMessage: String,
     ui: SocketManager,
-    task: SessionTask,
+    task: ISessionTask,
     processor: FixedConcurrencyProcessor,
     parallelMatch: MatchResult,
     orchestrationConfig: OrchestrationConfig,
@@ -350,7 +350,7 @@ ${settings?.toJson()}
     session: Session,
     currentMessage: String,
     ui: SocketManager,
-    task: SessionTask,
+    task: ISessionTask,
     processor: FixedConcurrencyProcessor,
     expression: String,
     items: List<String>,

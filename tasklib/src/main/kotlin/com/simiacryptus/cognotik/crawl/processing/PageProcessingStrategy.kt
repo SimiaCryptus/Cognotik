@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.crawl.processing
 
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import java.io.File
 import java.io.FileOutputStream
 import java.util.concurrent.atomic.AtomicInteger
@@ -86,7 +86,7 @@ interface PageProcessingStrategy {
     val typeConfig: CrawlerTaskTypeConfig,
     val orchestrationConfig: OrchestrationConfig,
     val messages: List<String> = emptyList(),
-    val task: SessionTask,
+    val task: ISessionTask,
     val webSearchDir: File = File("websearch"),
     val processedCount: AtomicInteger = AtomicInteger(0),
     val maxPages: Int = Int.MAX_VALUE,

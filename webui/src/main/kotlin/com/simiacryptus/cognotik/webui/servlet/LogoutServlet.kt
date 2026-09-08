@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.application.getCookie
 import jakarta.servlet.http.HttpServlet
@@ -14,7 +14,7 @@ class LogoutServlet : HttpServlet() {
     if (null == user) {
       response.status = HttpServletResponse.SC_BAD_REQUEST
     } else {
-      ApplicationServices.authenticationManager.logoutIfMatching(cookie ?: "", user)
+      ApplicationServicesImpl.authenticationManager.logoutIfMatching(cookie ?: "", user)
       response.sendRedirect("/")
     }
   }

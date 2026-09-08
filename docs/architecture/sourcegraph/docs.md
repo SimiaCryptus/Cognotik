@@ -42,7 +42,7 @@ include `ChatAgent`, `CodeAgent`, `ParsedAgent`, `ImageGenerationAgent`, `AudioP
 **Platform services** ([
 `platform/`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik/-/tree/core/src/main/kotlin/com/simiacryptus/cognotik/platform))
 
-`ApplicationServices` is a service-locator singleton that exposes `authenticationManager`, `authorizationManager`,
+`ApplicationServicesImpl` is a service-locator singleton that exposes `authenticationManager`, `authorizationManager`,
 `dataStorageFactory`, and `threadPoolManager`. Auth and storage are accessed through `AuthenticationInterface`,
 `AuthorizationInterface`, and `StorageInterface` — all interfaces, so implementations are swappable. The two platform
 model classes are [
@@ -178,7 +178,7 @@ different story.
 |----------------------------------------------------------------------------------|---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
 | `BaseAgent<I, R>` is the typed LLM abstraction                                   | Confirmed by [`BaseAgent.kt`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik/-/blob/core/src/main/kotlin/com/simiacryptus/cognotik/agents/BaseAgent.kt)                                                                             |
 | `DynamicEnum` underpins all extension points (providers, tasks, cognitive modes) | Confirmed by [`CognitiveModeType.kt`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik/-/blob/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive/CognitiveModeType.kt)                                                    |
-| `ApplicationServices` is the central service-locator                             | Confirmed by imports throughout `ApplicationServer`, `SocketManager`, `TaskOrchestrator`                                                                                                                                                                      |
+| `ApplicationServicesImpl` is the central service-locator                             | Confirmed by imports throughout `ApplicationServer`, `SocketManager`, `TaskOrchestrator`                                                                                                                                                                      |
 | `SocketManager` maintains message state history for reconnect replay             | Confirmed by [`SocketManager.kt`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik/-/blob/webui/src/main/kotlin/com/simiacryptus/cognotik/webui/session/SocketManager.kt) — it loads from `dataStorage.getMessages()` at construction |
 | `SessionProxyServer` acts as the session router                                  | Confirmed by [`SessionProxyServer.kt`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik/-/blob/webui/src/main/kotlin/com/simiacryptus/cognotik/apps/SessionProxyServer.kt)                                                            |
 | `TaskOrchestrator` resolves dependency order and uses per-session thread pools   | Confirmed by [`TaskOrchestrator.kt`](https://acharneski-fe.sourcegraph.app/r/github.com/SimiaCryptus/Cognotik/-/blob/webui/src/main/kotlin/com/simiacryptus/cognotik/plan/TaskOrchestrator.kt)                                                                |

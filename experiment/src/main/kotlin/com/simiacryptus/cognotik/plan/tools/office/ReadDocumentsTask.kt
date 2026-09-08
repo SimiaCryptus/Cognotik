@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.plan.tools.office
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.docs.PaginatedDocumentReader
 import com.simiacryptus.cognotik.docs.getDocumentReader
-import com.simiacryptus.cognotik.models.ModelSchema.Role
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -16,7 +16,7 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask.Companion.TRIP
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -81,7 +81,7 @@ class ReadDocumentsTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -89,7 +89,7 @@ class ReadDocumentsTask(
 
     val transcript = task.newUserFileStream(transcriptFile())
     try {
-      task.ui.pool.submit {
+      task.pool.submit {
         try {
           val tabs = TabbedDisplay(task)
           val analysisTask = tabs.newTask("Analysis")

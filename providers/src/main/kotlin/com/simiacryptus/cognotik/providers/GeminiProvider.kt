@@ -4,9 +4,9 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.GeminiSdkChatClient
 import com.simiacryptus.cognotik.image.GeminiImageClient
 import com.simiacryptus.cognotik.image.GeminiImageModels
-import com.simiacryptus.cognotik.image.ImageClientInterface
-import com.simiacryptus.cognotik.image.ImageModel
-import com.simiacryptus.cognotik.models.APIProvider
+import com.simiacryptus.cognotik.platform.model.ImageClientInterface
+import com.simiacryptus.cognotik.platform.model.ImageModel
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.games
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.safeComplete
@@ -13,7 +13,7 @@ import com.simiacryptus.cognotik.plan.truncateForDisplay
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.time.LocalDateTime
@@ -363,7 +363,7 @@ class GameLevelDesignTask(
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -1404,7 +1404,7 @@ Ensure variants maintain the core level design while adjusting challenge.
   }
 
   private fun buildFinalResultWithLinks(
-    task: SessionTask,
+    task: ISessionTask,
     summary: String,
     completeDesign: String,
     level: GameLevel,

@@ -3,9 +3,11 @@ package com.simiacryptus.cognotik.embedding
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.models.APIProvider
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.Usage
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.EmbeddingClientInterface
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.core5.http.HttpRequest
@@ -17,15 +19,6 @@ import java.io.BufferedOutputStream
 import java.io.IOException
 import java.util.*
 import java.util.concurrent.ExecutorService
-
-interface EmbeddingClientInterface {
-
-  fun createEmbedding(
-    request: ModelSchema.EmbeddingRequest,
-    model: EmbeddingModel
-  ): ModelSchema.EmbeddingResponse
-
-}
 
 abstract class SingleProviderEmbeddingClient(
   protected val provider: APIProvider,

@@ -26,9 +26,6 @@ open class AuthenticationManager : AuthenticationInterface {
     @Volatile var lastUsedAt: Instant,
   )
 
-  /** Keyed by the hash of the presented token; never by the token itself. */
-  private val sessions = ConcurrentHashMap<String, Entry>()
-
   override fun getUser(accessToken: String?): User? {
     if (accessToken.isNullOrBlank()) return null
     val key = hash(accessToken)
@@ -108,5 +105,8 @@ open class AuthenticationManager : AuthenticationInterface {
 
   companion object {
     private val log = LoggerFactory.getLogger(AuthenticationManager::class.java)
+
+    /** Keyed by the hash of the presented token; never by the token itself. */
+    private val sessions = ConcurrentHashMap<String, Entry>()
   }
 }

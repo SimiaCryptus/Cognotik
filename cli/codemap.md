@@ -38,7 +38,7 @@ both from a terminal and remotely over HTTP.
 - **`ServerDocOps.kt`** — Server-side driver for the DocOps API backing the file
   server's `POST /.fsapi/v1/docops`. Mirrors `DocOpsCli`'s command surface
   (`plan`, `run`, `status`, `vars`, `models`, plus `targets` for live option
-  lists) but never touches global `ApplicationServices` state, never calls
+  lists) but never touches global `ApplicationServicesImpl` state, never calls
   `exitProcess`, and jails all requested paths under the configured root.
 
 - **`ServerTaskActions.kt`** — Registers `docops`, `autofix`, and `tasks` as FS API

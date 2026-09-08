@@ -1098,6 +1098,9 @@
         log('Running ' + opArg + ' → ' + targetArg);
         let docTaskId = null;
         try {
+            if (!state.sessionId) {
+                log('No session id could be detected from this URL — the doc-op is sent without one.', 'warn');
+            }
             docTaskId = await runDocOp(state.sessionId || null, opArg, targetArg, {});
         } catch (e) {
             log('Could not start doc op: ' + msgOf(e), 'error');
@@ -2193,20 +2196,89 @@
 
     const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
     const ROOT_ALIASES = ['root'];
+    /**
+     * Session ids look like `U-20260905-HYxB8p8B` (kind letter, yyyymmdd, random suffix)
+     * and usually sit directly after one of these path markers:
+     *   /<app>/fileIndex/<sessionId>/…   /<app>/fileZip/<sessionId>/…
+     */
+    const SESSION_MARKERS = ['fileindex', 'filezip', 'fileindexzip', 'session', 'sessions', 'chat'];
+    const SESSION_PATTERN = /^[A-Za-z]-\d{8}-[A-Za-z0-9_-]{6,}$/;
+    const cleanSessionId = (v) => {
+        const s = String(v == null ? '' : v).trim();
+        return (!s || s === 'null' || s === 'undefined') ? null : s;
+    };
+    /** Finds the session id in the current URL: explicit query param first, then the path. */
+    function detectSessionId(segments) {
+        let fromQuery = null;
+        try {
+            const params = new URLSearchParams(location.search);
+            fromQuery = cleanSessionId(params.get('sessionId') || params.get('session'));
+        } catch (e) { /* ignore */
+        }
+        if (fromQuery) return fromQuery;
+        const decoded = (segments || []).map((s) => {
+            try {
+                return decodeURIComponent(s);
+            } catch (e) {
+                return s;
+            }
+        });
+        for (let i = 0; i < decoded.length - 1; i++) {
+            if (SESSION_MARKERS.indexOf(decoded[i].toLowerCase()) !== -1) {
+                const candidate = cleanSessionId(decoded[i + 1]);
+                if (candidate && SESSION_PATTERN.test(candidate)) return candidate;
+            }
+        }
+        const loose = decoded.find((s) => SESSION_PATTERN.test(s));
+        return loose ? cleanSessionId(loose) : null;
+    }
+    const decodeSeg = (s) => {
+        try {
+            return decodeURIComponent(s);
+        } catch (e) {
+            return s;
+        }
+    };
+    /**
+     * Everything up to (and including) the session marker/id belongs to the server mount —
+     * e.g. `/empty-project/fileIndex/U-20260905-UlKZ5ilv/` — and must never appear in the
+     * `doc=` / `target=` arguments handed to the doc-op runner. Only the trailing,
+     * project-relative part (`cognotik-tools/greenfield`) is kept.
+     */
+    function stripMountPrefix(segments, sessionId) {
+        const decoded = segments.map(decodeSeg);
+        let cut = -1;
+        for (let i = 0; i < decoded.length; i++) {
+            const seg = decoded[i];
+            if ((sessionId && seg === sessionId) || SESSION_PATTERN.test(seg)) {
+                cut = i;                                   // the id itself — strongest signal
+                break;
+            }
+            // a marker such as `fileIndex` with no recognisable id after it
+            if (SESSION_MARKERS.indexOf(seg.toLowerCase()) !== -1) cut = i;
+        }
+        if (cut >= 0) return segments.slice(cut + 1);
+        const rel = segments.slice();
+        if (rel.length && MOUNT_SEGMENTS.indexOf(decodeSeg(rel[0]).toLowerCase()) !== -1) rel.shift();
+        if (rel.length && ROOT_ALIASES.indexOf(decodeSeg(rel[0]).toLowerCase()) !== -1) rel.shift();
+        return rel;
+    }
+
 
     /**
-     * Without a session URL we address everything relative to the directory this page is
-     * served from — the `greenfield/` project folder, which holds `idea.md`, `ops/`,
-     * `plan/`, `tasks/` and `tmp/`.
+     * `basePath` is the full URL directory this page is served from (used verbatim for
+     * file reads/writes), while `docRoot` is the same folder expressed *relative to the
+     * served root* — the `greenfield/` project folder holding `idea.md`, `ops/`, `plan/`,
+     * `tasks/` and `tmp/`. Doc-op arguments are built from `docRoot`, never from the
+     * mount/session prefix.
      */
     function inferContextFromLocation() {
         const segments = location.pathname.split('/').filter(Boolean);
         if (segments.length && /\.[a-z0-9]+$/i.test(segments[segments.length - 1])) segments.pop();
         const base = ('/' + segments.join('/')).replace(/\/{2,}/g, '/');
-        const rel = segments.slice();
-        if (rel.length && MOUNT_SEGMENTS.indexOf(rel[0].toLowerCase()) !== -1) rel.shift();
-        if (rel.length && ROOT_ALIASES.indexOf(rel[0].toLowerCase()) !== -1) rel.shift();
-        return {basePath: base, docRoot: rel.join('/')};
+        const sessionId = detectSessionId(segments);
+        const rel = stripMountPrefix(segments, sessionId);
+        return {basePath: base, docRoot: rel.map(decodeSeg).join('/'), sessionId: sessionId};
     }
 
     function restoreDraft() {
@@ -2325,17 +2397,20 @@
         $('idea-path').textContent = ideaFile();
 
         state.ctx = {};
-        state.sessionId = state.ctx.sessionId || null;
+        state.sessionId = cleanSessionId(state.ctx.sessionId);
         state.basePath = state.ctx.basePath || null;
+        const inferred = inferContextFromLocation();
+        if (!state.sessionId) state.sessionId = inferred.sessionId || null;
 
         if (!state.basePath) {
-            const inferred = inferContextFromLocation();
             state.basePath = inferred.basePath;
-            state.standalone = true;
             state.docRoot = inferred.docRoot || '';
             log('Direct file mode — base "' + state.basePath + '".');
             log('Doc-op paths are sent relative to "' + (docRoot() || '(server root)') + '".');
         }
+        state.standalone = !state.sessionId;
+        if (state.sessionId) log('Session "' + state.sessionId + '" detected from the URL.', 'ok');
+        else log('No session id in this URL — doc-ops will be started without one.', 'warn');
         state.statusBase = computeStatusBase();
         if (state.basePath) log('Doc-op status polled from "' + state.statusBase + '/docops.status.json".');
 

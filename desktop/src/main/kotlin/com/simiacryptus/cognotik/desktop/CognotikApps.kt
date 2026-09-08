@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.PluginManagerInterface
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
@@ -186,7 +186,7 @@ open class CognotikApps(
 
     fun checkIsAlive() {
         try {
-            val threadPoolManager = ApplicationServices.threadPoolManager
+            val threadPoolManager = ApplicationServicesImpl.threadPoolManager
             val alive = threadPoolManager.isAlive()
             val systemTrayManager = systemTrayManager
             if (systemTrayManager != null) {
@@ -210,14 +210,14 @@ open class CognotikApps(
         //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
-        ApplicationServices.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        ApplicationServicesImpl.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
     }
 
     open fun init(actualPort: Int, args: Array<out String>) {
         initSystemTray()
         startSocketServer(actualPort + 1)
-        ApplicationServices.pluginManager.apply {
+        ApplicationServicesImpl.pluginManager.apply {
             getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
             subscribeToChanges()
         }
@@ -298,7 +298,7 @@ open class CognotikApps(
 //            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
 //            override fun logout(accessToken: String, user: User) {}
 //        }
-        ApplicationServices.authorizationManager = object : AuthorizationManager() {
+        ApplicationServicesImpl.authorizationManager = object : AuthorizationManager() {
             override fun isAuthorized(
                 applicationClass: Class<*>?,
                 user: User?,
@@ -542,14 +542,14 @@ fun String?.urlEncode(): String {
 fun ApiChatModel.instance(
     user: User,
     session: Session = globalID,
-    service: ExecutorService = ApplicationServices.threadPoolManager.getPool(session, user),
+    service: ExecutorService = ApplicationServicesImpl.threadPoolManager.getPool(session, user),
     temperature: Double = 0.1
 ) = model?.instance(
     key = when (provider?.key) {
         null -> null
         "NONE".encrypt -> null
         else -> provider?.key
-    } ?: ApplicationServices.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
+    } ?: ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
         it.firstOrNull { it.provider == this.provider }?.key
             ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
             ?: throw IllegalStateException("No API key configured for model $model")
@@ -558,7 +558,7 @@ fun ApiChatModel.instance(
     ?: throw IllegalStateException("No API base configured for model $model"),
     workPool = service,
     temperature = temperature,
-    scheduledPool = ApplicationServices.threadPoolManager.getScheduledPool(session, user),
+    scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(session, user),
     session = session,
     user = user,
 )

@@ -68,14 +68,14 @@ class SessionIdFilter : Filter {
       response.addHeader("Set-Cookie", cookieHeader.toString())
 
       // Also set standard Jakarta Cookie object with attributes
-      val cookie = Cookie(SESSION_COOKIE_NAME, sessionId)
-      cookie.path = "/"
-      cookie.isHttpOnly = true
-      cookie.secure = isSecure
-      if (maxAge >= 0) {
-        cookie.maxAge = maxAge
-      }
-      response.addCookie(cookie)
+      response.addCookie(Cookie(SESSION_COOKIE_NAME, sessionId).apply {
+        this.path = "/"
+        this.isHttpOnly = true
+        this.secure = isSecure
+        if (maxAge >= 0) {
+          this.maxAge = maxAge
+        }
+      })
     }
   }
 }

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.file
 
 import com.simiacryptus.cognotik.agents.ChatAgent
-import com.simiacryptus.cognotik.describe.Description
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.patch.SessionRenderer
+import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
@@ -18,8 +18,7 @@ import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
-import com.simiacryptus.cognotik.webui.session.SessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.nio.file.Path
@@ -73,7 +72,7 @@ FileModification - Modify existing files or create new files
   override fun run(
     agent: TaskOrchestrator,
     messages: List<String>,
-    task: SessionTask,
+    task: ISessionTask,
     resultFn: (String) -> Unit,
     orchestrationConfig: OrchestrationConfig
   ) {
@@ -88,7 +87,7 @@ FileModification - Modify existing files or create new files
     try {
       transcript?.write("# File Modification Task Transcript\n\n".toByteArray())
 
-      Retryable(task, process = { task: SessionTask ->
+      Retryable(task, process = { task: ISessionTask ->
         completionNotes.clear()
 
         // 1. Prepare Context
@@ -160,7 +159,7 @@ $codeResult
                 """.toByteArray()
         )
         val autoFix = orchestrationConfig.autoFix
-        val markdown = renderMarkdown(codeResult, ui = task.ui) {
+        val markdown = renderMarkdown(codeResult) {
           DiffInstrumentor(
             orchestrationConfig.processor,
             SessionRenderer(task),
@@ -192,13 +191,13 @@ $codeResult
         } else {
           task.add(markdown)
           // Best Practice: Use acceptButtonFooter for manual review
-          task.complete(acceptButtonFooter(task.ui) {
+          task.complete(acceptButtonFooter(task) {
             task.complete()
             semaphore.release()
           })
         }
         transcript?.flush()
-      }.async(task.ui))
+      }.async(task))
 
       semaphore.acquire()
 

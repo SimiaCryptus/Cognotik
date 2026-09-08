@@ -1,20 +1,21 @@
+@file:Suppress("DEPRECATION")
+
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.MetadataStorageInterface
 import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.time.Instant
-import java.util.*
 
-open class DataStorage(
+class DataStorage(
   private val dataDir: File,
-  override val metadataStorage: MetadataStorageInterface = ApplicationServices.fileApplicationServices(dataDir.parentFile).metadataDB
+  override val metadataStorage: MetadataStorageInterface = ApplicationServicesImpl.fileApplicationServices(dataDir.parentFile).metadataDB
 ) : StorageInterface {
 
   init {
@@ -63,6 +64,7 @@ open class DataStorage(
   }
 
 
+  @Deprecated("Exposes the local filesystem and grants callers unrestricted authority over the directory; use (openRead/openWrite/list/delete).")
   override fun getUserDir(
     user: User?,
     session: Session
@@ -72,6 +74,7 @@ open class DataStorage(
     getSystemDir(user, session).apply { mkdirs() }
   }
 
+  @Deprecated("Exposes the local filesystem; use (openRead/openWrite/list/delete) for content access.")
   override fun getSystemDir(
     user: User?,
     session: Session
@@ -116,7 +119,7 @@ open class DataStorage(
     path: String
   ): List<Session> {
     log.debug("Listing sessions for user: ${user?.email}")
-    val globalSessions = listSessions(dataDir.resolve("global"), path)
+    val globalSessions = listSessions(path)
     val userSessions =
       if (user == null) listOf() else metadataStorage.listSessionsByPath(
         path
@@ -125,13 +128,13 @@ open class DataStorage(
     return ((globalSessions.map {
       try {
         Session("G-$it")
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         null
       }
     }).toList() + (userSessions.map {
       try {
         Session("U-$it")
-      } catch (e: Exception) {
+      } catch (_: Exception) {
         null
       }
     }).toList()).filterNotNull()
@@ -173,7 +176,7 @@ open class DataStorage(
     JsonUtil.objectMapper().writeValue(file, SecureString(value))
   }
 
-  protected open fun addMessageID(
+  private fun addMessageID(
     user: User?,
     session: Session,
     messageId: String
@@ -212,7 +215,7 @@ open class DataStorage(
 
 
   @Deprecated("Use metadataStorage instead")
-  fun listSessions(dir: File, path: String): List<String> =
+  fun listSessions(path: String): List<String> =
     metadataStorage.listSessionsByPath(path)
 
   @Deprecated("Use metadataStorage instead")
@@ -243,7 +246,7 @@ open class DataStorage(
   ): Instant? = metadataStorage.getSessionTimestamp(user, session)
 
   companion object {
-    val log = LoggerFactory.getLogger(DataStorage::class.java)
+    val log = LoggerFactory.getLogger(StorageInterface::class.java)
     val userPaths = mutableMapOf<Session, File>()
     val systemPaths = mutableMapOf<Session, File>()
   }

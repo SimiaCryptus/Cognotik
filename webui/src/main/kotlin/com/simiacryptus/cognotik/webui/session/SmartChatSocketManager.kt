@@ -1,13 +1,14 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.chat.ChatInterface
-import com.simiacryptus.cognotik.describe.Description
-import com.simiacryptus.cognotik.models.ModelSchema
-import com.simiacryptus.cognotik.models.ModelSchema.ChatRequest
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toContentList
@@ -29,7 +30,7 @@ open class SmartChatSocketManager(
   override val systemPrompt: String,
   temperature: Double = 0.3,
   applicationClass: Class<out ChatServer>,
-  storage: StorageInterface = ApplicationServices.fileApplicationServices().dataStorageFactory,
+  storage: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
   override val fastTopicParsing: Boolean = true,
   retriable: Boolean = true,
   budget: Double,
@@ -73,7 +74,7 @@ open class SmartChatSocketManager(
   )
 
   override fun respond(
-    task: SessionTask,
+    task: ISessionTask,
     userMessage: String,
     currentChatMessages: List<ModelSchema.ChatMessage>,
     transcriptStream: OutputStream?
@@ -244,7 +245,7 @@ open class SmartChatSocketManager(
    */
   private fun maybeCompactHistory(
     messages: List<ModelSchema.ChatMessage>,
-    task: SessionTask
+    task: ISessionTask
   ): List<ModelSchema.ChatMessage> {
     val estimatedTokens = estimateTokenCount(messages)
 
@@ -298,7 +299,7 @@ open class SmartChatSocketManager(
    */
   private fun generateSummary(
     messages: List<ModelSchema.ChatMessage>,
-    task: SessionTask
+    task: ISessionTask
   ): String {
     val conversationText = messages.joinToString("\n\n") { msg ->
       "${msg.role}: ${msg.content?.firstOrNull()?.text ?: ""}"

@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.application
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.webui.servlet.GiftedCreditsServlet
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.webui.session.ChatServer
@@ -123,7 +123,7 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized SessionUsageDetailsServlet") }
 
   open val creditsServlet: CreditsServlet =
-    CreditsServlet(NoOpPaymentProvider(ApplicationServices.fileApplicationServices().usageDB))
+    CreditsServlet(NoOpPaymentProvider(ApplicationServicesImpl.fileApplicationServices().usageDB))
       .also { log.debug("Initialized CreditsServlet") }
 
   open fun setupPlatform() {
@@ -336,11 +336,11 @@ abstract class ApplicationDirectory(
     // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
     if (!isAndroid()) {
       log.debug("Using WebAppClassLoader for context: $path")
-      context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
+      context.classLoader = WebAppClassLoader(ApplicationServicesImpl::class.java.classLoader, context)
       context.isParentLoaderPriority = true
     } else {
       log.debug("Using standard class loader for Android compatibility in context: $path")
-      context.classLoader = ApplicationServices::class.java.classLoader
+      context.classLoader = ApplicationServicesImpl::class.java.classLoader
     }
     if (baseResource != null) {
       log.debug("Setting base resource for context $path: ${baseResource.javaClass.simpleName}")
@@ -368,11 +368,11 @@ abstract class ApplicationDirectory(
     // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
     if (!isAndroid()) {
       log.debug("Using WebAppClassLoader for servlet context: $path")
-      context.classLoader = WebAppClassLoader(ApplicationServices::class.java.classLoader, context)
+      context.classLoader = WebAppClassLoader(ApplicationServicesImpl::class.java.classLoader, context)
       context.isParentLoaderPriority = true
     } else {
       log.debug("Using standard class loader for Android compatibility in servlet context: $path")
-      context.classLoader = ApplicationServices::class.java.classLoader
+      context.classLoader = ApplicationServicesImpl::class.java.classLoader
     }
     context.contextPath = path
     log.debug("New WebAppContext created for servlet at path: $path")
