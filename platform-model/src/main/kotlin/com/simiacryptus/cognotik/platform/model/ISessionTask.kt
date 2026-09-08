@@ -174,7 +174,6 @@ interface ISessionTask {
     linkText: String,
     classname: String = "href-link",
     id: String? = null,
-    root: Boolean = false,
     handler: Consumer<Unit>
   ): String
 

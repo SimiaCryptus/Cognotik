@@ -431,7 +431,7 @@ abstract class SocketManager(
         System.identityHashCode(socket),
         message.length
       )
-      val opCmdPattern = """![a-z]{3,7},.*""".toRegex()
+      val opCmdPattern = """![a-z01-9]{3,7},.*""".toRegex()
       if (opCmdPattern.matches(message)) {
         val commaIndex = message.indexOf(",")
         if (commaIndex == -1 || commaIndex == message.length - 1) {

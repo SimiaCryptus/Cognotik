@@ -365,11 +365,10 @@ Stack Trace:
     linkText: String,
     classname: String,
     id: String?,
-    root: Boolean,
     handler: Consumer<Unit>
   ): String {
     log.debug("Creating href link with text: {}", linkText)
-    val operationID = ui.newMessageID(root = root)
+    val operationID = ui.newMessageID(root = false)
     ui.linkTriggers[operationID] = handler
     return """<a class="$classname" data-id="$operationID"${
       when {
