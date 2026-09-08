@@ -1,5 +1,5 @@
 {
-  "lastUpdated" : "2026-09-02T00:34:24.611121860Z",
+  "lastUpdated" : "2026-09-03T14:34:48.655027520Z",
   "tasks" : {
     "docs/site/menu/devtools.json" : {
       "target" : "docs/site/menu/devtools.json",
@@ -164,9 +164,9 @@
     "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt" : {
       "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GeminiModels.kt",
       "status" : "COMPLETED",
-      "sessionId" : "U-20260814-L9DGPRQl",
-      "startedAt" : "2026-08-14T20:00:53.086023983Z",
-      "completedAt" : "2026-08-14T20:01:14.256468483Z"
+      "sessionId" : "U-20260903-RlUde04i",
+      "startedAt" : "2026-09-03T14:34:30.270928366Z",
+      "completedAt" : "2026-09-03T14:34:48.655027520Z"
     },
     "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/QwenModels.kt" : {
       "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/QwenModels.kt",
@@ -223,6 +223,13 @@
       "sessionId" : "U-20260901-ax2g8zuo",
       "startedAt" : "2026-09-02T00:34:18.125530645Z",
       "completedAt" : "2026-09-02T00:34:24.611121860Z"
+    },
+    "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/AnthropicModels.kt" : {
+      "target" : "providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/AnthropicModels.kt",
+      "status" : "COMPLETED",
+      "sessionId" : "U-20260903-vDGqwyUO",
+      "startedAt" : "2026-09-03T12:53:35.604223611Z",
+      "completedAt" : "2026-09-03T12:53:54.361119221Z"
     }
   }
 }

@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.session.SocketManager.Companion.randomID
 import org.slf4j.LoggerFactory.getLogger
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -369,7 +368,7 @@ Stack Trace:
     handler: Consumer<Unit>
   ): String {
     log.debug("Creating href link with text: {}", linkText)
-    val operationID = randomID()
+    val operationID = ui.newMessageID()
     ui.linkTriggers[operationID] = handler
     return """<a class="$classname" data-id="$operationID"${
       when {

@@ -32,6 +32,40 @@ export function isReferenceId(id) {
     return typeof id === 'string' && id.startsWith(REFERENCE_PREFIX);
 }
 /**
+  * §4.1 ordering — server ids carry their own sort order: an optional lower-case type
+  * prefix followed by a zero-padded hex counter drawn from a SINGLE monotonically
+  * increasing generator (`z00001`, `000002`, `z00003`, …).
+  *
+  * Plain string comparison is NOT sufficient: the padding widths differ per prefix
+  * (`z` + 5 vs 6 digits) and the counter eventually outgrows its padding, at which point
+  * `0fffff` would sort after `100000`. Compare the parsed counter instead.
+  *
+  * Returns null for ids that do not follow the scheme (locally injected / archived ids).
+  */
+const MESSAGE_ID_PATTERN = /^([A-Za-z]*)([0-9a-fA-F]+)$/;
+export function messageOrdinal(id) {
+     if (typeof id !== 'string') return null;
+     const match = MESSAGE_ID_PATTERN.exec(id);
+     if (!match) return null;
+     const ordinal = parseInt(match[2], 16);
+     return Number.isFinite(ordinal) ? ordinal : null;
+}
+/**
+  * Total order over ids. Ids that do not follow the scheme sort last and keep their
+  * first-sighting order (Array#sort is stable, so returning 0 for two of them preserves
+  * insertion order). The raw-string tie-break only ever fires for a prefix collision on
+  * the same counter value, which the server cannot currently produce.
+  */
+export function compareMessageIds(a, b) {
+     const oa = messageOrdinal(a);
+     const ob = messageOrdinal(b);
+     if (oa === null && ob === null) return 0;
+     if (oa === null) return 1;
+     if (ob === null) return -1;
+     if (oa !== ob) return oa - ob;
+     return a < b ? -1 : a > b ? 1 : 0;
+}
+/**
   * §3.4 — "pending" is a property of the delivered content: the server embeds
   * `<div class="spinner-border" role="status">…</div>` while it is still working on a
   * message and removes it (by publishing a new version) when the task completes.
@@ -49,10 +83,17 @@ export function isRenderable(message) {
 export class MessageStore extends EventTarget {
     constructor() {
         super();
-        /** id -> record. Map preserves first-sighting insertion order; re-set never reorders (§4.1). */
+         /**
+          * id -> record. The Map is keyed by arrival, but render order comes from
+          * compareMessageIds(): ids are intrinsically sortable, so a frame that arrives
+          * late for an earlier id still renders in the right place (§4.1).
+          */
         this.records = new Map();
         /** id -> version */
         this.versions = new Map();
+         /** Cached id ordering; invalidated only when a NEW id is seen or one is forgotten. */
+         this.order = [];
+         this.orderDirty = false;
         /** refId -> Set<hostId> */
         this.hostsByRef = new Map();
         /** hostId -> Set<refId> */
@@ -72,9 +113,23 @@ export class MessageStore extends EventTarget {
     version(id) {
         return this.versions.get(id);
     }
+     /** Ids in intrinsic (server-assigned) order. */
+     ids() {
+         if (this.orderDirty) {
+             this.order = Array.from(this.records.keys()).sort(compareMessageIds);
+             this.orderDirty = false;
+         }
+         return this.order;
+     }
+
 
     all() {
-        return Array.from(this.records.values());
+         const out = [];
+         for (const id of this.ids()) {
+             const record = this.records.get(id);
+             if (record) out.push(record);
+         }
+         return out;
     }
 
     rendered() {
@@ -135,6 +190,8 @@ export class MessageStore extends EventTarget {
 
         this.records.set(id, record);
         this.versions.set(id, version);
+         // Only a brand-new id can change the ordering; version bumps never reorder.
+         if (!existed) this.orderDirty = true;
         this._touchHighWater(record);
 
         return {
@@ -202,7 +259,7 @@ export class MessageStore extends EventTarget {
     }
 
     forget(id) {
-        this.records.delete(id);
+         if (this.records.delete(id)) this.orderDirty = true;
         this.versions.delete(id);
         this.setDependencies(id, []);
     }
@@ -210,6 +267,8 @@ export class MessageStore extends EventTarget {
     clear() {
         this.records.clear();
         this.versions.clear();
+         this.order = [];
+         this.orderDirty = false;
         this.hostsByRef.clear();
         this.refsByHost.clear();
         this.lastMessageTime = 0;
