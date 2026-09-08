@@ -24,7 +24,7 @@ class SessionRenderer(
     log.debug("Rendering save button for file: {}, lang: {}, code length: {}", filepath, lang, code.length)
     val task = task.newTask(root = false)
     lateinit var hrefLink: StringBuilder
-    hrefLink = task.complete(task.hrefLink("Save File", classname = "href-link cmd-button") {
+    hrefLink = task.complete(task.hrefLink("Save File", classname = "href-link cmd-button", handler = {
       try {
         log.info("Save button clicked for file: {}", filepath)
         onSave()
@@ -36,7 +36,7 @@ class SessionRenderer(
         hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
         task.error(e)
       }
-    })!!
+    }))!!
     return task.placeholder
   }
 
@@ -61,7 +61,7 @@ class SessionRenderer(
 
     /** Controls offered whenever the diff is *not* currently applied. */
     fun pendingControls() = applyHtml + forceHtml
-    applyHtml = task.hrefLink("Apply Diff", classname = "href-link cmd-button") {
+    applyHtml = task.hrefLink("Apply Diff", classname = "href-link cmd-button", handler = {
       if (!isApplied.compareAndSet(false, true)) return@hrefLink
       try {
         log.info("Apply diff button clicked for file: {}", filepath)
@@ -76,9 +76,9 @@ class SessionRenderer(
         hrefLink.set("""<div class="cmd-button">Error: ${e.message}</div>""" + pendingControls())
         task.error(e)
       }
-    }
+    })
     if (onForceApply != null) {
-      forceHtml = task.hrefLink("Apply (Ignore Validation)", classname = "href-link cmd-button") {
+      forceHtml = task.hrefLink("Apply (Ignore Validation)", classname = "href-link cmd-button", handler = {
         if (!isApplied.compareAndSet(false, true)) return@hrefLink
         try {
           log.info("Force-apply diff button clicked for file: {}", filepath)
@@ -92,9 +92,9 @@ class SessionRenderer(
           hrefLink.set("""<div class="cmd-button">Error: ${e.message}</div>""" + pendingControls())
           task.error(e)
         }
-      }
+      })
     }
-    revertHtml = task.hrefLink("Revert", classname = "href-link cmd-button") {
+    revertHtml = task.hrefLink("Revert", classname = "href-link cmd-button", handler = {
       try {
         log.info("Revert button clicked for file: {}", filepath)
         onRevert()
@@ -108,7 +108,7 @@ class SessionRenderer(
         hrefLink.append("""<div class="cmd-button">Error: ${e.message}</div>""")
         task.error(e)
       }
-    }
+    })
 
     hrefLink = task.complete(pendingControls())!!
     return task.placeholder
@@ -144,7 +144,7 @@ class SessionRenderer(
     if (onApplyAll == null || pendingCount == 0) return "\n\n### Change Summary\n\n$table\n\n"
     val task = task.newTask(root = false)
     lateinit var hrefLink: StringBuilder
-    hrefLink = task.complete(task.hrefLink("Apply All ($pendingCount)", classname = "href-link cmd-button") {
+      hrefLink = task.complete(task.hrefLink("Apply All ($pendingCount)", classname = "href-link cmd-button") {
       try {
         log.info("Apply-all clicked for {} pending change(s)", pendingCount)
         onApplyAll()

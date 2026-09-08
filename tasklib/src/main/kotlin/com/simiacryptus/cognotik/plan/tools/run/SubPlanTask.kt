@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.OutputStream
 import java.util.concurrent.Semaphore
@@ -192,7 +191,7 @@ class SubPlanTask(
         }
       } else {
         val semaphore = Semaphore(0)
-        task.complete(task.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown(true)) {
+        task.complete(task.hrefLink("▶ Run Sub-Plan", "btn btn-primary".renderMarkdown(true), handler = {
           task.pool.submit {
             try {
               val summary = runExecution()
@@ -206,7 +205,7 @@ class SubPlanTask(
               semaphore.release()
             }
           }
-        })
+        }))
         semaphore.acquire()
       }
     } catch (e: Exception) {

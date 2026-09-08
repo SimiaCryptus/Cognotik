@@ -132,7 +132,7 @@ class RunToolTask(
 
           task.add("### Approval Required\nReview the command in the **Command** tab before running.".renderMarkdown())
 
-          task.add(task.hrefLink("▶ Run Tool", "btn btn-primary") {
+          task.add(task.hrefLink("▶ Run Tool", "btn btn-primary", handler = {
             try {
               val outputTask = tabs.newTask("Output")
               result = execute(outputTask)
@@ -146,7 +146,7 @@ class RunToolTask(
               log.error("Error in RunTool hrefLink", e)
               transcript?.write("## Error\n\n```\n${e.stackTraceToString()}\n```".toByteArray())
             }
-          })
+          }))
 
           semaphore.acquire()
           resultFn(result)

@@ -389,9 +389,9 @@ Generate the constraint satisfaction solution now:
   }
 
   override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
-    val acceptLink = ui.hrefLink("Accept and Save Solution") {
+    val acceptLink = ui.hrefLink("Accept and Save Solution", handler = {
       fn()
-    }
+    })
     return """
         |
         |---

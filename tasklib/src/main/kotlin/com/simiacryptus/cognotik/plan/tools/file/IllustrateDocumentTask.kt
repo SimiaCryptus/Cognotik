@@ -252,9 +252,9 @@ class IllustrateDocumentTask(
           val semaphore = Semaphore(0)
           analysisTask.header("✋ Approval Required", level = 3)
           analysisTask.add("Please review the planned images above.".renderMarkdown())
-          analysisTask.add(task.hrefLink("🚀 Proceed with Generation", "btn btn-primary") {
+          analysisTask.add(task.hrefLink("🚀 Proceed with Generation", "btn btn-primary", handler = {
             semaphore.release()
-          })
+          }))
           semaphore.acquire()
           analysisTask.add("✅ **User Approved**. Starting generation...".renderMarkdown())
         }

@@ -224,11 +224,11 @@ open class CodingTask<T : CodeRuntime>(
     response: CodeAgent.CodeResult,
     formText: StringBuilder,
     formHandle: () -> StringBuilder
-  ) = if (!canPlay) "" else task.hrefLink("▶ Run", "href-link play-button") {
+  ) = if (!canPlay) "" else task.hrefLink("▶ Run", "href-link play-button", handler = {
     responseAction(task, "Running...", formHandle(), formText) {
       execute(task, response, request)
     }
-  }.replace("<a class", """<a style="font-size: large;" class""")
+  }).replace("<a class", """<a style="font-size: large;" class""")
 
   protected open fun responseAction(
     task: ISessionTask, message: String, formHandle: StringBuilder?, formText: StringBuilder, fn: () -> Unit = {}
@@ -241,11 +241,11 @@ open class CodingTask<T : CodeRuntime>(
     } finally {
       header?.clear()
       var revertButton: StringBuilder? = null
-      val link = task.hrefLink("↩", "href-link regen-button") {
+      val link = task.hrefLink("↩", "href-link regen-button", handler = {
         revertButton?.clear()
         formHandle?.append(formText)
         task.update()
-      }
+      })
       revertButton = task.add(link)
       task.complete()
     }

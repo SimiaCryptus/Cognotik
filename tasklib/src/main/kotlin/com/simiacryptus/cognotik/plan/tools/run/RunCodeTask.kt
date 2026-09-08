@@ -19,7 +19,6 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -172,14 +171,14 @@ open class RunCodeTask<T : RunCodeTask.RunCodeTaskExecutionConfigData, U : RunCo
         if (super.canPlay) {
           buttonsHtml.append(super.playButton(task, request, response, formText) { formHandle!! })
         }
-        buttonsHtml.append(task.hrefLink("Continue", "href-link play-button") {
+        buttonsHtml.append(task.hrefLink("Continue", "href-link play-button", handler = {
           transcript?.write("## User Action: Continue\n".toByteArray())
           transcript?.flush()
           val finalOutput =
             "## Execution Result\n* Code executed successfully.\n* Result: `${response.result.resultValue}`"
           resultFn(finalOutput)
           semaphore.release()
-        })
+        }))
         val feedbackHtml = task.textInput(oneAtATime { feedback: String ->
           transcript?.write("## User Feedback\n$feedback\n\n".toByteArray())
           transcript?.flush()

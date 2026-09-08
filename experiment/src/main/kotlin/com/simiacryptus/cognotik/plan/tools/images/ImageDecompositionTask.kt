@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.awt.BasicStroke
@@ -466,7 +465,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
   }
 
   override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
-    return ui.hrefLink("Accept Analysis") { fn() }
+    return ui.hrefLink("Accept Analysis", handler = { fn() })
   }
 
   companion object {

@@ -503,9 +503,9 @@ IMPORTANT: Previous attempt failed verification. Please be more conservative wit
 
 
   override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
-    val acceptLink = ui.hrefLink("Accept and Save QR Image") {
+    val acceptLink = ui.hrefLink("Accept and Save QR Image", handler = {
       fn()
-    }
+    })
     return """
         |
         |---

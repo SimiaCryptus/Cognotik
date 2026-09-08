@@ -1248,9 +1248,9 @@ ResearchPaperGeneration - Generate comprehensive academic research papers with c
   }
 
   override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
-    val acceptLink = ui.hrefLink("Accept and Save Research Paper") {
+    val acceptLink = ui.hrefLink("Accept and Save Research Paper", handler = {
       fn()
-    }
+    })
     return """
         |
         |---

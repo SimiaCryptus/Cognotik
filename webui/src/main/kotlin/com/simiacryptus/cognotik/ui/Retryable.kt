@@ -40,8 +40,7 @@ open class Retryable(
     task.hrefLink(
       "♻",
       """href-link""",
-      null,
-      oneAtATime { it: Unit -> retry() })
+      handler = oneAtATime { it: Unit -> retry() })
   }
 </div>
 """

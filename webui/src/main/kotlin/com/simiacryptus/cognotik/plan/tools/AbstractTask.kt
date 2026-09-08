@@ -80,17 +80,18 @@ abstract class AbstractTask<T : TaskExecutionConfig, U : TaskTypeConfig>(
         @Suppress("AssignedValueIsNeverRead")
         textHandle = footerTask.complete(
             """<div style="margin-top: 20px; border-top: 1px solid #ccc; padding-top: 10px;">""" + task.hrefLink(
-                "Accept Result",
-                classname = "href-link cmd-button"
-            ) {
+              "Accept Result",
+              classname = "href-link cmd-button",
+              handler = {
                 try {
-                    textHandle.set("""<div class="cmd-button">Accepted</div>""")
-                    footerTask.complete()
+                  textHandle.set("""<div class="cmd-button">Accepted</div>""")
+                  footerTask.complete()
                 } catch (e: Throwable) {
-                    log.warn("Error", e)
+                  log.warn("Error", e)
                 }
                 fn()
-            } + "</div>")!!
+              }
+            ) + "</div>")!!
         return footerTask.placeholder
     }
 

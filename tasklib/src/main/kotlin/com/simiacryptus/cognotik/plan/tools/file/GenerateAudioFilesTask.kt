@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -424,7 +423,7 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
       .replace("\"", "&quot;")
 
   override fun acceptButtonFooter(task: ISessionTask, fn: () -> Unit): String {
-    return task.hrefLink("Accept Audio Files") {
+    return task.hrefLink("Accept Audio Files", handler = {
       log.info("Accept Audio Files button clicked - committing audio files")
       try {
         fn()
@@ -433,7 +432,7 @@ GenerateAudioFiles - Render an audio script as individual per-segment audio file
         log.error("Error committing audio files via accept button", e)
         throw e
       }
-    }
+    })
   }
 
   companion object {

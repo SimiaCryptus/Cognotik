@@ -56,10 +56,10 @@ open class TabbedDisplay(
     } else {
       """<button class="tab-button" data-for-tab="$idx">$label</button>"""
     }
-    val closeButton = if (idx <= 1 || !closable) "" else task.hrefLink("✖️") {
+    val closeButton = if (idx <= 1 || !closable) "" else task.hrefLink("✖️", handler = {
       tabs.removeAt(idx)
       update()
-    }
+    })
     return buttonHtml + closeButton
   }
 

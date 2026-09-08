@@ -31,7 +31,7 @@ ${
       }
     }
 ${
-      task.hrefLink("♻") {
+      task.hrefLink("♻", handler = {
         val newTask = task.newTask(blocking)
         val header = newTask.header("Retrying...", 4)
         val idx: Int = size
@@ -40,7 +40,7 @@ ${
 
         header?.clear()
         newTask.complete()
-      }
+      })
     }
 
 </div>
@@ -67,9 +67,9 @@ ${
     } catch (e: Throwable) {
       log.error("Error in discussable", e)
       task.error(e)
-      task.complete(task.hrefLink("🔄 Retry") {
+      task.complete(task.hrefLink("🔄 Retry", handler = {
         main(tabIndex = tabIndex, task = task)
-      })
+      }))
     }
   }
 
@@ -100,12 +100,12 @@ ${textInput(tabContent, history, task, feedbackSB, feedbackTask = this)}
     design: T,
     feedbackSB: StringBuilder,
     feedbackTask: ISessionTask,
-  ) = task.hrefLink("Accept", classname = "href-link cmd-button") {
+  ) = task.hrefLink("Accept", classname = "href-link cmd-button", handler = {
     log.info("Accept link clicked for tabIndex: $tabIndex")
     accept(tabIndex, tabContent, design)
     feedbackSB.clear()
     feedbackTask.complete()
-  }
+  })
 
   private fun textInput(
     tabContent: StringBuilder,

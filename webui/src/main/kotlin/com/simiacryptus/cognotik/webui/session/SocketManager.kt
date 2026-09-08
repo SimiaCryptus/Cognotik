@@ -593,9 +593,9 @@ abstract class SocketManager(
     id: Long,
     length: Int = 5
   ): String = if (root) {
-    "z${id.toString(16).padStart(length, '0')}"
-  } else {
     id.toString(16).padStart(length + 1, '0')
+  } else {
+    "z${id.toString(16).padStart(length, '0')}"
   }
 
   fun divInitializer(operationID: String = newMessageID(), cancelable: Boolean): String =

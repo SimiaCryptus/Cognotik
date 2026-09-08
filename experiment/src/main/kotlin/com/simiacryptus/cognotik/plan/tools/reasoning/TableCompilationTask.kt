@@ -13,7 +13,6 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 
@@ -359,9 +358,9 @@ TableCompilation - Generate structured tables with AI-computed cell values
   }
 
   override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
-    val acceptLink = ui.hrefLink("Accept Table") {
+    val acceptLink = ui.hrefLink("Accept Table", handler = {
       fn()
-    }
+    })
     return """
         |
         |---

@@ -193,8 +193,7 @@ class DiffInstrumentor(
         "$failures of ${pending.size} change(s) could not be applied; use the per-file buttons for details"
       )
     })
-    val changeSummary = renderer.renderChangeSummary(changes.map { it.summary }, onApplyAll)
-    return changeSummary
+    return renderer.renderChangeSummary(changes.map { it.summary }, onApplyAll)
   }
 
   private fun newFileSummary(filepath: Path, code: String, applied: Boolean) = FileChangeSummary(

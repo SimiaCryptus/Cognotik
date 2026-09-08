@@ -257,9 +257,9 @@ class CommandSessionTask(
       }
       task.add(plan.renderMarkdown())
 
-      task.add(task.hrefLink("Run Commands", "btn btn-primary") {
+      task.add(task.hrefLink("Run Commands", "btn btn-primary", handler = {
         executeAction(false)
-      })
+      }))
 
       task.add(acceptButtonFooter(task) {
         task.complete()

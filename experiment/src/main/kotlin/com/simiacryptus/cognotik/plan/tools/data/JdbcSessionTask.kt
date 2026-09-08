@@ -191,9 +191,9 @@ class JdbcSessionTask(
       }
       task.add(plan.renderMarkdown())
 
-      task.add(task.hrefLink("▶ Run SQL", "btn btn-primary") {
+      task.add(task.hrefLink("▶ Run SQL", "btn btn-primary", handler = {
         execute(false)
-      })
+      }))
 
       task.add(acceptButtonFooter(task) {
         task.complete()

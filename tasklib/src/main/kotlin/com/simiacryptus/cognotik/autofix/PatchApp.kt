@@ -284,7 +284,7 @@ abstract class PatchApp(
             else -> "▶ Run"
           }
           append("""<span style="display:inline-block;">""")
-          append(task.hrefLink(runLabel, classname = "href-link play-button") {
+          append(task.hrefLink(runLabel, classname = "href-link play-button", handler = {
             if (!isRunning.compareAndSet(false, true)) return@hrefLink
             if (autoRetryEnabled.get()) {
               retriesRemaining.set(settings.maxRetries)
@@ -292,21 +292,21 @@ abstract class PatchApp(
               retriesRemaining.set(0)
             }
             runIteration()
-          })
+          }))
           append("</span>&nbsp;&nbsp;")
         }
 
         // Auto-retry toggle
         append("""<span style="display:inline-block;">""")
         if (autoRetry) {
-          append(task.hrefLink("⏸ Disable Auto-Retry", classname = "href-link") {
+          append(task.hrefLink("⏸ Disable Auto-Retry", handler = {
             log.info("Auto-retry disabled by user")
             autoRetryEnabled.set(false)
             retriesRemaining.set(0)
             renderControlPanel()
-          })
+          }))
         } else {
-          append(task.hrefLink("▶ Enable Auto-Retry (${settings.maxRetries} max)", classname = "href-link") {
+          append(task.hrefLink("▶ Enable Auto-Retry (${settings.maxRetries} max)", handler = {
             log.info("Auto-retry enabled by user")
             autoRetryEnabled.set(true)
             val currentState = state.get()
@@ -314,7 +314,7 @@ abstract class PatchApp(
               retriesRemaining.set(settings.maxRetries)
             }
             renderControlPanel()
-          })
+          }))
         }
         append("</span>")
 
@@ -322,12 +322,12 @@ abstract class PatchApp(
         if (running && autoRetry && remaining > 0) {
           append("&nbsp;&nbsp;")
           append("""<span style="display:inline-block;">""")
-          append(task.hrefLink("⏹ Stop After Current", classname = "href-link") {
+          append(task.hrefLink("⏹ Stop After Current", handler = {
             log.info("User requested stop after current iteration")
             retriesRemaining.set(0)
             autoRetryEnabled.set(false)
             renderControlPanel(statusOverride = "Stopping after current iteration completes...")
-          })
+          }))
           append("</span>")
         }
       }

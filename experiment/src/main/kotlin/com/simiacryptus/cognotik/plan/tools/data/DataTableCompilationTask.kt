@@ -17,7 +17,6 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.BufferedWriter
 import java.io.StringWriter
@@ -370,9 +369,9 @@ class DataTableCompilationTask(
       } else {
         task.add("### Preview of Compiled Data".renderMarkdown())
         task.add(markdownTable.renderMarkdown())
-        task.add(task.hrefLink("Save Table & Complete", "btn btn-primary") {
+        task.add(task.hrefLink("Save Table & Complete", "btn btn-primary", handler = {
           finalizeAction()
-        })
+        }))
       }
 
     } catch (e: Exception) {

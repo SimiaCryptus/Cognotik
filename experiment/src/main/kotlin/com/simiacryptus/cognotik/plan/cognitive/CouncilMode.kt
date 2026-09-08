@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -179,15 +178,15 @@ open class CouncilMode(
             }
             iterationTask.add(renderMarkdown(planHtml.toString()))
             val buttons = StringBuilder()
-            buttons.append(iterationTask.hrefLink("Execute Plan", "btn btn-success mr-2") {
+            buttons.append(iterationTask.hrefLink("Execute Plan", "btn btn-success mr-2", handler = {
               approved = true
               semaphore.release()
-            })
+            }))
             buttons.append(" ")
-            buttons.append(iterationTask.hrefLink("Stop Council", "btn btn-danger") {
+            buttons.append(iterationTask.hrefLink("Stop Council", "btn btn-danger", handler = {
               approved = false
               semaphore.release()
-            })
+            }))
             iterationTask.add(buttons.toString())
             semaphore.acquire()
             if (!approved) {

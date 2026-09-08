@@ -146,11 +146,11 @@ StructuralInvariantAnalysis - Distill an object to immutable properties
         task.safeComplete("Analysis complete. <a href='$link' target='_blank'>View Transcript</a>", log)
         resultFn(response)
       } else {
-        val acceptLink = task.hrefLink("Accept Result", "btn btn-success") {
+        val acceptLink = task.hrefLink("Accept Result", "btn btn-success", handler = {
           val (link, _) = task.createFile("invariant_analysis_transcript.md")
           task.complete("Analysis accepted. <a href='$link' target='_blank'>View Transcript</a>")
           resultFn(response)
-        }
+        })
         task.add("<div class='p-3'>$acceptLink</div>")
         task.complete()
       }

@@ -15,7 +15,6 @@ import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.FileOutputStream
@@ -180,9 +179,9 @@ class SingleFixTask(
       if (orchestrationConfig.autoFix) {
         execute()
       } else {
-        subTask.add(subTask.hrefLink("▶ Run SingleFix", "btn btn-primary") {
+        subTask.add(subTask.hrefLink("▶ Run SingleFix", "btn btn-primary", handler = {
           execute()
-        }.renderMarkdown())
+        }).renderMarkdown())
       }
       subTask.placeholder
     }

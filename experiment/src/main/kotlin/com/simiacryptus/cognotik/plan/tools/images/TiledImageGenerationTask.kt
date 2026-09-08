@@ -12,7 +12,6 @@ import com.simiacryptus.cognotik.plan.tools.file.AbstractFileTask
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.awt.BasicStroke
@@ -482,7 +481,7 @@ class TiledImageGenerationTask(
   }
 
   override fun acceptButtonFooter(ui: ISessionTask, fn: () -> Unit): String {
-    return ui.hrefLink("Accept Image") { fn() }
+    return ui.hrefLink("Accept Image", handler = { fn() })
   }
 
   private fun featherImage(

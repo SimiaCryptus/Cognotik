@@ -365,10 +365,11 @@ Stack Trace:
     linkText: String,
     classname: String,
     id: String?,
+    root: Boolean,
     handler: Consumer<Unit>
   ): String {
     log.debug("Creating href link with text: {}", linkText)
-    val operationID = ui.newMessageID()
+    val operationID = ui.newMessageID(root = root)
     ui.linkTriggers[operationID] = handler
     return """<a class="$classname" data-id="$operationID"${
       when {
@@ -380,7 +381,7 @@ Stack Trace:
 
   override fun newTask(showSpinner: Boolean, root: Boolean): ISessionTask {
     val newTask = ui.newTask(root = root)
-    add(newTask.placeholder, showSpinner = showSpinner)
+    if(root) add(newTask.placeholder, showSpinner = showSpinner)
     return newTask
   }
 

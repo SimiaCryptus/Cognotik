@@ -8,7 +8,6 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.InputStream
@@ -130,10 +129,10 @@ class CmdPatchApp(
           task.add("Model: $model / $fastModel")
           val process = processBuilder.start()
           task.add("Started at: ${Instant.now()}")
-          val cancelButton = task.add(task.hrefLink("Stop") {
+          val cancelButton = task.add(task.hrefLink("Stop", handler = {
             log.info("Process manually stopped by user")
             process.destroy()
-          })
+          }))
           val taskOutput = task.add("")
           val buffer = StringBuilder()
           fun addOutput(taskOutput: StringBuilder?, task: ISessionTask) {

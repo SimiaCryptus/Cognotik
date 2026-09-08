@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.autofix
 
 import com.simiacryptus.cognotik.autofix.AutoFixTask.AutoFixTaskTypeConfig
-import com.simiacryptus.cognotik.docops.plan.defaultTargetResolvers
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
@@ -195,12 +194,12 @@ class AutoFixTask(
                       transcript?.close()
                     } else {
                       subTask.add(
-                        subTask.hrefLink("Accept & Continue", "btn btn-primary") {
+                        subTask.hrefLink("Accept & Continue", "btn btn-primary", handler = {
                           resultFn("### Success\nUser accepted command execution results.")
                           semaphore.release()
                           subTask.complete()
                           transcript?.close()
-                        }.renderMarkdown()
+                        }).renderMarkdown()
                       )
                     }
                   }
@@ -213,12 +212,12 @@ class AutoFixTask(
                     }
                     transcript?.write("</div>\n\n".toByteArray())
                     subTask.add(
-                      subTask.hrefLink("Ignore Error", "href-link cmd-button") {
+                      subTask.hrefLink("Ignore Error", "href-link cmd-button", handler = {
                         resultFn("### Warning\nCommands failed with exit code $result, but error was ignored by user.")
                         semaphore.release()
                         subTask.complete()
                         transcript?.close()
-                      }.renderMarkdown()
+                      }).renderMarkdown()
                     )
                   }
                 }
@@ -244,9 +243,9 @@ class AutoFixTask(
       if (orchestrationConfig.autoFix) {
         execute()
       } else {
-        subTask.add(subTask.hrefLink("▶ Run AutoFix", "btn btn-primary") {
+        subTask.add(subTask.hrefLink("▶ Run AutoFix", "btn btn-primary", handler = {
           execute()
-        }.renderMarkdown())
+        }).renderMarkdown())
       }
       subTask.placeholder
     }
