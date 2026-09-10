@@ -329,13 +329,20 @@
 
     const handleStatusUpdate = (target, taskInfo) => {
         const status = taskInfo?.status;
-       const badgeState =
+        const next =
            status === 'RUNNING' ? 'running'
                : status === 'COMPLETED' ? 'done'
                    : (status === 'ERROR' || status === 'FAILED') ? 'error'
                        : null;
-       if (badgeState) {
-           for (const badgeId of badgesFor(target)) setBadge(badgeId, badgeState);
+        if (next) {
+            const [primary, ...extras] = badgesFor(target);
+            if (primary) setBadge(primary, next);
+            // Sibling steps that share this target (Update / Illustrate for
+            // content.md) are only *finished* by a status update, never *started*
+            // by one — the file alone cannot tell us which of them is running.
+            for (const extra of extras) {
+                if (next !== 'running' && $(extra)?.classList.contains('running')) setBadge(extra, next);
+            }
        }
         if (status === 'RUNNING') runningTargets.add(target);
         else runningTargets.delete(target);
@@ -1091,10 +1098,17 @@
             if (target === CONTENT_FILE) continue;
             const artifact = store.get().drafts?.[artifactDraftId(target)];
             if (!artifact?.sourceRef) continue;
-            if (isStale(draft, artifact.sourceRef) && badgeState(badgeId) === 'ready') {
-                setBadge(badgeId, 'stale');
-                $(badgeId).title =
-                    `generated from ${formatRevisionRef(artifact.sourceRef)}, current is v${draft.headRevision}`;
+             const state = badgeState(badgeId);
+             if (isStale(draft, artifact.sourceRef)) {
+                 if (state === 'ready' || state === 'stale') {
+                     setBadge(badgeId, 'stale');
+                     $(badgeId).title =
+                         `generated from ${formatRevisionRef(artifact.sourceRef)}, current is v${draft.headRevision}`;
+                 }
+             } else if (state === 'stale') {
+                 // Regenerated against the current head (possibly from a lens page).
+                 setBadge(badgeId, 'ready');
+                 $(badgeId).removeAttribute('title');
             }
         }
     };
@@ -1163,10 +1177,12 @@
                 .replace(/^(.+)\n=+\s*$/gm, '# $1')
                 .replace(/^(.+)\n-{3,}\s*$/gm, '## $1');
             await writeFile(basePath, CONTENT_FILE, normalized);
-            recordArticleRevision(normalized, {origin: 'raw-import'});
+             const created = recordArticleRevision(normalized, {origin: 'raw-import'});
+             const rev = created?.revision ?? articleDraft()?.headRevision ?? 1;
             setBadge('badge-content', 'ready');
-            setBadge('badge-summary', 'skipped');
-            setStatus('raw-draft-status', '✓ Imported as v1', 'success');
+             if (badgeState('badge-summary') === 'idle') setBadge('badge-summary', 'skipped');
+             setStatus('raw-draft-status',
+                 created ? `✓ Imported as v${rev}` : `✓ Identical to v${rev} — nothing appended`, 'success');
             await loadIntoViewer(CONTENT_FILE, 'viewer-content');
             review?.render();
         } catch (err) {
@@ -1216,13 +1232,14 @@
             : target?.scope === 'section' ? target.headingPath.at(-1) : null;
         if (!needle || !viewer) return;
         const walker = document.createTreeWalker(viewer, NodeFilter.SHOW_TEXT);
+         const probe = needle.slice(0, 40);
         while (walker.nextNode()) {
-            if (walker.currentNode.textContent.includes(needle.slice(0, 40))) {
-                walker.currentNode.parentElement?.scrollIntoView({block: 'center', behavior: 'smooth'});
-                walker.currentNode.parentElement?.classList.add('jump-flash');
-                setTimeout(() => walker.currentNode.parentElement?.classList.remove('jump-flash'), 1600);
-                return;
-            }
+             if (!walker.currentNode.textContent.includes(probe)) continue;
+             const hit = walker.currentNode.parentElement;
+             hit?.scrollIntoView({block: 'center', behavior: 'smooth'});
+             hit?.classList.add('jump-flash');
+             setTimeout(() => hit?.classList.remove('jump-flash'), 1600);
+             return;
         }
     };
 
@@ -1234,9 +1251,21 @@
             onJump: jumpToTarget,
             confirmAction,
             toast: showToast,
-            onRestore: async content => {
+             onRestore: async (content, revision) => {
                 await writeFile(basePath, CONTENT_FILE, content);
-                await loadIntoViewer(CONTENT_FILE, 'viewer-content');
+                 // The restored text is the new head: recompute every anchor against
+                 // it so annotations and queue items don't point into the old body.
+                 store.update(state => {
+                     state.annotations[ARTICLE_DRAFT_ID] = reanchorAnnotations(
+                         state.annotations[ARTICLE_DRAFT_ID] ?? [], content, revision);
+                     state.queues[ARTICLE_DRAFT_ID] = reanchorItems(
+                         state.queues[ARTICLE_DRAFT_ID] ?? emptyQueue(ARTICLE_DRAFT_ID), content);
+                 });
+                 await loadIntoViewer(CONTENT_FILE, 'viewer-content');
+                 for (const viewerId of ['viewer-update', 'viewer-illustration']) {
+                     if (viewerRawContent.has(viewerId)) await loadIntoViewer(CONTENT_FILE, viewerId);
+                 }
+                 refreshStaleBadges();
             }
         });
         initAnnotator({

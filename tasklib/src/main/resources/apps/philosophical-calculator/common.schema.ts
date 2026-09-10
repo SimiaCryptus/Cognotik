@@ -124,6 +124,7 @@ export const RunStatus = z.enum([
   'stale',
   'error',
   'cancelled',
+   'skipped', // step deliberately bypassed (e.g. Summarize after a raw draft import)
 ]);
 export type RunStatus = z.infer<typeof RunStatus>;
 

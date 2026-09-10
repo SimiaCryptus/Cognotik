@@ -57,6 +57,14 @@ export const NOTES_TEMPLATE = [
     '_Run **Review** to have the vision agent inspect the rendered output._',
     ''
 ].join('\n');
+/** Placeholder the vision agent replaces on its first pass. */
+const OCR_PLACEHOLDER = NOTES_TEMPLATE.split('## OCR review')[1].trim();
+/** True once `## OCR review` holds something other than the seed placeholder. */
+export const hasOcrReview = notes => {
+     const body = (/##\s+OCR review\s*([\s\S]*)$/i.exec(notes ?? '')?.[1] ?? '').trim();
+     return !!body && body !== OCR_PLACEHOLDER;
+};
+
 
 /* --------------------------------------------------------------- utils */
 
@@ -366,7 +374,10 @@ export function initLensPage(config) {
         const status = el('span', 'status-msg');
         status.id = 'status-source';
         status.setAttribute('aria-live', 'polite');
-        head.append(el('h3', null, `🧾 ${config.source.file}`), status);
+         const conflict = el('span', 'status-msg status-warning is-hidden',
+             '⚠ the agent rewrote this file while you had unsaved edits — Refresh to load it');
+         conflict.id = 'source-conflict';
+         head.append(el('h3', null, `🧾 ${config.source.file}`), conflict, status);
 
         const row = el('div', 'button-row');
         const save = el('button', 'btn btn-primary btn-sm', '💾 Save');
@@ -470,21 +481,37 @@ export function initLensPage(config) {
     };
 
     const loadSource = async ({force = false} = {}) => {
-        if (!force && dirty.has(config.source.file)) return;
+         if (!force && dirty.has(config.source.file)) {
+             $('source-conflict')?.classList.remove('is-hidden');
+             return;
+         }
         try {
             const content = await readFile(basePath, config.source.file);
             if (content != null) sourceEditor.value = content;
             dirty.delete(config.source.file);
+             $('source-conflict')?.classList.add('is-hidden');
         } catch (err) {
             console.warn('[lens] source read failed', err);
         }
     };
 
-    const saveSource = async ({silent = false} = {}) => {
+     /**
+      * `record` snapshots the edit as a `manual-edit` artifact revision. Autosave
+      * passes `record: false` so a typing pause does not inflate history; an
+      * explicit Save, Ctrl/⌘+S and every step run record the checkpoint.
+      */
+     let sourceUnrecorded = false;
+     const saveSource = async ({silent = false, record = true} = {}) => {
         try {
             await writeFile(basePath, config.source.file, sourceEditor.value);
             dirty.delete(config.source.file);
-            await recordArtifact('manual-edit');
+             $('source-conflict')?.classList.add('is-hidden');
+             if (record) {
+                 await recordArtifact('manual-edit');
+                 sourceUnrecorded = false;
+             } else {
+                 sourceUnrecorded = true;
+             }
             if (!silent) setStatus('status-source', '✓ Saved', 'success');
             await refreshPreview(true);
             return true;
@@ -513,11 +540,11 @@ export function initLensPage(config) {
         autosaveSource();
     });
     const autosaveNotes = debounce(() => saveNotes({silent: true}));
-    const autosaveSource = debounce(() => saveSource({silent: true}));
+     const autosaveSource = debounce(() => saveSource({silent: true, record: false}));
 
     const saveAll = async () => {
         if (dirty.has(config.notesFile)) await saveNotes({silent: true});
-        if (dirty.has(config.source.file)) await saveSource({silent: true});
+         if (dirty.has(config.source.file) || sourceUnrecorded) await saveSource({silent: true});
     };
 
     /* ---------------- preview / log ---------------- */
@@ -677,7 +704,7 @@ export function initLensPage(config) {
 
     const afterStep = async step => {
         if (step.target === config.source.file) {
-            await loadSource({force: !dirty.has(config.source.file)});
+             await loadSource();
             await recordArtifact(step.origin ?? 'revise-artifact');
             await refreshPreview(true);
         } else if (step.target === config.notesFile) {
@@ -731,11 +758,20 @@ export function initLensPage(config) {
         } catch (err) {
             console.warn('[lens] status fetch failed', err);
         }
+         // Infer "done" from what is on disk — but only for the *first* step that
+         // produces each target (Generate, not Update), and only count the notes
+         // file once the agent has actually replaced the OCR placeholder.
+         const seen = new Set();
         for (const step of stepDefs) {
+             if (seen.has(step.target)) continue;
+             seen.add(step.target);
             if (step.badge.dataset.state !== 'idle') continue;
             try {
                 const content = await readFile(basePath, step.target);
-                if (content?.trim()) setStepBadge(step, 'ready');
+                 const produced = step.target === config.notesFile
+                     ? hasOcrReview(content)
+                     : !!content?.trim();
+                 if (produced) setStepBadge(step, 'ready');
             } catch {
                 /* leave pending */
             }

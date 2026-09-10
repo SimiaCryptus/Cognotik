@@ -18,6 +18,10 @@ fi
 DIR="$(cd "$(dirname "$INPUT")" && pwd)"
 BASENAME="$(basename "$INPUT" .tex)"
 OUTPUT="${DIR}/${BASENAME}.pdf"
+# Compile from the source directory so relative \includegraphics paths resolve the
+# same way whether we are invoked from the session root or anywhere else.
+cd "$DIR" || exit 1
+INPUT="${BASENAME}.tex"
 
 echo "== Building ${BASENAME}.pdf from ${INPUT} =="
 

@@ -56,10 +56,11 @@ export function createStore(basePath, {saveDelayMs = 700} = {}) {
     };
 
     const persist = async () => {
-        const snapshot = {...state, updatedAt: nowIso()};
-        for (const [id, draft] of Object.entries(snapshot.drafts)) {
-            snapshot.drafts[id] = pruneRevisions(draft, REVISION_RETENTION);
-        }
+         // Copy the drafts map so retention pruning shapes what goes to disk
+         // without silently mutating the live in-memory state.
+         const drafts = Object.fromEntries(Object.entries(state.drafts)
+             .map(([id, draft]) => [id, pruneRevisions(draft, REVISION_RETENTION)]));
+         const snapshot = {...state, drafts, updatedAt: nowIso()};
         await writeFile(basePath, STATE_FILE, JSON.stringify(snapshot, null, 2));
     };
 

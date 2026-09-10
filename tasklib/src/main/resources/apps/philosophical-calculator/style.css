@@ -1072,6 +1072,12 @@
     .queue-item.status-rejected { opacity: .55; }
     .queue-item.status-applied { border-left: 3px solid var(--color-info); }
     .queue-group-title { font-size: .78rem; color: var(--color-primary); margin-top: var(--space-3); }
+     .queue-warnings {
+         color: var(--color-warning);
+         border-left: 3px solid rgba(232, 196, 74, .45);
+         padding-left: var(--space-3);
+         margin-bottom: 0;
+     }
     /* ===== Annotation authoring ===== */
     .annotate-popup { position: absolute; z-index: 9000; }
     .annotate-dialog textarea { margin-bottom: var(--space-3); }

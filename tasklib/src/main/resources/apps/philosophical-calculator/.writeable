@@ -21,6 +21,8 @@ gametheory.md
 perspectives.md
 persuasive.md
 socratic.md
+debate.md
+protocol.md
 
 # Narrative and creative outputs
 narrative.md
@@ -37,6 +39,7 @@ paper.pdf
 paper.log
 paper.aux
 paper.out
+paper.toc
 build.log.md
 
 # Iterative output-revision notes (author notes + OCR agent review)

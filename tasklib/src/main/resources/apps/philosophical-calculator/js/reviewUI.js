@@ -106,6 +106,7 @@ export function initReviewUI({store, onJump, confirmAction, toast, onRestore}) {
         search: '', lensIds: [], actions: [], statuses: ['proposed', 'accepted', 'deferred'],
         groupBy: 'lens', sortBy: 'priority', sortDir: 'desc', orphanedOnly: false
     };
+     const TRIAGE_STATUSES = ['proposed', 'accepted', 'deferred'];
 
     const article = () => store.get().drafts?.[ARTICLE_DRAFT_ID];
     const annotationsOf = () => store.get().annotations?.[ARTICLE_DRAFT_ID] ?? [];
@@ -337,9 +338,11 @@ export function initReviewUI({store, onJump, confirmAction, toast, onRestore}) {
         });
 
         const status = select('queue-status',
-            [{value: '', label: 'triage (default)'}, ...REVISION_STATUSES, {value: 'all', label: 'all'}], '');
+             [{value: '', label: 'triage (default)'}, ...REVISION_STATUSES, {value: 'all', label: 'all'}],
+             itemQuery.statuses.length === 0 ? 'all'
+                 : itemQuery.statuses.length === 1 ? itemQuery.statuses[0] : '');
         status.addEventListener('change', () => {
-            itemQuery.statuses = status.value === '' ? ['proposed', 'accepted', 'deferred']
+             itemQuery.statuses = status.value === '' ? [...TRIAGE_STATUSES]
                 : status.value === 'all' ? [] : [status.value];
             renderQueue();
         });
@@ -371,6 +374,17 @@ export function initReviewUI({store, onJump, confirmAction, toast, onRestore}) {
 
         filters.append(search, lens, status, action, groupBy, sortBy);
         host.appendChild(filters);
+         // Extraction problems (e.g. a prose-only Socratic dialogue yielded no
+         // list-shaped suggestions) — otherwise an empty batch looks like a no-op.
+         const warnings = (queue?.batches ?? [])
+             .filter(b => !itemQuery.lensIds.length || itemQuery.lensIds.includes(b.lensId))
+             .flatMap(b => (b.warnings ?? []).map(w => `${b.lensId}: ${w}`));
+         if (warnings.length) {
+             const box = el('div', 'hint queue-warnings');
+             for (const w of warnings) box.appendChild(el('div', null, `⚠ ${w}`));
+             host.appendChild(box);
+         }
+
 
         const draft = article();
         const bulk = el('div', 'button-row');
@@ -413,8 +427,9 @@ export function initReviewUI({store, onJump, confirmAction, toast, onRestore}) {
         });
 
         if (!matched.length) {
-            host.appendChild(el('p', 'hint',
-                'No revision items yet. Run an analysis lens — its suggestions are ingested automatically.'));
+             host.appendChild(el('p', 'hint', items.length
+                 ? `No items match the current filters (${items.length} in the queue).`
+                 : 'No revision items yet. Run an analysis lens — its suggestions are ingested automatically.'));
             return;
         }
 

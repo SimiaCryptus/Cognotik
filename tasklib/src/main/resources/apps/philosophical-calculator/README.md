@@ -22,9 +22,9 @@ Have you ever captured brilliant ideas, meeting transcripts, or rough notes, onl
 
 ---
 
-## 🚀 How It Works: The 4-Stage Journey
+## 🚀 How It Works: The 5-Stage Journey
 
-Philosophical Calculator guides your work through a smooth, four-stage workflow:
+Philosophical Calculator guides your work through a smooth, five-stage workflow:
 
 ```
 📝 1. Input        ⚙️ 2. Pipeline      🔍 3. Analysis     🗂 4. Review       📦 5. Output
