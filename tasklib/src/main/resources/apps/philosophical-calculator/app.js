@@ -75,11 +75,20 @@
         ['ops/debate_op.md', {lens: 'historical-debate', analysis: true}],
         ['ops/protocol_op.md', {lens: 'unrunnable-protocol', analysis: true}],
         ['ops/persuasive_op.md', {lens: 'persuasive-essay'}],
+         ['ops/persuasive_update_op.md', {lens: 'persuasive-essay'}],
         ['ops/narrative_op.md', {lens: 'narrative-story'}],
+         ['ops/narrative_update_op.md', {lens: 'narrative-story'}],
         ['ops/comic_op.md', {lens: 'comic-script'}],
+         ['ops/comic_update_op.md', {lens: 'comic-script'}],
         ['ops/technical_explanation_op.md', {lens: 'technical-tutorial'}],
+         ['ops/technical_update_op.md', {lens: 'technical-tutorial'}],
         ['ops/webpage_op.md', {lens: 'html-webpage'}],
-        ['ops/latex_op.md', {lens: 'pdf-document'}]
+         ['ops/webpage_update_op.md', {lens: 'html-webpage'}],
+         ['ops/webpage_review_op.md', {lens: 'html-webpage'}],
+         ['ops/latex_op.md', {lens: 'pdf-document'}],
+         ['ops/latex_update_op.md', {lens: 'pdf-document'}],
+         ['ops/latex_review_op.md', {lens: 'pdf-document'}],
+         ['ops/render_pdf_op.md', {lens: 'pdf-document'}]
     ]);
 
 

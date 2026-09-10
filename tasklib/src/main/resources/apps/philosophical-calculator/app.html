@@ -462,9 +462,9 @@
         <section id="section-output" class="section" role="tabpanel" aria-labelledby="nav-output">
             <div class="section-header">
                 <h2>📦 Output Lenses</h2>
-               <p class="section-subtitle">Transform the article into finished deliverables. Persuasive, Narrative and
-                   Technical Tutorial also feed back into <strong>Update Article</strong>; Comic and HTML are terminal
-                   renderings.</p>
+                <p class="section-subtitle">Each deliverable now has its own workbench page — generate, build, review
+                    with the OCR agent and iterate on your own notes. Persuasive, Narrative and Technical Tutorial
+                    still feed back into <strong>Update Article</strong>.</p>
             </div>
 
             <div class="lenses-grid">
@@ -477,17 +477,10 @@
                         </div>
                         <p class="step-desc">Reframe as a compelling persuasive essay using rhetorical technique.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/persuasive_op.md" data-output="persuasive.md"
-                                    data-badge="badge-persuasive" data-viewer="viewer-persuasive">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="persuasive.md" data-viewer="viewer-persuasive">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-persuasive.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-persuasive-md"
                              data-session-links="persuasive.md"></div>
-                        <div class="viewer" id="viewer-persuasive"></div>
                     </div>
                 </div>
 
@@ -500,17 +493,10 @@
                         </div>
                         <p class="step-desc">Dramatize the content into a narrative with illustrations.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/narrative_op.md" data-output="narrative.md"
-                                    data-badge="badge-narrative" data-viewer="viewer-narrative">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="narrative.md" data-viewer="viewer-narrative">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-narrative.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-narrative-md"
                              data-session-links="narrative.md"></div>
-                        <div class="viewer" id="viewer-narrative"></div>
                     </div>
                 </div>
 
@@ -523,17 +509,10 @@
                         </div>
                         <p class="step-desc">Generate a comic book representation of the content.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/comic_op.md" data-output="comic.md"
-                                    data-badge="badge-comic" data-viewer="viewer-comic">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="comic.md" data-viewer="viewer-comic">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-comic.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-comic-md"
                              data-session-links="comic.md"></div>
-                        <div class="viewer" id="viewer-comic"></div>
                     </div>
                 </div>
 
@@ -546,17 +525,10 @@
                         </div>
                         <p class="step-desc">Definitions, mechanisms, code snippets and worked examples.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/technical_explanation_op.md" data-output="technical_explanation.md"
-                                    data-badge="badge-technical" data-viewer="viewer-technical">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="technical_explanation.md" data-viewer="viewer-technical">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-technical.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-technical-explanation-md"
                              data-session-links="technical_explanation.md"></div>
-                        <div class="viewer" id="viewer-technical"></div>
                     </div>
                 </div>
 
@@ -567,19 +539,12 @@
                             <span class="step-title">HTML Webpage</span>
                             <span class="step-badge pending" id="badge-webpage">pending</span>
                         </div>
-                        <p class="step-desc">A standalone HTML page rendering of the article.</p>
+                         <p class="step-desc">A standalone HTML page rendering, with an OCR review / update loop.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/webpage_op.md" data-output="page.html"
-                                    data-badge="badge-webpage" data-viewer="viewer-webpage">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="page.html" data-viewer="viewer-webpage">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-webpage.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-page-html"
                              data-session-links="page.html"></div>
-                        <div class="viewer" id="viewer-webpage"></div>
                     </div>
                 </div>
                 <div class="card lens-card lens-card-output">
@@ -589,20 +554,14 @@
                             <span class="step-title">LaTeX / PDF Source</span>
                             <span class="step-badge pending" id="badge-latex">pending</span>
                         </div>
-                        <p class="step-desc">A template-constrained LaTeX document ready for <code>tectonic</code> or
-                            <code>xelatex</code>. (Server-side rendering is the remaining half of M4.1.)</p>
+                         <p class="step-desc">A template-constrained LaTeX document, compiled to
+                             <code>paper.pdf</code> by <code>build.sh</code> and refined through an OCR review
+                             loop.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/latex_op.md" data-output="paper.tex"
-                                    data-badge="badge-latex" data-viewer="viewer-latex">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="paper.tex" data-viewer="viewer-latex">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-latex.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-paper-tex"
                              data-session-links="paper.tex"></div>
-                        <div class="viewer" id="viewer-latex"></div>
                     </div>
                 </div>
             </div>

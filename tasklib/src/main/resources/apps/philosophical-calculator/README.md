@@ -86,14 +86,26 @@ Explore your ideas from unexpected intellectual angles:
 ---
 
 ### Stage 5: 📦 Output Lenses — Deliver Ready-to-Share Formats
-Tailor your finished content for different audiences and media:
+Every output lens now lives on **its own workbench page** (linked from the 📦 Output tab), where it
+runs its own iterative loop:
+
+```
+① Generate ──► artifact ──► ② Build (PDF only) ──► ③ OCR Review (vision agent)
+      ▲                                                        │
+      └──────────── ④ Update ◄──── <lens>-notes.md ◄────────────┘
+```
+
+`<lens>-notes.md` has two halves: `## Author notes` (yours, never touched by the agent) and
+`## OCR review` (rewritten on every review pass). **Update** applies both to the artifact and
+appends an immutable artifact revision to the shared history.
 
 * 🎯 **Persuasive Essay**: High-impact, rhetorically structured arguments designed to convince.
 * 📖 **Narrative Story**: Dramatized storytelling enriched with inline narrative illustrations.
 * 💬 **Comic Book Script**: Visual panel-by-panel comic scripts complete with dialog and scene direction.
 * 🔧 **Technical Tutorial**: Step-by-step guides complete with mechanism breakdowns and code examples.
-* 🌐 **HTML Webpage**: Generates a beautiful, standalone, responsive webpage ready to launch.
-* 📚 **LaTeX / PDF Source**: A template-constrained `paper.tex` ready for `tectonic` or `xelatex`.
+* 🌐 **HTML Webpage**: A standalone responsive page — with review/update rounds against the live render.
+* 📚 **LaTeX / PDF**: `paper.tex` compiled to `paper.pdf` by `build.sh` (`tectonic` → `xelatex` →
+   `pdflatex`), with the full engine output captured in `build.log.md` and a page-by-page OCR review.
 
 ---
 
@@ -103,6 +115,9 @@ Tailor your finished content for different audiences and media:
 * **🔍 Fullscreen Zoom**: Click Zoom on any viewer to expand your document into a distraction-free reader mode.
 * **🚀 Instant Web Preview**: Preview generated HTML pages in a new browser tab with one click.
 * **⚡ Live Status Updates**: Real-time progress badges keep you informed when operations are running, complete, or ready to view.
+* **🧾 Inline PDF & HTML Previews**: Lens pages embed the compiled `paper.pdf` / rendered `page.html`
+   right next to the editable source, plus the build log for LaTeX.
+* **💾 Ctrl/⌘+S**: Saves the notes and the artifact source on any lens page.
 
 ---
 
@@ -113,7 +128,8 @@ Tailor your finished content for different audiences and media:
 3. Switch to the **⚙️ Pipeline** tab and click **▶ Run** on **Summarize Notes**, followed by **Draft Article**.
 4. Open the **🔍 Analysis** tab and run any lenses that pique your interest (e.g., *Socratic Dialogue* or *Game Theory*).
 5. Head back to **⚙️ Pipeline** and click **▶ Run** on **Update Article** to blend those insights into your article!
-6. Visit **📦 Output** to generate comic scripts, narrative stories, or a fully formatted **HTML Webpage**.
+6. Visit **📦 Output** and open a lens page — e.g. **📚 LaTeX / PDF** — then run
+    **Generate → Build → Review → Update**, repeating the last two steps until the rendering is right.
 
 ---
 

@@ -1138,3 +1138,53 @@
             transition-duration: .01ms !important;
         }
     }
+    /* ===== Standalone output-lens pages ===== */
+    a.nav-link { text-decoration: none; }
+    #lens-root {
+        max-width: 1120px;
+        margin-inline: auto;
+        padding: var(--space-4);
+    }
+    .editor {
+        width: 100%;
+        background: var(--color-lcd);
+        color: var(--color-lcd-text);
+        border: 1px solid var(--color-lcd-border);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3);
+        font-family: var(--font-sans);
+        font-size: .92rem;
+        line-height: 1.65;
+        resize: vertical;
+        box-shadow: var(--shadow-inset);
+    }
+    .editor:focus {
+        outline: none;
+        border-color: var(--color-lcd-text);
+        box-shadow: var(--shadow-inset), 0 0 0 3px rgba(134, 227, 134, .12);
+    }
+    .editor-mono { font-family: var(--font-lcd); tab-size: 2; }
+    .log-container { min-height: 120px; }
+    .log-viewer {
+        background: rgba(0, 0, 0, .3);
+        border: 1px solid var(--color-lcd-border);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3);
+        font-family: var(--font-lcd);
+        font-size: .78rem;
+        line-height: 1.6;
+        color: var(--color-text-muted);
+        max-height: min(40vh, 340px);
+        overflow: auto;
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+    }
+    .pdf-frame {
+        width: 100%;
+        height: min(78vh, 900px);
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        background: var(--color-preview-bg);
+        display: block;
+    }
+    .status-warning { color: var(--color-warning); font-weight: 600; }
