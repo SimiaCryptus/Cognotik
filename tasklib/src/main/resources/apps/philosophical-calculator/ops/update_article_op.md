@@ -2,7 +2,6 @@
 specifies: ../content.md
 related:
   - ../instruct.md
-  - ../summary.md
   - ../feedback.md
   - ../notes/*.*
   - ../brainstorm.md
@@ -37,7 +36,7 @@ related:
   - narrative
   - technical explanation
 * Treat missing lens files as simply absent — never block on them
-* The notes and `summary.md` remain canonical; lenses are supporting material only
+* The existing article is the canonical text; notes (if any remain) are supporting context and lenses are supporting material only
 * Enhance arguments
   - clarify concepts
   - and add depth based on the auxiliary analyses

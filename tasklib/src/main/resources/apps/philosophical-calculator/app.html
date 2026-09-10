@@ -84,8 +84,9 @@
                     <h3>📋 Notes</h3>
                     <span id="notes-status" class="status-msg" aria-live="polite"></span>
                 </div>
-                <p class="hint">Paste raw notes, transcripts or source material — or drop files. This is the canonical
-                    source for every operation. Edits auto-save.</p>
+                <p class="hint">Paste raw notes, transcripts or source material — or drop files. Notes may be left
+                    blank, and once an article exists you can clear them: the draft carries on without them.
+                    Edits auto-save.</p>
 
                 <div class="upload-zone" id="upload-zone">
                     <div class="upload-zone-content">
@@ -104,6 +105,7 @@
                           placeholder="Paste your raw notes, transcripts, ideas, or source material here..."></textarea>
                 <div class="button-row">
                     <button type="button" class="btn btn-primary" id="save-notes">💾 Save Notes</button>
+                    <button type="button" class="btn btn-secondary" id="clear-notes">🗑 Clear Notes</button>
                     <button type="button" class="btn btn-secondary" id="refresh-file-list">🔄 Refresh Files</button>
                 </div>
             </div>
@@ -143,49 +145,25 @@
         <section id="section-pipeline" class="section" role="tabpanel" aria-labelledby="nav-pipeline">
             <div class="section-header">
                 <h2>⚙️ Pipeline</h2>
-                <p class="section-subtitle">Summarize → Draft → Synthesize lenses → Illustrate.</p>
+                <p class="section-subtitle">Draft once, then Update as often as you like → Illustrate.</p>
             </div>
 
             <div class="card step-card">
                 <div class="step">
                     <div class="step-header">
                         <span class="step-number">1</span>
-                        <span class="step-title">Summarize Notes</span>
-                        <span class="step-badge pending" id="badge-summary">pending</span>
-                    </div>
-                    <p class="step-desc">Distill raw notes into a thematic, conceptual summary organized by key ideas.</p>
-                    <div class="button-row">
-                        <button type="button" class="btn btn-primary btn-run"
-                                data-op="ops/summarize_op.md"
-                                data-output="summary.md"
-                                data-badge="badge-summary"
-                                data-viewer="viewer-summary">▶ Run
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-view"
-                                data-file="summary.md"
-                                data-viewer="viewer-summary">👁 View
-                        </button>
-                    </div>
-                    <div class="session-link-container" id="session-link-summary-md"
-                         data-session-links="summary.md"></div>
-                    <div class="viewer" id="viewer-summary"></div>
-                </div>
-            </div>
 
-            <div class="card step-card">
-                <div class="step">
-                    <div class="step-header">
-                        <span class="step-number">2</span>
-                        <span class="step-title">Draft Article</span>
+                        <span class="step-title" id="step-article-title">Draft Article</span>
                         <span class="step-badge pending" id="badge-content">pending</span>
                     </div>
-                    <p class="step-desc">Generate a polished article from the summary, notes and instructions.</p>
+                    <p class="step-desc" id="step-article-desc">Generate a polished article from the notes, uploaded
+                        files and instructions.</p>
                     <div class="button-row">
-                        <button type="button" class="btn btn-primary btn-run"
+                        <button type="button" class="btn btn-primary btn-run" id="run-article"
                                 data-op="ops/draft_article_op.md"
                                 data-output="content.md"
                                 data-badge="badge-content"
-                                data-viewer="viewer-content">▶ Run
+                                data-viewer="viewer-content">▶ Draft
                         </button>
                         <button type="button" class="btn btn-secondary btn-view"
                                 data-file="content.md"
@@ -201,53 +179,25 @@
             <div class="card step-card">
                 <div class="step">
                     <div class="step-header">
-                        <span class="step-number">3</span>
-                        <span class="step-title">Update Article</span>
-                        <span class="step-badge pending" id="badge-update">pending</span>
-                    </div>
-                    <p class="step-desc">Weave insights from the analysis lenses back into the article. Run after one or
-                       more lenses. Reads <code>brainstorm</code>, <code>dialectical</code>, <code>socratic</code>,
-                       <code>perspectives</code>, <code>gametheory</code>, <code>debate</code>, <code>protocol</code>,
-                       <code>persuasive</code>, <code>narrative</code> and <code>technical_explanation</code> —
-                       whichever exist.</p>
-                    <div class="button-row">
-                        <button type="button" class="btn btn-primary btn-run"
-                                data-op="ops/update_article_op.md"
-                                data-output="content.md"
-                                data-badge="badge-update"
-                                data-viewer="viewer-update">▶ Run
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-view"
-                                data-file="content.md"
-                                data-viewer="viewer-update">👁 View
-                        </button>
-                    </div>
-                    <div class="viewer" id="viewer-update"></div>
-                </div>
-            </div>
 
-            <div class="card step-card">
-                <div class="step">
-                    <div class="step-header">
-                        <span class="step-number">4</span>
+                        <span class="step-number">2</span>
                         <span class="step-title">Illustrate Article</span>
                         <span class="step-badge pending" id="badge-illustration">pending</span>
                     </div>
                     <p class="step-desc">Add inline AI-generated illustrations. Modifies <code>content.md</code> in
-                        place.</p>
+                        place; the result appears in the article pane above.</p>
                     <div class="button-row">
                         <button type="button" class="btn btn-primary btn-run"
                                 data-op="ops/illustration_op.md"
                                 data-output="content.md"
                                 data-badge="badge-illustration"
-                                data-viewer="viewer-illustration">▶ Run
+                                data-viewer="viewer-content">▶ Run
                         </button>
                         <button type="button" class="btn btn-secondary btn-view"
                                 data-file="content.md"
-                                data-viewer="viewer-illustration">👁 View
+                                data-viewer="viewer-content">👁 View
                         </button>
                     </div>
-                    <div class="viewer" id="viewer-illustration"></div>
                 </div>
             </div>
         </section>

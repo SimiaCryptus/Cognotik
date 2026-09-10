@@ -74,8 +74,9 @@ export function initAnnotator({getArticle, onCreate, viewerIds}) {
         }
         const rect = selection.getRangeAt(0).getBoundingClientRect();
         pendingSelection = text.trim();
-        popup.style.top = `${window.scrollY + rect.bottom + 8}px`;
-        popup.style.left = `${window.scrollX + rect.left}px`;
+        // The popup is position:fixed so it also works inside the (fixed) zoom overlay.
+        popup.style.top = `${Math.min(rect.bottom + 8, window.innerHeight - 56)}px`;
+        popup.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 160))}px`;
         popup.classList.remove('is-hidden');
     });
 
@@ -122,6 +123,7 @@ export function initAnnotator({getArticle, onCreate, viewerIds}) {
         dialog.addEventListener('close', onClose);
     });
 
-    document.addEventListener('scroll', hidePopup, {passive: true});
+    // Capture so scrolling inside a viewer / the zoom body also dismisses the popup.
+    document.addEventListener('scroll', hidePopup, {passive: true, capture: true});
     return {hidePopup};
 }

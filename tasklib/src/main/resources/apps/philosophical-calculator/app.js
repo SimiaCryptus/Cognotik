@@ -63,7 +63,6 @@
      *  consumesFeedback  regenerate feedback.md before running
      */
     const OP_META = new Map([
-        ['ops/summarize_op.md', {lens: 'summarize-notes'}],
         ['ops/draft_article_op.md', {lens: 'draft-article', origin: 'pipeline'}],
         ['ops/update_article_op.md', {lens: 'update-article', origin: 'update-article', consumesFeedback: true}],
         ['ops/illustration_op.md', {lens: 'illustrate-article', origin: 'pipeline'}],
@@ -94,13 +93,12 @@
 
     /** target path -> { badge, viewer } */
     const OUTPUTS = new Map([
-        ['summary.md', {badge: 'badge-summary', viewer: 'viewer-summary'}],
-       // content.md is produced by three separate steps (draft / update / illustrate),
-       // so a status update for this target must fan out to all of their badges.
+       // content.md is produced by two steps (draft⇄update / illustrate) that share
+       // one pane, so a status update for this target must fan out to both badges.
        [CONTENT_FILE, {
            badge: 'badge-content',
            viewer: 'viewer-content',
-           extraBadges: ['badge-update', 'badge-illustration']
+           extraBadges: ['badge-illustration']
        }],
         ['brainstorm.md', {badge: 'badge-brainstorm', viewer: 'viewer-brainstorm'}],
         ['dialectical.md', {badge: 'badge-dialectical', viewer: 'viewer-dialectical'}],
@@ -409,10 +407,6 @@
 
     $('save-notes')?.addEventListener('click', async event => {
         const button = event.currentTarget;
-        if (!notesEditor.value.trim()) {
-            setStatus('notes-status', '✗ Notes cannot be empty', 'error');
-            return;
-        }
         button.disabled = true;
         try {
             await persistNotes();
@@ -424,6 +418,23 @@
             button.disabled = false;
         }
     });
+    // Notes are optional once an article exists; clearing them is a first-class action.
+    $('clear-notes')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        if (notesEditor?.value.trim() && !await confirmAction('Clear the notes? Uploaded files are kept.')) return;
+        button.disabled = true;
+        try {
+            if (notesEditor) notesEditor.value = '';
+            await persistNotes();
+            setStatus('notes-status', '✓ Notes cleared', 'success');
+        } catch (err) {
+            console.error('[clearNotes]', err);
+            setStatus('notes-status', `✗ ${err.message}`, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    });
+
 
     $('save-instruct')?.addEventListener('click', async event => {
         const button = event.currentTarget;
@@ -441,8 +452,9 @@
 
     const saveInputsBeforeRun = async () => {
         try {
-            if (notesEditor?.value.trim()) await persistNotes();
-            if (instructEditor?.value.trim()) await persistInstructions();
+            // Persist even when empty — blank notes are valid input.
+            await persistNotes();
+            await persistInstructions();
         } catch (err) {
             console.warn('[saveInputsBeforeRun]', err);
         }
@@ -490,6 +502,7 @@
             pre.className = 'markdown-source';
             pre.textContent = raw;
             viewer.replaceChildren(pre);
+            if (isArticleViewer(viewerId)) decorateAnnotations(viewer, 'markdown');
             return;
         }
 
@@ -497,6 +510,7 @@
         if (html?.trim()) {
             viewer.innerHTML = html;
             wrapTables(viewer);
+            if (isArticleViewer(viewerId)) decorateAnnotations(viewer, 'rendered');
         } else {
             const pre = document.createElement('pre');
             pre.className = 'markdown-source';
@@ -615,6 +629,7 @@
             pre.className = 'markdown-source';
             pre.textContent = raw;
             body.replaceChildren(pre);
+            if (isArticleViewer(viewerId)) decorateAnnotations(body, 'markdown');
             return;
         }
         if (isHtmlViewer(viewerId)) {
@@ -635,6 +650,7 @@
         }
         body.innerHTML = renderMarkdown(raw);
         wrapTables(body);
+        if (isArticleViewer(viewerId)) decorateAnnotations(body, 'rendered');
     };
 
     const closeZoomOverlay = () => {
@@ -744,11 +760,7 @@
         btn.addEventListener('click', async () => {
             const {op, badge: badgeId, output, viewer: viewerId} = btn.dataset;
             const meta = OP_META.get(op) ?? {};
-            // M2.1: a raw-imported draft is a valid starting point too.
-            if (!notesEditor?.value.trim() && !store.get().drafts?.[ARTICLE_DRAFT_ID]) {
-                showToast('Add notes or import a draft first (Input tab).', 'warning');
-                return;
-            }
+            // Notes may be blank: uploaded files, instructions or an existing draft are all valid inputs.
             await saveInputsBeforeRun();
             let fed = null;
             if (meta.consumesFeedback) {
@@ -782,6 +794,12 @@
                    }
                }
                 await recordRunResult({op, meta, output, fed});
+                if (output === CONTENT_FILE) {
+                    setArticleOnDisk(true);
+                    if (meta.lens === 'draft-article') {
+                        showToast('Article drafted — the notes are optional from here on; clear them in the Input tab if you like.', 'info');
+                    }
+                }
                 await showViewerAfterRun(viewerId, output);
             } catch (err) {
                 console.error('[runOperation]', op, err);
@@ -1125,6 +1143,7 @@
         viewer?.classList.remove('visible');
         $(`toolbar-${viewerId}`)?.classList.add('is-hidden');
         viewerRawContent.delete(viewerId);
+        if (output === CONTENT_FILE) setArticleOnDisk(false);
         if (lensId) {
             // Clearing is local state only — draft revisions are never touched.
             store.update(state => {
@@ -1137,6 +1156,8 @@
 
     for (const btn of document.querySelectorAll('.btn-run')) {
         const {op, badge: badgeId, output, viewer: viewerId} = btn.dataset;
+        // Illustrate shares content.md with the article step; only that step owns Clear.
+        if (op === 'ops/illustration_op.md') continue;
         const lensId = OP_META.get(op)?.lens;
         const clear = document.createElement('button');
         clear.type = 'button';
@@ -1157,6 +1178,135 @@
         });
         btn.parentElement?.appendChild(clear);
     }
+    // ---- Draft ⇄ Update: one step, one pane ---------------------------------
+    const ARTICLE_MODES = {
+        draft: {
+            op: 'ops/draft_article_op.md',
+            title: 'Draft Article',
+            label: '▶ Draft',
+            desc: 'Generate a polished article from the notes, uploaded files and instructions.'
+        },
+        update: {
+            op: 'ops/update_article_op.md',
+            title: 'Update Article',
+            label: '▶ Update',
+            desc: 'Weave accepted revision items, open annotations and whichever analysis lenses exist ' +
+                'back into the article. Every run appends a new revision; the notes are optional from here on.'
+        }
+    };
+    let articleOnDisk = false;
+    /** The article step renames itself from Draft to Update once content.md exists. */
+    const syncArticleStep = () => {
+        const btn = $('run-article');
+        if (!btn) return;
+        const mode = ARTICLE_MODES[articleOnDisk ? 'update' : 'draft'];
+        btn.dataset.op = mode.op;
+        btn.textContent = mode.label;
+        const title = $('step-article-title');
+        if (title) title.textContent = mode.title;
+        const desc = $('step-article-desc');
+        if (desc) desc.textContent = mode.desc;
+    };
+    const setArticleOnDisk = value => {
+        articleOnDisk = !!value;
+        syncArticleStep();
+    };
+    // ---- Inline annotation marks in the article pane -------------------------
+    const isArticleViewer = viewerId => viewerId === 'viewer-content';
+    /** Approximate the rendered text of a markdown excerpt (quotes are stored as markdown). */
+    const stripInlineMarkup = text => text
+        .replace(/!\[[^\]]*]\([^)]*\)/g, '')
+        .replace(/\[([^\]]*)]\([^)]*\)/g, '$1')
+        .replace(/^#{1,6}[ \t]+/gm, '')
+        .replace(/^>[ \t]?/gm, '')
+        .replace(/[*_`~]+/g, '');
+    /** Wrap the first occurrence of `needle` (across text nodes) in a <mark>. */
+    const markTextInHost = (host, needle, decorate) => {
+        if (!needle) return false;
+        const walker = document.createTreeWalker(host, NodeFilter.SHOW_TEXT);
+        const nodes = [];
+        let full = '';
+        while (walker.nextNode()) {
+            nodes.push({node: walker.currentNode, start: full.length});
+            full += walker.currentNode.textContent;
+        }
+        const at = full.indexOf(needle);
+        if (at === -1) return false;
+        const locate = pos => {
+            for (let k = nodes.length - 1; k >= 0; k--) {
+                if (nodes[k].start <= pos) return [nodes[k].node, pos - nodes[k].start];
+            }
+            return null;
+        };
+        const start = locate(at);
+        const end = locate(at + needle.length);
+        if (!start || !end) return false;
+        const mark = document.createElement('mark');
+        decorate(mark);
+        const range = document.createRange();
+        try {
+            range.setStart(start[0], start[1]);
+            range.setEnd(end[0], end[1]);
+            range.surroundContents(mark);
+        } catch {
+            // The quote crosses an element boundary: mark the leading text node only.
+            try {
+                range.setStart(start[0], start[1]);
+                range.setEnd(start[0], start[0].textContent.length);
+                range.surroundContents(mark);
+            } catch {
+                return false;
+            }
+        }
+        return true;
+    };
+    const liveArticleAnnotations = () => (store.get().annotations?.[ARTICLE_DRAFT_ID] ?? [])
+        .filter(a => a.target?.scope === 'range'
+            && a.target.anchorState !== 'orphaned'
+            && (a.resolution === 'open' || a.resolution === 'accepted'));
+    /** Highlight every live annotation inside a rendered or markdown article view. */
+    const decorateAnnotations = (host, mode) => {
+        if (!host) return;
+        for (const annotation of liveArticleAnnotations()) {
+            const quote = annotation.target.anchor?.quote ?? '';
+            if (quote.trim().length < 4) continue;
+            const stripped = stripInlineMarkup(quote).trim();
+            const needles = mode === 'markdown'
+                ? [quote]
+                : [...new Set([stripped, stripped.slice(0, 60)])];
+            const decorate = mark => {
+                mark.className = `annotation-mark kind-${annotation.kind} sev-${annotation.severity}`;
+                mark.dataset.annotationId = annotation.id;
+                mark.title = `[${annotation.kind} · ${annotation.severity}] ${annotation.body}`;
+                mark.addEventListener('click', event => {
+                    if (document.getSelection()?.toString().trim()) return; // user is selecting text
+                    event.stopPropagation();
+                    jumpToAnnotation(annotation.id);
+                });
+            };
+            for (const needle of needles) {
+                if (needle.trim().length >= 4 && markTextInHost(host, needle, decorate)) break;
+            }
+        }
+    };
+    /** Re-paint the article pane (and zoom, if open) so annotation marks stay current. */
+    const refreshAnnotationMarks = debounce(() => {
+        if (viewerRawContent.has('viewer-content')) renderViewerContent('viewer-content');
+        if (zoomedViewerId === 'viewer-content') refreshZoomBody('viewer-content');
+    }, 150);
+    const jumpToAnnotation = id => {
+        if (zoomedViewerId) closeZoomOverlay();
+        document.querySelector('.nav-link[data-section="section-review"]')?.click();
+        const card = document.querySelector(`#annotations-panel [data-annotation-id="${id}"]`);
+        if (!card) {
+            showToast('That annotation is hidden by the current filters', 'info');
+            return;
+        }
+        card.scrollIntoView({block: 'center', behavior: 'smooth'});
+        card.classList.add('jump-flash');
+        setTimeout(() => card.classList.remove('jump-flash'), 1600);
+    };
+
 
     // ---- M2.1: "I already have a draft" -----------------------------------
     const rawDraftEditor = $('raw-draft-editor');
@@ -1180,7 +1330,7 @@
              const created = recordArticleRevision(normalized, {origin: 'raw-import'});
              const rev = created?.revision ?? articleDraft()?.headRevision ?? 1;
             setBadge('badge-content', 'ready');
-             if (badgeState('badge-summary') === 'idle') setBadge('badge-summary', 'skipped');
+             setArticleOnDisk(true);
              setStatus('raw-draft-status',
                  created ? `✓ Imported as v${rev}` : `✓ Identical to v${rev} — nothing appended`, 'success');
             await loadIntoViewer(CONTENT_FILE, 'viewer-content');
@@ -1262,14 +1412,12 @@
                          state.queues[ARTICLE_DRAFT_ID] ?? emptyQueue(ARTICLE_DRAFT_ID), content);
                  });
                  await loadIntoViewer(CONTENT_FILE, 'viewer-content');
-                 for (const viewerId of ['viewer-update', 'viewer-illustration']) {
-                     if (viewerRawContent.has(viewerId)) await loadIntoViewer(CONTENT_FILE, viewerId);
-                 }
+                 setArticleOnDisk(true);
                  refreshStaleBadges();
             }
         });
         initAnnotator({
-            viewerIds: ['viewer-content', 'viewer-update', 'viewer-illustration', 'zoom-overlay-body'],
+            viewerIds: ['viewer-content', 'zoom-overlay-body'],
             getArticle: () => {
                 const head = articleHead();
                 return head ? {content: head.content, ref: {draftId: ARTICLE_DRAFT_ID, revision: head.revision}} : null;
@@ -1285,20 +1433,22 @@
                 });
                 showToast('Annotation saved', 'success');
                 review.render();
+                refreshAnnotationMarks();
             }
         });
         review.render();
     };
 
-    /** Adopt an existing content.md written before the store existed. */
+    /** Adopt an existing content.md written before the store existed; also decides Draft vs Update. */
     const adoptExistingArticle = async () => {
-        if (articleDraft()) return;
+        let content = null;
         try {
-            const content = await readFile(basePath, CONTENT_FILE);
-            if (content?.trim()) recordArticleRevision(content, {origin: 'raw-import'});
+            content = await readFile(basePath, CONTENT_FILE);
         } catch {
             /* no article yet */
         }
+        setArticleOnDisk(!!content?.trim());
+        if (content?.trim() && !articleDraft()) recordArticleRevision(content, {origin: 'raw-import'});
     };
 
     await loadInitialFiles();
@@ -1309,6 +1459,9 @@
     reloadApiProviders();
     await checkExistingFiles();
     refreshStaleBadges();
+    syncArticleStep();
+    // Any change to annotations (accept / reject / reply / apply) re-paints the marks.
+    store.subscribe(() => refreshAnnotationMarks());
     window.addEventListener('beforeunload', () => {
         store.flush().catch(() => {
         });

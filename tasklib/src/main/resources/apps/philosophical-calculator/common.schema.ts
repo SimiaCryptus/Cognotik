@@ -68,7 +68,6 @@ export function contentHash(input: string): string {
  * ------------------------------------------------------------------------- */
 
 export const PipelineStepId = z.enum([
-  'summarize-notes',
   'draft-article',
   'update-article',
   'illustrate-article',

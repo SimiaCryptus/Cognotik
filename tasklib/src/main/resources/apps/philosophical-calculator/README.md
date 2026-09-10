@@ -29,10 +29,10 @@ Philosophical Calculator guides your work through a smooth, five-stage workflow:
 ```
 📝 1. Input        ⚙️ 2. Pipeline      🔍 3. Analysis     🗂 4. Review       📦 5. Output
 ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
-│ Notes & Files │─▶│ Summarize     │─▶│ Dialectical   │─▶│ Revisions     │─▶│ Persuasive    │
-│ Model Setup   │  │ Draft Article │  │ Socratic      │  │ Annotations   │  │ Narrative     │
-│ Instructions  │  │ Update Draft  │  │ Game Theory   │  │ Action Items  │  │ Comic · HTML  │
-│ Import Draft  │  │ Illustrate    │  │ Debate        │  └───────┬───────┘  │ LaTeX Source  │
+│ Notes & Files │─▶│ Draft ⇄ Update│─▶│ Dialectical   │─▶│ Revisions     │─▶│ Persuasive    │
+│ Model Setup   │  │   Article     │  │ Socratic      │  │ Annotations   │  │ Narrative     │
+│ Instructions  │  │ Illustrate    │  │ Game Theory   │  │ Action Items  │  │ Comic · HTML  │
+│ Import Draft  │  │               │  │ Debate        │  └───────┬───────┘  │ LaTeX Source  │
 └───────────────┘  └───────────────┘  └───────────────┘          │          └───────────────┘
                           ▲                                      │
                           └──────── accepted items + notes ◀─────┘
@@ -43,19 +43,17 @@ Philosophical Calculator guides your work through a smooth, five-stage workflow:
 ### Stage 1: 📝 Input — Set Your Foundation
 Every transformation starts here.
 * **AI Models**: Choose your preferred AI models for complex reasoning, quick tasks, and image generation.
-* **Raw Notes & Files**: Drag and drop documents (`.txt`, `.md`, `.pdf`, `.docx`, and more) or type notes directly into the editor. Your progress auto-saves automatically!
+* **Raw Notes & Files**: Drag and drop documents (`.txt`, `.md`, `.pdf`, `.docx`, and more) or type notes directly into the editor. Notes may be left blank, and once your article exists you can **🗑 Clear Notes** — the draft carries on without them. Your progress auto-saves automatically!
 * **Instructions (Optional)**: Add specific guidelines—like desired tone, target audience, or essay length.
 * **I Already Have a Draft**: Paste finished markdown to start at revision **v1** and skip straight to the lenses.
 
 ---
 
 ### Stage 2: ⚙️ Pipeline — Build & Refine Your Article
-Construct your core draft through a simple 4-step pipeline:
+Construct your core draft through a simple 2-step pipeline:
 
-1. **Summarize Notes**: Distill raw files and transcripts into a thematic summary organized by key concepts.
-2. **Draft Article**: Turn the summary and your notes into a full-length, structured draft.
-3. **Update Article**: The super-power of Philosophical Calculator! Automatically weave fresh insights from your Analysis and Output lenses back into the main article.
-4. **Illustrate Article**: Generate inline visual AI artwork that brings your writing to life.
+1. **Draft ⇄ Update Article**: One step, one pane. The first run turns your notes, files and instructions into a full-length, structured draft. As soon as `content.md` exists the step renames itself **Update Article** and every further run weaves accepted revision items, open annotations and fresh insights from your Analysis and Output lenses back into the article — appending a new revision each time.
+2. **Illustrate Article**: Generate inline visual AI artwork that brings your writing to life (shown in the same pane).
 
 ---
 
@@ -74,9 +72,12 @@ Explore your ideas from unexpected intellectual angles:
 
 ### Stage 4: 🗂 Review — Triage Everything in One Place
 * **🕓 Draft Revisions**: Every run appends an immutable revision. Diff any revision against the
-  current one, read the changelog, and restore safely (restores append, never overwrite).
+  current one — the diff highlights changed *segments* within a line, not whole lines, and can
+  ignore whitespace — read the changelog, and restore safely (restores append, never overwrite).
 * **💬 Annotations**: Select text in any rendered view to leave a comment, question, correction or
-  suggestion. Anchors survive rewrites; orphaned notes are surfaced rather than dropped.
+  suggestion. Live annotations are highlighted inline in the article pane (rendered and Markdown
+  views); click a highlight to jump to it. Anchors survive rewrites; orphaned notes are surfaced
+  rather than dropped.
 * **✅ Revision Queue**: Analysis lens output is automatically ingested into uniform action items
   (`add`, `clarify`, `evidence`, `counterargument`, …). Sort by priority, group by lens or section,
   merge duplicates, then **Accept** the ones you want — *Update Article* applies exactly those and
@@ -124,10 +125,10 @@ appends an immutable artifact revision to the shared history.
 ## 🏁 Quick Start Guide
 
 1. Navigate to the **📝 Input** tab.
-2. Select your preferred AI models and paste your raw notes or upload source files.
-3. Switch to the **⚙️ Pipeline** tab and click **▶ Run** on **Summarize Notes**, followed by **Draft Article**.
+2. Select your preferred AI models and paste your raw notes or upload source files (or import an existing draft).
+3. Switch to the **⚙️ Pipeline** tab and click **▶ Draft** on **Draft Article**.
 4. Open the **🔍 Analysis** tab and run any lenses that pique your interest (e.g., *Socratic Dialogue* or *Game Theory*).
-5. Head back to **⚙️ Pipeline** and click **▶ Run** on **Update Article** to blend those insights into your article!
+5. Head back to **⚙️ Pipeline** — the step is now **Update Article** — and click **▶ Update** to blend those insights into your article!
 6. Visit **📦 Output** and open a lens page — e.g. **📚 LaTeX / PDF** — then run
     **Generate → Build → Review → Update**, repeating the last two steps until the rendering is right.
 

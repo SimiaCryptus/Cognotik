@@ -171,61 +171,114 @@ export function reanchorTarget(target, content) {
 }
 
 /* --------------------------------------------------------------------- *
- * Diffing (word-level with a line-level fallback for huge documents)
+* Diffing — two-level: lines first, then word-level inside every changed
+* block, so a single edited word lights up as a segment, never a whole line.
  * --------------------------------------------------------------------- */
 
 const MAX_DP_CELLS = 4_000_000;
 
 const tokenizeWords = text => text.match(/\n|[ \t]+|[^\s]+/g) ?? [];
 const tokenizeLines = text => text.split(/(?<=\n)/);
+const fits = (a, b) => (a.length + 1) * (b.length + 1) <= MAX_DP_CELLS;
 
-function lcsDiff(a, b) {
+const identity = token => token;
+/** Comparison key that treats every run of whitespace (incl. line breaks) as equal. */
+const wsInsensitiveKey = token =>
+    (/^\s+$/.test(token) ? ' ' : token.replace(/\s+/g, ' ').trim());
+
+const pushPart = (out, type, text) => {
+    if (!text) return;
+    const last = out[out.length - 1];
+    if (last && last.type === type) last.text += text;
+    else out.push({type, text});
+};
+
+function lcsDiff(a, b, keyOf = identity) {
     const n = a.length;
     const m = b.length;
     const width = m + 1;
+    const ka = a.map(keyOf);
+    const kb = b.map(keyOf);
     const dp = new Int32Array((n + 1) * width);
     for (let i = n - 1; i >= 0; i--) {
         for (let j = m - 1; j >= 0; j--) {
-            dp[i * width + j] = a[i] === b[j]
+            dp[i * width + j] = ka[i] === kb[j]
                 ? dp[(i + 1) * width + j + 1] + 1
                 : Math.max(dp[(i + 1) * width + j], dp[i * width + j + 1]);
         }
     }
     const out = [];
-    const push = (type, text) => {
-        const last = out[out.length - 1];
-        if (last && last.type === type) last.text += text;
-        else out.push({type, text});
-    };
     let i = 0;
     let j = 0;
     while (i < n && j < m) {
-        if (a[i] === b[j]) push('eq', a[i++]), j++;
-        else if (dp[(i + 1) * width + j] >= dp[i * width + j + 1]) push('del', a[i++]);
-        else push('add', b[j++]);
+        if (ka[i] === kb[j]) {
+            // Prefer the new text so whitespace-insensitive "equal" runs read like the new document.
+            pushPart(out, 'eq', b[j]);
+            i++;
+            j++;
+        } else if (dp[(i + 1) * width + j] >= dp[i * width + j + 1]) {
+            pushPart(out, 'del', a[i++]);
+        } else {
+            pushPart(out, 'add', b[j++]);
+        }
     }
-    while (i < n) push('del', a[i++]);
-    while (j < m) push('add', b[j++]);
+    while (i < n) pushPart(out, 'del', a[i++]);
+    while (j < m) pushPart(out, 'add', b[j++]);
     return out;
 }
 
-/** @returns {{type:'eq'|'add'|'del', text:string}[]} */
-export function diffText(oldText = '', newText = '') {
-    let a = tokenizeWords(oldText);
-    let b = tokenizeWords(newText);
-    if ((a.length + 1) * (b.length + 1) > MAX_DP_CELLS) {
-        a = tokenizeLines(oldText);
-        b = tokenizeLines(newText);
-    }
-    if ((a.length + 1) * (b.length + 1) > MAX_DP_CELLS) {
+/**
+* @param {string} oldText
+* @param {string} newText
+* @param {{ignoreWhitespace?: boolean}} [opts]  treat whitespace-only differences as unchanged
+* @returns {{type:'eq'|'add'|'del', text:string}[]}
+*/
+export function diffText(oldText = '', newText = '', {ignoreWhitespace = false} = {}) {
+    const keyOf = ignoreWhitespace ? wsInsensitiveKey : identity;
+    const oldLines = tokenizeLines(oldText);
+    const newLines = tokenizeLines(newText);
+    if (!fits(oldLines, newLines)) {
         return [{type: 'del', text: oldText}, {type: 'add', text: newText}];
     }
-    return lcsDiff(a, b);
+
+    // Pass 1: line-level alignment (cheap, works for huge documents).
+    const coarse = lcsDiff(oldLines, newLines, keyOf);
+
+    // Pass 2: re-diff each changed block word by word so only the edited
+    // segments are highlighted, not the whole line/paragraph.
+    const out = [];
+    let k = 0;
+    while (k < coarse.length) {
+        if (coarse[k].type === 'eq') {
+            pushPart(out, 'eq', coarse[k].text);
+            k++;
+            continue;
+        }
+        let del = '';
+        let add = '';
+        while (k < coarse.length && coarse[k].type !== 'eq') {
+            if (coarse[k].type === 'del') del += coarse[k].text;
+            else add += coarse[k].text;
+            k++;
+        }
+        const a = tokenizeWords(del);
+        const b = tokenizeWords(add);
+        if (del && add && fits(a, b)) {
+            for (const part of lcsDiff(a, b, keyOf)) pushPart(out, part.type, part.text);
+        } else {
+            pushPart(out, 'del', del);
+            pushPart(out, 'add', add);
+        }
+    }
+    return out;
 }
 
-/** Render a diff as HTML. `onlyChanged` collapses long unchanged runs. */
-export function renderDiffHtml(oldText, newText, {onlyChanged = false} = {}) {
-    const parts = diffText(oldText, newText);
+/**
+* Render a diff as HTML. `onlyChanged` collapses long unchanged runs;
+* `ignoreWhitespace` hides whitespace-only differences.
+*/
+export function renderDiffHtml(oldText, newText, {onlyChanged = false, ignoreWhitespace = false} = {}) {
+    const parts = diffText(oldText, newText, {ignoreWhitespace});
     const html = parts.map((part, index) => {
         if (part.type === 'add') return `<ins class="diff-add">${esc(part.text)}</ins>`;
         if (part.type === 'del') return `<del class="diff-del">${esc(part.text)}</del>`;
@@ -237,10 +290,10 @@ export function renderDiffHtml(oldText, newText, {onlyChanged = false} = {}) {
     return `<pre class="diff-view">${html}</pre>`;
 }
 
-export function diffStats(oldText, newText) {
+export function diffStats(oldText, newText, {ignoreWhitespace = false} = {}) {
     let added = 0;
     let removed = 0;
-    for (const part of diffText(oldText, newText)) {
+    for (const part of diffText(oldText, newText, {ignoreWhitespace})) {
         if (part.type === 'add') added += countWords(part.text);
         if (part.type === 'del') removed += countWords(part.text);
     }

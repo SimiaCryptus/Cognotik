@@ -73,6 +73,7 @@ function buildDiffOverlay() {
           <span class="zoom-title" id="diff-title"></span>
           <div class="zoom-header-buttons">
             <label class="diff-toggle"><input type="checkbox" id="diff-only-changed"> only changed</label>
+            <label class="diff-toggle"><input type="checkbox" id="diff-ignore-ws"> ignore whitespace</label>
             <button type="button" class="btn btn-sm btn-toolbar" id="diff-close">✕ Close</button>
           </div>
         </div>
@@ -118,12 +119,17 @@ export function initReviewUI({store, onJump, confirmAction, toast, onRestore}) {
         const b = getRevision(draft, to);
         if (!a || !b) return;
         const onlyChanged = overlay.querySelector('#diff-only-changed');
+        const ignoreWs = overlay.querySelector('#diff-ignore-ws');
         const paint = () => {
             overlay.querySelector('#diff-body').innerHTML =
-                renderDiffHtml(a.content, b.content, {onlyChanged: onlyChanged.checked});
+                renderDiffHtml(a.content, b.content, {
+                    onlyChanged: onlyChanged.checked,
+                    ignoreWhitespace: ignoreWs.checked
+                });
         };
         overlay.querySelector('#diff-title').textContent = `diff v${from} → v${to}`;
         onlyChanged.onchange = paint;
+        ignoreWs.onchange = paint;
         paint();
         overlay.classList.add('visible');
         document.body.classList.add('scroll-locked');
@@ -245,6 +251,7 @@ export function initReviewUI({store, onJump, confirmAction, toast, onRestore}) {
         const list = el('div', 'annotation-list');
         for (const annotation of matched) {
             const card = el('div', `annotation-card kind-${annotation.kind}`);
+            card.dataset.annotationId = annotation.id;
             const head = el('div', 'annotation-head');
             head.append(
                 el('span', `chip chip-${annotation.kind}`, annotation.kind),
