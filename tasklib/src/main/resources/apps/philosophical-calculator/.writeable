@@ -5,6 +5,10 @@ notes/**
 notes/
 instruct.md
 issues.json
+# Persisted app state (drafts + revisions, annotations, revision items)
+state.json
+# Generated fan-in for Update Article (annotations + accepted revision items)
+feedback.md
 
 # Article and essay outputs
 content.md
@@ -27,3 +31,5 @@ technical_explanation.md
 
 # Web outputs
 page.html
+# Print outputs
+paper.tex

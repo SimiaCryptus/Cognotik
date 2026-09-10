@@ -4,13 +4,27 @@
     import {getProxyUrl, parseSessionUrl} from '/app/session.js';
     import {createSessionLinkManager, updateSessionLinks} from '/app/sessionLinks.js';
     import {initMenu} from '/app/menu.js';
-    import {escapeHtml, getFileIcon, renderMarkdown, setBadge, setStatus, showToast} from '/app/ui.js';
+    import {escapeHtml, getFileIcon, renderMarkdown, setStatus, showToast} from '/app/ui.js';
     import {
         loadApiProviders,
         loadModelSelections,
         populateModelDropdowns,
         saveModelSelections
     } from '/app/models.js';
+    import {
+        ARTICLE_DRAFT_ID,
+        artifactDraftId,
+        HUMAN_AUTHOR,
+        agentAuthor,
+        formatRevisionRef
+    } from './js/core.js';
+    import {appendRevision, createDraft, freezeRevision, headRef, headRevision, isStale} from './js/drafts.js';
+    import {reanchorAnnotations} from './js/annotations.js';
+    import {dropLensBatches, emptyQueue, ingestArtifact, reanchorItems} from './js/revisions.js';
+    import {STATE_FILE, createStore} from './js/store.js';
+    import {FEEDBACK_FILE, markFedApplied, writeFeedbackFile} from './js/feedback.js';
+    import {initAnnotator} from './js/annotateUI.js';
+    import {initReviewUI} from './js/reviewUI.js';
 
     // ========================================================================
     // Global error reporting
@@ -41,6 +55,33 @@
     const TASK_TIMEOUT_MS = 600_000;
     const POLL_INTERVAL_MS = 3000;
     const AUTOSAVE_MS = 800;
+    /**
+     * op path -> lens metadata.
+     *  lens            unified LensId (see common.schema.ts)
+     *  origin          DraftOrigin recorded on the resulting article revision
+     *  analysis        auto-ingest the artifact into revision items (open question #3)
+     *  consumesFeedback  regenerate feedback.md before running
+     */
+    const OP_META = new Map([
+        ['ops/summarize_op.md', {lens: 'summarize-notes'}],
+        ['ops/draft_article_op.md', {lens: 'draft-article', origin: 'pipeline'}],
+        ['ops/update_article_op.md', {lens: 'update-article', origin: 'update-article', consumesFeedback: true}],
+        ['ops/illustration_op.md', {lens: 'illustrate-article', origin: 'pipeline'}],
+        ['ops/brainstorm_op.md', {lens: 'brainstorm', analysis: true}],
+        ['ops/dialectical_op.md', {lens: 'dialectical', analysis: true}],
+        ['ops/socratic_op.md', {lens: 'socratic', analysis: true}],
+        ['ops/perspectives_op.md', {lens: 'perspectives', analysis: true}],
+        ['ops/gametheory_op.md', {lens: 'game-theory', analysis: true}],
+        ['ops/debate_op.md', {lens: 'historical-debate', analysis: true}],
+        ['ops/protocol_op.md', {lens: 'unrunnable-protocol', analysis: true}],
+        ['ops/persuasive_op.md', {lens: 'persuasive-essay'}],
+        ['ops/narrative_op.md', {lens: 'narrative-story'}],
+        ['ops/comic_op.md', {lens: 'comic-script'}],
+        ['ops/technical_explanation_op.md', {lens: 'technical-tutorial'}],
+        ['ops/webpage_op.md', {lens: 'html-webpage'}],
+        ['ops/latex_op.md', {lens: 'pdf-document'}]
+    ]);
+
 
     /** target path -> { badge, viewer } */
     const OUTPUTS = new Map([
@@ -63,6 +104,7 @@
         ['protocol.md', {badge: 'badge-protocol', viewer: 'viewer-protocol'}],
         ['comic.md', {badge: 'badge-comic', viewer: 'viewer-comic'}],
         ['technical_explanation.md', {badge: 'badge-technical', viewer: 'viewer-technical'}],
+        ['paper.tex', {badge: 'badge-latex', viewer: 'viewer-latex'}],
         [WEBPAGE_FILE, {badge: 'badge-webpage', viewer: 'viewer-webpage'}]
     ]);
 
@@ -78,6 +120,28 @@
     // Small helpers
     // ========================================================================
     const $ = id => document.getElementById(id);
+    // Unified status vocabulary (idle | queued | running | streaming | ready |
+    // stale | error | cancelled | skipped). Legacy names are accepted so the rest
+    // of the file needs no rewrite.
+    const BADGE_ALIASES = {pending: 'idle', done: 'ready'};
+    const BADGE_LABELS = {
+        idle: 'pending', queued: 'queued', running: 'running', streaming: 'streaming',
+        ready: 'done', stale: 'stale', error: 'error', cancelled: 'cancelled', skipped: 'skipped'
+    };
+    const BADGE_CLASSES = {
+        idle: 'pending', queued: 'running', running: 'running', streaming: 'running',
+        ready: 'done', stale: 'stale', error: 'error', cancelled: 'error', skipped: 'skipped'
+    };
+    const setBadge = (badgeId, rawState) => {
+        const badge = $(badgeId);
+        if (!badge) return;
+        const state = BADGE_ALIASES[rawState] ?? rawState;
+        badge.className = `step-badge ${BADGE_CLASSES[state] ?? 'pending'}`;
+        badge.dataset.state = state;
+        badge.textContent = BADGE_LABELS[state] ?? state;
+    };
+    const badgeState = badgeId => $(badgeId)?.dataset.state ?? 'idle';
+
 
     const debounce = (fn, ms = AUTOSAVE_MS) => {
         let timer;
@@ -663,11 +727,24 @@
     for (const btn of document.querySelectorAll('.btn-run')) {
         btn.addEventListener('click', async () => {
             const {op, badge: badgeId, output, viewer: viewerId} = btn.dataset;
-            if (!notesEditor?.value.trim()) {
-                showToast('Please enter your notes first (Input tab).', 'warning');
+            const meta = OP_META.get(op) ?? {};
+            // M2.1: a raw-imported draft is a valid starting point too.
+            if (!notesEditor?.value.trim() && !store.get().drafts?.[ARTICLE_DRAFT_ID]) {
+                showToast('Add notes or import a draft first (Input tab).', 'warning');
                 return;
             }
             await saveInputsBeforeRun();
+            let fed = null;
+            if (meta.consumesFeedback) {
+                try {
+                    fed = await writeFeedbackFile(basePath, store.get());
+                    if (fed.annotationIds.length || fed.itemIds.length) {
+                        showToast(`Feeding ${fed.annotationIds.length} annotation(s) and ${fed.itemIds.length} item(s)`, 'info');
+                    }
+                } catch (err) {
+                    console.warn('[feedback]', err);
+                }
+            }
 
             setBadge(badgeId, 'running');
             btn.disabled = true;
@@ -688,6 +765,7 @@
                        setBadge(sibling, 'done');
                    }
                }
+                await recordRunResult({op, meta, output, fed});
                 await showViewerAfterRun(viewerId, output);
             } catch (err) {
                 console.error('[runOperation]', op, err);
@@ -874,7 +952,7 @@
 
         for (const [target, {badge: badgeId}] of OUTPUTS) {
             const badge = $(badgeId);
-            if (badge?.classList.contains('running') || badge?.textContent === 'done') continue;
+            if (badge?.classList.contains('running') || badgeState(badgeId) === 'ready') continue;
             try {
                 const content = await readFile(basePath, target);
                 if (content?.trim()) setBadge(badgeId, 'done');
@@ -886,7 +964,314 @@
         if (anyRunning) startStatusPolling(); else stopStatusPolling();
     };
 
+    // ========================================================================
+    // M1.2 / M2.2 / M3 — revisions, annotations and the revision queue
+    // ========================================================================
+    const store = createStore(basePath);
+
+    const articleDraft = () => store.get().drafts?.[ARTICLE_DRAFT_ID];
+    const articleHead = () => {
+        const draft = articleDraft();
+        return draft ? headRevision(draft) : null;
+    };
+
+    /** Snapshot `content.md` into the append-only revision chain. */
+    const recordArticleRevision = (content, {origin = 'manual-edit', lens, fed, instruction} = {}) => {
+        let created = null;
+        store.update(state => {
+            const existing = state.drafts[ARTICLE_DRAFT_ID];
+            if (!existing) {
+                state.drafts[ARTICLE_DRAFT_ID] = createDraft({
+                    id: ARTICLE_DRAFT_ID,
+                    kind: 'article',
+                    title: 'Article',
+                    content,
+                    origin,
+                    createdBy: lens ? agentAuthor(getSelectedModels().smartModel ?? 'agent', lens) : HUMAN_AUTHOR
+                });
+                created = headRevision(state.drafts[ARTICLE_DRAFT_ID]);
+            } else {
+                const result = appendRevision(existing, {
+                    content,
+                    origin,
+                    instruction,
+                    createdBy: lens ? agentAuthor(getSelectedModels().smartModel ?? 'agent', lens) : HUMAN_AUTHOR,
+                    changelog: lens ? `Produced by \`${lens}\`.` : undefined,
+                    appliedAnnotationIds: fed?.annotationIds ?? [],
+                    appliedRevisionItemIds: fed?.itemIds ?? []
+                });
+                state.drafts[ARTICLE_DRAFT_ID] = result.draft;
+                created = result.created ? result.revision : null;
+            }
+            // Re-anchor everything against the new text; nothing is silently dropped.
+            state.annotations[ARTICLE_DRAFT_ID] =
+                reanchorAnnotations(state.annotations[ARTICLE_DRAFT_ID] ?? [], content,
+                    state.drafts[ARTICLE_DRAFT_ID].headRevision);
+            state.queues[ARTICLE_DRAFT_ID] =
+                reanchorItems(state.queues[ARTICLE_DRAFT_ID] ?? emptyQueue(ARTICLE_DRAFT_ID), content);
+            if (fed && created) markFedApplied(state, fed, created.revision);
+        });
+        return created;
+    };
+
+    /** M4.2 — output artifacts get their own revision chain. */
+    const recordArtifactRevision = (target, content, lens) => {
+        const id = artifactDraftId(target);
+        store.update(state => {
+            const sourceRef = state.drafts[ARTICLE_DRAFT_ID]
+                ? headRef(state.drafts[ARTICLE_DRAFT_ID]) : undefined;
+            const existing = state.drafts[id];
+            if (!existing) {
+                state.drafts[id] = createDraft({
+                    id, kind: lens ?? 'article', title: target, content,
+                    origin: 'lens-output', sourceRef,
+                    createdBy: agentAuthor(getSelectedModels().smartModel ?? 'agent', lens)
+                });
+            } else {
+                const {draft} = appendRevision(existing, {
+                    content, origin: 'lens-output',
+                    createdBy: agentAuthor(getSelectedModels().smartModel ?? 'agent', lens)
+                });
+                state.drafts[id] = {...draft, sourceRef};
+            }
+            // Freeze the article revision this artifact was generated from.
+            if (sourceRef && state.drafts[ARTICLE_DRAFT_ID]) {
+                state.drafts[ARTICLE_DRAFT_ID] =
+                    freezeRevision(state.drafts[ARTICLE_DRAFT_ID], sourceRef.revision);
+            }
+        });
+    };
+
+    /** After a run: snapshot, ingest action items, refresh stale badges. */
+    const recordRunResult = async ({op, meta, output, fed}) => {
+        let content = null;
+        try {
+            content = await readFile(basePath, output);
+        } catch (err) {
+            console.warn('[recordRunResult] read failed', output, err);
+        }
+        if (!content?.trim()) return;
+
+        if (output === CONTENT_FILE) {
+            recordArticleRevision(content, {origin: meta.origin ?? 'pipeline', lens: meta.lens, fed});
+        } else {
+            recordArtifactRevision(output, content, meta.lens);
+            if (meta.analysis) {
+                const draft = articleDraft();
+                const sourceRef = draft ? headRef(draft) : {draftId: ARTICLE_DRAFT_ID, revision: 1};
+                store.update(state => {
+                    const {queue} = ingestArtifact(state.queues[ARTICLE_DRAFT_ID], {
+                        lensId: meta.lens,
+                        sourceRef,
+                        artifactContent: content,
+                        articleContent: draft ? headRevision(draft).content : ''
+                    });
+                    state.queues[ARTICLE_DRAFT_ID] = queue;
+                });
+            }
+        }
+        refreshStaleBadges();
+        review?.render();
+    };
+
+    /** Any artifact generated against an older article revision is `stale`. */
+    const refreshStaleBadges = () => {
+        const draft = articleDraft();
+        if (!draft) return;
+        for (const [target, {badge: badgeId}] of OUTPUTS) {
+            if (target === CONTENT_FILE) continue;
+            const artifact = store.get().drafts?.[artifactDraftId(target)];
+            if (!artifact?.sourceRef) continue;
+            if (isStale(draft, artifact.sourceRef) && badgeState(badgeId) === 'ready') {
+                setBadge(badgeId, 'stale');
+                $(badgeId).title =
+                    `generated from ${formatRevisionRef(artifact.sourceRef)}, current is v${draft.headRevision}`;
+            }
+        }
+    };
+
+    // ---- M1.3: a 🗑 Clear control on every runnable step -------------------
+    const clearLens = async (output, badgeId, viewerId, lensId) => {
+        try {
+            await deleteFile(basePath, output);
+        } catch (err) {
+            console.warn('[clearLens] delete failed', output, err);
+        }
+        setBadge(badgeId, 'idle');
+        const viewer = $(viewerId);
+        viewer?.classList.remove('visible');
+        $(`toolbar-${viewerId}`)?.classList.add('is-hidden');
+        viewerRawContent.delete(viewerId);
+        if (lensId) {
+            // Clearing is local state only — draft revisions are never touched.
+            store.update(state => {
+                state.queues[ARTICLE_DRAFT_ID] = dropLensBatches(state.queues[ARTICLE_DRAFT_ID], lensId);
+                delete state.drafts[artifactDraftId(output)];
+            });
+        }
+        review?.render();
+    };
+
+    for (const btn of document.querySelectorAll('.btn-run')) {
+        const {op, badge: badgeId, output, viewer: viewerId} = btn.dataset;
+        const lensId = OP_META.get(op)?.lens;
+        const clear = document.createElement('button');
+        clear.type = 'button';
+        clear.className = 'btn btn-secondary btn-sm btn-clear';
+        clear.textContent = '🗑 Clear';
+        clear.title = `Clear ${output}`;
+        clear.addEventListener('click', async () => {
+            const items = (store.get().queues?.[ARTICLE_DRAFT_ID]?.batches ?? [])
+                .filter(b => b.lensId === lensId)
+                .flatMap(b => b.items)
+                .filter(i => i.status === 'accepted' || i.status === 'applied');
+            const message = items.length
+                ? `Clear ${output}? ${items.length} accepted/applied revision item(s) will be discarded.`
+                : `Clear ${output}?`;
+            if (!await confirmAction(message)) return;
+            await clearLens(output, badgeId, viewerId, lensId);
+            showToast(`Cleared ${output}`, 'success');
+        });
+        btn.parentElement?.appendChild(clear);
+    }
+
+    // ---- M2.1: "I already have a draft" -----------------------------------
+    const rawDraftEditor = $('raw-draft-editor');
+    $('import-raw-draft')?.addEventListener('click', async event => {
+        const button = event.currentTarget;
+        const content = rawDraftEditor?.value ?? '';
+        if (!content.trim()) {
+            setStatus('raw-draft-status', '✗ Paste a draft first', 'error');
+            return;
+        }
+        button.disabled = true;
+        try {
+            // Normalization: smart quotes -> ASCII, CRLF -> LF, setext -> ATX.
+            const normalized = content
+                .replace(/\r\n?/g, '\n')
+                .replace(/[\u2018\u2019]/g, "'")
+                .replace(/[\u201C\u201D]/g, '"')
+                .replace(/^(.+)\n=+\s*$/gm, '# $1')
+                .replace(/^(.+)\n-{3,}\s*$/gm, '## $1');
+            await writeFile(basePath, CONTENT_FILE, normalized);
+            recordArticleRevision(normalized, {origin: 'raw-import'});
+            setBadge('badge-content', 'ready');
+            setBadge('badge-summary', 'skipped');
+            setStatus('raw-draft-status', '✓ Imported as v1', 'success');
+            await loadIntoViewer(CONTENT_FILE, 'viewer-content');
+            review?.render();
+        } catch (err) {
+            console.error('[importRawDraft]', err);
+            setStatus('raw-draft-status', `✗ ${err.message}`, 'error');
+        } finally {
+            button.disabled = false;
+        }
+    });
+
+    // ---- Export / import bundle -------------------------------------------
+    $('export-bundle')?.addEventListener('click', async () => {
+        await store.flush();
+        const blob = new Blob([store.exportBundle()], {type: 'application/json'});
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = `philcalc-bundle-${new Date().toISOString().slice(0, 10)}.json`;
+        link.click();
+        URL.revokeObjectURL(url);
+    });
+
+    $('import-bundle-input')?.addEventListener('change', async event => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+        try {
+            store.importBundle(await file.text());
+            await store.flush();
+            showToast('Bundle imported', 'success');
+            review?.render();
+        } catch (err) {
+            showToast(`Import failed: ${err.message}`, 'error');
+        } finally {
+            event.target.value = '';
+        }
+    });
+
+    // ---- Jump-to-target from the review panels ----------------------------
+    const jumpToTarget = async target => {
+        document.querySelector('.nav-link[data-section="section-pipeline"]')?.click();
+        await loadIntoViewer(CONTENT_FILE, 'viewer-content');
+        const viewer = $('viewer-content');
+        viewer?.classList.add('visible');
+        $('toolbar-viewer-content')?.classList.remove('is-hidden');
+        const needle = target?.scope === 'range'
+            ? target.anchor.quote
+            : target?.scope === 'section' ? target.headingPath.at(-1) : null;
+        if (!needle || !viewer) return;
+        const walker = document.createTreeWalker(viewer, NodeFilter.SHOW_TEXT);
+        while (walker.nextNode()) {
+            if (walker.currentNode.textContent.includes(needle.slice(0, 40))) {
+                walker.currentNode.parentElement?.scrollIntoView({block: 'center', behavior: 'smooth'});
+                walker.currentNode.parentElement?.classList.add('jump-flash');
+                setTimeout(() => walker.currentNode.parentElement?.classList.remove('jump-flash'), 1600);
+                return;
+            }
+        }
+    };
+
+    let review = null;
+
+    const bootReview = () => {
+        review = initReviewUI({
+            store,
+            onJump: jumpToTarget,
+            confirmAction,
+            toast: showToast,
+            onRestore: async content => {
+                await writeFile(basePath, CONTENT_FILE, content);
+                await loadIntoViewer(CONTENT_FILE, 'viewer-content');
+            }
+        });
+        initAnnotator({
+            viewerIds: ['viewer-content', 'viewer-update', 'viewer-illustration', 'zoom-overlay-body'],
+            getArticle: () => {
+                const head = articleHead();
+                return head ? {content: head.content, ref: {draftId: ARTICLE_DRAFT_ID, revision: head.revision}} : null;
+            },
+            onCreate: annotation => {
+                store.update(state => {
+                    const list = state.annotations[ARTICLE_DRAFT_ID] ?? [];
+                    state.annotations[ARTICLE_DRAFT_ID] = [...list, annotation];
+                    if (state.drafts[ARTICLE_DRAFT_ID]) {
+                        state.drafts[ARTICLE_DRAFT_ID] =
+                            freezeRevision(state.drafts[ARTICLE_DRAFT_ID], annotation.sourceRef.revision);
+                    }
+                });
+                showToast('Annotation saved', 'success');
+                review.render();
+            }
+        });
+        review.render();
+    };
+
+    /** Adopt an existing content.md written before the store existed. */
+    const adoptExistingArticle = async () => {
+        if (articleDraft()) return;
+        try {
+            const content = await readFile(basePath, CONTENT_FILE);
+            if (content?.trim()) recordArticleRevision(content, {origin: 'raw-import'});
+        } catch {
+            /* no article yet */
+        }
+    };
+
     await loadInitialFiles();
     await refreshUploadedFileList();
+    await store.load();
+    await adoptExistingArticle();
+    bootReview();
     reloadApiProviders();
-    checkExistingFiles();
+    await checkExistingFiles();
+    refreshStaleBadges();
+    window.addEventListener('beforeunload', () => {
+        store.flush().catch(() => {
+        });
+    });

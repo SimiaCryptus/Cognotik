@@ -22,6 +22,9 @@
         <button type="button" class="nav-link" role="tab" id="nav-analysis"
                 aria-selected="false" aria-controls="section-analysis" data-section="section-analysis">🔍 Analysis
         </button>
+        <button type="button" class="nav-link" role="tab" id="nav-review"
+                aria-selected="false" aria-controls="section-review" data-section="section-review">🗂 Review
+        </button>
         <button type="button" class="nav-link" role="tab" id="nav-output"
                 aria-selected="false" aria-controls="section-output" data-section="section-output">📦 Output
         </button>
@@ -117,6 +120,21 @@
                           placeholder="e.g., Write a 2000-word essay focusing on the ethical implications. Use an academic tone."></textarea>
                 <div class="button-row">
                     <button type="button" class="btn btn-primary" id="save-instruct">💾 Save Instructions</button>
+                </div>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>📄 I already have a draft <span class="optional-tag">optional</span></h3>
+                    <span id="raw-draft-status" class="status-msg" aria-live="polite"></span>
+                </div>
+                <p class="hint">Draft-first mode: paste finished markdown to create <code>content.md</code> at
+                    revision <strong>v1</strong> and skip Summarize / Draft entirely. The lenses, annotations and the
+                    revision queue all work against it.</p>
+                <label class="field-label" for="raw-draft-editor">Existing article (Markdown)</label>
+                <textarea id="raw-draft-editor" rows="10"
+                          placeholder="# My article&#10;&#10;Paste an existing draft here…"></textarea>
+                <div class="button-row">
+                    <button type="button" class="btn btn-primary" id="import-raw-draft">⤒ Import as v1</button>
                 </div>
             </div>
         </section>
@@ -405,6 +423,40 @@
                 </div>
             </div>
         </section>
+        <!-- ==================== REVIEW ==================== -->
+        <section id="section-review" class="section" role="tabpanel" aria-labelledby="nav-review">
+            <div class="section-header">
+                <h2>🗂 Review</h2>
+                <p class="section-subtitle">Draft history, reader annotations and the aggregated revision queue.
+                    Accepted items and open annotations are what <strong>Update Article</strong> consumes.</p>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>🕓 Draft revisions</h3>
+                    <div class="button-row review-header-actions">
+                        <button type="button" class="btn btn-sm btn-toolbar" id="export-bundle">⤓ Export bundle</button>
+                        <label class="btn btn-sm btn-toolbar" for="import-bundle-input">⤒ Import bundle</label>
+                        <input type="file" id="import-bundle-input" accept="application/json" class="upload-file-input">
+                    </div>
+                </div>
+                <p class="hint">Every agentic or manual mutation appends an immutable revision. Restore never destroys
+                    history — it appends a <code>rollback</code> revision.</p>
+                <div id="revisions-panel" class="review-panel"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>💬 Annotations</h3></div>
+                <p class="hint">Select text in any rendered article view to annotate it. Anchors are recomputed on
+                    every new revision; orphaned notes are surfaced, never dropped.</p>
+                <div id="annotations-panel" class="review-panel"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>✅ Revision queue</h3></div>
+                <p class="hint">Analysis lens artifacts are ingested into uniform action items. Accept the ones you
+                    want, then run <strong>Update Article</strong>.</p>
+                <div id="queue-panel" class="review-panel"></div>
+            </div>
+        </section>
+
 
         <!-- ==================== OUTPUT LENSES ==================== -->
         <section id="section-output" class="section" role="tabpanel" aria-labelledby="nav-output">
@@ -528,6 +580,29 @@
                         <div class="session-link-container" id="session-link-page-html"
                              data-session-links="page.html"></div>
                         <div class="viewer" id="viewer-webpage"></div>
+                    </div>
+                </div>
+                <div class="card lens-card lens-card-output">
+                    <div class="step">
+                        <div class="step-header">
+                            <span class="lens-icon" aria-hidden="true">📚</span>
+                            <span class="step-title">LaTeX / PDF Source</span>
+                            <span class="step-badge pending" id="badge-latex">pending</span>
+                        </div>
+                        <p class="step-desc">A template-constrained LaTeX document ready for <code>tectonic</code> or
+                            <code>xelatex</code>. (Server-side rendering is the remaining half of M4.1.)</p>
+                        <div class="button-row">
+                            <button type="button" class="btn btn-primary btn-run"
+                                    data-op="ops/latex_op.md" data-output="paper.tex"
+                                    data-badge="badge-latex" data-viewer="viewer-latex">▶ Run
+                            </button>
+                            <button type="button" class="btn btn-secondary btn-view"
+                                    data-file="paper.tex" data-viewer="viewer-latex">👁 View
+                            </button>
+                        </div>
+                        <div class="session-link-container" id="session-link-paper-tex"
+                             data-session-links="paper.tex"></div>
+                        <div class="viewer" id="viewer-latex"></div>
                     </div>
                 </div>
             </div>

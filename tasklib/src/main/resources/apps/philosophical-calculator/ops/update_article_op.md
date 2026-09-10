@@ -3,6 +3,7 @@ specifies: ../content.md
 related:
   - ../instruct.md
   - ../summary.md
+  - ../feedback.md
   - ../notes/*.*
   - ../brainstorm.md
   - ../dialectical.md
@@ -18,6 +19,12 @@ related:
 
 * Update the document
 * Follow guidance in `instruct.md`; it takes precedence over every other input
+* Apply `feedback.md` — it contains the reader annotations and the revision action
+  items the user explicitly **accepted**. Treat it as second only to `instruct.md`:
+  - apply every listed item; weave it in, never append it as a list
+  - when an item carries `suggested text`, prefer that text verbatim
+  - when an item is flagged `⚠ anchor no longer resolves`, apply it by intent
+  - if `feedback.md` is absent or empty, perform a light polish pass instead
 * Synthesize insights from any of the analytical lenses that are present:
   - brainstorm
   - dialectical

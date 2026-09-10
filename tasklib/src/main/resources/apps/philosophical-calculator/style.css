@@ -450,6 +450,17 @@
         color: var(--color-danger);
         border: 1px solid rgba(212, 106, 106, .3);
     }
+    .step-badge.stale {
+        background: rgba(232, 196, 74, .12);
+        color: var(--color-warning);
+        border: 1px solid rgba(232, 196, 74, .3);
+    }
+    .step-badge.skipped {
+        background: var(--color-surface-alt);
+        color: var(--color-text-muted);
+        border: 1px dashed var(--color-border-light);
+    }
+
 
     @keyframes pulse-badge {
         0%, 100% { opacity: 1; }
@@ -976,6 +987,127 @@
     /* ===== Scrollbar ===== */
     ::-webkit-scrollbar { width: 9px; height: 9px; }
     ::-webkit-scrollbar-track { background: transparent; }
+    /* ===== Review stage (revisions · annotations · queue) ===== */
+    .review-panel { display: flex; flex-direction: column; gap: var(--space-3); }
+    .review-header-actions { margin-top: 0; }
+    .filter-row {
+        display: flex;
+        flex-wrap: wrap;
+        gap: var(--space-2);
+        align-items: center;
+    }
+    .review-input, .review-select {
+        min-height: 2.2rem;
+        padding: var(--space-1) var(--space-3);
+        background: var(--color-lcd);
+        color: var(--color-lcd-text);
+        border: 1px solid var(--color-lcd-border);
+        border-radius: var(--radius-sm);
+        font-family: var(--font-lcd);
+        font-size: .78rem;
+    }
+    .review-select { width: auto; background-image: none; padding-right: var(--space-3); }
+    .revision-list, .annotation-list, .queue-list {
+        display: flex;
+        flex-direction: column;
+        gap: var(--space-2);
+    }
+    .revision-row, .annotation-card, .queue-item {
+        border: 1px solid var(--color-border);
+        border-radius: var(--radius-sm);
+        padding: var(--space-3);
+        background: var(--color-surface-alt);
+    }
+    .revision-row.is-head { border-color: var(--color-primary); box-shadow: 0 0 0 1px rgba(232, 164, 74, .18); }
+    .revision-head, .annotation-head, .queue-item-head {
+        display: flex;
+        flex-wrap: wrap;
+        align-items: center;
+        gap: var(--space-2);
+    }
+    .revision-num { font-family: var(--font-lcd); font-weight: 700; color: var(--color-primary); }
+    .revision-meta { color: var(--color-text-muted); font-size: .74rem; }
+    .revision-changelog { color: var(--color-text-muted); font-size: .8rem; margin: var(--space-1) 0 0; }
+    .origin-badge, .chip {
+        font-size: .62rem;
+        font-family: var(--font-lcd);
+        text-transform: uppercase;
+        letter-spacing: .06em;
+        padding: .1rem .5rem;
+        border-radius: 999px;
+        border: 1px solid var(--color-border-light);
+        color: var(--color-text-muted);
+        background: var(--color-surface-hover);
+    }
+    .origin-pipeline, .chip-action { color: var(--color-info); border-color: rgba(106, 159, 212, .35); }
+    .origin-update-article { color: var(--color-primary); border-color: rgba(232, 164, 74, .35); }
+    .origin-rollback, .chip-stale { color: var(--color-warning); border-color: rgba(232, 196, 74, .35); }
+    .origin-frozen { color: var(--color-info); }
+    .chip-sev-blocker, .chip-sev-major, .chip-orphan { color: var(--color-danger); border-color: rgba(212, 106, 106, .35); }
+    .chip-lens, .chip-score { color: var(--color-lcd-text); border-color: var(--color-lcd-border); }
+    .annotation-target {
+        display: block;
+        margin: var(--space-1) 0;
+        padding: 0;
+        background: none;
+        border: none;
+        color: var(--color-primary);
+        font-size: .78rem;
+        text-align: left;
+        cursor: pointer;
+        text-decoration: underline dotted;
+    }
+    .annotation-body, .queue-item-rationale { font-size: .86rem; margin: var(--space-1) 0; }
+    .annotation-reply { font-size: .8rem; color: var(--color-text-muted); margin-left: var(--space-3); }
+    .annotation-suggested { margin-top: var(--space-2); font-size: .78rem; }
+    .reply-input { margin-top: var(--space-2); }
+    .queue-item-title {
+        font-weight: 600;
+        font-size: .9rem;
+        margin-top: var(--space-1);
+        border-radius: 4px;
+        outline-offset: 2px;
+    }
+    .queue-item.status-accepted { border-left: 3px solid var(--color-success); }
+    .queue-item.status-rejected { opacity: .55; }
+    .queue-item.status-applied { border-left: 3px solid var(--color-info); }
+    .queue-group-title { font-size: .78rem; color: var(--color-primary); margin-top: var(--space-3); }
+    /* ===== Annotation authoring ===== */
+    .annotate-popup { position: absolute; z-index: 9000; }
+    .annotate-dialog textarea { margin-bottom: var(--space-3); }
+    .annotate-title { color: var(--color-primary); font-size: .95rem; margin-bottom: var(--space-2); }
+    .annotate-quote {
+        font-size: .82rem;
+        color: var(--color-text-muted);
+        border-left: 3px solid var(--color-primary);
+        padding-left: var(--space-3);
+        margin-bottom: var(--space-3);
+    }
+    .annotate-quote-mark { color: var(--color-primary); }
+    .annotate-row { display: flex; gap: var(--space-3); flex-wrap: wrap; }
+    /* ===== Diff view ===== */
+    .diff-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: var(--space-1);
+        font-size: .72rem;
+        color: var(--color-text-muted);
+    }
+    .diff-view {
+        white-space: pre-wrap;
+        overflow-wrap: anywhere;
+        font-family: var(--font-lcd);
+        font-size: .85rem;
+        line-height: 1.7;
+    }
+    .diff-add { background: rgba(106, 191, 105, .18); color: var(--color-success); text-decoration: none; }
+    .diff-del { background: rgba(212, 106, 106, .16); color: var(--color-danger); }
+    .diff-gap { display: block; color: var(--color-text-muted); text-align: center; opacity: .6; }
+    .jump-flash { animation: jump-flash 1.4s var(--ease); }
+    @keyframes jump-flash {
+        from { background: rgba(232, 164, 74, .35); }
+        to { background: transparent; }
+    }
 
     ::-webkit-scrollbar-thumb {
         background: #3d3d3d;

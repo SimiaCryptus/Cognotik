@@ -27,13 +27,15 @@ Have you ever captured brilliant ideas, meeting transcripts, or rough notes, onl
 Philosophical Calculator guides your work through a smooth, four-stage workflow:
 
 ```
- 📝 1. Input           ⚙️ 2. Pipeline         🔍 3. Analysis        📦 4. Output
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ Notes & Files    │─▶│ Summarize Notes  │─▶│ Dialectical      │─▶│ Persuasive Essay │
-│ AI Model Setup   │  │ Draft Article    │  │ Socratic Dialogue│  │ Narrative Story  │
-│ Instructions     │  │ Update Draft     │  │ Game Theory      │  │ Comic Script     │
-└──────────────────┘  │ Illustrate       │  │ Historical Debate│  │ HTML Webpage     │
-                      └──────────────────┘  └──────────────────┘  └──────────────────┘
+📝 1. Input        ⚙️ 2. Pipeline      🔍 3. Analysis     🗂 4. Review       📦 5. Output
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│ Notes & Files │─▶│ Summarize     │─▶│ Dialectical   │─▶│ Revisions     │─▶│ Persuasive    │
+│ Model Setup   │  │ Draft Article │  │ Socratic      │  │ Annotations   │  │ Narrative     │
+│ Instructions  │  │ Update Draft  │  │ Game Theory   │  │ Action Items  │  │ Comic · HTML  │
+│ Import Draft  │  │ Illustrate    │  │ Debate        │  └───────┬───────┘  │ LaTeX Source  │
+└───────────────┘  └───────────────┘  └───────────────┘          │          └───────────────┘
+                          ▲                                      │
+                          └──────── accepted items + notes ◀─────┘
 ```
 
 ---
@@ -43,6 +45,7 @@ Every transformation starts here.
 * **AI Models**: Choose your preferred AI models for complex reasoning, quick tasks, and image generation.
 * **Raw Notes & Files**: Drag and drop documents (`.txt`, `.md`, `.pdf`, `.docx`, and more) or type notes directly into the editor. Your progress auto-saves automatically!
 * **Instructions (Optional)**: Add specific guidelines—like desired tone, target audience, or essay length.
+* **I Already Have a Draft**: Paste finished markdown to start at revision **v1** and skip straight to the lenses.
 
 ---
 
@@ -69,7 +72,20 @@ Explore your ideas from unexpected intellectual angles:
 
 ---
 
-### Stage 4: 📦 Output Lenses — Deliver Ready-to-Share Formats
+### Stage 4: 🗂 Review — Triage Everything in One Place
+* **🕓 Draft Revisions**: Every run appends an immutable revision. Diff any revision against the
+  current one, read the changelog, and restore safely (restores append, never overwrite).
+* **💬 Annotations**: Select text in any rendered view to leave a comment, question, correction or
+  suggestion. Anchors survive rewrites; orphaned notes are surfaced rather than dropped.
+* **✅ Revision Queue**: Analysis lens output is automatically ingested into uniform action items
+  (`add`, `clarify`, `evidence`, `counterargument`, …). Sort by priority, group by lens or section,
+  merge duplicates, then **Accept** the ones you want — *Update Article* applies exactly those and
+  records the provenance in the new revision.
+* **⤓ Export / ⤒ Import**: One JSON bundle with drafts, revisions, annotations and items.
+
+---
+
+### Stage 5: 📦 Output Lenses — Deliver Ready-to-Share Formats
 Tailor your finished content for different audiences and media:
 
 * 🎯 **Persuasive Essay**: High-impact, rhetorically structured arguments designed to convince.
@@ -77,6 +93,7 @@ Tailor your finished content for different audiences and media:
 * 💬 **Comic Book Script**: Visual panel-by-panel comic scripts complete with dialog and scene direction.
 * 🔧 **Technical Tutorial**: Step-by-step guides complete with mechanism breakdowns and code examples.
 * 🌐 **HTML Webpage**: Generates a beautiful, standalone, responsive webpage ready to launch.
+* 📚 **LaTeX / PDF Source**: A template-constrained `paper.tex` ready for `tectonic` or `xelatex`.
 
 ---
 
