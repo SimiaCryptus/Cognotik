@@ -1,0 +1,19 @@
+{
+  "cognitiveSettings" : {
+    "variables" : { },
+    "type" : "Waterfall"
+  },
+  "taskSettings" : {
+    "FileModification_FileModification" : {
+      "task_type" : "FileModification",
+      "name" : "FileModification",
+      "verbose" : false
+    }
+  },
+  "purpose" : "Layer 3 round-trip — materialise ledger entries as structured source comments at their anchors so they are reviewable in diffs.",
+  "summaryPrompt" : "Write the annotation log as markdown.\n\nOriginal Goal: {goal}\n\n## Comments written\nTable: ledger id · file:line · comment as written · action (added | updated | skipped).\n\n## Skipped\nEntries without a usable `source_anchor`, or whose anchor no longer matches the code (mark these `stale` in the log).\n\n## Diff summary\nFile patches implementing the comments.",
+  "name" : "SubPlan",
+  "task_type" : "SubPlan",
+  "verbose" : false,
+  "cognitiveMode" : "Waterfall"
+}

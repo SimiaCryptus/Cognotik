@@ -1,0 +1,27 @@
+{
+  "cognitiveSettings" : {
+    "type" : "Adaptive",
+    "maxTaskHistoryChars" : 12000,
+    "maxTasksPerIteration" : 4,
+    "maxIterations" : 8,
+    "cognitiveStrategy" : "Project Manager"
+  },
+  "taskSettings" : {
+    "FileSearch_FileSearch" : {
+      "task_type" : "FileSearch",
+      "name" : "FileSearch",
+      "verbose" : false
+    },
+    "FileReview_FileReview" : {
+      "task_type" : "FileReview",
+      "name" : "FileReview",
+      "verbose" : false
+    }
+  },
+  "purpose" : "Layer 1 — rewrite every in-scope unit into CSIR: SSA, explicit effects, explicit overflow policy, explicit trap edges, explicit termination slots.",
+  "summaryPrompt" : "Write the CSIR document as markdown.\n\nOriginal Goal: {goal}\n\nFor every unit in scope emit:\n### <qualified::unit>\n- source: <file>:<line-range>\n- profile assumed: <debug|release|...>\n```csir\n<CSIR following the notation in ops/csir_reference.md>\n```\n- front-end guarantees: (e.g. slice bounds enforced by the language, borrow checker excludes aliasing)\n- unmodeled: (constructs replaced by `?` slots or refused — never silently approximated)\n\nRules: every arithmetic node carries its overflow policy as an operand; every possible trap has a labelled edge; every loop has `decreases:` and `invariant:` lines (write `?` when unknown); every call has an effect row or `?`. Finish with a `## Translation-validation notes` section listing which existing tests could serve as differential checks.",
+  "name" : "SubPlan",
+  "task_type" : "SubPlan",
+  "verbose" : false,
+  "cognitiveMode" : "Adaptive"
+}

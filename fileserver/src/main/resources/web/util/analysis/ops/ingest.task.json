@@ -1,0 +1,27 @@
+{
+  "cognitiveSettings" : {
+    "type" : "Adaptive",
+    "maxTaskHistoryChars" : 10000,
+    "maxTasksPerIteration" : 5,
+    "maxIterations" : 8,
+    "cognitiveStrategy" : "Project Manager"
+  },
+  "taskSettings" : {
+    "FileSearch_FileSearch" : {
+      "task_type" : "FileSearch",
+      "name" : "FileSearch",
+      "verbose" : false
+    },
+    "FileReview_FileReview" : {
+      "task_type" : "FileReview",
+      "name" : "FileReview",
+      "verbose" : false
+    }
+  },
+  "purpose" : "Layer 0 — build the project model (language, build profile, entry points, dependency graph, unanalyzed units) for the analysis target.",
+  "summaryPrompt" : "Write the L0 project model as a markdown document.\n\nOriginal Goal: {goal}\n\nSections (use these headers):\n## Target\n## Language & toolchain (version, build profile, integer overflow policy, pointer width)\n## Units in scope (table: unit · file · lines · entry point? · criticality)\n## Dependency graph (which in-scope units call which, plus external calls needing effect summaries)\n## Existing evidence (tests, docstrings, asserts, contracts that can seed specs)\n## Unanalyzed (constructs or units the front end must refuse to model, with reasons)\n## Open questions for the human\n\nBe concrete: cite file paths and line numbers. Never guess the overflow policy — if the profile is unknown, say so and list both.",
+  "name" : "SubPlan",
+  "task_type" : "SubPlan",
+  "verbose" : false,
+  "cognitiveMode" : "Adaptive"
+}
