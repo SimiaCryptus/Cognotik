@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTML Webpage · Philosophical Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+    <h1 id="lens-title">🌐 HTML Webpage</h1>
+    <p class="subtitle" id="lens-blurb"></p>
+</header>
+<nav class="tab-nav" id="lens-nav" aria-label="Output lenses"></nav>
+<main id="lens-root"></main>
+<script src="/lib/marked.min.js"></script>
+<script type="module">
+    import {initLensPage} from './js/lensPage.js';
+
+    initLensPage({
+        lensId: 'html-webpage',
+        icon: '🌐',
+        title: 'HTML Webpage',
+        blurb: 'Generate a standalone responsive page, have the vision agent review the rendering, ' +
+            'then apply your notes and its findings — as many rounds as you like.',
+        source: {file: 'page.html'},
+        notesFile: 'webpage-notes.md',
+        preview: {kind: 'html', file: 'page.html'},
+        ops: {
+            generate: 'ops/webpage_op.md',
+            review: 'ops/webpage_review_op.md',
+            update: 'ops/webpage_update_op.md'
+        }
+    });
+</script>
+</body>
+</html>

@@ -5,10 +5,13 @@ notes/**
 notes/
 instruct.md
 issues.json
+# Persisted app state (drafts + revisions, annotations, revision items)
+state.json
+# Generated fan-in for Update Article (annotations + accepted revision items)
+feedback.md
 
 # Article and essay outputs
 content.md
-summary.md
 brainstorm.md
 
 # Analytical outputs
@@ -17,6 +20,8 @@ gametheory.md
 perspectives.md
 persuasive.md
 socratic.md
+debate.md
+protocol.md
 
 # Narrative and creative outputs
 narrative.md
@@ -27,3 +32,19 @@ technical_explanation.md
 
 # Web outputs
 page.html
+# Print outputs (build.sh renders paper.tex -> paper.pdf)
+paper.tex
+paper.pdf
+paper.log
+paper.aux
+paper.out
+paper.toc
+build.log.md
+
+# Iterative output-revision notes (author notes + OCR agent review)
+latex-notes.md
+webpage-notes.md
+persuasive-notes.md
+narrative-notes.md
+comic-notes.md
+technical-notes.md

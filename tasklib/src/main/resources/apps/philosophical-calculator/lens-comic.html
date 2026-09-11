@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Comic Book Script · Philosophical Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+    <h1 id="lens-title">💬 Comic Book Script</h1>
+    <p class="subtitle" id="lens-blurb"></p>
+</header>
+<nav class="tab-nav" id="lens-nav" aria-label="Output lenses"></nav>
+<main id="lens-root"></main>
+<script src="/lib/marked.min.js"></script>
+<script type="module">
+    import {initLensPage} from './js/lensPage.js';
+
+    initLensPage({
+        lensId: 'comic-script',
+        icon: '💬',
+        title: 'Comic Book Script',
+        blurb: 'Panel-by-panel script with dialog and scene direction. Iterate on panel count, ' +
+            'framing and captions through the notes file.',
+        source: {file: 'comic.md', mono: false},
+        notesFile: 'comic-notes.md',
+        preview: {kind: 'markdown'},
+        ops: {
+            generate: 'ops/comic_op.md',
+            update: 'ops/comic_update_op.md'
+        }
+    });
+</script>
+</body>
+</html>

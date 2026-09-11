@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LaTeX / PDF · Philosophical Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+    <h1 id="lens-title">📚 LaTeX / PDF</h1>
+    <p class="subtitle" id="lens-blurb"></p>
+</header>
+<nav class="tab-nav" id="lens-nav" aria-label="Output lenses"></nav>
+<main id="lens-root"></main>
+<script src="/lib/marked.min.js"></script>
+<script type="module">
+    import {initLensPage} from './js/lensPage.js';
+
+    initLensPage({
+        lensId: 'pdf-document',
+        icon: '📚',
+        title: 'LaTeX / PDF',
+        blurb: 'Render paper.tex, compile it with tectonic/xelatex/pdflatex, then iterate with your ' +
+            'notes and the OCR review agent until the typesetting is right.',
+        source: {file: 'paper.tex'},
+        notesFile: 'latex-notes.md',
+        buildLog: 'build.log.md',
+        preview: {kind: 'pdf', file: 'paper.pdf'},
+        ops: {
+            generate: 'ops/latex_op.md',
+            build: 'ops/render_pdf_op.md',
+            review: 'ops/latex_review_op.md',
+            update: 'ops/latex_update_op.md'
+        }
+    });
+</script>
+</body>
+</html>
