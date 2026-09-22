@@ -92,5 +92,14 @@ open class AuthenticationManager : AuthenticationInterface {
 
     /** Keyed by the hash of the presented token; never by the token itself. */
     private val sessions = ConcurrentHashMap<String, Entry>()
+      /**
+       * Visible for testing only. The session store is `static`, so tests that run in the
+       * same JVM would otherwise leak state into one another.
+       */
+      internal fun clearAllSessions() {
+        sessions.clear()
+      }
+      /** Visible for testing only: number of live (not necessarily unexpired) sessions. */
+      internal fun sessionCount(): Int = sessions.size
   }
 }
