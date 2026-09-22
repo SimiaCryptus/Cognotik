@@ -5,19 +5,12 @@ import com.simiacryptus.cognotik.platform.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
-import org.jetbrains.exposed.v1.core.Table
-import org.jetbrains.exposed.v1.core.and
-import org.jetbrains.exposed.v1.core.eq
-import org.jetbrains.exposed.v1.core.isNotNull
-import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.core.*
 import org.jetbrains.exposed.v1.javatime.timestamp
-import org.jetbrains.exposed.v1.jdbc.deleteAll
-import org.jetbrains.exposed.v1.jdbc.deleteWhere
-import org.jetbrains.exposed.v1.jdbc.insert
-import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.*
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
-import org.jetbrains.exposed.v1.jdbc.update
 import org.slf4j.LoggerFactory
+import java.lang.reflect.Modifier
 import java.time.Duration
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -60,6 +53,27 @@ open class AuthenticationDB : AuthenticationInterface {
     }
   }
 
+  /**
+   * Route all Exposed DSL access through [ExposedDatabase], which delegates connection
+   * acquisition to [DatabaseFacet.getConnection]. That path includes the
+   * retry-with-demotion handling for file-backed databases that cannot be opened
+   * (falling back to an in-memory database) and keeps the shared connection alive for
+   * the lifetime of the application.
+   *
+   * This is intentionally a *getter* rather than a stored value: a facet's JDBC URL can
+   * change after construction (file -> `mem:` demotion, or a new ephemeral port after
+   * [DatabaseFacet.resetAll]). Capturing the handle once would pin this instance to a
+   * dead URL and turn a single transient failure into an endless stream of identical
+   * ones.
+   */
+  private val database get() = ExposedDatabase.get(facet)
+
+  init {
+    // Force schema creation eagerly instead of discovering the failure inside an
+    // arbitrary (possibly exception-swallowing) call site later on.
+    warmSchema()
+  }
+
   /** Cached session row; mutable fields are updated in place on access. */
   private class Entry(
     val user: User,
@@ -77,6 +91,28 @@ open class AuthenticationDB : AuthenticationInterface {
   /** How often `last_used_at` is flushed to the database, per token. */
   private val touchIntervalMillis: Long =
     System.getProperty("cognotik.auth.touchIntervalMillis", "60000").toLong()
+
+  /**
+   * Touch the table so that [DatabaseFacet] creates the schema (and, if necessary,
+   * demotes an unusable file-backed database to memory and retries against it).
+   * Deliberately non-fatal: a second attempt is made against the freshly resolved
+   * database handle, and any remaining failure is logged rather than thrown so that a
+   * transient startup problem does not poison every construction site.
+   */
+  private fun warmSchema() {
+    try {
+      transaction(database) { AccessTokensTable.selectAll().limit(1).toList() }
+    } catch (first: Exception) {
+      log.warn("access_tokens schema check failed; retrying once: {}", first.message, first)
+      try {
+        // `database` re-resolves, picking up any in-memory demotion that happened
+        // during the first attempt.
+        transaction(database) { AccessTokensTable.selectAll().limit(1).toList() }
+      } catch (second: Exception) {
+        log.error("Failed to initialize the access_tokens schema", second)
+      }
+    }
+  }
 
   override fun getUser(accessToken: String?): User? {
     if (accessToken.isNullOrBlank()) return null
@@ -106,10 +142,10 @@ open class AuthenticationDB : AuthenticationInterface {
     require(accessToken.length <= 512) { "Access token exceeds the maximum supported length (512)" }
     val now = Instant.now()
     val expiry = ttl?.let { now.plus(it) }
-    val json = user.toJson()
+    val json = serializeUser(user)
     val id = userId(user)
     try {
-      transaction(facet.database) {
+      transaction(database) {
         val updated = AccessTokensTable.update({ AccessTokensTable.token eq accessToken }) {
           it[AccessTokensTable.userId] = id
           it[AccessTokensTable.userJson] = json
@@ -163,7 +199,7 @@ open class AuthenticationDB : AuthenticationInterface {
   override fun listTokens(user: User): List<TokenMetadata> {
     val id = userId(user)
     return try {
-      transaction(facet.database) {
+      transaction(database) {
         AccessTokensTable
           .selectAll()
           .where { AccessTokensTable.userId eq id }
@@ -189,7 +225,7 @@ open class AuthenticationDB : AuthenticationInterface {
     if (accessToken.isBlank()) return false
     val id = userId(user)
     return try {
-      val deleted = transaction(facet.database) {
+      val deleted = transaction(database) {
         AccessTokensTable.deleteWhere {
           (AccessTokensTable.token eq accessToken) and (AccessTokensTable.userId eq id)
         }
@@ -213,7 +249,7 @@ open class AuthenticationDB : AuthenticationInterface {
   override fun revokeAll(user: User): Int {
     val id = userId(user)
     return try {
-      val deleted = transaction(facet.database) {
+      val deleted = transaction(database) {
         AccessTokensTable.deleteWhere { AccessTokensTable.userId eq id }
       }
       cache.entries.removeIf { userId(it.value.user) == id }
@@ -234,7 +270,7 @@ open class AuthenticationDB : AuthenticationInterface {
   fun purgeExpired(): Int {
     val now = Instant.now()
     return try {
-      val deleted = transaction(facet.database) {
+      val deleted = transaction(database) {
         AccessTokensTable.deleteWhere {
           AccessTokensTable.expiresAt.isNotNull() and (AccessTokensTable.expiresAt less now)
         }
@@ -268,7 +304,7 @@ open class AuthenticationDB : AuthenticationInterface {
 
   /** Number of persisted sessions (including ones that have expired but not been purged). */
   fun sessionCount(): Int = try {
-    transaction(facet.database) { AccessTokensTable.selectAll().count().toInt() }
+    transaction(database) { AccessTokensTable.selectAll().count().toInt() }
   } catch (e: Exception) {
     log.error("Failed to count sessions: {}", e.message, e)
     0
@@ -279,7 +315,7 @@ open class AuthenticationDB : AuthenticationInterface {
    */
   internal fun clearAllSessions() {
     try {
-      transaction(facet.database) { AccessTokensTable.deleteAll() }
+      transaction(database) { AccessTokensTable.deleteAll() }
     } catch (e: Exception) {
       log.warn("Failed to clear sessions: {}", e.message, e)
     } finally {
@@ -294,7 +330,7 @@ open class AuthenticationDB : AuthenticationInterface {
     if (sinceMs < touchIntervalMillis) return
     entry.lastPersistedNanos = System.nanoTime()
     try {
-      transaction(facet.database) {
+      transaction(database) {
         AccessTokensTable.update({ AccessTokensTable.token eq accessToken }) {
           it[AccessTokensTable.lastUsedAt] = now
         }
@@ -306,7 +342,7 @@ open class AuthenticationDB : AuthenticationInterface {
   }
 
   private fun loadFromDb(accessToken: String): Entry? = try {
-    transaction(facet.database) {
+    transaction(database) {
       AccessTokensTable
         .selectAll()
         .where { AccessTokensTable.token eq accessToken }
@@ -337,7 +373,7 @@ open class AuthenticationDB : AuthenticationInterface {
 
   private fun deleteToken(accessToken: String) {
     try {
-      transaction(facet.database) {
+      transaction(database) {
         AccessTokensTable.deleteWhere { AccessTokensTable.token eq accessToken }
       }
     } catch (e: Exception) {
@@ -360,6 +396,68 @@ open class AuthenticationDB : AuthenticationInterface {
       null
     }
     return email?.takeIf { it.isNotBlank() } ?: user.toString()
+  }
+
+  /**
+   * Serialize [user] for storage.
+   *
+   * Jackson serializes *every* readable property, including computed getters that a
+   * `User` may derive from ambient state (authorization manager, cloud settings, ...).
+   * Such a getter can throw -- Jackson then reports a `JsonMappingException` and the
+   * entire login fails, even though everything we actually need to persist (the
+   * declared fields) serializes perfectly well.
+   *
+   * Authentication must not be collateral damage of an unrelated, non-persistent
+   * property, so: attempt the normal path first and, if it blows up, fall back to a
+   * snapshot built from the declared fields. Fields are read reflectively rather than
+   * through their getters, so no user code runs and nothing can throw.
+   *
+   * The proper fix is to annotate the offending derived property on `User` with
+   * `@get:JsonIgnore`; this keeps the failure from being fatal until that happens.
+   */
+  private fun serializeUser(user: User): String = try {
+    user.toJson()
+  } catch (e: Throwable) {
+    val snapshot = fieldSnapshot(user)
+    log.warn(
+      "A user could not be serialized in full ({}); persisting the declared fields {} instead",
+      e.message, snapshot.keys, e
+    )
+    snapshot.toJson()
+  }
+
+  /**
+   * Best-effort map of the declared, scalar fields of [user], newest class first.
+   * Synthetic/static/transient fields and anything that is not a simple value are
+   * skipped: the result must be safe to round-trip back into a [User] via Jackson.
+   */
+  private fun fieldSnapshot(user: User): Map<String, Any?> {
+    val out = LinkedHashMap<String, Any?>()
+    var cls: Class<*>? = user.javaClass
+    while (cls != null && cls != Any::class.java) {
+      for (field in cls.declaredFields) {
+        val mods = field.modifiers
+        if (Modifier.isStatic(mods) || Modifier.isTransient(mods)) continue
+        if (field.isSynthetic || field.name.startsWith("$")) continue
+        if (out.containsKey(field.name)) continue
+        val value = try {
+          field.isAccessible = true
+          field.get(user)
+        } catch (t: Throwable) {
+          log.debug("Could not read field '{}' of a user: {}", field.name, t.message)
+          null
+        } ?: continue
+        when (value) {
+          is String, is Number, is Boolean, is Char -> out[field.name] = value
+          else -> log.debug(
+            "Skipping non-scalar field '{}' of type {} while snapshotting a user",
+            field.name, value.javaClass.name
+          )
+        }
+      }
+      cls = cls.superclass
+    }
+    return out
   }
 
   companion object {

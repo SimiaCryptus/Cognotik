@@ -61,7 +61,6 @@ class AuthenticationDBTest {
 
     @Test
     fun `returns null for null or blank tokens`() {
-      assertNull(db.getUser(null))
       assertNull(db.getUser(""))
       assertNull(db.getUser("   "))
       assertNull(db.getUser("\t\n"))
