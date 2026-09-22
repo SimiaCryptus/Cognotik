@@ -102,7 +102,12 @@ data class User(
       * Hardcoded fallback so signing works out of the box in dev/test.
       * NEVER rely on this in production - set [SIGNING_KEY_ENV].
       */
-     private const val DEFAULT_SIGNING_KEY = "cognotik-insecure-default-user-signing-key"
+    private var DEFAULT_SIGNING_KEY = "cognotik-insecure-default-user-signing-key"
+
+    fun DEFAULT_SIGNING_KEY(value: String) {
+      DEFAULT_SIGNING_KEY = value
+    }
+
      /** Effective signing key: env var, then system property, then the built-in default. */
      @JvmStatic
      val signingKey: String
