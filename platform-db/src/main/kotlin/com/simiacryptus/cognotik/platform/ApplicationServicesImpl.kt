@@ -25,10 +25,9 @@ class ApplicationServicesImpl : ApplicationServices {
       get() = (ApplicationServices.services
         ?: throw IllegalStateException("ApplicationServices not initialized")).authorizationManager
       set(value) { ApplicationServices.services?.authorizationManager = value }
-    var authenticationManager: AuthenticationInterface
+    val authenticationManager: AuthenticationInterface
       get() = (ApplicationServices.services
-        ?: throw IllegalStateException("ApplicationServices not initialized")).authenticationManager
-      set(value) { ApplicationServices.services?.authenticationManager = value }
+        ?: throw IllegalStateException("ApplicationServices not initialized")).fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).authenticationManager
     var threadPoolManager: ThreadPoolManager
       get() = (ApplicationServices.services
         ?: throw IllegalStateException("ApplicationServices not initialized")).threadPoolManager
@@ -56,14 +55,6 @@ class ApplicationServicesImpl : ApplicationServices {
     get() = _authorizationManager()
     set(value) {
       _authorizationManager.value = value
-    }
-
-  private val _authenticationManager: LazyReference<AuthenticationInterface> =
-    LazyReference(isInitialized) { AuthenticationManager() }
-  override var authenticationManager: AuthenticationInterface
-    get() = _authenticationManager()
-    set(value) {
-      _authenticationManager.value = value
     }
 
   private val _threadPoolManager: LazyReference<ThreadPoolManager> =

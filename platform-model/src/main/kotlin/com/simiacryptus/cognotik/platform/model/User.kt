@@ -190,7 +190,8 @@ data class User(
 
   fun getAuthCookies(): Map<String, String?> {
     val services = ApplicationServices.services ?: throw IllegalStateException("ApplicationServices not initialized")
-    val tokenMetadata = services.authenticationManager.listTokens(this).firstOrNull() ?: return emptyMap()
+    val tokenMetadata = services.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot)
+      .authenticationManager.listTokens(this).firstOrNull() ?: return emptyMap()
     return mapOf(
       AuthenticationInterface.AUTH_COOKIE to tokenMetadata.token,
       "USER" to name,

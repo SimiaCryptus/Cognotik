@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
+import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.UserSettingsInterface
 import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse

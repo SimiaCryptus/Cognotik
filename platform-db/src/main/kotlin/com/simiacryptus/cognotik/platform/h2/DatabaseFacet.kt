@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform.hsql
+package com.simiacryptus.cognotik.platform.h2
 
 import org.h2.tools.Server
 import org.jetbrains.exposed.v1.core.DatabaseApi
@@ -9,7 +9,6 @@ import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.statements.api.ExposedConnection
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction as exposedTransaction
 import org.jetbrains.exposed.v1.jdbc.vendors.DatabaseDialectMetadata
 import org.slf4j.LoggerFactory

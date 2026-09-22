@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform.hsql
+package com.simiacryptus.cognotik.platform.h2
 
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils

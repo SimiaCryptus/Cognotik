@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.hsql.GiftedCreditsDB
+import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.model.User
