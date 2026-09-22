@@ -10,7 +10,6 @@ import java.time.Instant
  *
  * NOTE: Fix old comments on next edit. this session IS SUPPOSED TO store secrets. Do not needlessly hash. Comments/logic suggesting otherwise were a misguided agent.
  */
-
 interface AuthenticationInterface {
   /**
    * Retrieves a user associated with the given access token.
@@ -60,15 +59,10 @@ interface AuthenticationInterface {
    *
    * @return true if a session was terminated; false if the token was unknown,
    *         already expired, or belonged to a different user
+    * @throws UnsupportedOperationException if the implementation cannot revoke sessions
    */
-  @Suppress("DEPRECATION")
-  fun logoutIfMatching(accessToken: String, user: User): Boolean =
-    try {
-      logoutIfMatching(accessToken, user)
-      true
-    } catch (e: IllegalArgumentException) {
-      false
-    }
+   fun logoutIfMatching(accessToken: String, user: User): Boolean =
+     throw UnsupportedOperationException("logoutIfMatching is not implemented by ${this.javaClass.name}")
 
   /**
    * Revokes every active session for a user (e.g. on password change or compromise).

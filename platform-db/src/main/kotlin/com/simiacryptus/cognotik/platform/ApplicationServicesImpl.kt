@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform
 
+import com.simiacryptus.cognotik.platform.IFileApplicationServices.Companion.authenticationManagerFn
 import com.simiacryptus.cognotik.platform.file.AuthenticationManager
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
@@ -25,9 +26,10 @@ class ApplicationServicesImpl : ApplicationServices {
       get() = (ApplicationServices.services
         ?: throw IllegalStateException("ApplicationServices not initialized")).authorizationManager
       set(value) { ApplicationServices.services?.authorizationManager = value }
-    val authenticationManager: AuthenticationInterface
+    var authenticationManager: AuthenticationInterface
       get() = (ApplicationServices.services
         ?: throw IllegalStateException("ApplicationServices not initialized")).fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).authenticationManager
+      set(value) { authenticationManagerFn = { value } }
     var threadPoolManager: ThreadPoolManager
       get() = (ApplicationServices.services
         ?: throw IllegalStateException("ApplicationServices not initialized")).threadPoolManager
