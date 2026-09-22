@@ -362,7 +362,7 @@ class UserProviderImpl : UserProvider {
         null
       }
       if (verified != null) {
-        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.label.isNullOrBlank()) {
+        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.token.isNullOrBlank()) {
           authenticationManager.putUser(token, claimedUser)
           log.warn("Session token stored for user: {}", claimedUser.email)
         } else {
@@ -428,8 +428,3 @@ fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
   setCookies(newCookies)
 }
 
-fun User.getAuthCookies(): Map<String, String?> = mapOf(
-  AuthenticationInterface.AUTH_COOKIE to authenticationManager.listTokens(this).firstOrNull()?.label,
-  "USER" to name,
-  "EMAIL" to email
-)

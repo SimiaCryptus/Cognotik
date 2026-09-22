@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.platform.file
 
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.TokenMetadata
+import com.simiacryptus.cognotik.platform.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
 import java.security.MessageDigest
@@ -15,7 +15,7 @@ import java.util.concurrent.ConcurrentHashMap
  * Per the platform contract (REVIEW.md §3.6) only a SHA-256 *hash* of the bearer
  * token is retained, so a token value can never be recovered from this store.
  * That is why there is no reverse lookup (`user -> token`); use [listTokens]
- * plus [TokenMetadata.tokenId] to build session-management UIs.
+ * plus [TokenMetadata.token] to build session-management UIs.
  */
 open class AuthenticationManager : AuthenticationInterface {
 
@@ -28,10 +28,9 @@ open class AuthenticationManager : AuthenticationInterface {
 
   override fun getUser(accessToken: String?): User? {
     if (accessToken.isNullOrBlank()) return null
-    val key = hash(accessToken)
-    val entry = sessions[key] ?: return null
+    val entry = sessions[accessToken] ?: return null
     if (entry.expiresAt?.isBefore(Instant.now()) == true) {
-      sessions.remove(key, entry)
+      sessions.remove(accessToken, entry)
       log.debug("Rejected expired access token for user: {}", entry.user)
       return null
     }
@@ -44,7 +43,7 @@ open class AuthenticationManager : AuthenticationInterface {
   override fun putUser(accessToken: String, user: User, ttl: Duration?): User {
     require(accessToken.isNotBlank()) { "Access token must not be blank" }
     val now = Instant.now()
-    sessions[hash(accessToken)] = Entry(
+    sessions[accessToken] = Entry(
       user = user,
       issuedAt = now,
       expiresAt = ttl?.let { now.plus(it) },
@@ -58,23 +57,22 @@ open class AuthenticationManager : AuthenticationInterface {
     .filter { it.value.user == user }
     .map { (key, entry) ->
       TokenMetadata(
-        tokenId = key.take(12),
-        userId = user.id,
+        userId = entry.user.id,
         issuedAt = entry.issuedAt,
         expiresAt = entry.expiresAt,
         lastUsedAt = entry.lastUsedAt,
+        token = key,
       )
     }
 
   override fun logoutIfMatching(accessToken: String, user: User): Boolean {
     if (accessToken.isBlank()) return false
-    val key = hash(accessToken)
-    val entry = sessions[key] ?: return false
+    val entry = sessions[accessToken] ?: return false
     if (entry.user != user) {
       log.warn("Logout attempted with a token belonging to a different user")
       return false
     }
-    return sessions.remove(key, entry)
+    return sessions.remove(accessToken, entry)
   }
 
   override fun revokeAll(user: User): Int {
@@ -84,27 +82,13 @@ open class AuthenticationManager : AuthenticationInterface {
     return doomed.size
   }
 
-  @Deprecated(
-    "Tokens are stored hashed and cannot be recovered; use listTokens(user).",
-    ReplaceWith("listTokens(user)")
-  )
-  fun getAccessToken(user: User): String? {
-    log.warn("getAccessToken is no longer supported; tokens are stored hashed. User: {}", user)
-    return null
-  }
-
-  @Deprecated("Use logoutIfMatching, which is idempotent.", ReplaceWith("logoutIfMatching(accessToken, user)"))
-  fun logout(accessToken: String, user: User) {
-    require(logoutIfMatching(accessToken, user)) { "Invalid user" }
-  }
-
-  private fun hash(token: String): String =
-    MessageDigest.getInstance("SHA-256")
-      .digest(token.toByteArray(Charsets.UTF_8))
-      .joinToString("") { "%02x".format(it) }
-
   companion object {
     private val log = LoggerFactory.getLogger(AuthenticationManager::class.java)
+
+    fun hash(token: String): String =
+      MessageDigest.getInstance("SHA-256")
+        .digest(token.toByteArray(Charsets.UTF_8))
+        .joinToString("") { "%02x".format(it) }
 
     /** Keyed by the hash of the presented token; never by the token itself. */
     private val sessions = ConcurrentHashMap<String, Entry>()

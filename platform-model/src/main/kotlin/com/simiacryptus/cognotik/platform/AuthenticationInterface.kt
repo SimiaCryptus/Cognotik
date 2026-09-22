@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.platform.model.AccessToken
-import com.simiacryptus.cognotik.platform.model.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import java.time.Duration
+import java.time.Instant
 
 /**
  * Interface for managing user authentication and session management.
@@ -80,6 +80,14 @@ interface AuthenticationInterface {
    */
   fun revokeAll(user: User): Int =
     throw UnsupportedOperationException("revokeAll is not implemented by ${this.javaClass.name}")
+
+  data class TokenMetadata(
+    val token: String,
+    val userId: String,
+    val issuedAt: Instant? = null,
+    val expiresAt: Instant? = null,
+    val lastUsedAt: Instant? = null,
+  )
 
   companion object {
     /**

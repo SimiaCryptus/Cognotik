@@ -2,6 +2,8 @@ package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonProperty
+import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
 
 
 /**
@@ -63,6 +65,15 @@ data class User(
     }
   }
 
+  fun getAuthCookies(): Map<String, String?> {
+    val services = ApplicationServices.services ?: throw IllegalStateException("ApplicationServices not initialized")
+    val tokenMetadata = services.authenticationManager.listTokens(this).firstOrNull() ?: return emptyMap()
+    return mapOf(
+      AuthenticationInterface.AUTH_COOKIE to tokenMetadata.token,
+      "USER" to name,
+      "EMAIL" to email
+    )
+  }
 }
 
 
