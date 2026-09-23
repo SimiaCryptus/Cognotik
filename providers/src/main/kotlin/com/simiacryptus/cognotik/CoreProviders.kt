@@ -44,9 +44,8 @@ object CoreProviders : CognotikPlugin {
   @JvmStatic
   val XAI: APIProvider = XAIProvider()
 
-  /*ZAI*/
   @JvmStatic
-  val ZAI: APIProvider = com.simiacryptus.cognotik.providers.ZAIProvider()
+  val ZAI: APIProvider = ZAIProvider()
 
   @JvmStatic
   val Qwen: APIProvider = QwenProvider()
@@ -58,9 +57,9 @@ object CoreProviders : CognotikPlugin {
   val HostedProxy: APIProvider = HostedProxyProvider()
 
 
-override fun init() {
-  log.info("Registering API providers")
-  DynamicEnum.register(APIProvider::class.java, Gemini)
+  override fun init() {
+    log.info("Registering API providers")
+    DynamicEnum.register(APIProvider::class.java, Gemini)
     DynamicEnum.register(APIProvider::class.java, OpenAI)
     DynamicEnum.register(APIProvider::class.java, Anthropic)
     DynamicEnum.register(APIProvider::class.java, AWS)

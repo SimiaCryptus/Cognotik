@@ -4,27 +4,21 @@ import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
-import java.sql.Connection
 import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Bridges Exposed's [Database] API with the existing [DatabaseFacet] connection management.
  *
- * Exposed's `transaction { ... }` block obtains a [java.sql.Connection] from the [Database]
- * via the connection provider lambda we pass to `Database.connect`. We delegate to
- * [DatabaseFacet.getConnection], which returns the JVM-wide shared connection for that
- * facet. The connection is intentionally NOT closed by Exposed (we use a non-closing
- * wrapper) since the facet caches and reuses it across all callers.
+  * Exposed's `transaction { ... }` block obtains a [java.sql.Connection] from the [Database]
+  * via the connection provider lambda we pass to `Database.connect`. We delegate to
+  * [DatabaseFacet.borrowConnection], which hands out a connection used by exactly one
+  * transaction at a time. Exposed's `close()` returns it to a small per-facet pool.
  *
- * Concurrency note: the shared facet connection is reused across all Exposed
- * transactions for that facet. Exposed serializes statements within a single
- * transaction, but multiple concurrent `transaction { ... }` calls would race
- * on the shared connection. Callers that perform multi-statement work outside
- * of Exposed should prefer [DatabaseFacet.transaction] / [DatabaseFacet.withConnection],
- * which acquire `synchronized(conn)` locks. Exposed's own framework manages
- * autoCommit / commit / rollback on the connection it receives, so we rely on
- * the underlying JDBC driver's per-statement thread safety for concurrent
- * Exposed transactions on the same connection.
+  * Concurrency note: connections must NOT be shared between concurrent Exposed
+  * transactions. Exposed sets autoCommit, isolation level and read-only on each
+  * transaction's connection. PostgreSQL rejects the latter two while another
+  * transaction is active on the same connection ("Cannot change transaction
+  * isolation level in the middle of a transaction").
  */
 object ExposedDatabase {
   private val log = LoggerFactory.getLogger(ExposedDatabase::class.java)
@@ -35,12 +29,11 @@ object ExposedDatabase {
       log.info("Initializing Exposed Database for facet '{}'", facet)
       val db = Database.connect(
         getNewConnection = {
-          // Force schema initialization and return a non-closing wrapper
-          // around the shared facet connection. Exposed will manage
-          // autoCommit/commit/rollback against this connection.
+           // A dedicated (pooled) connection per transaction. The URL is
+           // re-resolved on every borrow, so memory demotion / server
+           // restarts are picked up automatically.
           try {
-            val raw = facet.getConnection()
-            NonClosingConnection(raw)
+             facet.borrowConnection()
           } catch (e: Exception) {
             log.info("Failed to obtain JDBC connection for Exposed facet '{}': {}", facet, e.message, e)
             throw e
@@ -68,15 +61,4 @@ object ExposedDatabase {
     }
   }
 
-  /**
-   * Wraps a [Connection] so that Exposed's automatic close on transaction completion
-   * does not actually close the shared underlying connection.
-   */
-  private class NonClosingConnection(
-    private val delegate: Connection
-  ) : Connection by delegate {
-    override fun close() {
-      // Intentionally a no-op; the connection is owned by DatabaseFacet.
-    }
-  }
 }

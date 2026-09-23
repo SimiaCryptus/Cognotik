@@ -18,6 +18,8 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.util.LinkedHashMap
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 class DatabaseFacet(
@@ -193,6 +195,107 @@ class DatabaseFacet(
       }
     }
   }
+   // ----- Dedicated (pooled) connections for Exposed transactions -----
+   /** An idle pooled connection, tagged with the JDBC URL it was opened for. */
+   private class IdleConnection(val url: String, val conn: Connection, val returnedAtNanos: Long)
+   private val idleConnections = ConcurrentLinkedDeque<IdleConnection>()
+   private val maxIdleConnections: Int =
+     System.getProperty("cognotik.db.maxIdleConnections", "8").toIntOrNull()?.coerceAtLeast(0) ?: 8
+   /** Idle connections older than this are validated with a round trip before reuse. */
+   private val validateAfterIdleNanos: Long = 5_000_000_000L
+   /**
+    * Borrow a connection that is used by exactly one caller at a time.
+    *
+    * Exposed changes per-transaction state on the connection it receives
+    * (autoCommit, transaction isolation, read-only). Sharing one physical
+    * connection between concurrent Exposed transactions therefore fails. On
+    * PostgreSQL you get "Cannot change transaction isolation level / read-only
+    * property in the middle of a transaction". So every Exposed transaction
+    * gets its own connection. Calling [Connection.close] on the returned
+    * wrapper resets its state and returns it to a small per-facet idle pool
+    * instead of closing it.
+    */
+   fun borrowConnection(): Connection {
+     ensureDriverLoaded()
+     val url: String
+     val username: String
+     val password: String
+     var localDbName: String? = null
+     val remoteUrl = serviceUrl?.ifBlank { null }
+     if (remoteUrl != null) {
+       url = remoteUrl
+       username = serviceUser
+       password = filterPassword(servicePassword)
+     } else {
+       val db = dbName ?: "default"
+       registerDatabase(name, db, root)
+       startSharedServer()
+       ensureDatabaseAccessible(db)
+       localDbName = db
+       url = buildLocalJdbcUrl(db)
+       username = "SA"
+       password = ""
+     }
+     while (true) {
+       val idle = idleConnections.pollFirst() ?: break
+       val fresh = System.nanoTime() - idle.returnedAtNanos < validateAfterIdleNanos
+       val usable = idle.url == url && try {
+         !idle.conn.isClosed && (fresh || idle.conn.isValid(1))
+       } catch (e: Exception) {
+         false
+       }
+       if (usable) return PooledConnection(idle.url, idle.conn)
+       closeQuietly(idle.conn)
+     }
+     val raw = openConnectionWithRetry(url, username, password, localDbName)
+     // The URL may have changed if the database was demoted to memory while connecting.
+     val effectiveUrl = if (localDbName != null) buildLocalJdbcUrl(localDbName) else url
+     try {
+       ensureSchema(effectiveUrl, raw)
+     } catch (e: Exception) {
+       closeQuietly(raw)
+       throw e
+     }
+     return PooledConnection(effectiveUrl, raw)
+   }
+   private fun closeQuietly(conn: Connection) {
+     try {
+       conn.close()
+     } catch (e: Exception) {
+       log.debug("Error closing pooled $name connection: ${e.message}", e)
+     }
+   }
+   /** Pooled wrapper: `close()` resets connection state and returns it to [idleConnections]. */
+   private inner class PooledConnection(
+     private val url: String,
+     private val delegate: Connection,
+   ) : Connection by delegate {
+     private val returned = AtomicBoolean(false)
+     override fun isClosed(): Boolean = returned.get() || delegate.isClosed
+     override fun close() {
+       if (!returned.compareAndSet(false, true)) return
+       try {
+         if (delegate.isClosed) return
+         // Leave no open transaction behind: the next borrower (and Exposed's
+         // isolation/read-only setters) require an idle connection.
+         if (!delegate.autoCommit) {
+           delegate.rollback()
+           delegate.autoCommit = true
+         }
+         if (delegate.isReadOnly) delegate.isReadOnly = false
+       } catch (e: Exception) {
+         log.debug("Discarding $name connection that could not be reset: ${e.message}", e)
+         closeQuietly(delegate)
+         return
+       }
+       if (idleConnections.size < maxIdleConnections) {
+         idleConnections.offerFirst(IdleConnection(url, delegate, System.nanoTime()))
+       } else {
+         closeQuietly(delegate)
+       }
+     }
+   }
+
 
   /**
    * Initialize schema using an Exposed [Database] handle. This is used
