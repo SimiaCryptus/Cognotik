@@ -15,13 +15,19 @@ import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.SocketTimeoutException
 import java.net.URL
+import java.net.URLEncoder
 import java.net.UnknownHostException
+import java.nio.charset.StandardCharsets
 import java.util.concurrent.ExecutorService
 
 /**
  * Minimal ChatClient implementation that forwards chat() requests to the
  * Cognotik proxy server.
  *
+  * One client may cover several upstream providers; they are addressed as a
+  * single comma-separated path segment, so listing models or dispatching a
+  * chat request never requires more than one API call.
+  *
  * The server returns a job token immediately from POST /chat/{provider} and
  * then this client polls GET /chat/{provider}/result/{token} until the job
  * completes (or fails / times out).
@@ -29,11 +35,23 @@ import java.util.concurrent.ExecutorService
 class ProxyChatClient(
     private val proxyBase: String,
     private val upstreamKey: SecureString,
-    private val upstreamProviderName: String,
+     private val upstreamProviderNames: Collection<String>,
     private val mapper: ObjectMapper,
     override val session: Session
 ) : ChatClientInterface {
     private val log = LoggerFactory.getLogger(ProxyChatClient::class.java)
+     constructor(
+         proxyBase: String,
+         upstreamKey: SecureString,
+         upstreamProviderName: String,
+         mapper: ObjectMapper,
+         session: Session
+     ) : this(proxyBase, upstreamKey, listOf(upstreamProviderName), mapper, session)
+     /** Label used in log/exception messages. */
+     private val upstreamProviderName: String = upstreamProviderNames.joinToString(",")
+     /** Single URL path segment addressing all upstream providers. */
+     private val providerPath: String =
+         upstreamProviderNames.joinToString(",") { URLEncoder.encode(it, StandardCharsets.UTF_8) }
 
     val user: User = try {
         upstreamKey.decrypt?.jsonCast<User>()
@@ -48,8 +66,8 @@ class ProxyChatClient(
         if (proxyBase.isBlank()) {
             throw IllegalArgumentException("Proxy base URL cannot be blank")
         }
-        if (upstreamProviderName.isBlank()) {
-            throw IllegalArgumentException("Upstream provider name cannot be blank")
+         if (upstreamProviderNames.isEmpty() || upstreamProviderNames.any { it.isBlank() }) {
+             throw IllegalArgumentException("At least one non-blank upstream provider name is required")
         }
         log.debug("ProxyChatClient initialized for upstream='$upstreamProviderName' base='$proxyBase'")
     }
@@ -82,7 +100,7 @@ class ProxyChatClient(
         chatRequest: ModelSchema.ChatRequest,
         model: ChatModel
     ): String {
-        val urlString = "${proxyBase.trimEnd('/')}/chat/$upstreamProviderName?session=${session}"
+         val urlString = "${proxyBase.trimEnd('/')}/chat/$providerPath?session=${session}"
         log.debug("Submitting async chat request to proxy: $urlString (model=${model.modelId})")
         val url = try {
             URL(urlString)
@@ -206,7 +224,7 @@ class ProxyChatClient(
      * completion, failure, or timeout (controlled by [ProxyConfig.chatReadTimeoutMs]).
      */
     private fun pollForResult(token: String, model: ChatModel): ModelSchema.ChatResponse {
-        val urlString = "${proxyBase.trimEnd('/')}/chat/$upstreamProviderName/result/$token"
+         val urlString = "${proxyBase.trimEnd('/')}/chat/$providerPath/result/$token"
         val deadline = System.currentTimeMillis() + ProxyConfig.chatReadTimeoutMs
         var delayMs = ProxyConfig.pollInitialIntervalMs
         log.debug("Polling for async chat result: token='$token' url='$urlString'")
@@ -348,7 +366,8 @@ class ProxyChatClient(
         get() = throw UnsupportedOperationException("ProxyChatClient does not support async operations")
 
     override fun getModels(): List<ChatModel> {
-        val urlString = "${proxyBase.trimEnd('/')}/models/$upstreamProviderName"
+         /* All upstream providers are queried in a single request. */
+         val urlString = "${proxyBase.trimEnd('/')}/models/$providerPath"
         log.debug("Fetching models from proxy: $urlString")
         val url = try {
             URL(urlString)
@@ -406,5 +425,8 @@ class ProxyChatClient(
 
 }
 fun HttpURLConnection.setCookies(cookies: Map<String, String?>) {
-    setRequestProperty("Cookie", cookies.entries.joinToString("; ") { "${it.key}=${it.value}" })
+    val header = cookies.entries
+        .filter { it.key.isNotBlank() && !it.value.isNullOrBlank() }
+        .joinToString("; ") { "${it.key}=${it.value}" }
+    if (header.isNotEmpty()) setRequestProperty("Cookie", header)
 }

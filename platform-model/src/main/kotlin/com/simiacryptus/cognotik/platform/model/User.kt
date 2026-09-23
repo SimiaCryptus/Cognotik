@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
@@ -15,13 +16,19 @@ import javax.crypto.spec.SecretKeySpec
  *
  * Identity is [id] (which defaults to [email]); this matches what `Claim.userId`
  * and `SessionMetadata.ownerId` actually persist. See REVIEW.md §3.2.
+  *
+  * Wire format is intentionally minimal: `email`, `name`, `signature`. Any other
+  * property (including legacy `provider` / `authCookies` fields emitted by older
+  * servers) is ignored on read so that cross-version tokens keep parsing.
  */
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class User(
   @get:JsonProperty("email") val email: String,
   @get:JsonProperty("name") val name: String = email,
   //@get:JsonProperty("provider") val provider: String? = null,
 ) {
-  val provider: String = ""
+   @get:JsonIgnore
+   val provider: String = ""
   @get:JsonIgnore
   val id: String by lazy { (email+provider).hexHash().take(20) }
 
@@ -48,10 +55,10 @@ data class User(
    fun signingPayload(): String =
      listOf(SIGNATURE_VERSION, enc(id), enc(email), enc(name)).joinToString(FIELD_DELIMITER)
 
-   /** Verify a signature previously produced by [signature] (constant-time). */
-   @JvmOverloads
-   fun isSignatureValid(candidate: String?, key: String = signingKey): Boolean =
-     verify(signingPayload(), candidate, key)
+/** Verify a signature previously produced by [signature] (constant-time). */
+@JvmOverloads
+fun isSignatureValid(candidate: String?, key: String = signingKey): Boolean =
+  verify(signingPayload(), candidate, key)
 
    /**
     * Produce a self-contained, expiring token carrying this user's identity, for
@@ -187,7 +194,22 @@ data class User(
       return "${email.first()}***@${email.substring(at + 1)}"
     }
   }
-
+  /**
+   * Resolve this user's auth cookies from the local authentication manager.
+   *
+   * MUST remain `@JsonIgnore`: the method name matches the JavaBean getter pattern, so without
+   * this annotation Jackson exposes it as a read-only `authCookies` property. That caused two
+   * production defects:
+   *  - serializing a [User] performed a database round-trip (and leaked the session token into
+   *    the serialized payload / encrypted API key blob), and
+   *  - deserializing a payload containing `authCookies` used USE_GETTERS_AS_SETTERS and tried to
+   *    mutate the immutable map returned here, failing with
+   *    "Operation is not supported for read-only collection".
+   *
+   * Auth cookies are host-local state and are deliberately *not* part of this object's wire form.
+   * Returns an empty map when no token is available for this user.
+   */
+  @JsonIgnore
   fun getAuthCookies(): Map<String, String?> {
     val services = ApplicationServices.services ?: throw IllegalStateException("ApplicationServices not initialized")
     val tokenMetadata = services.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot)
@@ -198,9 +220,17 @@ data class User(
       "EMAIL" to email
     )
   }
+   @JsonIgnore
 
-  fun requireValid(): User {
-    if (!isSignatureValid(signature)) throw IllegalArgumentException("Invalid user signature")
+  /**
+   * WARNING: [signature] is *recomputed* from this instance, so this check can only ever fail if
+   * the signing key is unusable - a transported signature is currently dropped on deserialization
+   * (it has no creator parameter). To make this a real check, pass the received signature in:
+   * `user.requireValid(receivedSignature)`.
+   */
+  @JvmOverloads
+  fun requireValid(candidateSignature: String? = signature): User {
+    if (!isSignatureValid(candidateSignature)) throw IllegalArgumentException("Invalid user signature")
     return this
   }
 }
