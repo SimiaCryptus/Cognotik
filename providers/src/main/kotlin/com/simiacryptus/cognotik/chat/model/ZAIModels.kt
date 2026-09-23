@@ -142,177 +142,208 @@ object ZAIModels {
   )
 
 
-  val GLM46 = ChatModel(
-    name = "GLM46",
-    modelId = "glm-4.6",
-    maxTotalTokens = 200_000,
-    maxOutTokens = 128_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm46Pricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM53Flash = ChatModel(
-    name = "GLM53Flash",
-    modelId = "glm-5.3-flash",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm53FlashPricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM53 = ChatModel(
-    name = "GLM53",
-    modelId = "glm-5.3",
-    maxTotalTokens = 200_000,
-    maxOutTokens = 128_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm53Pricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM52 = ChatModel(
-    name = "GLM52",
-    modelId = "glm-5.2",
-    maxTotalTokens = 200_000,
-    maxOutTokens = 128_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm52Pricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM51 = ChatModel(
-    name = "GLM51",
-    modelId = "glm-5.1",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm51Pricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM5 = ChatModel(
-    name = "GLM5",
-    modelId = "glm-5",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm5Pricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM47 = ChatModel(
-    name = "GLM47",
-    modelId = "glm-4.7",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm47Pricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM47FlashX = ChatModel(
-    name = "GLM47FlashX",
-    modelId = "glm-4.7-flashx",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm47FlashXPricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM47Flash = ChatModel(
-    name = "GLM47Flash",
-    modelId = "glm-4.7-flash",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm47FlashPricing,
-    supportsReasoning = false,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM45X = ChatModel(
-    name = "GLM45X",
-    modelId = "glm-4.5-x",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm45XPricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM45AirX = ChatModel(
-    name = "GLM45AirX",
-    modelId = "glm-4.5-airx",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm45AirXPricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
-  val GLM432B0414 = ChatModel(
-    name = "GLM432B0414",
-    modelId = "glm-4-32b-0414-128k",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 32_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm432B0414Pricing,
-    supportsReasoning = false,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
+  val GLM46 by lazy {
+    ChatModel(
+      name = "GLM46",
+      modelId = "glm-4.6",
+      maxTotalTokens = 200_000,
+      maxOutTokens = 128_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm46Pricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM53Flash by lazy {
+    ChatModel(
+      name = "GLM53Flash",
+      modelId = "glm-5.3-flash",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm53FlashPricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM53 by lazy {
+    ChatModel(
+      name = "GLM53",
+      modelId = "glm-5.3",
+      maxTotalTokens = 200_000,
+      maxOutTokens = 128_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm53Pricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM52 by lazy {
+    ChatModel(
+      name = "GLM52",
+      modelId = "glm-5.2",
+      maxTotalTokens = 200_000,
+      maxOutTokens = 128_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm52Pricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM51 by lazy {
+    ChatModel(
+      name = "GLM51",
+      modelId = "glm-5.1",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm51Pricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM5 by lazy {
+    ChatModel(
+      name = "GLM5",
+      modelId = "glm-5",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm5Pricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM47 by lazy {
+    ChatModel(
+      name = "GLM47",
+      modelId = "glm-4.7",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm47Pricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM47FlashX by lazy {
+    ChatModel(
+      name = "GLM47FlashX",
+      modelId = "glm-4.7-flashx",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm47FlashXPricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM47Flash by lazy {
+    ChatModel(
+      name = "GLM47Flash",
+      modelId = "glm-4.7-flash",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm47FlashPricing,
+      supportsReasoning = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM45X by lazy {
+    ChatModel(
+      name = "GLM45X",
+      modelId = "glm-4.5-x",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm45XPricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM45AirX by lazy {
+    ChatModel(
+      name = "GLM45AirX",
+      modelId = "glm-4.5-airx",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm45AirXPricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val GLM432B0414 by lazy {
+    ChatModel(
+      name = "GLM432B0414",
+      modelId = "glm-4-32b-0414-128k",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 32_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm432B0414Pricing,
+      supportsReasoning = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
 
 
-  val GLM45 = ChatModel(
-    name = "GLM45",
-    modelId = "glm-4.5",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm45Pricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
+  val GLM45 by lazy {
+    ChatModel(
+      name = "GLM45",
+      modelId = "glm-4.5",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm45Pricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
 
-  val GLM45Air = ChatModel(
-    name = "GLM45Air",
-    modelId = "glm-4.5-air",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm45AirPricing,
-    supportsReasoning = true,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
+  val GLM45Air by lazy {
+    ChatModel(
+      name = "GLM45Air",
+      modelId = "glm-4.5-air",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm45AirPricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
 
-  val GLM45Flash = ChatModel(
-    name = "GLM45Flash",
-    modelId = "glm-4.5-flash",
-    maxTotalTokens = 128_000,
-    maxOutTokens = 96_000,
-    provider = CoreProviders.ZAI,
-    tokenPricingPerK = glm45FlashPricing,
-    supportsReasoning = false,
-    inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
-  )
+  val GLM45Flash by lazy {
+    ChatModel(
+      name = "GLM45Flash",
+      modelId = "glm-4.5-flash",
+      maxTotalTokens = 128_000,
+      maxOutTokens = 96_000,
+      provider = CoreProviders.ZAI,
+      tokenPricingPerK = glm45FlashPricing,
+      supportsReasoning = false,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
 
-  val values = mapOf(
+  val values by lazy {
+    mapOf(
     "GLM46" to GLM46,
     "GLM53Flash" to GLM53Flash,
     "GLM53" to GLM53,
@@ -329,4 +360,5 @@ object ZAIModels {
     "GLM45Air" to GLM45Air,
     "GLM45Flash" to GLM45Flash,
   )
+  }
 }

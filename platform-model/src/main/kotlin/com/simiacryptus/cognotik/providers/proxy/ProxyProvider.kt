@@ -83,7 +83,7 @@ abstract class ProxyProvider(
     return try {
       ProxyChatClient(
         proxyBase = this.base,
-        upstreamKey = key,
+        key = key,
         upstreamProviderNames = this.upstreamProviderNames,
         mapper = mapper,
         session = session
