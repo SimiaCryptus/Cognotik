@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.hsql.DatabaseFacet
+import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
 import com.simiacryptus.cognotik.platform.model.OperationType

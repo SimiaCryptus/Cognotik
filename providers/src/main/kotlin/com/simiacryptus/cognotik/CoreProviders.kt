@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik
 import com.simiacryptus.cognotik.platform.CognotikPlugin
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.providers.*
+import com.simiacryptus.cognotik.providers.proxy.HostedProxyProvider
 import com.simiacryptus.cognotik.util.DynamicEnum
 import org.slf4j.LoggerFactory
 
@@ -53,6 +54,9 @@ object CoreProviders : CognotikPlugin {
   @JvmStatic
   val ElevenLabs: APIProvider = ElevenLabsProvider()
 
+  @JvmStatic
+  val HostedProxy: APIProvider = HostedProxyProvider()
+
 
   override fun init() {
     log.info("Registering API providers")
@@ -70,5 +74,6 @@ object CoreProviders : CognotikPlugin {
     DynamicEnum.register(APIProvider::class.java, ZAI)
     DynamicEnum.register(APIProvider::class.java, Qwen)
     DynamicEnum.register(APIProvider::class.java, ElevenLabs)
+    DynamicEnum.register(APIProvider::class.java, HostedProxy)
   }
 }

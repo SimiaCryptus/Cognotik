@@ -278,6 +278,29 @@ object AnthropicModels {
     outputModalities = setOf(ChatMessageModality.TEXT),
   )
   @JvmStatic
+  val Claude55Opus = ChatModel(
+    name = "Claude Opus 5.5",
+    modelId = "claude-opus-5-5",
+    maxTotalTokens = 1000000,
+    maxOutTokens = 128000,
+    provider = CoreProviders.Anthropic,
+    tokenPricingPerK = mapOf(
+      TokenTypes.Prompt to 4.0 / 1000.0,
+      TokenTypes.Completion to 20.0 / 1000.0,
+      TokenTypes.CacheWrite5m to 5.0 / 1000.0,
+      TokenTypes.CacheWrite1h to 8.0 / 1000.0,
+      // Cache hits/refreshes on Opus 5.5 use a 0.05x multiplier instead of
+      // the standard 0.1x multiplier used by other models.
+      TokenTypes.Cached to 0.20 / 1000.0,
+      TokenTypes.Thinking to 20.0 / 1000.0,
+    ),
+    supportsTemperature = false,
+    supportsReasoning = true,
+    inputModalities = setOf(ChatMessageModality.TEXT),
+    outputModalities = setOf(ChatMessageModality.TEXT),
+  )
+
+  @JvmStatic
   val Claude5Sonnet = ChatModel(
     name = "Claude Sonnet 5",
     modelId = "claude-sonnet-5",
@@ -407,6 +430,7 @@ object AnthropicModels {
     "Claude47Opus" to Claude47Opus,
     "Claude48Opus" to Claude48Opus,
     "Claude5Opus" to Claude5Opus,
+    "Claude55Opus" to Claude55Opus,
     "ClaudeFable5" to ClaudeFable5,
     "ClaudeMythos5" to ClaudeMythos5,
     "ClaudeFable51" to ClaudeFable51,
