@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform.hsql
+package com.simiacryptus.cognotik.platform.h2
 
 import org.h2.tools.Server
 import org.jetbrains.exposed.v1.core.DatabaseApi
@@ -9,7 +9,6 @@ import org.jetbrains.exposed.v1.core.vendors.PostgreSQLDialect
 import org.jetbrains.exposed.v1.jdbc.Database
 import org.jetbrains.exposed.v1.jdbc.JdbcTransaction
 import org.jetbrains.exposed.v1.jdbc.SchemaUtils
-import org.jetbrains.exposed.v1.jdbc.statements.api.ExposedConnection
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction as exposedTransaction
 import org.jetbrains.exposed.v1.jdbc.vendors.DatabaseDialectMetadata
 import org.slf4j.LoggerFactory
@@ -19,6 +18,8 @@ import java.sql.Connection
 import java.sql.DriverManager
 import java.util.LinkedHashMap
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.atomic.AtomicBoolean
 
 
 class DatabaseFacet(
@@ -27,16 +28,60 @@ class DatabaseFacet(
   val tables: List<Table> = emptyList()
 ) {
   /**
-   * Lazily-initialized Exposed [Database] bound to this facet's JDBC connection.
+   * Exposed [Database] bound to this facet's JDBC coordinates.
    * Exposed DSL operations (selectAll, insert, update, etc.) require an Exposed
    * `Transaction` in thread-local context; callers should wrap DSL usage in
    * `org.jetbrains.exposed.v1.jdbc.transactions.transaction(facet.database) { ... }`.
    *
-   * The connection manager returns the facet's shared/cached JDBC connection,
-   * so Exposed transactions reuse the same physical connection that
-   * [transaction] / [withConnection] synchronize on.
+   * Deliberately NOT a `by lazy` value. The JDBC URL of a facet is not stable
+   * for the lifetime of the JVM:
+   *   * a file-backed database can be demoted to `mem:` at any time (see
+   *     [demoteToMemory]), and
+   *   * [resetAll] restarts the shared server on a *new* ephemeral port.
+   * A memoized handle would keep pointing at the old, now-unopenable URL and
+   * every subsequent transaction would fail with the very same error forever.
+   * Instead the handle is cached together with the URL it was built for and
+   * rebuilt whenever that URL changes.
    */
-  val database: Database by lazy {
+  @Volatile
+  private var databaseHandle: Database? = null
+
+  @Volatile
+  private var databaseUrl: String? = null
+  private val databaseLock = Any()
+
+  val database: Database
+    get() {
+      val cached = databaseHandle
+      if (cached != null) {
+        val current = currentJdbcUrlOrNull()
+        if (current != null && current == databaseUrl) return cached
+      }
+      return synchronized(databaseLock) {
+        val again = databaseHandle
+        val current = currentJdbcUrlOrNull()
+        if (again != null && current != null && current == databaseUrl) again
+        else connectDatabase()
+      }
+    }
+
+  /**
+   * The JDBC URL this facet would use *right now*, or null when it cannot be
+   * determined without side effects (the shared server has not started yet, or
+   * the database is no longer registered because of [resetAll]).
+   */
+  private fun currentJdbcUrlOrNull(): String? {
+    val remoteUrl = serviceUrl?.ifBlank { null }
+    if (remoteUrl != null) return remoteUrl
+    val db = dbName ?: "default"
+    return synchronized(serverLock) {
+      if (actualPort <= 0 || !registeredDatabases.containsKey(db)) null
+      else buildLocalJdbcUrl(db)
+    }
+  }
+
+  /** Build (and schema-initialize) a fresh handle. Caller must hold [databaseLock]. */
+  private fun connectDatabase(): Database {
     ensureDriverLoaded()
     // Ensure Exposed dialects are registered before connecting. Exposed v1
     // resolves the dialect from the JDBC URL prefix (e.g. "h2",
@@ -62,16 +107,13 @@ class DatabaseFacet(
     // for this facet. Exposed transactions bypass [getConnection], so
     // schema initialization must also be triggered here.
     //
-    // Intentionally NOT caught here: swallowing this failure would cache
-    // a "ready" Database handle (via `by lazy`) whose schema was never
-    // actually created. This is especially dangerous right after an
-    // in-memory fallback demotion, where a failed initialization attempt
-    // otherwise looks identical to a successful one from the caller's
-    // perspective. Letting the exception propagate means Kotlin's
-    // `lazy {}` will NOT memoize this value, so the next access retries
-    // schema initialization instead of silently operating without one.
+    // Intentionally NOT caught: the handle is only published once the schema
+    // really exists, so a failed attempt is retried on the next access rather
+    // than caching a "ready" database that was never initialized.
     initializeSchemaForDatabase(url, db)
-    db
+    databaseHandle = db
+    databaseUrl = url
+    return db
   }
 
   /**
@@ -153,6 +195,107 @@ class DatabaseFacet(
       }
     }
   }
+   // ----- Dedicated (pooled) connections for Exposed transactions -----
+   /** An idle pooled connection, tagged with the JDBC URL it was opened for. */
+   private class IdleConnection(val url: String, val conn: Connection, val returnedAtNanos: Long)
+   private val idleConnections = ConcurrentLinkedDeque<IdleConnection>()
+   private val maxIdleConnections: Int =
+     System.getProperty("cognotik.db.maxIdleConnections", "8").toIntOrNull()?.coerceAtLeast(0) ?: 8
+   /** Idle connections older than this are validated with a round trip before reuse. */
+   private val validateAfterIdleNanos: Long = 5_000_000_000L
+   /**
+    * Borrow a connection that is used by exactly one caller at a time.
+    *
+    * Exposed changes per-transaction state on the connection it receives
+    * (autoCommit, transaction isolation, read-only). Sharing one physical
+    * connection between concurrent Exposed transactions therefore fails. On
+    * PostgreSQL you get "Cannot change transaction isolation level / read-only
+    * property in the middle of a transaction". So every Exposed transaction
+    * gets its own connection. Calling [Connection.close] on the returned
+    * wrapper resets its state and returns it to a small per-facet idle pool
+    * instead of closing it.
+    */
+   fun borrowConnection(): Connection {
+     ensureDriverLoaded()
+     val url: String
+     val username: String
+     val password: String
+     var localDbName: String? = null
+     val remoteUrl = serviceUrl?.ifBlank { null }
+     if (remoteUrl != null) {
+       url = remoteUrl
+       username = serviceUser
+       password = filterPassword(servicePassword)
+     } else {
+       val db = dbName ?: "default"
+       registerDatabase(name, db, root)
+       startSharedServer()
+       ensureDatabaseAccessible(db)
+       localDbName = db
+       url = buildLocalJdbcUrl(db)
+       username = "SA"
+       password = ""
+     }
+     while (true) {
+       val idle = idleConnections.pollFirst() ?: break
+       val fresh = System.nanoTime() - idle.returnedAtNanos < validateAfterIdleNanos
+       val usable = idle.url == url && try {
+         !idle.conn.isClosed && (fresh || idle.conn.isValid(1))
+       } catch (e: Exception) {
+         false
+       }
+       if (usable) return PooledConnection(idle.url, idle.conn)
+       closeQuietly(idle.conn)
+     }
+     val raw = openConnectionWithRetry(url, username, password, localDbName)
+     // The URL may have changed if the database was demoted to memory while connecting.
+     val effectiveUrl = if (localDbName != null) buildLocalJdbcUrl(localDbName) else url
+     try {
+       ensureSchema(effectiveUrl, raw)
+     } catch (e: Exception) {
+       closeQuietly(raw)
+       throw e
+     }
+     return PooledConnection(effectiveUrl, raw)
+   }
+   private fun closeQuietly(conn: Connection) {
+     try {
+       conn.close()
+     } catch (e: Exception) {
+       log.debug("Error closing pooled $name connection: ${e.message}", e)
+     }
+   }
+   /** Pooled wrapper: `close()` resets connection state and returns it to [idleConnections]. */
+   private inner class PooledConnection(
+     private val url: String,
+     private val delegate: Connection,
+   ) : Connection by delegate {
+     private val returned = AtomicBoolean(false)
+     override fun isClosed(): Boolean = returned.get() || delegate.isClosed
+     override fun close() {
+       if (!returned.compareAndSet(false, true)) return
+       try {
+         if (delegate.isClosed) return
+         // Leave no open transaction behind: the next borrower (and Exposed's
+         // isolation/read-only setters) require an idle connection.
+         if (!delegate.autoCommit) {
+           delegate.rollback()
+           delegate.autoCommit = true
+         }
+         if (delegate.isReadOnly) delegate.isReadOnly = false
+       } catch (e: Exception) {
+         log.debug("Discarding $name connection that could not be reset: ${e.message}", e)
+         closeQuietly(delegate)
+         return
+       }
+       if (idleConnections.size < maxIdleConnections) {
+         idleConnections.offerFirst(IdleConnection(url, delegate, System.nanoTime()))
+       } else {
+         closeQuietly(delegate)
+       }
+     }
+   }
+
 
   /**
    * Initialize schema using an Exposed [Database] handle. This is used
@@ -505,6 +648,16 @@ class DatabaseFacet(
      * shared server (possibly after being demoted to in-memory storage).
      */
     private val verifiedDatabases = ConcurrentHashMap.newKeySet<String>()
+    /**
+     * Databases that were demoted from file-backed to in-memory storage.
+     * Once demoted, a database must never be "upgraded" back: the running
+     * server, the keep-alive connection and every initialized schema live in
+     * the in-memory database, so re-promoting it would point new connections
+     * at the same unusable file again and produce an endless stream of
+     * identical failures.
+     */
+    private val demotedDatabases = ConcurrentHashMap.newKeySet<String>()
+
     private fun isMemoryBacked(db: String): Boolean =
       registeredDatabases[db]?.startsWith("mem:") ?: true
 
@@ -554,6 +707,7 @@ class DatabaseFacet(
         if (isMemoryBacked(db)) return
         val previous = registeredDatabases[db]
         registeredDatabases[db] = "mem:$db"
+        demotedDatabases.add(db)
         schemasInitialized.removeIf { it.contains("/$previous") }
         log.debug(
           "Unable to open file-backed H2 database '{}' at '{}'; falling back to an in-memory " +
@@ -647,6 +801,16 @@ class DatabaseFacet(
     }
 
     private fun registerDatabase(facetName: String, dbName: String, root: String?) {
+      // A previously demoted database stays in memory for the lifetime of the
+      // application; do not probe the filesystem or re-register a file path.
+      if (demotedDatabases.contains(dbName)) {
+        synchronized(serverLock) { registeredDatabases[dbName] = "mem:$dbName" }
+        log.debug(
+          "H2 database '{}' was demoted to in-memory storage; facet '{}' will reuse it",
+          dbName, facetName
+        )
+        return
+      }
       // For H2 we register the absolute file path (without the `file:`
       // prefix used by HSQL). H2 derives the database files
       // (`<path>.mv.db`, `<path>.trace.db`, ...) from this base name.
@@ -1021,6 +1185,7 @@ class DatabaseFacet(
 
           registeredDatabases.clear()
           verifiedDatabases.clear()
+          demotedDatabases.clear()
           schemasInitialized.clear()
         }
       }

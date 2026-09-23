@@ -6,9 +6,10 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
 
 object GroqModels {
 
-    // ==================== Production Models ====================
+  // ==================== Production Models ====================
 
-    val Llama31_8bInstant = ChatModel(
+  val Llama31_8bInstant by lazy {
+    ChatModel(
       name = "Llama31_8bInstant",
       modelId = "llama-3.1-8b-instant",
       maxTotalTokens = 131072,
@@ -19,8 +20,10 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
-    val Llama33_70bVersatile = ChatModel(
+  val Llama33_70bVersatile by lazy {
+    ChatModel(
       name = "Llama33_70bVersatile",
       modelId = "llama-3.3-70b-versatile",
       maxTotalTokens = 131072,
@@ -31,8 +34,10 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
-    val GptOss120b = ChatModel(
+  val GptOss120b by lazy {
+    ChatModel(
       name = "GptOss120b",
       modelId = "openai/gpt-oss-120b",
       maxTotalTokens = 131072,
@@ -43,9 +48,11 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
 
-    val GptOss20b = ChatModel(
+  val GptOss20b by lazy {
+    ChatModel(
       name = "GptOss20b",
       modelId = "openai/gpt-oss-20b",
       maxTotalTokens = 131072,
@@ -56,7 +63,9 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
-    val WhisperLargeV3 = ChatModel(
+  }
+  val WhisperLargeV3 by lazy {
+    ChatModel(
       name = "WhisperLargeV3",
       modelId = "whisper-large-v3",
       maxTotalTokens = 0,
@@ -67,7 +76,9 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.AUDIO),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
-    val WhisperLargeV3Turbo = ChatModel(
+  }
+  val WhisperLargeV3Turbo by lazy {
+    ChatModel(
       name = "WhisperLargeV3Turbo",
       modelId = "whisper-large-v3-turbo",
       maxTotalTokens = 0,
@@ -78,11 +89,13 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.AUDIO),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
 
-    // ==================== Production Systems ====================
+  // ==================== Production Systems ====================
 
-    val Compound = ChatModel(
+  val Compound by lazy {
+    ChatModel(
       name = "Compound",
       modelId = "groq/compound",
       maxTotalTokens = 131072,
@@ -93,8 +106,10 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
-    val CompoundMini = ChatModel(
+  val CompoundMini by lazy {
+    ChatModel(
       name = "CompoundMini",
       modelId = "groq/compound-mini",
       maxTotalTokens = 131072,
@@ -105,10 +120,12 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
-    // ==================== Preview Models ====================
+  // ==================== Preview Models ====================
 
-    val OrpheusArabicSaudi = ChatModel(
+  val OrpheusArabicSaudi by lazy {
+    ChatModel(
       name = "OrpheusArabicSaudi",
       modelId = "canopylabs/orpheus-arabic-saudi",
       maxTotalTokens = 4000,
@@ -119,8 +136,10 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO)
     )
+  }
 
-    val OrpheusV1English = ChatModel(
+  val OrpheusV1English by lazy {
+    ChatModel(
       name = "OrpheusV1English",
       modelId = "canopylabs/orpheus-v1-english",
       maxTotalTokens = 4000,
@@ -131,8 +150,10 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO)
     )
+  }
 
-    val Llama4Scout17b = ChatModel(
+  val Llama4Scout17b by lazy {
+    ChatModel(
       name = "Llama4Scout17b",
       modelId = "meta-llama/llama-4-scout-17b-16e-instruct",
       maxTotalTokens = 131072,
@@ -143,8 +164,10 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
-    val LlamaPromptGuard2_22m = ChatModel(
+  val LlamaPromptGuard2_22m by lazy {
+    ChatModel(
       name = "LlamaPromptGuard2_22m",
       modelId = "meta-llama/llama-prompt-guard-2-22m",
       maxTotalTokens = 512,
@@ -155,7 +178,9 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
-    val LlamaPromptGuard2_86m = ChatModel(
+  }
+  val LlamaPromptGuard2_86m by lazy {
+    ChatModel(
       name = "LlamaPromptGuard2_86m",
       modelId = "meta-llama/llama-prompt-guard-2-86m",
       maxTotalTokens = 512,
@@ -166,7 +191,9 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
-    val GptOssSafeguard20b = ChatModel(
+  }
+  val GptOssSafeguard20b by lazy {
+    ChatModel(
       name = "GptOssSafeguard20b",
       modelId = "openai/gpt-oss-safeguard-20b",
       maxTotalTokens = 131072,
@@ -177,7 +204,9 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
-    val Qwen3_32b = ChatModel(
+  }
+  val Qwen3_32b by lazy {
+    ChatModel(
       name = "Qwen3_32b",
       modelId = "qwen/qwen3-32b",
       maxTotalTokens = 131072,
@@ -188,26 +217,29 @@ object GroqModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
+  }
 
 
-    val values = mapOf(
-        // Production Models
-        "Llama31_8bInstant" to Llama31_8bInstant,
-        "Llama33_70bVersatile" to Llama33_70bVersatile,
-        "GptOss120b" to GptOss120b,
-        "GptOss20b" to GptOss20b,
-        "WhisperLargeV3" to WhisperLargeV3,
-        "WhisperLargeV3Turbo" to WhisperLargeV3Turbo,
-        // Production Systems
-        "Compound" to Compound,
-        "CompoundMini" to CompoundMini,
-        // Preview Models
-        "OrpheusArabicSaudi" to OrpheusArabicSaudi,
-        "OrpheusV1English" to OrpheusV1English,
-        "Llama4Scout17b" to Llama4Scout17b,
-        "LlamaPromptGuard2_22m" to LlamaPromptGuard2_22m,
-        "LlamaPromptGuard2_86m" to LlamaPromptGuard2_86m,
-        "GptOssSafeguard20b" to GptOssSafeguard20b,
-        "Qwen3_32b" to Qwen3_32b,
+  val values by lazy {
+    mapOf(
+      // Production Models
+      "Llama31_8bInstant" to Llama31_8bInstant,
+      "Llama33_70bVersatile" to Llama33_70bVersatile,
+      "GptOss120b" to GptOss120b,
+      "GptOss20b" to GptOss20b,
+      "WhisperLargeV3" to WhisperLargeV3,
+      "WhisperLargeV3Turbo" to WhisperLargeV3Turbo,
+      // Production Systems
+      "Compound" to Compound,
+      "CompoundMini" to CompoundMini,
+      // Preview Models
+      "OrpheusArabicSaudi" to OrpheusArabicSaudi,
+      "OrpheusV1English" to OrpheusV1English,
+      "Llama4Scout17b" to Llama4Scout17b,
+      "LlamaPromptGuard2_22m" to LlamaPromptGuard2_22m,
+      "LlamaPromptGuard2_86m" to LlamaPromptGuard2_86m,
+      "GptOssSafeguard20b" to GptOssSafeguard20b,
+      "Qwen3_32b" to Qwen3_32b,
     )
+  }
 }

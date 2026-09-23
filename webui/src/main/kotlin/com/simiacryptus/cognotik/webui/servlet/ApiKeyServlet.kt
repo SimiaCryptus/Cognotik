@@ -1,330 +1,384 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.SecureString
-import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
-import java.io.File
-import java.net.URLEncoder
-import java.util.*
-import kotlin.reflect.jvm.javaType
-import kotlin.reflect.typeOf
+import org.slf4j.LoggerFactory
+import java.security.SecureRandom
+import java.time.Duration
+import java.time.Instant
+import java.time.ZoneId
+import java.time.format.DateTimeFormatter
+import java.util.Base64
 
+/**
+ * UI + JSON API for management of the access tokens held by [AuthenticationInterface].
+ *
+ * Endpoints (all require an already-authenticated session):
+ *
+ *  - `GET  /api/keys`                          -> HTML page, or JSON when `Accept: application/json`/`?format=json`
+ *  - `POST /api/keys?action=create[&ttl=<s>]`  -> issue a new token (returned in full exactly once)
+ *  - `POST /api/keys?action=revoke&token=<t>`  -> revoke a single token owned by the caller
+ *  - `POST /api/keys?action=revoke-all`        -> revoke every session for the caller
+ *  - `DELETE /api/keys?token=<t>`              -> JSON alias for `action=revoke`
+ *
+ * Mutating requests must carry the caller's CSRF token (`csrf` parameter or `X-CSRF-Token`
+ * header); the value is rendered into the HTML forms and returned by the JSON `GET`.
+ */
 class ApiKeyServlet : HttpServlet() {
 
-  data class ApiKeyRecord(
-    val owner: String,
-    val apiKey: SecureString,
-    val mappedKey: SecureString,
-    val budget: Double,
-    val comment: String,
-    val welcomeMessage: String = "Welcome to our service!"
-  )
+  private val services by lazy { fileApplicationServices() }
+  private val authenticationManager: AuthenticationInterface by lazy { services.authenticationManager }
+  private val userProvider by lazy { UserProviderImpl() }
+  private val mapper = ObjectMapper()
+  private val random = SecureRandom()
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-    response.contentType = "text/html"
-    val user = UserProviderImpl().authenticate(request, response) ?: return response.sendError(
-      HttpServletResponse.SC_UNAUTHORIZED
-    )
-    val action = request.getParameter("action") ?: ""
-    val apiKey = request.getParameter("apiKey")
-    val provider = request.getParameter("provider")
-
-    when (action.lowercase(Locale.ROOT)) {
-      "edit" -> {
-        val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey && it.owner == user.email }
-        if (record != null) {
-          serveEditPage(response, record)
-        } else {
-          response.writer.write("API Key record not found")
-        }
-      }
-
-      "delete" -> {
-        val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey && it.owner == user.email }
-        if (record != null) {
-          apiKeyRecords.remove(record)
-          saveRecords()
-          response.writer.write("API Key record deleted")
-        } else {
-          response.writer.write("API Key record not found")
-        }
-      }
-
-      "create" -> {
-        val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
-        serveEditPage(
-          response,
-          ApiKeyRecord(
-            owner = user.email,
-            apiKey = UUID.randomUUID().toString().encrypt,
-            mappedKey = userSettings.apis.firstOrNull { it.provider == APIProvider.valueOf(provider) }?.key
-              ?: "".encrypt,
-            budget = 0.0,
-            comment = ""
-          )
+    val user = authenticate(request, response) ?: return
+    if (wantsJson(request)) {
+      writeJson(
+        response, HttpServletResponse.SC_OK, mapOf(
+          "user" to userJson(user),
+          "csrf" to user.signature,
+          "tokens" to tokens(user).map(::tokenJson)
         )
-      }
-
-      "invite" -> {
-        val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
-        if (record == null) {
-          throw IllegalArgumentException("API Key record not found, or you do not have permission to access it, or you are the owner.")
-        }
-
-        serveInviteConfirmationPage(response, record, user)
-      }
-
-      else -> {
-        response.writer.write(indexPage(request, response))
-      }
+      )
+    } else {
+      renderPage(response, user, newToken = null, notice = null, error = null)
     }
   }
 
   override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
-    val action = request.getParameter("action")
-    val apiKey = request.getParameter("apiKey")
-    val mappedKey = request.getParameter("mappedKey")
-    val budget = request.getParameter("budget")?.toDoubleOrNull()
-    val comment = request.getParameter("comment")
-    val welcomeMessage = request.getParameter("welcomeMessage")
-
-    val user = UserProviderImpl().authenticate(request, response)
-
-    if (action == "acceptInvite") {
-      if (apiKey.isNullOrEmpty()) {
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "API Key is missing")
-        return
-      }
-      if (user == null) {
-        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "User not authenticated")
-        return
-      }
-      val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
-      if (record == null) {
-        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid API Key or User not found")
-        return
-      }
-      response.sendRedirect("/")
+    val user = authenticate(request, response) ?: return
+    if (!csrfOk(request, user)) {
+      fail(request, response, user, HttpServletResponse.SC_FORBIDDEN, "Invalid or missing CSRF token")
       return
     }
+    when (val action = request.getParameter("action")?.trim()?.lowercase() ?: "create") {
+      "create", "new", "issue" -> create(request, response, user)
+      "revoke", "delete" -> revoke(request, response, user)
+      "revoke-all", "revokeall" -> revokeAll(request, response, user)
+      else -> fail(request, response, user, HttpServletResponse.SC_BAD_REQUEST, "Unknown action: $action")
+    }
+  }
 
-    // Require authentication and admin authorization for all record modification operations
-    if (user == null) {
-      response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required")
+  /** JSON-only alias for `action=revoke`. */
+  override fun doDelete(request: HttpServletRequest, response: HttpServletResponse) {
+    val user = authenticate(request, response) ?: return
+    if (!csrfOk(request, user)) {
+      writeJson(response, HttpServletResponse.SC_FORBIDDEN, mapOf("error" to "Invalid or missing CSRF token"))
       return
     }
-
-    val record = apiKeyRecords.find { it.apiKey.decrypt == apiKey }
-
-    if (record != null && budget != null) {
-      apiKeyRecords.remove(record)
-      apiKeyRecords.add(
-        record.copy(
-          mappedKey = mappedKey?.encrypt ?: record.mappedKey,
-          budget = budget,
-          comment = comment ?: "",
-          welcomeMessage = welcomeMessage ?: record.welcomeMessage
-        )
-      )
-      saveRecords()
-      response.sendRedirect("?action=edit&apiKey=${URLEncoder.encode(apiKey, "UTF-8")}&editSuccess=true")
-    } else if (apiKey != null && budget != null) {
-      val newRecord = ApiKeyRecord(
-        owner = user.email,
-        apiKey = apiKey.encrypt,
-        mappedKey = mappedKey?.encrypt ?: "".encrypt,
-        budget = budget,
-        comment = comment ?: "",
-        welcomeMessage = welcomeMessage ?: "Welcome to our service!"
-      )
-      apiKeyRecords.add(newRecord)
-      saveRecords()
-      response.sendRedirect(
-        "?action=edit&apiKey=${
-          URLEncoder.encode(
-            apiKey,
-            "UTF-8"
-          )
-        }&creationSuccess=true"
+    val token = request.getParameter("token")
+    if (token.isNullOrBlank()) {
+      writeJson(response, HttpServletResponse.SC_BAD_REQUEST, mapOf("error" to "Missing 'token' parameter"))
+      return
+    }
+    val revoked = tryLogout(token, user)
+    if (revoked == null) {
+      writeJson(
+        response, HttpServletResponse.SC_NOT_IMPLEMENTED,
+        mapOf("error" to "Revocation is not supported by ${authenticationManager.javaClass.simpleName}")
       )
     } else {
-      response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid input")
+      writeJson(response, if (revoked) HttpServletResponse.SC_OK else HttpServletResponse.SC_NOT_FOUND,
+        mapOf("revoked" to revoked))
     }
   }
 
-  private fun escapeHtml(input: Any?): String {
-    if (input == null) return ""
-    return input.toString()
-      .replace("&", "&amp;")
-      .replace("<", "&lt;")
-      .replace(">", "&gt;")
-      .replace("\"", "&quot;")
-      .replace("'", "&#x27;")
+  private fun create(request: HttpServletRequest, response: HttpServletResponse, user: User) {
+    val ttl = parseTtl(request.getParameter("ttl"))
+    val token = generateToken()
+    try {
+      authenticationManager.putUser(token, user, ttl)
+    } catch (e: Exception) {
+      log.warn("Failed to issue access token for {}", user, e)
+      fail(request, response, user, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to issue token")
+      return
+    }
+    log.info("Issued access token {} for user {} (ttl={})", mask(token), user, ttl ?: "default")
+    if (wantsJson(request)) {
+      writeJson(
+        response, HttpServletResponse.SC_CREATED, mapOf(
+          "token" to token,
+          "expiresInSeconds" to ttl?.seconds,
+          "warning" to "This value is shown only once; store it securely."
+        )
+      )
+    } else {
+      renderPage(
+        response, user, newToken = token,
+        notice = "New access token created - copy it now, it will not be shown again.", error = null
+      )
+    }
   }
 
-  private fun indexPage(request: HttpServletRequest, response: HttpServletResponse): String {
-    val user = UserProviderImpl().authenticate(request, response) ?: return ""
-    return """
-          <html>
-          <head>
-              <title>API Key Records</title>
-              <style>
-                  body { font-family: Arial, sans-serif; margin: 20px; }
-                  .records { margin-bottom: 20px; }
-                  .record { margin: 10px 0; }
-                  a { text-decoration: none; color: #007BFF; }
-              </style>
-          </head>
-          <body>
-              <h1>API Key Records</h1>
-              <div class='records'>
-                  ${
-      apiKeyRecords.filter { it.owner == user.email }.joinToString("\n") { record ->
-        val safeKey = escapeHtml(record.apiKey)
-        val encodedKey = URLEncoder.encode(record.apiKey.decrypt, "UTF-8")
-        "<div class='record'><a href='?action=edit&apiKey=$encodedKey'>$safeKey</a></div>"
+  private fun revoke(request: HttpServletRequest, response: HttpServletResponse, user: User) {
+    val token = request.getParameter("token")
+    if (token.isNullOrBlank()) {
+      fail(request, response, user, HttpServletResponse.SC_BAD_REQUEST, "Missing 'token' parameter")
+      return
+    }
+    when (tryLogout(token, user)) {
+      null -> fail(
+        request, response, user, HttpServletResponse.SC_NOT_IMPLEMENTED,
+        "Revocation is not supported by ${authenticationManager.javaClass.simpleName}"
+      )
+
+      true -> {
+        log.info("Revoked access token {} for user {}", mask(token), user)
+        if (wantsJson(request)) writeJson(response, HttpServletResponse.SC_OK, mapOf("revoked" to true))
+        else renderPage(response, user, null, notice = "Token ${mask(token)} revoked.", error = null)
       }
+
+      false -> fail(request, response, user, HttpServletResponse.SC_NOT_FOUND, "Unknown or already expired token")
     }
-              </div>
-              <a href="?action=create">Create New API Key Record</a>
-          </body>
-          </html>
-      """.trimIndent()
   }
 
-  private fun serveInviteConfirmationPage(resp: HttpServletResponse, record: ApiKeyRecord, user: User) {
-    val safeWelcome = escapeHtml(record.welcomeMessage)
-    val safeApiKey = escapeHtml(record.apiKey)
-    resp.writer.write(
-      """
-    <html>
-    <head>
-        <title>Accept API Key Invitation</title>
-    </head>
-    <body>
-    <h1>Accept API Key Invitation</h1>
-    <h2>$safeWelcome</h2>
-    <p>You have been invited to use the API Key: $safeApiKey</p>
-    <form action='/apiKeys/' method="post">
-        <input type="hidden" name="apiKey" value="$safeApiKey">
-        <input type="hidden" name="action" value="acceptInvite">
-        <input type="submit" value="Accept Invite">
-    </form>
-    </body>
-    </html>
-    """.trimIndent()
+  private fun revokeAll(request: HttpServletRequest, response: HttpServletResponse, user: User) {
+    val count = try {
+      authenticationManager.revokeAll(user)
+    } catch (e: UnsupportedOperationException) {
+      // Fall back to revoking the enumerable sessions one at a time.
+      tokens(user).count { tryLogout(it.token, user) == true }
+    }
+    log.info("Revoked {} session(s) for user {}", count, user)
+    if (wantsJson(request)) writeJson(response, HttpServletResponse.SC_OK, mapOf("revoked" to count))
+    else renderPage(
+      response, user, null,
+      notice = "Revoked $count session(s). You may need to sign in again.", error = null
     )
   }
 
-  private fun serveEditPage(response: HttpServletResponse, record: ApiKeyRecord) {
-    val safeApiKey = escapeHtml(record.apiKey)
-    val safeMappedKey = escapeHtml(record.mappedKey)
-    val safeComment = escapeHtml(record.comment)
-    val safeWelcome = escapeHtml(record.welcomeMessage)
-    val encodedApiKey = URLEncoder.encode(record.apiKey.decrypt, "UTF-8")
+  private fun tokens(user: User): List<TokenMetadata> = try {
+    authenticationManager.listTokens(user)
+  } catch (e: Exception) {
+    log.warn("Failed to list tokens for {}", user, e)
+    emptyList()
+  }
 
+  /** @return true/false when revocation is supported, null when the backend cannot revoke. */
+  private fun tryLogout(token: String, user: User): Boolean? = try {
+    authenticationManager.logoutIfMatching(token, user)
+  } catch (e: UnsupportedOperationException) {
+    null
+  } catch (e: StackOverflowError) {
+    // Defensive: some implementations inherit the (previously recursive) default.
+    log.error("AuthenticationInterface.logoutIfMatching is not implemented by {}", authenticationManager.javaClass)
+    null
+  }
+
+  private fun authenticate(request: HttpServletRequest, response: HttpServletResponse): User? {
+    val user = userProvider.authenticate(request, response)
+    if (user == null) {
+      if (!response.isCommitted) {
+        response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required")
+      }
+      return null
+    }
+    return user
+  }
+
+  private fun csrfOk(request: HttpServletRequest, user: User): Boolean {
+    val presented = request.getHeader(CSRF_HEADER) ?: request.getParameter("csrf")
+    return user.isSignatureValid(presented)
+  }
+
+  private fun generateToken(): String {
+    val bytes = ByteArray(TOKEN_BYTES)
+    random.nextBytes(bytes)
+    return Base64.getUrlEncoder().withoutPadding().encodeToString(bytes)
+  }
+
+  private fun parseTtl(raw: String?): Duration? {
+    val value = raw?.trim()?.lowercase()?.takeIf { it.isNotEmpty() && it != "never" && it != "default" } ?: return null
+    val seconds = when {
+      value.endsWith("d") -> value.dropLast(1).toLongOrNull()?.times(86_400)
+      value.endsWith("h") -> value.dropLast(1).toLongOrNull()?.times(3_600)
+      value.endsWith("m") -> value.dropLast(1).toLongOrNull()?.times(60)
+      value.endsWith("s") -> value.dropLast(1).toLongOrNull()
+      else -> value.toLongOrNull()
+    } ?: return null
+    return if (seconds <= 0) null else Duration.ofSeconds(seconds)
+  }
+
+  private fun wantsJson(request: HttpServletRequest): Boolean {
+    if (request.getParameter("format").equals("json", ignoreCase = true)) return true
+    val accept = request.getHeader("Accept").orEmpty()
+    return accept.contains("application/json", ignoreCase = true) && !accept.contains("text/html", ignoreCase = true)
+  }
+
+  private fun writeJson(response: HttpServletResponse, status: Int, body: Any) {
+    response.status = status
+    response.contentType = "application/json"
+    response.characterEncoding = "UTF-8"
+    response.setHeader("Cache-Control", "no-store")
+    mapper.writeValue(response.writer, body)
+  }
+
+  private fun fail(
+    request: HttpServletRequest,
+    response: HttpServletResponse,
+    user: User,
+    status: Int,
+    message: String
+  ) {
+    if (wantsJson(request)) {
+      writeJson(response, status, mapOf("error" to message))
+    } else {
+      response.status = status
+      renderPage(response, user, newToken = null, notice = null, error = message)
+    }
+  }
+
+  private fun userJson(user: User) = mapOf(
+    "id" to user.id,
+    "name" to user.name,
+    "email" to user.redactedEmail
+  )
+
+  private fun tokenJson(meta: TokenMetadata) = mapOf(
+    "preview" to mask(meta.token),
+    "userId" to meta.userId,
+    "issuedAt" to meta.issuedAt?.toString(),
+    "expiresAt" to meta.expiresAt?.toString(),
+    "lastUsedAt" to meta.lastUsedAt?.toString(),
+    "expired" to (meta.expiresAt?.isBefore(Instant.now()) ?: false)
+  )
+
+  private fun renderPage(
+    response: HttpServletResponse,
+    user: User,
+    newToken: String?,
+    notice: String?,
+    error: String?
+  ) {
+    val tokens = tokens(user)
+    val csrf = user.signature
+    response.contentType = "text/html"
+    response.characterEncoding = "UTF-8"
+    response.setHeader("Cache-Control", "no-store")
+    val rows = if (tokens.isEmpty()) {
+      """<tr><td colspan="5" class="empty">No active sessions are tracked for this account.</td></tr>"""
+    } else tokens.joinToString("\n") { meta ->
+      val expired = meta.expiresAt?.isBefore(Instant.now()) ?: false
+      """
+      <tr${if (expired) " class=\"expired\"" else ""}>
+        <td><code>${esc(mask(meta.token))}</code></td>
+        <td>${esc(fmt(meta.issuedAt))}</td>
+        <td>${esc(fmt(meta.expiresAt))}</td>
+        <td>${esc(fmt(meta.lastUsedAt))}</td>
+        <td>
+          <form method="post" onsubmit="return confirm('Revoke this token?')">
+            <input type="hidden" name="action" value="revoke"/>
+            <input type="hidden" name="csrf" value="${esc(csrf)}"/>
+            <input type="hidden" name="token" value="${esc(meta.token)}"/>
+            <button type="submit" class="danger">Revoke</button>
+          </form>
+        </td>
+      </tr>
+      """.trimIndent()
+    }
+    val banners = buildString {
+      if (error != null) append("""<div class="banner error">${esc(error)}</div>""")
+      if (notice != null) append("""<div class="banner notice">${esc(notice)}</div>""")
+      if (newToken != null) append(
+        """
+        <div class="banner token">
+          <div>Your new access token (shown once):</div>
+          <code id="new-token">${esc(newToken)}</code>
+          <button type="button" onclick="navigator.clipboard.writeText(document.getElementById('new-token').textContent)">Copy</button>
+        </div>
+        """.trimIndent()
+      )
+    }
     response.writer.write(
       """
-      <html>
+      <!DOCTYPE html>
+      <html lang="en">
       <head>
-          <title>Edit API Key Record: $safeApiKey</title>
-          <style>
-              body {
-                  font-family: Arial, sans-serif;
-                  margin: 20px;
-              }
-
-              form > label {
-                  display: block;
-                  margin-top: 10px;
-              }
-
-              form > input[type="text"], textarea {
-                  margin-bottom: 10px;
-                  display: block;
-                  width: 100%;
-                  box-sizing: border-box;
-              }
-
-              form > input[type="text"]#mappedKey {
-                  width: 50%;
-              }
-
-              textarea {
-                  height: 100px;
-              }
-
-              form > input[type="submit"] {
-                  margin-top: 10px;
-              }
-
-              form {
-                  max-width: 600px;
-              }
-
-              h2 {
-                  margin-top: 20px;
-              }
-
-              div {
-                  margin-bottom: 10px;
-              }
-               .invite-link {
-                   margin-top: 20px;
-               }
-          </style>
+        <meta charset="utf-8"/>
+        <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <title>Access Tokens</title>
+        <style>
+          body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; }
+          table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
+          th, td { border-bottom: 1px solid #ddd; padding: .5rem; text-align: left; font-size: .9rem; }
+          tr.expired { opacity: .5; }
+          td.empty { text-align: center; color: #666; }
+          code { background: #f4f4f4; padding: .15rem .35rem; border-radius: 3px; }
+          .banner { padding: .75rem 1rem; border-radius: 4px; margin: .5rem 0; }
+          .banner.error { background: #fdecea; color: #8a1c12; }
+          .banner.notice { background: #eaf4fd; color: #11527d; }
+          .banner.token { background: #edf7ed; color: #17501b; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+          .toolbar { display: flex; gap: 1rem; align-items: flex-end; margin-top: 1rem; flex-wrap: wrap; }
+          button { cursor: pointer; padding: .4rem .8rem; }
+          button.danger { color: #8a1c12; }
+          form.inline { display: inline; }
+        </style>
       </head>
       <body>
-      <h1>Edit API Key Record: $safeApiKey</h1>
-      <form action="edit" method="post">
-          <input type="hidden" name="apiKey" value="$safeApiKey">
-          <label for="mappedKey">Mapped Key:</label>
-          <input type="text" id="mappedKey" name="mappedKey" value="$safeMappedKey" style="width: 100%;">
-          <label for="budget">Budget:</label>
-          <input type="text" id="budget" name="budget" value="${record.budget}">
-          <label for="comment">Description:</label>
-          <textarea id="comment" name="comment">$safeComment</textarea>
-          <label for="welcomeMessage">Welcome Message:</label>
-          <textarea id="welcomeMessage" name="welcomeMessage">$safeWelcome</textarea>
-          <input type="submit" value="Submit">
-      </form>
-       <!-- Invite Link -->
-       <div class="invite-link">
-           <h2>Invite Link</h2>
-           <p>Share this link to invite others to use this API Key:</p>
-           <a href="?action=invite&apiKey=$encodedApiKey">Invite Link</a>
-       </div>
+        <h1>Access Tokens</h1>
+        <p>Signed in as <strong>${esc(user.name)}</strong> (<code>${esc(user.redactedEmail)}</code>)</p>
+        $banners
+        <div class="toolbar">
+          <form method="post" class="inline">
+            <input type="hidden" name="action" value="create"/>
+            <input type="hidden" name="csrf" value="${esc(csrf)}"/>
+            <label>Expires in
+              <select name="ttl">
+                <option value="1d">1 day</option>
+                <option value="7d">7 days</option>
+                <option value="30d" selected>30 days</option>
+                <option value="90d">90 days</option>
+                <option value="never">Never</option>
+              </select>
+            </label>
+            <button type="submit">Create token</button>
+          </form>
+          <form method="post" class="inline" onsubmit="return confirm('Revoke ALL sessions, including this one?')">
+            <input type="hidden" name="action" value="revoke-all"/>
+            <input type="hidden" name="csrf" value="${esc(csrf)}"/>
+            <button type="submit" class="danger">Revoke all</button>
+          </form>
+        </div>
+        <table>
+          <thead><tr><th>Token</th><th>Issued</th><th>Expires</th><th>Last used</th><th></th></tr></thead>
+          <tbody>
+          $rows
+          </tbody>
+        </table>
       </body>
       </html>
-        """.trimIndent()
+      """.trimIndent()
     )
   }
 
   companion object {
-    private val userRoot by lazy {
-      dataStorageRoot.resolve("apiKeys").apply { mkdirs() }
+    private val log = LoggerFactory.getLogger(ApiKeyServlet::class.java)
+    private const val TOKEN_BYTES = 32
+    private const val CSRF_HEADER = "X-CSRF-Token"
+    private val TIMESTAMP_FORMAT: DateTimeFormatter =
+      DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneId.systemDefault())
+
+    internal fun mask(token: String): String = when {
+      token.length <= 8 -> "*".repeat(token.length.coerceAtLeast(4))
+      else -> token.take(4) + "\u2026" + token.takeLast(4)
     }
 
-    val apiKeyRecords by lazy {
-      val file = File(userRoot, "apiKeys.json")
-      if (file.exists()) try {
-        return@lazy JsonUtil.fromJson(file.readText(), typeOf<List<ApiKeyRecord>>().javaType)
-      } catch (e: Throwable) {
-        e.printStackTrace()
-      }
-      mutableListOf<ApiKeyRecord>()
-    }
+    private fun fmt(instant: Instant?): String = instant?.let { TIMESTAMP_FORMAT.format(it) } ?: "-"
 
-    private fun saveRecords() {
-      File(userRoot, "apiKeys.json").writeText(JsonUtil.toJson(apiKeyRecords))
-    }
+    private fun esc(value: String): String = value
+      .replace("&", "&amp;")
+      .replace("<", "&lt;")
+      .replace(">", "&gt;")
+      .replace("\"", "&quot;")
+      .replace("'", "&#39;")
   }
 }

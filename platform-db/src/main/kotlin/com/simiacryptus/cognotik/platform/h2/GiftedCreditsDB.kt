@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform.hsql
+package com.simiacryptus.cognotik.platform.h2
 
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig

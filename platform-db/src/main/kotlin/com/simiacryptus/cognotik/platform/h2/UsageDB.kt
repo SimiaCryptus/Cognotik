@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform.hsql
+package com.simiacryptus.cognotik.platform.h2
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken

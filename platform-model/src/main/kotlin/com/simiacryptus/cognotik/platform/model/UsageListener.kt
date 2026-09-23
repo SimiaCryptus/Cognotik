@@ -9,8 +9,9 @@ interface UsageListener {
       sessionId: Session,
       fn: (model: LLMModel, usage: ModelSchema.Usage, data: ModelSchema.UsageData?) -> Unit
     ): UsageListener {
+       val session = sessionId
       return object : UsageListener {
-        override val sessionId: Session get() =  sessionId
+         override val sessionId: Session get() = session
         override fun onUsage(model: LLMModel, usage: ModelSchema.Usage, data: ModelSchema.UsageData?) {
           fn(model, usage, data)
         }

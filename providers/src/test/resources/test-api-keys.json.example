@@ -1,0 +1,82 @@
+{
+  "_comment": [
+    "Copy this file to 'test-api-keys.json' (same directory) and fill in real keys.",
+    "'test-api-keys.json' is gitignored - never commit real credentials.",
+    "You may also point at a file elsewhere with -Dcognotik.test.apiKeys=/path/to/keys.json",
+    "or the COGNOTIK_TEST_API_KEYS environment variable.",
+    "Any provider entry that is missing, disabled, blank, or still contains a <placeholder>",
+    "is skipped."
+  ],
+  "defaults": {
+    "prompt": "Reply with the single word: pong",
+    "maxTokens": 64,
+    "timeoutSeconds": 120
+  },
+  "providers": {
+    "OpenAI": {
+      "enabled": true,
+      "apiKey": "<sk-...>",
+      "base": null,
+      "chatModel": null,
+      "embeddingModel": null
+    },
+    "Anthropic": {
+      "enabled": true,
+      "apiKey": "<sk-ant-...>"
+    },
+    "Gemini": {
+      "enabled": true,
+      "apiKey": "<AIza...>"
+    },
+    "Groq": {
+      "enabled": false,
+      "apiKey": "<gsk_...>"
+    },
+    "Perplexity": {
+      "enabled": false,
+      "apiKey": "<pplx-...>"
+    },
+    "Mistral": {
+      "enabled": false,
+      "apiKey": "<...>"
+    },
+    "DeepSeek": {
+      "enabled": false,
+      "apiKey": "<...>"
+    },
+    "XAI": {
+      "enabled": false,
+      "apiKey": "<xai-...>"
+    },
+    "ZAI": {
+      "enabled": false,
+      "apiKey": "<...>"
+    },
+    "Qwen": {
+      "enabled": false,
+      "apiKey": "<...>"
+    },
+    "AWS": {
+      "enabled": false,
+      "apiKey": "<accessKey:secretKey>"
+    },
+    "ModelsLab": {
+      "enabled": false,
+      "apiKey": "<...>"
+    },
+    "ElevenLabs": {
+      "enabled": false,
+      "apiKey": "<...>"
+    },
+    "Ollama": {
+      "enabled": false,
+      "apiKey": "unused",
+      "base": "http://localhost:11434/v1"
+    },
+    "HostedProxy": {
+      "enabled": false,
+      "apiKey": "<...>",
+      "base": null
+    }
+  }
+}

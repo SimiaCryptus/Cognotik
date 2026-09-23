@@ -5,7 +5,6 @@ import java.io.File
 interface ApplicationServices {
   var pluginManager: PluginManagerInterface
   var authorizationManager: AuthorizationInterface
-  var authenticationManager: AuthenticationInterface
   var threadPoolManager: ThreadPoolManager
 
   var fileApplicationServices: (File) -> IFileApplicationServices

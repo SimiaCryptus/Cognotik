@@ -157,6 +157,50 @@ export const tools = [
             '/app/fileIO.js'
         ]
     },
+     {
+         id: 'analysis',
+         name: 'Software Analysis Engine',
+         icon: '🧪',
+         category: 'review',
+         status: 'experimental',
+         tagline: 'Make the implicit assumptions in a codebase explicit, reviewable and — where possible — proved.',
+         description:
+             'Point it at a scope (files, modules, functions), pick a language and a target rung, ' +
+             'and a ten-stage doc-op pipeline builds a project model, normalises the code into a ' +
+             'canonical semantic IR, extracts proof obligations, mines candidate assumptions into a ' +
+             'ratifiable ledger, emits Lean theorems against a human-authored semantics prelude, ' +
+             'runs a cheapest-first proof portfolio, triages failures into repair plans and renders ' +
+             'an evidence bundle whose first page is the residual-risk summary.',
+         entry: 'analysis/index.html',
+         docs: 'analysis/README.md',
+         tags: ['doc-ops', 'verification', 'lean', 'assumptions', 'proof-obligations', 'csir', 'json-schema', 'triage'],
+         pipeline: [
+             'target.md — scope, language and target ladder rung (UI "Save target")',
+             'project.md — build profile, entry points, dependency graph (ingest, SubPlan/Adaptive)',
+             'csir.md — Canonical Semantic IR with explicit effects, overflow policy and trap edges',
+             'obligations.json — deterministic obligation slots (ObligationSet schema)',
+             'ledger.json — typed, provenance-carrying assumption ledger; humans ratify or reject here',
+             'Obligations.lean — deep embedding + one theorem per obligation against ops/LangSem.lean',
+             'proofs.md — portfolio results with honest trust levels (kernel-checked … proposed, timeout)',
+             'triage.json — failure diagnoses + repair plans (TriageReport schema)',
+             'annotations.md — optional @assume/@ensures/@decreases comments written back to source',
+             'report.md — evidence bundle, residual-risk summary first'
+         ],
+         artifacts: [
+             {path: 'analysis/analyses/<slug>/', note: 'one folder per analysis target holding every stage output'},
+             {path: 'analysis/analyses/<slug>/ledger.json', note: 'the assumption ledger — the unit of trust'},
+             {path: 'analysis/analyses/<slug>/Obligations.lean', note: 'emitted theorems, imports ops/LangSem.lean'},
+             {path: 'analysis/analyses/<slug>/triage.<id>.md', note: 'per-repair doc-ops generated from triage items'},
+             {path: 'analysis/ops/LangSem.lean', note: 'human-authored semantics prelude — versioned, never regenerated'}
+         ],
+         requires: [
+             '/app/docops.js — runDocOp, waitForTask, createStatusPoller',
+             '/app/fileIO.js — readFile, writeFile, listFiles',
+             '/lib/marked.min.js — markdown rendering',
+             'a doc-op runner able to execute ops/*.op.md (SubPlan Adaptive/Waterfall, FileSearch, FileReview, FileModification)',
+             'optional: a Lean toolchain hook (lake build) — without it the best trust level is `proposed`'
+         ]
+     },
     {
         id: 'builder',
         name: 'Builder',

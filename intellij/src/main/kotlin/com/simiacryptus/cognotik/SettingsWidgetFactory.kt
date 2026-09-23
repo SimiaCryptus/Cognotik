@@ -20,7 +20,6 @@ import com.simiacryptus.cognotik.platform.ApiChatModel
 import com.simiacryptus.cognotik.platform.UserSettings
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.UsageTable
-import com.simiacryptus.cognotik.platform.hsql.UsageDB
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer

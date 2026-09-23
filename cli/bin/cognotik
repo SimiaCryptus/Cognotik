@@ -13,6 +13,7 @@
 #   keys             -> com.simiacryptus.cognotik.cli.ApiKeysCli
 #   docops           -> com.simiacryptus.cognotik.cli.DocOpsCli
 #   autofix          -> com.simiacryptus.cognotik.cli.AutoFixCli
+#   session          -> com.simiacryptus.cognotik.cli.SessionServerCli
 #
 # Options:
 #   --build      Force a rebuild (:cli:shadowJar). Source checkout only.
@@ -73,14 +74,15 @@ usage() {
 case "${1:-}" in
    -h|--help) usage; exit 0 ;;
 esac
-[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix)"; }
+[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix, session)"; }
 ACTION="$1"; shift
 case "$ACTION" in
    fileserver|fs) MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli" ;;
    keys)          MAIN_CLASS="com.simiacryptus.cognotik.cli.ApiKeysCli" ;;
    docops)        MAIN_CLASS="com.simiacryptus.cognotik.cli.DocOpsCli" ;;
    autofix)       MAIN_CLASS="com.simiacryptus.cognotik.cli.AutoFixCli" ;;
-   *) die "unknown action: '$ACTION' (expected: fileserver|fs, keys, docops, autofix)" ;;
+   session)       MAIN_CLASS="com.simiacryptus.cognotik.cli.SessionServerCli" ;;
+   *) die "unknown action: '$ACTION' (expected: fileserver|fs, keys, docops, autofix, session)" ;;
 esac
 
 

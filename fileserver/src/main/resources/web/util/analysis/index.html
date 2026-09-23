@@ -1,0 +1,1420 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Software Analysis Engine</title>
+    <style>
+        :root {
+            --bg: #0f1115; --panel: #171a21; --panel-2: #1e222b; --border: #2a2f3a;
+            --fg: #e6e9ef; --muted: #9aa4b2; --accent: #4f8cff; --accent-2: #7c5cff;
+            --ok: #3ecf8e; --warn: #f5a524; --err: #f4636e; --radius: 10px;
+        }
+        * { box-sizing: border-box; }
+        html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg);
+            font: 14px/1.55 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+        a { color: var(--accent); }
+        h1, h2, h3 { margin: 0 0 .5rem; line-height: 1.25; }
+        .wrap { max-width: 1400px; margin: 0 auto; padding: 1rem 1.25rem 4rem; }
+        #menubar-mount:empty { display: none; }
+        body.has-menubar .wrap { padding-top: 1.5rem; }
+        .layout { display: grid; grid-template-columns: 280px minmax(0, 1fr); gap: 1rem; align-items: start; }
+        @media (max-width: 980px) { .layout { grid-template-columns: minmax(0, 1fr); } }
+        .panel { background: var(--panel); border: 1px solid var(--border); border-radius: var(--radius); padding: 1rem; margin-bottom: 1rem; }
+        .panel > h2 { font-size: .95rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); }
+        label { display: block; font-size: .8rem; color: var(--muted); margin: .6rem 0 .25rem; }
+        input[type="text"], textarea, select { width: 100%; background: var(--panel-2); color: var(--fg);
+            border: 1px solid var(--border); border-radius: 8px; padding: .55rem .65rem; font: inherit; }
+        textarea { min-height: 160px; resize: vertical; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 13px; }
+        input:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+        button { background: var(--panel-2); color: var(--fg); border: 1px solid var(--border); border-radius: 8px;
+            padding: .5rem .85rem; font: inherit; cursor: pointer; }
+        button:hover:not(:disabled) { border-color: var(--accent); }
+        button:disabled { opacity: .5; cursor: not-allowed; }
+        button.primary { background: linear-gradient(180deg, var(--accent), #3f76e0); border-color: transparent; color: #fff; font-weight: 600; }
+        button.danger:hover:not(:disabled) { border-color: var(--err); color: var(--err); }
+        .row { display: flex; gap: .5rem; flex-wrap: wrap; align-items: center; }
+        .grid-3 { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: .75rem; }
+        .muted { color: var(--muted); }
+        .small { font-size: .8rem; }
+        .banner { border-radius: var(--radius); padding: .7rem .9rem; margin-bottom: 1rem; border: 1px solid var(--border); background: var(--panel-2); }
+        .banner.error { border-color: var(--err); color: #ffd7da; background: #2a1417; }
+        .banner.warn { border-color: var(--warn); color: #ffe6bf; background: #2a2113; }
+        .hidden { display: none !important; }
+        .ladder { margin: 0; padding-left: 1.2rem; }
+        .ladder li code { color: var(--accent-2); }
+
+        /* steps */
+        .steps { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .35rem; }
+        .steps li { display: flex; gap: .6rem; align-items: center; padding: .4rem .55rem; border-radius: 8px;
+            background: var(--panel-2); border: 1px solid transparent; }
+        .steps li .dot { width: 10px; height: 10px; border-radius: 50%; background: var(--border); flex: 0 0 auto; }
+        .steps li .layer { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .7rem; color: var(--accent-2); margin-right: .3rem; }
+        .steps li[data-state="running"] { border-color: var(--accent); }
+        .steps li[data-state="running"] .dot { background: var(--accent); animation: pulse 1s infinite; }
+        .steps li[data-state="done"] .dot { background: var(--ok); }
+        .steps li[data-state="error"] { border-color: var(--err); }
+        .steps li[data-state="error"] .dot { background: var(--err); }
+        .steps li[data-state="skipped"] { opacity: .5; }
+        @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+        .steps li .state { margin-left: auto; font-size: .75rem; color: var(--muted); }
+        .steps li .step-run, .steps li .step-del { padding: .05rem .45rem; font-size: .75rem; line-height: 1.4; background: transparent; color: var(--muted); flex: 0 0 auto; }
+        .steps li .step-run:hover:not(:disabled) { color: var(--fg); border-color: var(--accent); }
+        .steps li .step-del:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+
+        /* log */
+        #log { max-height: 180px; overflow: auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px;
+            background: #0b0d12; border: 1px solid var(--border); border-radius: 8px; padding: .5rem .6rem; margin-top: .6rem; }
+        #log .l-error { color: var(--err); }
+        #log .l-ok { color: var(--ok); }
+        #log .l-warn { color: var(--warn); }
+        #log time { color: var(--muted); margin-right: .5rem; }
+
+        /* tabs */
+        .tabs { display: flex; gap: .25rem; border-bottom: 1px solid var(--border); margin-bottom: .9rem; flex-wrap: wrap; }
+        .tabs button { border: none; border-bottom: 2px solid transparent; border-radius: 8px 8px 0 0; background: transparent; color: var(--muted); }
+        .tabs button[aria-selected="true"] { color: var(--fg); border-bottom-color: var(--accent); }
+        .tabpanel[hidden] { display: none; }
+        .doc { background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 1rem 1.15rem; overflow: auto; max-height: 70vh; }
+        .doc pre { background: #0b0d12; padding: .75rem; border-radius: 8px; overflow: auto; }
+        .doc code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12.5px; }
+        .doc pre.raw { white-space: pre-wrap; overflow-wrap: anywhere; margin: 0; }
+        .view-toolbar { margin-bottom: .6rem; }
+        .view-toolbar button[aria-pressed="true"] { border-color: var(--accent); color: #fff; }
+        .view-toolbar select { width: auto; padding: .3rem .5rem; }
+        .doc table { border-collapse: collapse; }
+        .doc th, .doc td { border: 1px solid var(--border); padding: .35rem .55rem; }
+
+        /* history */
+        #history { list-style: none; margin: .5rem 0 0; padding: 0; display: grid; gap: .3rem; max-height: 45vh; overflow: auto; }
+        #history li button { width: 100%; text-align: left; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #history li button[aria-current="true"] { border-color: var(--accent); color: #fff; }
+
+        /* cards */
+        .cards { display: grid; gap: .75rem; max-height: 70vh; overflow: auto; }
+        .card { background: var(--panel-2); border: 1px solid var(--border); border-left-width: 4px; border-radius: 8px; padding: .8rem .95rem; }
+        .card[data-priority="critical"] { border-left-color: var(--err); }
+        .card[data-priority="high"] { border-left-color: var(--warn); }
+        .card[data-priority="medium"] { border-left-color: var(--accent); }
+        .card[data-priority="low"] { border-left-color: var(--border); }
+        .card[data-flag="true"] { border-left-color: var(--err); box-shadow: inset 0 0 0 1px rgba(244, 99, 110, .35); }
+        .card[data-status="running"] { box-shadow: inset 0 0 0 1px var(--accent); }
+        .card[data-status="done"] { border-color: rgba(62, 207, 142, .45); }
+        .card[data-status="error"] { border-color: rgba(244, 99, 110, .55); }
+        .card[data-ledger="rejected"], .card[data-ledger="refuted"] { opacity: .6; }
+        .card h3 { font-size: 1rem; margin-bottom: .35rem; }
+        .card pre.stmt { background: #0b0d12; padding: .5rem .65rem; border-radius: 6px; font-size: 12px; overflow: auto; margin: .35rem 0; }
+        .card pre.stmt code { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+        .kv { margin-top: .2rem; }
+        .kv span { color: var(--muted); }
+        .badges { display: flex; gap: .35rem; flex-wrap: wrap; margin: .35rem 0; }
+        .badge { font-size: .7rem; text-transform: uppercase; letter-spacing: .05em; padding: .12rem .45rem; border-radius: 999px; border: 1px solid var(--border); color: var(--muted); }
+        .badge.p-critical { color: var(--err); border-color: var(--err); }
+        .badge.p-high { color: var(--warn); border-color: var(--warn); }
+        .badge.p-medium { color: var(--accent); border-color: var(--accent); }
+        .badge.type { color: var(--accent-2); border-color: var(--accent-2); }
+        .badge.s-running { color: var(--accent); border-color: var(--accent); }
+        .badge.s-done, .badge.ratified { color: var(--ok); border-color: var(--ok); }
+        .badge.s-error { color: var(--err); border-color: var(--err); }
+        .badge.st-axiomatic { color: var(--err); border-color: var(--err); }
+        .badge.st-provable { color: var(--ok); border-color: var(--ok); }
+        .badge.st-checkable { color: var(--accent); border-color: var(--accent); }
+        .badge.st-enforced-elsewhere { color: var(--warn); border-color: var(--warn); }
+        .badge.st-idealization { color: var(--accent-2); border-color: var(--accent-2); }
+        .badge.d-real-bug, .badge.d-wrong-specification { color: var(--err); border-color: var(--err); }
+        .badge.d-missing-assumption { color: var(--warn); border-color: var(--warn); }
+        .badge.d-missing-lemma { color: var(--accent); border-color: var(--accent); }
+        .badge.d-front-end-defect { color: var(--accent-2); border-color: var(--accent-2); }
+        .badge.d-discharged { color: var(--ok); border-color: var(--ok); }
+        .badge.lv-kernel-checked { color: var(--ok); border-color: var(--ok); }
+        .badge.lv-smt-attested, .badge.lv-bounded-checked { color: var(--warn); border-color: var(--warn); }
+        .badge.lv-refuted { color: var(--err); border-color: var(--err); }
+        .files { display: flex; gap: .3rem; flex-wrap: wrap; margin-top: .4rem; }
+        .files code { background: #0b0d12; border: 1px solid var(--border); border-radius: 6px; padding: .1rem .35rem; font-size: 12px; }
+        .op-path { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 11.5px; }
+        .risk { border: 1px solid var(--warn); background: #2a2113; border-radius: 8px; padding: .75rem .9rem; margin-bottom: .75rem; }
+        .risk h3 { font-size: .95rem; color: #ffe6bf; }
+        details summary { cursor: pointer; color: var(--muted); }
+    </style>
+</head>
+<body>
+<div id="menubar-mount"></div>
+
+<div class="wrap">
+    <div id="session-banner" class="banner warn hidden"></div>
+
+    <div class="layout">
+        <aside>
+            <section class="panel">
+                <h2>Session</h2>
+                <div class="small muted" id="ctx-info">detecting…</div>
+            </section>
+
+            <section class="panel">
+                <h2>History</h2>
+                <div class="row">
+                    <button id="refresh-history" class="small">Refresh</button>
+                    <button id="new-analysis" class="small">New</button>
+                </div>
+                <ul id="history"></ul>
+                <div id="history-empty" class="small muted" style="margin-top:.5rem">No analyses yet.</div>
+            </section>
+
+            <section class="panel">
+                <h2>Semantics ladder</h2>
+                <ol class="small muted ladder" start="0">
+                    <li><code>ideal</code> — unbounded ints, no UB, sequential</li>
+                    <li><code>bounded</code> — machine ints, wrapping</li>
+                    <li><code>trapping</code> — panic-on-overflow observable</li>
+                    <li><code>memory</code> — real memory model, UB outcome</li>
+                    <li><code>concurrent</code> — weak/atomic orderings</li>
+                    <li><code>deployed</code> — allocator failure, clock, world</li>
+                </ol>
+            </section>
+
+            <section class="panel" style="visibility: hidden">
+                <h2>Settings</h2>
+                <label for="work-dir">Working directory</label>
+                <input id="work-dir" type="text" value="analyses" spellcheck="false">
+                <label for="ops-dir">Ops directory</label>
+                <input id="ops-dir" type="text" value="ops" spellcheck="false">
+            </section>
+        </aside>
+
+        <main>
+            <section class="panel">
+                <h2>Analysis Target</h2>
+                <div class="grid-3">
+                    <div>
+                        <label for="doc-name">Analysis name</label>
+                        <input id="doc-name" type="text" placeholder="auto-generated from scope" spellcheck="false">
+                    </div>
+                    <div>
+                        <label for="lang">Language</label>
+                        <select id="lang">
+                            <option value="auto">auto-detect</option>
+                            <option value="rust">Rust</option>
+                            <option value="c">C</option>
+                            <option value="cpp">C++</option>
+                            <option value="python">Python</option>
+                            <option value="java">Java</option>
+                            <option value="go">Go</option>
+                            <option value="kotlin">Kotlin</option>
+                            <option value="typescript">TypeScript</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="rung">Target rung</label>
+                        <select id="rung">
+                            <option value="0">0 · ideal</option>
+                            <option value="1">1 · bounded</option>
+                            <option value="2" selected>2 · trapping</option>
+                            <option value="3">3 · memory</option>
+                            <option value="4">4 · concurrent</option>
+                            <option value="5">5 · deployed</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label for="opt-report">Options</label>
+                        <div class="row" style="padding-top:.35rem">
+                            <label class="row small" style="margin:0;gap:.35rem">
+                                <input id="opt-annotate" type="checkbox" style="width:auto"> Annotate source
+                            </label>
+                            <label class="row small" style="margin:0;gap:.35rem">
+                                <input id="opt-report" type="checkbox" checked style="width:auto"> Evidence bundle
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <label for="target">Scope &amp; properties</label>
+                <textarea id="target" spellcheck="false"
+                          placeholder="Which files / modules / functions should be analysed, and which properties matter (panic-freedom, memory safety, a functional spec, race freedom…)?"></textarea>
+
+                <div class="row" style="margin-top:.75rem">
+                    <button id="run" class="primary" title="Run every enabled stage in order">Run All Steps</button>
+                    <button id="save-target">Save Target</button>
+                    <button id="delete-doc" class="danger" style="margin-left:auto">Delete</button>
+                </div>
+
+                <ul class="steps" id="steps"></ul>
+                <div id="log" aria-live="polite"></div>
+            </section>
+
+            <section class="panel">
+                <div class="tabs" role="tablist" id="tabs"></div>
+                <div id="panels"></div>
+            </section>
+        </main>
+    </div>
+</div>
+
+<script src="/lib/marked.min.js"></script>
+<script type="module">
+    import {runDocOp, waitForTask, createStatusPoller} from '/app/docops.js';
+    import {readFile, writeFile, listFiles, deleteFile} from '/app/fileIO.js';
+
+    /* ───────────────────────── constants & state ───────────────────────── */
+
+    const STORAGE_PREFIX = 'analysisEngine';
+    const TASK_TIMEOUT_MS = 60 * 60 * 1000;
+    const RUNGS = ['ideal', 'bounded', 'trapping', 'memory', 'concurrent', 'deployed'];
+    /**
+     * The pipeline, one row per idea.md layer. `file` is the sibling artefact inside
+     * `analyses/<slug>/`, `op` the doc-op in `ops/`, `needs` the artefact that must
+     * exist first, `kind` how the tab renders it, `optional` the checkbox gating it.
+     */
+    const STAGES = [
+        {key: 'target', layer: 'L0', label: 'Save target', file: 'target.md', kind: 'md', tab: 'Target'},
+        {key: 'ingest', layer: 'L0', label: 'Project model (SubPlan)', file: 'project.md', kind: 'md', tab: 'Project',
+            op: 'ingest.op.md', needs: 'target'},
+        {key: 'normalize', layer: 'L1', label: 'CSIR normalisation (SubPlan)', file: 'csir.md', kind: 'md', tab: 'CSIR',
+            op: 'normalize.op.md', needs: 'ingest'},
+        {key: 'obligations', layer: 'L2', label: 'Obligation extraction', file: 'obligations.json', kind: 'json',
+            tab: 'Obligations', op: 'extract_obligations.op.md', needs: 'normalize'},
+        {key: 'ledger', layer: 'L2/3', label: 'Assumption mining → ledger', file: 'ledger.json', kind: 'json',
+            tab: 'Ledger', op: 'mine_assumptions.op.md', needs: 'obligations'},
+        {key: 'lean', layer: 'L4', label: 'Lean emission', file: 'Obligations.lean', kind: 'code', tab: 'Lean',
+            op: 'emit_lean.op.md', needs: 'ledger'},
+        {key: 'proofs', layer: 'L5', label: 'Proof orchestration (SubPlan)', file: 'proofs.md', kind: 'md', tab: 'Proofs',
+            op: 'orchestrate_proofs.op.md', needs: 'lean'},
+        {key: 'triage', layer: 'L6', label: 'Counterexample triage', file: 'triage.json', kind: 'json', tab: 'Triage',
+            op: 'triage.op.md', needs: 'proofs'},
+        {key: 'annotate', layer: 'L3', label: 'Annotate source (SubPlan)', file: 'annotations.md', kind: 'md',
+            tab: 'Annotations', op: 'annotate_source.op.md', needs: 'ledger', optional: 'opt-annotate'},
+        {key: 'report', layer: 'L7', label: 'Evidence bundle', file: 'report.md', kind: 'md', tab: 'Report',
+            op: 'report.op.md', needs: 'triage', optional: 'opt-report'}
+    ];
+    const STAGE_BY_KEY = {};
+    STAGES.forEach((s) => { STAGE_BY_KEY[s.key] = s; });
+    const JSON_STAGES = STAGES.filter((s) => s.kind === 'json').map((s) => s.key);
+    let menu = null;
+
+    const state = {
+        basePath: null, docRoot: '', statusBase: null, sessionId: null, slug: null,
+        busy: false, poller: null, standalone: false,
+        obligations: null, ledger: null, triage: null, repairStatus: {}
+    };
+    const docSource = {};
+    const docRawMode = {};
+    const jsonSource = {};
+
+    const $ = (id) => document.getElementById(id);
+
+    /* ───────────────────────── small helpers ───────────────────────── */
+
+    function escapeHtml(s) {
+        return String(s ?? '').replace(/[&<>"']/g, (c) => ({
+            '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
+        })[c]);
+    }
+
+    function renderMarkdown(md) {
+        const text = String(md ?? '');
+        try {
+            if (window.marked) {
+                return typeof window.marked.parse === 'function' ? window.marked.parse(text) : window.marked(text);
+            }
+        } catch (e) { console.warn('markdown render failed', e); }
+        return '<pre>' + escapeHtml(text) + '</pre>';
+    }
+
+    function slugify(text, fallback) {
+        const base = String(text || '').split('\n')[0].toLowerCase()
+            .replace(/[`*#>_\[\]()]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 60);
+        return base || fallback || ('analysis-' + Date.now());
+    }
+
+    function log(message, level) {
+        const line = document.createElement('div');
+        if (level) line.className = 'l-' + level;
+        const t = document.createElement('time');
+        t.textContent = new Date().toLocaleTimeString();
+        line.appendChild(t);
+        line.appendChild(document.createTextNode(message));
+        const box = $('log');
+        box.appendChild(line);
+        box.scrollTop = box.scrollHeight;
+    }
+
+    function setStep(step, stateName, detail) {
+        const li = document.querySelector('.steps li[data-step="' + step + '"]');
+        if (!li) return;
+        li.dataset.state = stateName;
+        li.querySelector('.state').textContent = detail || '';
+    }
+
+    function resetSteps() { STAGES.forEach((s) => setStep(s.key, 'idle', '')); }
+
+    function setBusy(busy) {
+        state.busy = busy;
+        ['run', 'save-target', 'delete-doc', 'new-analysis', 'run-repairs', 'reset-repair-status']
+            .forEach((id) => { const el = $(id); if (el) el.disabled = busy; });
+        document.querySelectorAll('.step-run, .step-del, .repair-run, .repair-mark, .ratify, .reject')
+            .forEach((b) => { b.disabled = busy; });
+    }
+
+    const badge = (text, cls) => '<span class="badge ' + (cls || '') + '">' + escapeHtml(text) + '</span>';
+    const kv = (label, value) => value
+        ? '<div class="small kv"><span>' + escapeHtml(label) + ':</span> ' + escapeHtml(value) + '</div>' : '';
+    const fileList = (list, label) => (Array.isArray(list) && list.length)
+        ? '<div class="files"><span class="small muted">' + label + ':</span>' +
+        list.map((f) => '<code>' + escapeHtml(f) + '</code>').join('') + '</div>' : '';
+
+    /* ───────────────────────── path helpers ───────────────────────── */
+
+    const workDir = () => $('work-dir').value.trim().replace(/^\/+|\/+$/g, '');
+    const opsDir = () => $('ops-dir').value.trim().replace(/^\/+|\/+$/g, '');
+    const docRoot = () => String(state.docRoot || '').trim().replace(/^\/+|\/+$/g, '');
+    const rootRel = (p) => join(docRoot(), String(p || '').replace(/^\.?\/+/, ''));
+    function computeStatusBase() {
+        const base = String(state.basePath || '').replace(/\/+$/, '');
+        if (!base) return base;
+        const rel = docRoot();
+        if (!rel) return base || '/';
+        const suffix = '/' + rel;
+        return (base.endsWith(suffix) ? base.slice(0, -suffix.length) : base) || '/';
+    }
+    const statusBase = () => state.statusBase || computeStatusBase();
+    function join(dir, name) { return dir ? dir + '/' + name : name; }
+    const docDir = (slug) => join(workDir(), slug);
+    const filePath = (slug, key) => join(docDir(slug), STAGE_BY_KEY[key].file);
+    const opPath = (stage) => join(opsDir(), stage.op);
+
+    const MOUNT_SEGMENTS = ['files', 'file', 'fs', 'browse'];
+    const ROOT_ALIASES = ['root'];
+    function inferContextFromLocation() {
+        const segments = location.pathname.split('/').filter(Boolean);
+        if (segments.length && /\.[a-z0-9]+$/i.test(segments[segments.length - 1])) segments.pop();
+        const base = ('/' + segments.join('/')).replace(/\/{2,}/g, '/');
+        const rel = segments.slice();
+        if (rel.length && MOUNT_SEGMENTS.indexOf(rel[0].toLowerCase()) !== -1) rel.shift();
+        if (rel.length && ROOT_ALIASES.indexOf(rel[0].toLowerCase()) !== -1) rel.shift();
+        return {basePath: base, docRoot: rel.join('/')};
+    }
+
+    /* generated per-item ops live in analyses/<slug>/ and must still reach the analysis root */
+    const docRootDepth = () => docRoot().split('/').filter(Boolean).length;
+    const docDirDepth = () => (workDir() ? workDir().split('/').filter(Boolean).length : 0) + 1;
+    const rootPrefix = () => '../'.repeat(docDirDepth() + docRootDepth());
+    const rootDir = () => rootPrefix().replace(/\/+$/, '') || '.';
+    const relFromDocDir = (p) => rootPrefix() + String(p || '').replace(/^\.?\/+/, '');
+
+    /* ───────────────────────── docops driver ───────────────────────── */
+
+    async function runOpFile(opFilePath, targetPath, onProgress, opts) {
+        const opArg = rootRel(opFilePath);
+        const targetArg = (opts && opts.targetIsRootRelative)
+            ? String(targetPath || '').replace(/^\.?\/+/, '') : rootRel(targetPath);
+        log('Running ' + opArg + ' → ' + targetArg);
+        let docTaskId = null;
+        try {
+            docTaskId = await runDocOp(state.sessionId || null, opArg, targetArg, {});
+        } catch (e) {
+            log('Could not start doc op: ' + (e && e.message ? e.message : e), 'error');
+            throw e;
+        }
+        if (!docTaskId) log('No task id returned for ' + targetPath + '.', 'warn');
+        else log('Task ' + docTaskId + ' started.');
+        const task = await waitForTask(statusBase(), targetArg, TASK_TIMEOUT_MS, (target, info) => {
+            if (onProgress) onProgress(info.status || 'running');
+        });
+        log('Completed ' + targetPath, 'ok');
+        return task;
+    }
+
+    async function runOp(stage, targetPath) {
+        setStep(stage.key, 'running', 'starting…');
+        const task = await runOpFile(opPath(stage), targetPath, (status) => setStep(stage.key, 'running', status));
+        setStep(stage.key, 'done', 'completed');
+        return task;
+    }
+
+    /* ───────────────────────── UI construction ───────────────────────── */
+
+    function buildUI() {
+        const steps = $('steps');
+        STAGES.forEach((s) => {
+            const li = document.createElement('li');
+            li.dataset.step = s.key;
+            li.dataset.state = 'idle';
+            li.innerHTML = '<span class="dot"></span><span><span class="layer">' + escapeHtml(s.layer) + '</span>' +
+                escapeHtml(s.label) + '</span><span class="state"></span>' +
+                '<button class="step-run" data-run="' + s.key + '" title="Run this step only">▶ run</button>' +
+                '<button class="step-del" data-del="' + s.key + '" title="Delete this step\'s artefact so it can be re-run">🗑 delete</button>';
+            steps.appendChild(li);
+        });
+
+        const tabs = $('tabs');
+        const panels = $('panels');
+        const addTab = (key, label, selected) => {
+            const b = document.createElement('button');
+            b.setAttribute('role', 'tab');
+            b.dataset.tab = key;
+            b.setAttribute('aria-selected', String(!!selected));
+            b.textContent = label;
+            tabs.appendChild(b);
+        };
+        STAGES.forEach((s, i) => {
+            addTab(s.key, s.tab, i === 0);
+            const p = document.createElement('div');
+            p.className = 'tabpanel';
+            p.dataset.tab = s.key;
+            p.hidden = i !== 0;
+            if (s.kind === 'json') {
+                p.innerHTML =
+                    '<div class="small muted" id="meta-' + s.key + '" style="margin-bottom:.75rem"></div>' +
+                    (s.key === 'triage'
+                        ? '<div class="row view-toolbar hidden" id="repair-toolbar">' +
+                        '<button id="run-repairs" class="small" title="Run every repair that has not completed yet">▶ Run all repairs</button>' +
+                        '<button id="reset-repair-status" class="small">Reset statuses</button>' +
+                        '<span class="small muted" id="repair-progress"></span></div>' : '') +
+                    '<div class="cards" id="cards-' + s.key + '"><p class="muted">Nothing loaded yet.</p></div>';
+            } else {
+                p.innerHTML =
+                    (s.key === 'report' ? '<div id="risk" class="risk hidden"></div>' : '') +
+                    '<div class="row view-toolbar">' +
+                    (s.kind === 'md'
+                        ? '<button class="small view-toggle" data-view="' + s.key + '" aria-pressed="false">View raw</button>' : '') +
+                    '<button class="small view-copy" data-view="' + s.key + '">Copy source</button></div>' +
+                    '<div class="doc" id="view-' + s.key + '"><p class="muted">Nothing loaded yet.</p></div>';
+            }
+            panels.appendChild(p);
+        });
+        addTab('raw', 'Raw JSON', false);
+        const rp = document.createElement('div');
+        rp.className = 'tabpanel';
+        rp.dataset.tab = 'raw';
+        rp.hidden = true;
+        rp.innerHTML = '<div class="row view-toolbar"><select id="raw-select">' +
+            JSON_STAGES.map((k) => '<option value="' + k + '">' + escapeHtml(STAGE_BY_KEY[k].file) + '</option>').join('') +
+            '</select><button class="small view-copy" data-view="raw">Copy JSON</button></div>' +
+            '<div class="doc"><pre><code id="view-raw">{}</code></pre></div>';
+        panels.appendChild(rp);
+    }
+
+    function activateTab(name) {
+        document.querySelectorAll('.tabs button').forEach((b) => b.setAttribute('aria-selected', String(b.dataset.tab === name)));
+        document.querySelectorAll('.tabpanel').forEach((p) => { p.hidden = p.dataset.tab !== name; });
+    }
+
+    /* ───────────────────────── document rendering ───────────────────────── */
+
+    function renderDoc(key) {
+        const stage = STAGE_BY_KEY[key];
+        const el = $('view-' + key);
+        if (!el) return;
+        const text = docSource[key];
+        if (text === null || text === undefined || text === '') {
+            el.innerHTML = '<p class="muted">Nothing to display.</p>';
+        } else if (stage.kind === 'code' || docRawMode[key]) {
+            el.innerHTML = '<pre class="raw"><code>' + escapeHtml(text) + '</code></pre>';
+        } else {
+            el.innerHTML = renderMarkdown(text);
+        }
+        const btn = document.querySelector('.view-toggle[data-view="' + key + '"]');
+        if (btn) {
+            btn.textContent = docRawMode[key] ? 'View rendered' : 'View raw';
+            btn.setAttribute('aria-pressed', String(!!docRawMode[key]));
+        }
+    }
+
+    function showDoc(key, text) {
+        docSource[key] = (text === undefined ? null : text);
+        renderDoc(key);
+    }
+
+    function viewSource(name) {
+        if (name === 'raw') return $('view-raw').textContent || '';
+        return docSource[name] || '';
+    }
+
+    function stripFences(text) {
+        const trimmed = String(text || '').trim();
+        const match = trimmed.match(/^```(?:json)?\s*([\s\S]*?)\s*```$/);
+        return match ? match[1] : trimmed;
+    }
+
+    function updateRawView() {
+        const key = $('raw-select').value;
+        const raw = jsonSource[key];
+        $('view-raw').textContent = (raw === null || raw === undefined) ? '(no ' + STAGE_BY_KEY[key].file + ')' : raw;
+    }
+
+    const RENDERERS = {obligations: renderObligations, ledger: renderLedger, triage: renderTriage};
+
+    function showJson(key, raw) {
+        jsonSource[key] = (raw === undefined ? null : raw);
+        let parsed = null;
+        if (raw !== null && raw !== undefined) {
+            try { parsed = JSON.parse(stripFences(raw)); }
+            catch (e) { log(STAGE_BY_KEY[key].file + ' is not parseable JSON: ' + e.message, 'error'); }
+        }
+        state[key] = parsed;
+        RENDERERS[key](parsed);
+        if (key === 'triage' && state.obligations) renderObligations(state.obligations);
+        updateRawView();
+        renderRisk();
+        return parsed;
+    }
+
+    /* ───────────────────────── obligations (L2) ───────────────────────── */
+
+    function renderObligations(set) {
+        const box = $('cards-obligations');
+        const meta = $('meta-obligations');
+        box.innerHTML = '';
+        const list = (set && Array.isArray(set.obligations)) ? set.obligations : [];
+        if (!list.length) {
+            meta.textContent = '';
+            box.innerHTML = '<p class="muted">No obligations extracted.</p>';
+            return;
+        }
+        const unanalyzed = Array.isArray(set.unanalyzed) ? set.unanalyzed.length : 0;
+        meta.innerHTML = 'target: <code>' + escapeHtml(set.target || '—') + '</code> · source: <code>' +
+            escapeHtml(set.source_csir_file || '—') + '</code>' +
+            (set.profile ? ' · profile <code>' + escapeHtml(set.profile) + '</code>' : '') +
+            ' · ' + list.length + ' obligation(s)' +
+            (unanalyzed ? ' · <strong>' + unanalyzed + ' unanalyzed unit(s)</strong>' : '') +
+            (set.generated_at ? ' · generated ' + escapeHtml(set.generated_at) : '');
+        const triageById = {};
+        ((state.triage && state.triage.items) || []).forEach((it) => { triageById[it.obligation_id] = it; });
+
+        list.forEach((o, i) => {
+            const card = document.createElement('article');
+            card.className = 'card';
+            const crit = o.criticality || 'medium';
+            card.dataset.priority = crit;
+            const t = triageById[o.id];
+            const loc = o.location
+                ? [o.location.file, o.location.line].filter(Boolean).join(':') +
+                (o.location.function ? ' (' + o.location.function + ')' : '') : '';
+            card.innerHTML =
+                '<h3>' + (i + 1) + '. ' + escapeHtml(o.title || o.id || '(untitled)') + '</h3>' +
+                '<div class="badges">' + badge(o.kind || 'obligation', 'type') + badge('rung ' + (o.rung ?? '?')) +
+                badge(crit, 'p-' + crit) + (o.id ? badge('#' + o.id) : '') +
+                (t ? badge(t.diagnosis, 'd-' + t.diagnosis) + (t.discharge_level ? badge(t.discharge_level, 'lv-' + t.discharge_level) : '')
+                    : badge('not triaged')) +
+                (Array.isArray(o.tags) ? o.tags.map((x) => badge(x)).join('') : '') + '</div>' +
+                (o.statement ? '<pre class="stmt"><code>' + escapeHtml(o.statement) + '</code></pre>' : '') +
+                (o.description ? '<div class="small">' + renderMarkdown(o.description) + '</div>' : '') +
+                kv('pattern', o.pattern) + kv('location', loc) +
+                (o.slot ? kv('slot', (o.slot.kind || '?') + (o.slot.hint ? ' — ' + o.slot.hint : '')) : '') +
+                fileList(o.discharged_by, 'discharged by');
+            box.appendChild(card);
+        });
+        if (unanalyzed) {
+            const card = document.createElement('article');
+            card.className = 'card';
+            card.dataset.priority = 'high';
+            card.innerHTML = '<h3>Unanalyzed units</h3><div class="small">' +
+                set.unanalyzed.map((u) => '<div>' + escapeHtml(u.file + (u.unit ? ' · ' + u.unit : '')) +
+                    ' <span class="muted">— ' + escapeHtml(u.reason) + '</span></div>').join('') + '</div>';
+            box.appendChild(card);
+        }
+    }
+
+    /* ───────────────────────── ledger (L3) ───────────────────────── */
+
+    function isRedFlag(a) {
+        const p = a.provenance || {};
+        const d = a.discharge || {};
+        return d.strategy === 'axiomatic' && !p.human_ratified && a.status !== 'rejected';
+    }
+
+    function renderLedger(ledger) {
+        const box = $('cards-ledger');
+        const meta = $('meta-ledger');
+        box.innerHTML = '';
+        const list = (ledger && Array.isArray(ledger.assumptions)) ? ledger.assumptions : [];
+        if (!list.length) {
+            meta.textContent = '';
+            box.innerHTML = '<p class="muted">No assumptions in the ledger.</p>';
+            return;
+        }
+        const flags = list.filter(isRedFlag).length;
+        const ratified = list.filter((a) => a.provenance && a.provenance.human_ratified).length;
+        meta.innerHTML = 'target: <code>' + escapeHtml(ledger.target || '—') + '</code> · LangSem <code>' +
+            escapeHtml(ledger.langsem_version || '?') + '</code> · ' + list.length + ' assumption(s) · ' +
+            ratified + ' ratified · ' + (flags ? '<strong style="color:var(--err)">' + flags + ' red flag(s)</strong>' : '0 red flags') +
+            (ledger.generated_at ? ' · generated ' + escapeHtml(ledger.generated_at) : '');
+
+        list.forEach((a, i) => {
+            const p = a.provenance || {};
+            const d = a.discharge || {};
+            const card = document.createElement('article');
+            card.className = 'card';
+            card.dataset.priority = isRedFlag(a) ? 'critical' : (d.strategy === 'provable' ? 'low' : 'medium');
+            card.dataset.flag = String(isRedFlag(a));
+            card.dataset.ledger = a.status || 'candidate';
+            const anchor = a.source_anchor ? [a.source_anchor.file, a.source_anchor.line].filter(Boolean).join(':') : '';
+            card.innerHTML =
+                '<h3>' + (i + 1) + '. ' + escapeHtml(a.id || '(no id)') + '</h3>' +
+                '<div class="badges">' + badge(a.kind || 'assumption', 'type') + badge(a.bucket || 'bucket ?') +
+                badge(d.strategy || 'strategy ?', 'st-' + (d.strategy || '')) + badge(a.status || 'candidate') +
+                badge(a.scope || 'scope ?') +
+                (typeof a.confidence === 'number' ? badge('confidence ' + Math.round(a.confidence * 100) + '%') : '') +
+                badge(p.source || 'provenance ?') +
+                (p.human_ratified ? badge('✓ ratified by ' + (p.ratified_by || '?'), 'ratified') : badge('unratified')) +
+                (isRedFlag(a) ? badge('red flag', 'p-critical') : '') +
+                (Array.isArray(a.warnings) ? a.warnings.map((w) => badge(w, 'p-high')).join('') : '') + '</div>' +
+                (a.statement ? '<pre class="stmt"><code>' + escapeHtml(a.statement.text || '') + '</code></pre>' : '') +
+                kv('target', a.target) + kv('justification', d.justification) + kv('residual risk', d.residual_risk) +
+                (typeof d.rung === 'number' ? kv('rung', d.rung + ' · ' + RUNGS[d.rung]) : '') +
+                fileList(p.corroborated_by, 'corroborated by') + fileList(a.used_by, 'used by') +
+                kv('anchor', anchor) +
+                (a.source_anchor && a.source_anchor.comment_form
+                    ? '<pre class="stmt"><code>' + escapeHtml(a.source_anchor.comment_form) + '</code></pre>' : '');
+
+            const actions = document.createElement('div');
+            actions.className = 'row';
+            actions.style.marginTop = '.55rem';
+            if (!p.human_ratified) {
+                const b = document.createElement('button');
+                b.className = 'small ratify';
+                b.textContent = 'Ratify';
+                b.title = 'Record human ratification in ledger.json';
+                b.disabled = state.busy;
+                b.addEventListener('click', () => ratifyAssumption(a));
+                actions.appendChild(b);
+            } else {
+                const b = document.createElement('button');
+                b.className = 'small ratify';
+                b.textContent = 'Withdraw ratification';
+                b.disabled = state.busy;
+                b.addEventListener('click', () => updateAssumption(a, (x) => {
+                    x.provenance.human_ratified = false; delete x.provenance.ratified_by; delete x.provenance.ratified_at;
+                }, 'Withdrew ratification of ' + a.id));
+                actions.appendChild(b);
+            }
+            const rej = document.createElement('button');
+            rej.className = 'small reject';
+            rej.textContent = a.status === 'rejected' ? 'Restore' : 'Reject';
+            rej.title = 'Rejected entries are excluded from Lean emission';
+            rej.disabled = state.busy;
+            rej.addEventListener('click', () => updateAssumption(a, (x) => {
+                x.status = x.status === 'rejected' ? 'candidate' : 'rejected';
+            }, (a.status === 'rejected' ? 'Restored ' : 'Rejected ') + a.id));
+            actions.appendChild(rej);
+            const cp = document.createElement('button');
+            cp.className = 'small';
+            cp.textContent = 'Copy JSON';
+            cp.addEventListener('click', () => copyText(JSON.stringify(a, null, 2), cp));
+            actions.appendChild(cp);
+            card.appendChild(actions);
+            box.appendChild(card);
+        });
+    }
+
+    async function updateAssumption(asm, mutate, note) {
+        if (state.busy || !requireBase() || !state.ledger) return;
+        const slug = ensureSlug(true);
+        if (!slug) return;
+        mutate(asm);
+        setBusy(true);
+        try {
+            const text = JSON.stringify(state.ledger, null, 2);
+            await writeFile(state.basePath, filePath(slug, 'ledger'), text + '\n');
+            jsonSource.ledger = text;
+            log(note, 'ok');
+        } catch (e) {
+            log('Could not write ledger: ' + (e && e.message ? e.message : e), 'error');
+        } finally {
+            setBusy(false);
+            renderLedger(state.ledger);
+            updateRawView();
+            renderRisk();
+        }
+    }
+
+    function ratifyAssumption(asm) {
+        let last = '';
+        try { last = localStorage.getItem(STORAGE_PREFIX + '_ratifier') || ''; } catch (e) { /* ignore */ }
+        const who = window.prompt('Ratify "' + (asm.id || '') + '" as (your name):', last);
+        if (!who) return;
+        try { localStorage.setItem(STORAGE_PREFIX + '_ratifier', who); } catch (e) { /* ignore */ }
+        updateAssumption(asm, (a) => {
+            a.provenance = a.provenance || {source: 'human', human_ratified: false};
+            a.provenance.human_ratified = true;
+            a.provenance.ratified_by = who;
+            a.provenance.ratified_at = new Date().toISOString();
+            if (!a.status || a.status === 'candidate') a.status = 'active';
+        }, 'Ratified ' + asm.id + ' as ' + who);
+    }
+
+    /* ───────────────────────── triage & repair (L6) ───────────────────────── */
+
+    const DIAG_PRIORITY = {
+        'real-bug': 'critical', 'wrong-specification': 'high', 'front-end-defect': 'high',
+        'missing-assumption': 'medium', 'missing-lemma': 'medium', 'open': 'medium', 'discharged': 'low'
+    };
+    const STATUS_LABEL = {idle: 'not run', running: 'running…', done: 'done', error: 'failed'};
+    const repairId = (item) => item.id || slugify((item.obligation_id || '') + '-' + (item.diagnosis || ''), 'repair');
+    const repairOpPath = (slug, item) => join(docDir(slug), 'triage.' + repairId(item) + '.md');
+    const isRepairable = (item) => !!(item.repair && item.repair.action !== 'none' &&
+        Array.isArray(item.repair.target_files) && item.repair.target_files.length);
+
+    const repairStatusKey = (slug) => STORAGE_PREFIX + '_repairs_' + workDir() + '_' + (slug || state.slug || '');
+    function persistRepairStatus() {
+        try { localStorage.setItem(repairStatusKey(), JSON.stringify(state.repairStatus)); } catch (e) { /* ignore */ }
+    }
+    function restoreRepairStatus(slug) {
+        try { state.repairStatus = JSON.parse(localStorage.getItem(repairStatusKey(slug)) || '{}') || {}; }
+        catch (e) { state.repairStatus = {}; }
+    }
+    const repairState = (id) => state.repairStatus[id] || {state: 'idle', detail: ''};
+    function setRepairState(id, name, detail) {
+        state.repairStatus[id] = {state: name, detail: detail || '', at: Date.now()};
+        persistRepairStatus();
+        if (state.triage) renderTriage(state.triage);
+    }
+
+    /** Doc-op (front-matter + body) for one repair, addressed from the document folder. */
+    function buildRepairOp(item) {
+        const r = item.repair || {};
+        const targets = Array.isArray(r.target_files) ? r.target_files : [];
+        const related = (Array.isArray(r.related_files) ? r.related_files : []).concat(targets.slice(1));
+        const lines = ['---'];
+        lines.push('specifies: ' + relFromDocDir(targets[0] || ''));
+        lines.push('task_type: ' + (r.task_type || 'FileModification'));
+        if (related.length) {
+            lines.push('related:');
+            related.forEach((f) => lines.push('  - ' + relFromDocDir(f)));
+        }
+        lines.push('folder: ' + rootDir());
+        lines.push('---', '');
+        lines.push('# ' + (r.action || 'repair') + ' — ' + (item.obligation_id || repairId(item)), '');
+        lines.push('Diagnosis: ' + (item.diagnosis || 'open'));
+        if (item.evidence) lines.push('', 'Evidence: ' + String(item.evidence).trim());
+        if (item.counterexample) {
+            lines.push('', 'Counterexample (replay: ' + (item.counterexample.replay || 'not-replayed') + '):');
+            lines.push('```json', JSON.stringify(item.counterexample, null, 2), '```');
+        }
+        lines.push('', String(r.description || '').trim());
+        if (r.requires_ratification) {
+            lines.push('', 'This change requires human ratification before any proof status may become "verified"; ' +
+                'leave a `@spec-revision` comment naming the ledger/spec entry it alters.');
+        }
+        lines.push('');
+        return lines.join('\n');
+    }
+
+    async function executeRepair(item) {
+        const slug = ensureSlug();
+        if (!slug) return false;
+        const id = repairId(item);
+        if (!isRepairable(item)) {
+            setRepairState(id, 'error', 'no executable repair plan');
+            return false;
+        }
+        const op = repairOpPath(slug, item);
+        try {
+            setRepairState(id, 'running', 'writing ' + op);
+            await writeFile(state.basePath, op, buildRepairOp(item));
+            log('Wrote ' + op, 'ok');
+            setRepairState(id, 'running', 'starting…');
+            await runOpFile(op, item.repair.target_files[0], (status) => setRepairState(id, 'running', status),
+                {targetIsRootRelative: true});
+            setRepairState(id, 'done', 'completed ' + new Date().toLocaleTimeString());
+            return true;
+        } catch (e) {
+            setRepairState(id, 'error', e && e.message ? e.message : String(e));
+            log('Repair "' + id + '" failed: ' + (e && e.message ? e.message : e), 'error');
+            return false;
+        }
+    }
+
+    function confirmRepair(item) {
+        const r = item.repair || {};
+        if (r.action === 'revise-spec' || r.requires_ratification) {
+            return window.confirm('This repair revises a specification (' + (item.obligation_id || '') +
+                ').\nSpec changes must be ratified by a human before proofs count as verified. Run it anyway?');
+        }
+        return true;
+    }
+
+    async function runRepair(item) {
+        if (state.busy || !requireBase()) return;
+        if (!confirmRepair(item)) return;
+        setBusy(true);
+        startPoller();
+        try { await executeRepair(item); }
+        finally { stopPoller(); setBusy(false); if (state.triage) renderTriage(state.triage); }
+    }
+
+    async function runAllRepairs() {
+        if (state.busy || !requireBase()) return;
+        const items = ((state.triage && state.triage.items) || []).filter(isRepairable);
+        if (!items.length) { log('No executable repairs.', 'warn'); return; }
+        const order = {critical: 0, high: 1, medium: 2, low: 3};
+        items.sort((a, b) => (order[DIAG_PRIORITY[a.diagnosis]] ?? 2) - (order[DIAG_PRIORITY[b.diagnosis]] ?? 2));
+        setBusy(true);
+        startPoller();
+        try {
+            for (const item of items) {
+                const id = repairId(item);
+                if (repairState(id).state === 'done') { log('Skipping "' + id + '" — already completed.'); continue; }
+                if (!confirmRepair(item)) { log('Skipped "' + id + '".', 'warn'); continue; }
+                if (!(await executeRepair(item))) { log('Stopping after failure of "' + id + '".', 'warn'); break; }
+            }
+        } finally { stopPoller(); setBusy(false); if (state.triage) renderTriage(state.triage); }
+    }
+
+    function renderTriage(report) {
+        const box = $('cards-triage');
+        const meta = $('meta-triage');
+        const toolbar = $('repair-toolbar');
+        const progress = $('repair-progress');
+        box.innerHTML = '';
+        const items = (report && Array.isArray(report.items)) ? report.items : [];
+        if (!items.length) {
+            meta.textContent = '';
+            toolbar.classList.add('hidden');
+            box.innerHTML = '<p class="muted">No triage report yet.</p>';
+            return;
+        }
+        const byDiag = {};
+        items.forEach((it) => { byDiag[it.diagnosis || 'open'] = (byDiag[it.diagnosis || 'open'] || 0) + 1; });
+        meta.innerHTML = 'target: <code>' + escapeHtml(report.target || '—') + '</code> · source: <code>' +
+            escapeHtml(report.source_proofs_file || '—') + '</code>' +
+            (typeof report.highest_unconditional_rung === 'number'
+                ? ' · unconditional up to rung <strong>' + report.highest_unconditional_rung + ' · ' +
+                escapeHtml(RUNGS[report.highest_unconditional_rung] || '') + '</strong>' : '') +
+            '<div class="badges">' + Object.keys(byDiag).map((k) => badge(byDiag[k] + ' ' + k, 'd-' + k)).join('') + '</div>';
+        const repairable = items.filter(isRepairable);
+        toolbar.classList.toggle('hidden', !repairable.length);
+        progress.textContent = repairable.filter((it) => repairState(repairId(it)).state === 'done').length +
+            ' / ' + repairable.length + ' repairs completed';
+
+        items.forEach((it, i) => {
+            const id = repairId(it);
+            const status = repairState(id);
+            const card = document.createElement('article');
+            card.className = 'card';
+            card.dataset.priority = DIAG_PRIORITY[it.diagnosis] || 'medium';
+            card.dataset.status = isRepairable(it) ? status.state : 'idle';
+            const r = it.repair || null;
+            const cx = it.counterexample || null;
+            card.innerHTML =
+                '<h3>' + (i + 1) + '. ' + escapeHtml(it.obligation_id || id) + '</h3>' +
+                '<div class="badges">' + badge(it.diagnosis || 'open', 'd-' + (it.diagnosis || 'open')) +
+                (it.discharge_level ? badge(it.discharge_level, 'lv-' + it.discharge_level) : '') +
+                (r ? badge(r.action || 'repair', 'type') : '') +
+                (r && r.requires_ratification ? badge('needs ratification', 'p-high') : '') +
+                (isRepairable(it) ? badge(STATUS_LABEL[status.state] || status.state, 's-' + status.state) : '') + '</div>' +
+                '<div class="small">' + renderMarkdown(it.evidence || '') + '</div>' +
+                (cx ? '<div class="small kv"><span>counterexample:</span> replay <strong>' + escapeHtml(cx.replay || 'not-replayed') +
+                    '</strong>' + (cx.replay_notes ? ' — ' + escapeHtml(cx.replay_notes) : '') + '</div>' +
+                    '<pre class="stmt"><code>' + escapeHtml((cx.input ? 'input: ' + cx.input + '\n' : '') +
+                        JSON.stringify(cx.model || {}, null, 2)) + '</code></pre>' : '') +
+                fileList(it.assumptions_used, 'assumptions used') +
+                (Array.isArray(it.ledger_changes) && it.ledger_changes.length
+                    ? '<div class="files"><span class="small muted">ledger changes:</span>' +
+                    it.ledger_changes.map((c) => '<code>' + escapeHtml(c.change + ' ' + c.id) + '</code>').join('') + '</div>' : '') +
+                (r ? '<details style="margin-top:.4rem" open><summary>Repair plan</summary><div class="small">' +
+                    renderMarkdown(r.description || '') + '</div>' + fileList(r.target_files, 'targets') +
+                    fileList(r.related_files, 'context') + '</details>' : '') +
+                (status.detail && isRepairable(it) ? '<div class="small muted kv">' + escapeHtml(status.detail) + '</div>' : '') +
+                (isRepairable(it) ? '<div class="small muted kv">op file: <span class="op-path">' +
+                    escapeHtml(state.slug ? repairOpPath(state.slug, it) : '(save the target first)') + '</span></div>' : '');
+
+            const actions = document.createElement('div');
+            actions.className = 'row';
+            actions.style.marginTop = '.55rem';
+            if (isRepairable(it)) {
+                const run = document.createElement('button');
+                run.className = 'small repair-run';
+                run.textContent = status.state === 'done' ? '▶ Re-run repair' : '▶ Run repair';
+                run.disabled = state.busy;
+                run.addEventListener('click', () => runRepair(it));
+                const mark = document.createElement('button');
+                mark.className = 'small repair-mark';
+                mark.textContent = status.state === 'done' ? 'Reset status' : 'Mark done';
+                mark.disabled = state.busy;
+                mark.addEventListener('click', () => {
+                    if (status.state === 'done') { delete state.repairStatus[id]; persistRepairStatus(); renderTriage(state.triage); }
+                    else setRepairState(id, 'done', 'marked done manually');
+                });
+                const opBtn = document.createElement('button');
+                opBtn.className = 'small';
+                opBtn.textContent = 'Copy op file';
+                opBtn.addEventListener('click', () => copyText(buildRepairOp(it), opBtn));
+                actions.append(run, mark, opBtn);
+            }
+            const jsonBtn = document.createElement('button');
+            jsonBtn.className = 'small';
+            jsonBtn.textContent = 'Copy JSON';
+            jsonBtn.addEventListener('click', () => copyText(JSON.stringify(it, null, 2), jsonBtn));
+            actions.appendChild(jsonBtn);
+            card.appendChild(actions);
+            box.appendChild(card);
+        });
+    }
+
+    /* ───────────────────────── residual risk (F7) ───────────────────────── */
+
+    function renderRisk() {
+        const el = $('risk');
+        if (!el) return;
+        const asms = (state.ledger && state.ledger.assumptions) || [];
+        const items = (state.triage && state.triage.items) || [];
+        if (!asms.length && !items.length) { el.classList.add('hidden'); return; }
+        el.classList.remove('hidden');
+        const flags = asms.filter(isRedFlag);
+        const byStrategy = {};
+        asms.filter((a) => a.status !== 'rejected').forEach((a) => {
+            const s = (a.discharge && a.discharge.strategy) || 'unknown';
+            byStrategy[s] = (byStrategy[s] || 0) + 1;
+        });
+        const byDiag = {};
+        items.forEach((it) => { byDiag[it.diagnosis || 'open'] = (byDiag[it.diagnosis || 'open'] || 0) + 1; });
+        const byLevel = {};
+        items.forEach((it) => { if (it.discharge_level) byLevel[it.discharge_level] = (byLevel[it.discharge_level] || 0) + 1; });
+        const stale = asms.filter((a) => a.status === 'stale' || a.status === 'refuted').length;
+        const specRevs = items.filter((it) => it.repair && it.repair.requires_ratification).length;
+        el.innerHTML =
+            '<h3>Residual risk summary</h3>' +
+            '<p class="small">Computed locally from <code>ledger.json</code> and <code>triage.json</code>; shown before the ' +
+            'generated report on purpose. Status is always <em>(property, assumption set)</em>, never a bare checkmark.</p>' +
+            '<div class="badges">' +
+            badge(flags.length + ' unratified axiomatic assumption(s)', flags.length ? 'p-critical' : 's-done') +
+            badge(stale + ' stale/refuted assumption(s)', stale ? 'p-high' : '') +
+            badge(specRevs + ' spec revision(s) awaiting ratification', specRevs ? 'p-high' : '') +
+            Object.keys(byStrategy).map((k) => badge(byStrategy[k] + ' ' + k, 'st-' + k)).join('') + '</div>' +
+            '<div class="badges">' + Object.keys(byDiag).map((k) => badge(byDiag[k] + ' ' + k, 'd-' + k)).join('') +
+            Object.keys(byLevel).map((k) => badge(byLevel[k] + ' ' + k, 'lv-' + k)).join('') + '</div>' +
+            (flags.length ? '<div class="small">Red flags: ' + flags.map((a) => '<code>' + escapeHtml(a.id) + '</code>').join(' ') + '</div>' : '');
+    }
+
+    /* ───────────────────────── pipeline stages ───────────────────────── */
+
+    function ensureSlug(quiet) {
+        const typed = $('doc-name').value.trim();
+        const text = $('target').value.trim();
+        const slug = typed ? slugify(typed) : (state.slug || (text ? slugify(text) : ''));
+        if (!slug) {
+            if (!quiet) log('Enter a scope description or an analysis name first.', 'warn');
+            return null;
+        }
+        $('doc-name').value = slug;
+        state.slug = slug;
+        return slug;
+    }
+
+    function requireBase() {
+        if (state.basePath) return true;
+        log('No base path could be resolved — cannot read or write files.', 'error');
+        return false;
+    }
+
+    function parseTargetFile(raw) {
+        const m = String(raw).match(/^---\r?\n([\s\S]*?)\r?\n---\r?\n?([\s\S]*)$/);
+        const meta = {};
+        let body = String(raw);
+        if (m) {
+            m[1].split(/\r?\n/).forEach((l) => {
+                const i = l.indexOf(':');
+                if (i > 0) meta[l.slice(0, i).trim()] = l.slice(i + 1).trim();
+            });
+            body = m[2];
+        }
+        return {meta, body: body.replace(/^\n+/, '')};
+    }
+
+    function applyTargetFile(raw) {
+        const {meta, body} = parseTargetFile(raw);
+        $('target').value = body;
+        if (meta.language && Array.from($('lang').options).some((o) => o.value === meta.language)) $('lang').value = meta.language;
+        const r = parseInt(meta.target_rung, 10);
+        if (!isNaN(r) && r >= 0 && r <= 5) $('rung').value = String(r);
+    }
+
+    function buildTargetFile(text) {
+        const rung = Number($('rung').value);
+        return '---\nlanguage: ' + $('lang').value + '\ntarget_rung: ' + rung + '\ntarget_rung_name: ' + RUNGS[rung] +
+            '\n---\n\n' + text + (text.endsWith('\n') ? '' : '\n');
+    }
+
+    async function stageSaveTarget() {
+        const text = $('target').value.trim();
+        if (!text) {
+            log('Describe the analysis target first.', 'warn');
+            setStep('target', 'error', 'empty');
+            $('target').focus();
+            return null;
+        }
+        const slug = ensureSlug();
+        if (!slug) return null;
+        const path = filePath(slug, 'target');
+        setStep('target', 'running', 'saving…');
+        const content = buildTargetFile(text);
+        await writeFile(state.basePath, path, content);
+        showDoc('target', content);
+        setStep('target', 'done', path);
+        log('Saved ' + path, 'ok');
+        await refreshHistory();
+        return slug;
+    }
+
+    async function loadStageDoc(slug, key) {
+        const stage = STAGE_BY_KEY[key];
+        const raw = await readFile(state.basePath, filePath(slug, key));
+        if (stage.kind === 'json') return showJson(key, raw);
+        showDoc(key, raw);
+        if (key === 'target' && raw !== null) applyTargetFile(raw);
+        return raw;
+    }
+
+    async function runStageKey(key) {
+        const stage = STAGE_BY_KEY[key];
+        if (key === 'target') return stageSaveTarget();
+        const slug = ensureSlug();
+        if (!slug) return null;
+        if (stage.needs) {
+            const have = (await readFile(state.basePath, filePath(slug, stage.needs))) !== null;
+            if (!have) {
+                if (stage.needs === 'target') {
+                    if (!(await stageSaveTarget())) return null;
+                } else {
+                    log('Missing ' + filePath(slug, stage.needs) + ' — run "' + STAGE_BY_KEY[stage.needs].label + '" first.', 'error');
+                    setStep(key, 'error', 'missing input');
+                    return null;
+                }
+            }
+        }
+        await runOp(stage, filePath(slug, key));
+        const out = await loadStageDoc(slug, key);
+        if (out === null) throw new Error('Output missing or unparseable: ' + filePath(slug, key));
+        activateTab(key);
+        await refreshHistory();
+        return out;
+    }
+
+    async function runStage(name) {
+        if (!STAGE_BY_KEY[name] || state.busy || !requireBase()) return;
+        setBusy(true);
+        startPoller();
+        try {
+            await runStageKey(name);
+        } catch (err) {
+            setStep(name, 'error', 'failed');
+            log(err && err.message ? err.message : String(err), 'error');
+        } finally {
+            stopPoller();
+            setBusy(false);
+        }
+    }
+
+    async function runPipeline() {
+        if (state.busy || !requireBase()) return;
+        if (!$('target').value.trim()) {
+            log('Describe the analysis target first.', 'warn');
+            $('target').focus();
+            return;
+        }
+        resetSteps();
+        setBusy(true);
+        startPoller();
+        let current = null;
+        try {
+            for (const stage of STAGES) {
+                current = stage.key;
+                if (stage.optional && !$(stage.optional).checked) { setStep(stage.key, 'skipped', 'skipped'); continue; }
+                const out = await runStageKey(stage.key);
+                if (out === null) throw new Error('Stage "' + stage.label + '" produced no usable output.');
+            }
+            log('Pipeline finished for "' + state.slug + '".', 'ok');
+        } catch (err) {
+            log(err && err.message ? err.message : String(err), 'error');
+            if (current) {
+                const li = document.querySelector('.steps li[data-step="' + current + '"]');
+                if (li && li.dataset.state !== 'done') setStep(current, 'error', 'failed');
+            }
+        } finally {
+            stopPoller();
+            setBusy(false);
+        }
+    }
+
+    const STEP_CLEAR = {
+        target: () => { $('target').value = ''; showDoc('target', null); },
+        obligations: () => showJson('obligations', null),
+        ledger: () => showJson('ledger', null),
+        triage: () => { state.repairStatus = {}; persistRepairStatus(); showJson('triage', null); }
+    };
+
+    async function deleteStepArtifact(step) {
+        const stage = STAGE_BY_KEY[step];
+        if (!stage || state.busy || !requireBase()) return;
+        const slug = ensureSlug(true);
+        if (!slug) { log('No analysis selected — nothing to delete.', 'warn'); return; }
+        const path = filePath(slug, step);
+        if (!window.confirm('Delete ' + path + '?\nThe step can be re-run afterwards.')) return;
+        try {
+            await deleteFile(state.basePath, path);
+            log('Deleted ' + path, 'ok');
+        } catch (e) {
+            log('Could not delete ' + path + ': ' + (e && e.message ? e.message : e), 'error');
+            return;
+        }
+        setStep(step, 'idle', '');
+        if (STEP_CLEAR[step]) STEP_CLEAR[step](); else showDoc(step, null);
+        await refreshHistory();
+    }
+
+    /* ───────────────────────── status poller ───────────────────────── */
+
+    function startPoller() {
+        if (state.poller || !state.basePath) return;
+        state.poller = createStatusPoller(statusBase(), (target, info) => {
+            if (!info || !info.status || !state.slug) return;
+            for (const s of STAGES) {
+                if (s.key !== 'target' && target.endsWith(filePath(state.slug, s.key))) {
+                    setStep(s.key, mapState(info.status), info.status);
+                    return;
+                }
+            }
+        }, 3000);
+        state.poller.start();
+    }
+
+    function stopPoller() {
+        if (state.poller) { state.poller.stop(); state.poller = null; }
+    }
+
+    function mapState(status) {
+        const s = String(status).toUpperCase();
+        if (s === 'COMPLETED') return 'done';
+        if (s === 'ERROR' || s === 'FAILED') return 'error';
+        return 'running';
+    }
+
+    /* ───────────────────────── loading & history ───────────────────────── */
+
+    async function copyText(text, button) {
+        try {
+            await navigator.clipboard.writeText(text);
+            const original = button.textContent;
+            button.textContent = 'Copied ✓';
+            setTimeout(() => { button.textContent = original; }, 1200);
+        } catch (e) {
+            log('Clipboard unavailable: ' + e.message, 'warn');
+        }
+    }
+
+    async function loadDocument(slug) {
+        state.slug = slug;
+        $('doc-name').value = slug;
+        resetSteps();
+        markHistorySelection(slug);
+        restoreRepairStatus(slug);
+        for (const s of STAGES) {
+            const out = await loadStageDoc(slug, s.key);
+            if (out !== null) setStep(s.key, 'done', s.key === 'target' ? filePath(slug, 'target') : 'loaded');
+        }
+        activateTab('target');
+        log('Loaded "' + slug + '".');
+    }
+
+    function markHistorySelection(slug) {
+        document.querySelectorAll('#history button').forEach((b) => b.setAttribute('aria-current', String(b.dataset.slug === slug)));
+    }
+    const entryName = (entry) => (entry && entry.name ? entry.name : '');
+    function looksLikeFolder(entry) {
+        if (!entry) return false;
+        if (typeof entry.isDirectory === 'boolean') return entry.isDirectory;
+        if (typeof entry.directory === 'boolean') return entry.directory;
+        if (entry.type) return /^dir/i.test(String(entry.type));
+        return !/\.[a-z0-9]+$/i.test(entryName(entry));
+    }
+    async function isDocumentFolder(slug) {
+        try {
+            const files = await listFiles(state.basePath, join(workDir(), slug));
+            return (files || []).some((f) => /^(target|project)\.md$/.test(entryName(f)));
+        } catch (e) { return false; }
+    }
+
+    async function refreshHistory() {
+        const list = $('history');
+        list.innerHTML = '';
+        const entries = (await listFiles(state.basePath, workDir())) || [];
+        const candidates = entries
+            .filter((e) => looksLikeFolder(e) && entryName(e) && !entryName(e).startsWith('.')).map(entryName);
+        const isDoc = await Promise.all(candidates.map(isDocumentFolder));
+        const sorted = candidates.filter((_, i) => isDoc[i]).sort();
+        $('history-empty').classList.toggle('hidden', sorted.length > 0);
+        sorted.forEach((slug) => {
+            const li = document.createElement('li');
+            const btn = document.createElement('button');
+            btn.className = 'small';
+            btn.textContent = slug;
+            btn.title = slug;
+            btn.dataset.slug = slug;
+            btn.addEventListener('click', () => loadDocument(slug));
+            li.appendChild(btn);
+            list.appendChild(li);
+        });
+        markHistorySelection(state.slug);
+    }
+
+    async function deleteCurrent() {
+        if (!state.slug) return;
+        if (!window.confirm('Delete all files for "' + state.slug + '"?')) return;
+        const dir = docDir(state.slug);
+        for (const s of STAGES) {
+            try { await deleteFile(state.basePath, filePath(state.slug, s.key)); }
+            catch (e) { /* may not exist */ }
+        }
+        try {
+            const entries = (await listFiles(state.basePath, dir)) || [];
+            for (const entry of entries) {
+                const name = entryName(entry);
+                if (!name.startsWith('triage.') || !name.endsWith('.md')) continue;
+                try { await deleteFile(state.basePath, join(dir, name)); } catch (e) { /* ignore */ }
+            }
+            try { await deleteFile(state.basePath, dir); } catch (e) { /* folder may not be removable */ }
+        } catch (e) {
+            log('Could not clean up generated op files: ' + e.message, 'warn');
+        }
+        try { localStorage.removeItem(repairStatusKey()); } catch (e) { /* ignore */ }
+        log('Deleted "' + state.slug + '".', 'ok');
+        newDocument();
+        await refreshHistory();
+    }
+
+    function newDocument() {
+        state.slug = null;
+        state.repairStatus = {};
+        $('doc-name').value = '';
+        $('target').value = '';
+        resetSteps();
+        STAGES.forEach((s) => { if (s.kind === 'json') showJson(s.key, null); else showDoc(s.key, null); });
+        markHistorySelection(null);
+        activateTab('target');
+    }
+
+    /* ───────────────────────── bootstrap ───────────────────────── */
+
+    function restoreSettings() {
+        try {
+            const dir = localStorage.getItem(STORAGE_PREFIX + '_workDir');
+            if (dir) $('work-dir').value = dir;
+            const ops = localStorage.getItem(STORAGE_PREFIX + '_opsDir');
+            if (ops) $('ops-dir').value = ops;
+        } catch (e) { /* storage may be unavailable */ }
+    }
+
+    function persistSettings() {
+        try {
+            localStorage.setItem(STORAGE_PREFIX + '_workDir', workDir());
+            localStorage.setItem(STORAGE_PREFIX + '_opsDir', opsDir());
+        } catch (e) { /* ignore */ }
+    }
+
+    function wireEvents() {
+        $('run').addEventListener('click', runPipeline);
+        $('save-target').addEventListener('click', () => runStage('target'));
+        $('delete-doc').addEventListener('click', deleteCurrent);
+        $('new-analysis').addEventListener('click', newDocument);
+        $('refresh-history').addEventListener('click', refreshHistory);
+        $('run-repairs').addEventListener('click', runAllRepairs);
+        $('reset-repair-status').addEventListener('click', () => {
+            state.repairStatus = {};
+            persistRepairStatus();
+            if (state.triage) renderTriage(state.triage);
+            log('Cleared all repair statuses.');
+        });
+        $('raw-select').addEventListener('change', updateRawView);
+        document.querySelectorAll('.step-run').forEach((b) => b.addEventListener('click', () => runStage(b.dataset.run)));
+        document.querySelectorAll('.step-del').forEach((b) => b.addEventListener('click', () => deleteStepArtifact(b.dataset.del)));
+        ['work-dir', 'ops-dir'].forEach((id) => $(id).addEventListener('change', () => { persistSettings(); refreshHistory(); }));
+
+        $('tabs').addEventListener('click', (e) => {
+            const b = e.target.closest('button[data-tab]');
+            if (b) activateTab(b.dataset.tab);
+        });
+        $('panels').addEventListener('click', (e) => {
+            const toggle = e.target.closest('.view-toggle');
+            if (toggle) {
+                const name = toggle.dataset.view;
+                docRawMode[name] = !docRawMode[name];
+                renderDoc(name);
+                return;
+            }
+            const copy = e.target.closest('.view-copy');
+            if (copy) copyText(viewSource(copy.dataset.view), copy);
+        });
+
+        $('target').addEventListener('keydown', (e) => {
+            if ((e.ctrlKey || e.metaKey) && e.key === 'Enter' && !state.busy) runPipeline();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && menu) { try { menu.close(); } catch (err) { /* ignore */ } }
+        });
+        window.addEventListener('beforeunload', stopPoller);
+    }
+
+    async function initMenubar() {
+        const mount = $('menubar-mount');
+        try {
+            const {initMenu} = await import('/app/menu.js');
+            menu = initMenu({mount, appName: 'Software Analysis Engine'});
+            document.body.classList.add('has-menubar');
+            window.addEventListener('pagehide', () => {
+                try { if (menu) menu.destroy(); } catch (e) { /* ignore */ }
+                menu = null;
+            }, {once: true});
+        } catch (e) {
+            console.warn('Menubar unavailable — continuing without it', e);
+            if (mount) mount.remove();
+        }
+    }
+
+    async function init() {
+        buildUI();
+        restoreSettings();
+        wireEvents();
+        initMenubar();
+
+        state.sessionId = null;
+        state.basePath = null;
+        if (!state.basePath) {
+            const inferred = inferContextFromLocation();
+            state.basePath = inferred.basePath;
+            state.standalone = true;
+            state.docRoot = inferred.docRoot || '';
+            log('Direct file mode — base "' + state.basePath + '", working directory "' + workDir() + '".');
+            log('Doc-op paths are sent relative to "' + (docRoot() || '(server root)') + '".');
+        }
+        state.statusBase = computeStatusBase();
+        if (state.basePath) log('Doc-op status polled from "' + state.statusBase + '/docops.status.json".');
+
+        $('ctx-info').innerHTML =
+            (state.sessionId ? 'session <code>' + escapeHtml(state.sessionId) + '</code><br>' : 'mode <code>direct files</code><br>') +
+            'base <code>' + escapeHtml(state.basePath || '(unresolved)') + '</code><br>' +
+            'doc-op root <code>' + escapeHtml(docRoot() || '(server root)') + '</code><br>' +
+            'analysis root <code>' + escapeHtml(rootDir()) + '</code> from a document folder<br>' +
+            'status <code>' + escapeHtml((state.statusBase || '') + '/docops.status.json') + '</code>';
+
+        const banner = $('session-banner');
+        if (!state.basePath) {
+            banner.classList.remove('warn');
+            banner.classList.add('error');
+            banner.textContent = 'Could not determine a base path from this URL — file reads and writes are disabled.';
+            banner.classList.remove('hidden');
+            setBusy(true);
+            $('new-analysis').disabled = false;
+            $('refresh-history').disabled = true;
+            return;
+        }
+        await refreshHistory();
+        log('Ready. Ctrl/Cmd+Enter runs the whole pipeline; each layer can also be run on its own.');
+    }
+
+    init().catch((err) => {
+        console.error(err);
+        log('Initialization failed: ' + err.message, 'error');
+    });
+</script>
+</body>
+</html>

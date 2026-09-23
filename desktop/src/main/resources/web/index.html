@@ -593,6 +593,26 @@
                    title="Usage and Credits"></iframe>
       </div>
 </div>
+<!-- API Keys Modal -->
+<div class="modal" id="api-keys-modal">
+      <div class="modal-content modal-content-wide" style="height: 85vh; display: flex; flex-direction: column;">
+          <span class="close" id="close-api-keys-modal">&times;</span>
+          <h3>🔑 API Keys</h3>
+           <div id="api-keys-iframe-container"
+                style="flex: 1; position: relative; width: 100%; border: 1px solid #ddd; border-radius: 4px; background: #fff; overflow: hidden;">
+               <div id="api-keys-loading-overlay"
+                    style="position: absolute; inset: 0; display: flex; flex-direction: column;
+                           align-items: center; justify-content: center; background: var(--color-surface, #fff);
+                           z-index: 2;">
+                   <div class="spinner"></div>
+                   <p style="margin-top: 12px; color: var(--color-muted, #7f8c8d);">Loading API keys...</p>
+               </div>
+                <iframe id="api-keys-iframe" src="about:blank" loading="lazy"
+                       style="width: 100%; height: 100%; border: none; background: #fff;"
+                       title="API Keys"></iframe>
+           </div>
+      </div>
+</div>
 <!-- About Modal -->
 <div class="modal" id="about-modal">
      <div class="modal-content modal-content-wide" style="max-height: 90vh; overflow-y: auto; padding: 0;">

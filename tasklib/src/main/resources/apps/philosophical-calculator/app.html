@@ -22,6 +22,9 @@
         <button type="button" class="nav-link" role="tab" id="nav-analysis"
                 aria-selected="false" aria-controls="section-analysis" data-section="section-analysis">🔍 Analysis
         </button>
+        <button type="button" class="nav-link" role="tab" id="nav-review"
+                aria-selected="false" aria-controls="section-review" data-section="section-review">🗂 Review
+        </button>
         <button type="button" class="nav-link" role="tab" id="nav-output"
                 aria-selected="false" aria-controls="section-output" data-section="section-output">📦 Output
         </button>
@@ -63,7 +66,7 @@
                     <div class="model-field">
                         <label for="image-model-select">
                             <span class="model-label-row"><span aria-hidden="true">🖼️</span> Image Model</span>
-                            <span class="model-label-hint">Illustrations, narrative &amp; comic lenses</span>
+                                 <span class="model-label-hint">Illustrations and vision / OCR review</span>
                         </label>
                         <select id="image-model-select" class="model-select">
                             <option value="">Loading models…</option>
@@ -81,8 +84,9 @@
                     <h3>📋 Notes</h3>
                     <span id="notes-status" class="status-msg" aria-live="polite"></span>
                 </div>
-                <p class="hint">Paste raw notes, transcripts or source material — or drop files. This is the canonical
-                    source for every operation. Edits auto-save.</p>
+                <p class="hint">Paste raw notes, transcripts or source material — or drop files. Notes may be left
+                    blank, and once an article exists you can clear them: the draft carries on without them.
+                    Edits auto-save.</p>
 
                 <div class="upload-zone" id="upload-zone">
                     <div class="upload-zone-content">
@@ -101,6 +105,7 @@
                           placeholder="Paste your raw notes, transcripts, ideas, or source material here..."></textarea>
                 <div class="button-row">
                     <button type="button" class="btn btn-primary" id="save-notes">💾 Save Notes</button>
+                    <button type="button" class="btn btn-secondary" id="clear-notes">🗑 Clear Notes</button>
                     <button type="button" class="btn btn-secondary" id="refresh-file-list">🔄 Refresh Files</button>
                 </div>
             </div>
@@ -119,55 +124,46 @@
                     <button type="button" class="btn btn-primary" id="save-instruct">💾 Save Instructions</button>
                 </div>
             </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>📄 I already have a draft <span class="optional-tag">optional</span></h3>
+                    <span id="raw-draft-status" class="status-msg" aria-live="polite"></span>
+                </div>
+                <p class="hint">Draft-first mode: paste finished markdown to create <code>content.md</code> at
+                    revision <strong>v1</strong> and skip Summarize / Draft entirely. The lenses, annotations and the
+                    revision queue all work against it.</p>
+                <label class="field-label" for="raw-draft-editor">Existing article (Markdown)</label>
+                <textarea id="raw-draft-editor" rows="10"
+                          placeholder="# My article&#10;&#10;Paste an existing draft here…"></textarea>
+                <div class="button-row">
+                    <button type="button" class="btn btn-primary" id="import-raw-draft">⤒ Import as v1</button>
+                </div>
+            </div>
         </section>
 
         <!-- ==================== PIPELINE ==================== -->
         <section id="section-pipeline" class="section" role="tabpanel" aria-labelledby="nav-pipeline">
             <div class="section-header">
                 <h2>⚙️ Pipeline</h2>
-                <p class="section-subtitle">Summarize → Draft → Synthesize lenses → Illustrate.</p>
+                <p class="section-subtitle">Draft once, then Update as often as you like → Illustrate.</p>
             </div>
 
             <div class="card step-card">
                 <div class="step">
                     <div class="step-header">
                         <span class="step-number">1</span>
-                        <span class="step-title">Summarize Notes</span>
-                        <span class="step-badge pending" id="badge-summary">pending</span>
-                    </div>
-                    <p class="step-desc">Distill raw notes into a thematic, conceptual summary organized by key ideas.</p>
-                    <div class="button-row">
-                        <button type="button" class="btn btn-primary btn-run"
-                                data-op="ops/summarize_op.md"
-                                data-output="summary.md"
-                                data-badge="badge-summary"
-                                data-viewer="viewer-summary">▶ Run
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-view"
-                                data-file="summary.md"
-                                data-viewer="viewer-summary">👁 View
-                        </button>
-                    </div>
-                    <div class="session-link-container" id="session-link-summary-md"
-                         data-session-links="summary.md"></div>
-                    <div class="viewer" id="viewer-summary"></div>
-                </div>
-            </div>
 
-            <div class="card step-card">
-                <div class="step">
-                    <div class="step-header">
-                        <span class="step-number">2</span>
-                        <span class="step-title">Draft Article</span>
+                        <span class="step-title" id="step-article-title">Draft Article</span>
                         <span class="step-badge pending" id="badge-content">pending</span>
                     </div>
-                    <p class="step-desc">Generate a polished article from the summary, notes and instructions.</p>
+                    <p class="step-desc" id="step-article-desc">Generate a polished article from the notes, uploaded
+                        files and instructions.</p>
                     <div class="button-row">
-                        <button type="button" class="btn btn-primary btn-run"
+                        <button type="button" class="btn btn-primary btn-run" id="run-article"
                                 data-op="ops/draft_article_op.md"
                                 data-output="content.md"
                                 data-badge="badge-content"
-                                data-viewer="viewer-content">▶ Run
+                                data-viewer="viewer-content">▶ Draft
                         </button>
                         <button type="button" class="btn btn-secondary btn-view"
                                 data-file="content.md"
@@ -183,53 +179,25 @@
             <div class="card step-card">
                 <div class="step">
                     <div class="step-header">
-                        <span class="step-number">3</span>
-                        <span class="step-title">Update Article</span>
-                        <span class="step-badge pending" id="badge-update">pending</span>
-                    </div>
-                    <p class="step-desc">Weave insights from the analysis lenses back into the article. Run after one or
-                       more lenses. Reads <code>brainstorm</code>, <code>dialectical</code>, <code>socratic</code>,
-                       <code>perspectives</code>, <code>gametheory</code>, <code>debate</code>, <code>protocol</code>,
-                       <code>persuasive</code>, <code>narrative</code> and <code>technical_explanation</code> —
-                       whichever exist.</p>
-                    <div class="button-row">
-                        <button type="button" class="btn btn-primary btn-run"
-                                data-op="ops/update_article_op.md"
-                                data-output="content.md"
-                                data-badge="badge-update"
-                                data-viewer="viewer-update">▶ Run
-                        </button>
-                        <button type="button" class="btn btn-secondary btn-view"
-                                data-file="content.md"
-                                data-viewer="viewer-update">👁 View
-                        </button>
-                    </div>
-                    <div class="viewer" id="viewer-update"></div>
-                </div>
-            </div>
 
-            <div class="card step-card">
-                <div class="step">
-                    <div class="step-header">
-                        <span class="step-number">4</span>
+                        <span class="step-number">2</span>
                         <span class="step-title">Illustrate Article</span>
                         <span class="step-badge pending" id="badge-illustration">pending</span>
                     </div>
                     <p class="step-desc">Add inline AI-generated illustrations. Modifies <code>content.md</code> in
-                        place.</p>
+                        place; the result appears in the article pane above.</p>
                     <div class="button-row">
                         <button type="button" class="btn btn-primary btn-run"
                                 data-op="ops/illustration_op.md"
                                 data-output="content.md"
                                 data-badge="badge-illustration"
-                                data-viewer="viewer-illustration">▶ Run
+                                data-viewer="viewer-content">▶ Run
                         </button>
                         <button type="button" class="btn btn-secondary btn-view"
                                 data-file="content.md"
-                                data-viewer="viewer-illustration">👁 View
+                                data-viewer="viewer-content">👁 View
                         </button>
                     </div>
-                    <div class="viewer" id="viewer-illustration"></div>
                 </div>
             </div>
         </section>
@@ -405,14 +373,48 @@
                 </div>
             </div>
         </section>
+        <!-- ==================== REVIEW ==================== -->
+        <section id="section-review" class="section" role="tabpanel" aria-labelledby="nav-review">
+            <div class="section-header">
+                <h2>🗂 Review</h2>
+                <p class="section-subtitle">Draft history, reader annotations and the aggregated revision queue.
+                    Accepted items and open annotations are what <strong>Update Article</strong> consumes.</p>
+            </div>
+            <div class="card">
+                <div class="card-header">
+                    <h3>🕓 Draft revisions</h3>
+                    <div class="button-row review-header-actions">
+                        <button type="button" class="btn btn-sm btn-toolbar" id="export-bundle">⤓ Export bundle</button>
+                        <label class="btn btn-sm btn-toolbar" for="import-bundle-input">⤒ Import bundle</label>
+                        <input type="file" id="import-bundle-input" accept="application/json" class="upload-file-input">
+                    </div>
+                </div>
+                <p class="hint">Every agentic or manual mutation appends an immutable revision. Restore never destroys
+                    history — it appends a <code>rollback</code> revision.</p>
+                <div id="revisions-panel" class="review-panel"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>💬 Annotations</h3></div>
+                <p class="hint">Select text in any rendered article view to annotate it. Anchors are recomputed on
+                    every new revision; orphaned notes are surfaced, never dropped.</p>
+                <div id="annotations-panel" class="review-panel"></div>
+            </div>
+            <div class="card">
+                <div class="card-header"><h3>✅ Revision queue</h3></div>
+                <p class="hint">Analysis lens artifacts are ingested into uniform action items. Accept the ones you
+                    want, then run <strong>Update Article</strong>.</p>
+                <div id="queue-panel" class="review-panel"></div>
+            </div>
+        </section>
+
 
         <!-- ==================== OUTPUT LENSES ==================== -->
         <section id="section-output" class="section" role="tabpanel" aria-labelledby="nav-output">
             <div class="section-header">
                 <h2>📦 Output Lenses</h2>
-               <p class="section-subtitle">Transform the article into finished deliverables. Persuasive, Narrative and
-                   Technical Tutorial also feed back into <strong>Update Article</strong>; Comic and HTML are terminal
-                   renderings.</p>
+                <p class="section-subtitle">Each deliverable now has its own workbench page — generate, build, review
+                    with the OCR agent and iterate on your own notes. Persuasive, Narrative and Technical Tutorial
+                    still feed back into <strong>Update Article</strong>.</p>
             </div>
 
             <div class="lenses-grid">
@@ -425,17 +427,10 @@
                         </div>
                         <p class="step-desc">Reframe as a compelling persuasive essay using rhetorical technique.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/persuasive_op.md" data-output="persuasive.md"
-                                    data-badge="badge-persuasive" data-viewer="viewer-persuasive">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="persuasive.md" data-viewer="viewer-persuasive">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-persuasive.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-persuasive-md"
                              data-session-links="persuasive.md"></div>
-                        <div class="viewer" id="viewer-persuasive"></div>
                     </div>
                 </div>
 
@@ -448,17 +443,10 @@
                         </div>
                         <p class="step-desc">Dramatize the content into a narrative with illustrations.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/narrative_op.md" data-output="narrative.md"
-                                    data-badge="badge-narrative" data-viewer="viewer-narrative">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="narrative.md" data-viewer="viewer-narrative">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-narrative.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-narrative-md"
                              data-session-links="narrative.md"></div>
-                        <div class="viewer" id="viewer-narrative"></div>
                     </div>
                 </div>
 
@@ -471,17 +459,10 @@
                         </div>
                         <p class="step-desc">Generate a comic book representation of the content.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/comic_op.md" data-output="comic.md"
-                                    data-badge="badge-comic" data-viewer="viewer-comic">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="comic.md" data-viewer="viewer-comic">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-comic.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-comic-md"
                              data-session-links="comic.md"></div>
-                        <div class="viewer" id="viewer-comic"></div>
                     </div>
                 </div>
 
@@ -494,17 +475,10 @@
                         </div>
                         <p class="step-desc">Definitions, mechanisms, code snippets and worked examples.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/technical_explanation_op.md" data-output="technical_explanation.md"
-                                    data-badge="badge-technical" data-viewer="viewer-technical">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="technical_explanation.md" data-viewer="viewer-technical">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-technical.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-technical-explanation-md"
                              data-session-links="technical_explanation.md"></div>
-                        <div class="viewer" id="viewer-technical"></div>
                     </div>
                 </div>
 
@@ -515,19 +489,29 @@
                             <span class="step-title">HTML Webpage</span>
                             <span class="step-badge pending" id="badge-webpage">pending</span>
                         </div>
-                        <p class="step-desc">A standalone HTML page rendering of the article.</p>
+                         <p class="step-desc">A standalone HTML page rendering, with an OCR review / update loop.</p>
                         <div class="button-row">
-                            <button type="button" class="btn btn-primary btn-run"
-                                    data-op="ops/webpage_op.md" data-output="page.html"
-                                    data-badge="badge-webpage" data-viewer="viewer-webpage">▶ Run
-                            </button>
-                            <button type="button" class="btn btn-secondary btn-view"
-                                    data-file="page.html" data-viewer="viewer-webpage">👁 View
-                            </button>
+                             <a class="btn btn-primary" href="lens-webpage.html">🚀 Open lens page</a>
                         </div>
                         <div class="session-link-container" id="session-link-page-html"
                              data-session-links="page.html"></div>
-                        <div class="viewer" id="viewer-webpage"></div>
+                    </div>
+                </div>
+                <div class="card lens-card lens-card-output">
+                    <div class="step">
+                        <div class="step-header">
+                            <span class="lens-icon" aria-hidden="true">📚</span>
+                            <span class="step-title">LaTeX / PDF Source</span>
+                            <span class="step-badge pending" id="badge-latex">pending</span>
+                        </div>
+                         <p class="step-desc">A template-constrained LaTeX document, compiled to
+                             <code>paper.pdf</code> by <code>build.sh</code> and refined through an OCR review
+                             loop.</p>
+                        <div class="button-row">
+                             <a class="btn btn-primary" href="lens-latex.html">🚀 Open lens page</a>
+                        </div>
+                        <div class="session-link-container" id="session-link-paper-tex"
+                             data-session-links="paper.tex"></div>
                     </div>
                 </div>
             </div>

@@ -1,0 +1,24 @@
+{
+  "cognitiveSettings" : {
+    "variables" : { },
+    "type" : "Waterfall"
+  },
+  "taskSettings" : {
+    "FileReview_FileReview" : {
+      "task_type" : "FileReview",
+      "name" : "FileReview",
+      "verbose" : false
+    },
+    "FileModification_FileModification" : {
+      "task_type" : "FileModification",
+      "name" : "FileModification",
+      "verbose" : false
+    }
+  },
+  "purpose" : "Layer 5 — run the proof portfolio over Obligations.lean cheapest-first and record an honest trust level per obligation.",
+  "summaryPrompt" : "Write the proof-orchestration results as markdown.\n\nOriginal Goal: {goal}\n\n## Portfolio order used\ncache → decide/simp/omega/bv_decide → SMT → bounded model checking / property testing → lemma library → agentic tactic proposal → human escalation.\n\n## Results\nA table with one row per theorem in Obligations.lean: obligation id · rung · level (`kernel-checked` | `smt-attested` | `bounded-checked` | `refuted` | `proposed` | `timeout`) · backend · ledger hypotheses used · notes.\n\nLevels are never merged: `kernel-checked` is only allowed when a Lean run actually accepted the file without `sorry`; if no Lean toolchain was executed, the maximum level is `proposed` and this must be stated in a `## Trust caveat` section.\n\n## Refutations\nFor every `refuted` row: the model-level counterexample and the concrete source-level input to replay.\n\n## Residuals\nFor each rung lift attempted: the residual side conditions and their disposition (proved / assumed / refuted / runtime-checked).\n\n## Proposed lemmas\nReusable lemmas worth adding to the library.",
+  "name" : "SubPlan",
+  "task_type" : "SubPlan",
+  "verbose" : false,
+  "cognitiveMode" : "Waterfall"
+}

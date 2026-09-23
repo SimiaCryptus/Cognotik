@@ -22,18 +22,20 @@ Have you ever captured brilliant ideas, meeting transcripts, or rough notes, onl
 
 ---
 
-## 🚀 How It Works: The 4-Stage Journey
+## 🚀 How It Works: The 5-Stage Journey
 
-Philosophical Calculator guides your work through a smooth, four-stage workflow:
+Philosophical Calculator guides your work through a smooth, five-stage workflow:
 
 ```
- 📝 1. Input           ⚙️ 2. Pipeline         🔍 3. Analysis        📦 4. Output
-┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐  ┌──────────────────┐
-│ Notes & Files    │─▶│ Summarize Notes  │─▶│ Dialectical      │─▶│ Persuasive Essay │
-│ AI Model Setup   │  │ Draft Article    │  │ Socratic Dialogue│  │ Narrative Story  │
-│ Instructions     │  │ Update Draft     │  │ Game Theory      │  │ Comic Script     │
-└──────────────────┘  │ Illustrate       │  │ Historical Debate│  │ HTML Webpage     │
-                      └──────────────────┘  └──────────────────┘  └──────────────────┘
+📝 1. Input        ⚙️ 2. Pipeline      🔍 3. Analysis     🗂 4. Review       📦 5. Output
+┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐  ┌───────────────┐
+│ Notes & Files │─▶│ Draft ⇄ Update│─▶│ Dialectical   │─▶│ Revisions     │─▶│ Persuasive    │
+│ Model Setup   │  │   Article     │  │ Socratic      │  │ Annotations   │  │ Narrative     │
+│ Instructions  │  │ Illustrate    │  │ Game Theory   │  │ Action Items  │  │ Comic · HTML  │
+│ Import Draft  │  │               │  │ Debate        │  └───────┬───────┘  │ LaTeX Source  │
+└───────────────┘  └───────────────┘  └───────────────┘          │          └───────────────┘
+                          ▲                                      │
+                          └──────── accepted items + notes ◀─────┘
 ```
 
 ---
@@ -41,18 +43,17 @@ Philosophical Calculator guides your work through a smooth, four-stage workflow:
 ### Stage 1: 📝 Input — Set Your Foundation
 Every transformation starts here.
 * **AI Models**: Choose your preferred AI models for complex reasoning, quick tasks, and image generation.
-* **Raw Notes & Files**: Drag and drop documents (`.txt`, `.md`, `.pdf`, `.docx`, and more) or type notes directly into the editor. Your progress auto-saves automatically!
+* **Raw Notes & Files**: Drag and drop documents (`.txt`, `.md`, `.pdf`, `.docx`, and more) or type notes directly into the editor. Notes may be left blank, and once your article exists you can **🗑 Clear Notes** — the draft carries on without them. Your progress auto-saves automatically!
 * **Instructions (Optional)**: Add specific guidelines—like desired tone, target audience, or essay length.
+* **I Already Have a Draft**: Paste finished markdown to start at revision **v1** and skip straight to the lenses.
 
 ---
 
 ### Stage 2: ⚙️ Pipeline — Build & Refine Your Article
-Construct your core draft through a simple 4-step pipeline:
+Construct your core draft through a simple 2-step pipeline:
 
-1. **Summarize Notes**: Distill raw files and transcripts into a thematic summary organized by key concepts.
-2. **Draft Article**: Turn the summary and your notes into a full-length, structured draft.
-3. **Update Article**: The super-power of Philosophical Calculator! Automatically weave fresh insights from your Analysis and Output lenses back into the main article.
-4. **Illustrate Article**: Generate inline visual AI artwork that brings your writing to life.
+1. **Draft ⇄ Update Article**: One step, one pane. The first run turns your notes, files and instructions into a full-length, structured draft. As soon as `content.md` exists the step renames itself **Update Article** and every further run weaves accepted revision items, open annotations and fresh insights from your Analysis and Output lenses back into the article — appending a new revision each time.
+2. **Illustrate Article**: Generate inline visual AI artwork that brings your writing to life (shown in the same pane).
 
 ---
 
@@ -69,14 +70,43 @@ Explore your ideas from unexpected intellectual angles:
 
 ---
 
-### Stage 4: 📦 Output Lenses — Deliver Ready-to-Share Formats
-Tailor your finished content for different audiences and media:
+### Stage 4: 🗂 Review — Triage Everything in One Place
+* **🕓 Draft Revisions**: Every run appends an immutable revision. Diff any revision against the
+  current one — the diff highlights changed *segments* within a line, not whole lines, and can
+  ignore whitespace — read the changelog, and restore safely (restores append, never overwrite).
+* **💬 Annotations**: Select text in any rendered view to leave a comment, question, correction or
+  suggestion. Live annotations are highlighted inline in the article pane (rendered and Markdown
+  views); click a highlight to jump to it. Anchors survive rewrites; orphaned notes are surfaced
+  rather than dropped.
+* **✅ Revision Queue**: Analysis lens output is automatically ingested into uniform action items
+  (`add`, `clarify`, `evidence`, `counterargument`, …). Sort by priority, group by lens or section,
+  merge duplicates, then **Accept** the ones you want — *Update Article* applies exactly those and
+  records the provenance in the new revision.
+* **⤓ Export / ⤒ Import**: One JSON bundle with drafts, revisions, annotations and items.
+
+---
+
+### Stage 5: 📦 Output Lenses — Deliver Ready-to-Share Formats
+Every output lens now lives on **its own workbench page** (linked from the 📦 Output tab), where it
+runs its own iterative loop:
+
+```
+① Generate ──► artifact ──► ② Build (PDF only) ──► ③ OCR Review (vision agent)
+      ▲                                                        │
+      └──────────── ④ Update ◄──── <lens>-notes.md ◄────────────┘
+```
+
+`<lens>-notes.md` has two halves: `## Author notes` (yours, never touched by the agent) and
+`## OCR review` (rewritten on every review pass). **Update** applies both to the artifact and
+appends an immutable artifact revision to the shared history.
 
 * 🎯 **Persuasive Essay**: High-impact, rhetorically structured arguments designed to convince.
 * 📖 **Narrative Story**: Dramatized storytelling enriched with inline narrative illustrations.
 * 💬 **Comic Book Script**: Visual panel-by-panel comic scripts complete with dialog and scene direction.
 * 🔧 **Technical Tutorial**: Step-by-step guides complete with mechanism breakdowns and code examples.
-* 🌐 **HTML Webpage**: Generates a beautiful, standalone, responsive webpage ready to launch.
+* 🌐 **HTML Webpage**: A standalone responsive page — with review/update rounds against the live render.
+* 📚 **LaTeX / PDF**: `paper.tex` compiled to `paper.pdf` by `build.sh` (`tectonic` → `xelatex` →
+   `pdflatex`), with the full engine output captured in `build.log.md` and a page-by-page OCR review.
 
 ---
 
@@ -86,17 +116,21 @@ Tailor your finished content for different audiences and media:
 * **🔍 Fullscreen Zoom**: Click Zoom on any viewer to expand your document into a distraction-free reader mode.
 * **🚀 Instant Web Preview**: Preview generated HTML pages in a new browser tab with one click.
 * **⚡ Live Status Updates**: Real-time progress badges keep you informed when operations are running, complete, or ready to view.
+* **🧾 Inline PDF & HTML Previews**: Lens pages embed the compiled `paper.pdf` / rendered `page.html`
+   right next to the editable source, plus the build log for LaTeX.
+* **💾 Ctrl/⌘+S**: Saves the notes and the artifact source on any lens page.
 
 ---
 
 ## 🏁 Quick Start Guide
 
 1. Navigate to the **📝 Input** tab.
-2. Select your preferred AI models and paste your raw notes or upload source files.
-3. Switch to the **⚙️ Pipeline** tab and click **▶ Run** on **Summarize Notes**, followed by **Draft Article**.
+2. Select your preferred AI models and paste your raw notes or upload source files (or import an existing draft).
+3. Switch to the **⚙️ Pipeline** tab and click **▶ Draft** on **Draft Article**.
 4. Open the **🔍 Analysis** tab and run any lenses that pique your interest (e.g., *Socratic Dialogue* or *Game Theory*).
-5. Head back to **⚙️ Pipeline** and click **▶ Run** on **Update Article** to blend those insights into your article!
-6. Visit **📦 Output** to generate comic scripts, narrative stories, or a fully formatted **HTML Webpage**.
+5. Head back to **⚙️ Pipeline** — the step is now **Update Article** — and click **▶ Update** to blend those insights into your article!
+6. Visit **📦 Output** and open a lens page — e.g. **📚 LaTeX / PDF** — then run
+    **Generate → Build → Review → Update**, repeating the last two steps until the rendering is right.
 
 ---
 

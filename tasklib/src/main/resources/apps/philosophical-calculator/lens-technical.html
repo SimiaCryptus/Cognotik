@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Technical Tutorial · Philosophical Calculator</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="app-header">
+    <h1 id="lens-title">🔧 Technical Tutorial</h1>
+    <p class="subtitle" id="lens-blurb"></p>
+</header>
+<nav class="tab-nav" id="lens-nav" aria-label="Output lenses"></nav>
+<main id="lens-root"></main>
+<script src="/lib/marked.min.js"></script>
+<script type="module">
+    import {initLensPage} from './js/lensPage.js';
+
+    initLensPage({
+        lensId: 'technical-tutorial',
+        icon: '🔧',
+        title: 'Technical Tutorial',
+        blurb: 'Definitions, mechanisms, worked examples and code. Use the notes file to demand more ' +
+            'depth, different languages or extra edge cases.',
+        source: {file: 'technical_explanation.md', mono: false},
+        notesFile: 'technical-notes.md',
+        preview: {kind: 'markdown'},
+        ops: {
+            generate: 'ops/technical_explanation_op.md',
+            update: 'ops/technical_update_op.md'
+        }
+    });
+</script>
+</body>
+</html>

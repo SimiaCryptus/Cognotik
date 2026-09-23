@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
+import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.UserProvider
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
@@ -335,7 +336,11 @@ class UserProviderImpl : UserProvider {
     request: HttpServletRequest,
     response: AbstractHttpServletResponse?
   ): User? {
-    val claimedUser = request.getCookie("USER")?.let { username ->
+
+    val authCookie = request.getCookie()
+    val claimedUser = authCookie?.let {
+      ApplicationServicesImpl.fileApplicationServices().authenticationManager.getUser(it)
+    } ?: request.getCookie("USER")?.let { username ->
       val email = request.getCookie("EMAIL") ?: ""
       User(
         name = username,
@@ -345,7 +350,7 @@ class UserProviderImpl : UserProvider {
     if (null != claimedUser) {
       val userSettings =
         ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
-      val token = request.getCookie() ?: ""
+      val token = authCookie ?: ""
       val passwordHash = userSettings.passwordHash
       val internalToken = userSettings.internalToken
       val verified = try {
@@ -362,7 +367,7 @@ class UserProviderImpl : UserProvider {
         null
       }
       if (verified != null) {
-        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.label.isNullOrBlank()) {
+        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.token.isNullOrBlank()) {
           authenticationManager.putUser(token, claimedUser)
           log.warn("Session token stored for user: {}", claimedUser.email)
         } else {
@@ -374,7 +379,7 @@ class UserProviderImpl : UserProvider {
       }
     }
     try {
-      val user = authenticationManager.getUser(request.getCookie())
+      val user = authenticationManager.getUser(authCookie)
       return user
     } catch (e: RuntimeException) {
       log.debug(e.message)
@@ -428,8 +433,3 @@ fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
   setCookies(newCookies)
 }
 
-fun User.getAuthCookies(): Map<String, String?> = mapOf(
-  AuthenticationInterface.AUTH_COOKIE to authenticationManager.listTokens(this).firstOrNull()?.label,
-  "USER" to name,
-  "EMAIL" to email
-)
