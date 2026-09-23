@@ -65,7 +65,7 @@ object SessionServerCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
-    var zipUrl: String? = null
+    var zipUrl: String? = "s3://cognotik.com/apps/empty-project.zip"
     var workRoot: String = System.getenv("COGNOTIK_SESSION_ROOT")?.takeIf { it.isNotBlank() }
       ?: System.getProperty("java.io.tmpdir")
     var prefix = "session"
