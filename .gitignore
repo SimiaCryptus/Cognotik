@@ -13,3 +13,4 @@ build/
 .data/
 .logs/
 cognotik-tools/
+docops.status.json
