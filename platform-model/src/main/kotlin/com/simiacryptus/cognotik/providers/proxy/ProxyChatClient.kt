@@ -53,13 +53,25 @@ class ProxyChatClient(
      private val providerPath: String =
          upstreamProviderNames.joinToString(",") { URLEncoder.encode(it, StandardCharsets.UTF_8) }
 
-    val user: User = try {
+    /**
+     * Optional user identity carried by the upstream key. A plain API key (no
+     * embedded user document) is legitimate: the proxy can authenticate with
+     * the X-API-Key header alone, so this degrades to `null` rather than failing.
+     */
+    val user: User? = try {
         upstreamKey.decrypt?.jsonCast<User>()
-            ?: throw IllegalArgumentException("Upstream key must contain user information for authentication")
-    } catch (e: IllegalArgumentException) {
-        throw e
     } catch (e: Exception) {
-        throw IllegalArgumentException("Failed to decrypt/parse upstream key: ${e.message}", e)
+        LoggerFactory.getLogger(ProxyChatClient::class.java)
+            .info("Upstream key for '${upstreamProviderNames.joinToString(",")}' carries no user document (${e.message}); using X-API-Key authentication only")
+        null
+    }
+
+    /** Never throws: cookie resolution is best-effort local state. */
+    private fun authCookies(): Map<String, String?> = try {
+        user?.getAuthCookies() ?: emptyMap()
+    } catch (e: Exception) {
+        log.warn("Could not resolve auth cookies for '$user' (provider='$upstreamProviderName'): ${e.message}")
+        emptyMap()
     }
 
     init {
@@ -69,7 +81,7 @@ class ProxyChatClient(
          if (upstreamProviderNames.isEmpty() || upstreamProviderNames.any { it.isBlank() }) {
              throw IllegalArgumentException("At least one non-blank upstream provider name is required")
         }
-        log.debug("ProxyChatClient initialized for upstream='$upstreamProviderName' base='$proxyBase'")
+        log.info("ProxyChatClient initialized for upstream='$upstreamProviderName' base='$proxyBase' user=${user?.email ?: "<anonymous>"}")
     }
 
     /**
@@ -119,7 +131,7 @@ class ProxyChatClient(
             conn.setRequestProperty("Content-Type", "application/json")
             conn.setRequestProperty("Accept", "application/json")
             conn.setRequestProperty("X-API-Key", upstreamKey.toString())
-            conn.setCookies(user.getAuthCookies())
+            conn.setCookies(authCookies())
             conn.connectTimeout = ProxyConfig.connectTimeoutMs
 
 
@@ -301,7 +313,7 @@ class ProxyChatClient(
             conn.requestMethod = "GET"
             conn.setRequestProperty("X-API-Key", upstreamKey.toString())
             conn.setRequestProperty("Accept", "application/json")
-            conn.setCookies(user.getAuthCookies())
+            conn.setCookies(authCookies())
             conn.connectTimeout = ProxyConfig.connectTimeoutMs
             conn.readTimeout = ProxyConfig.pollReadTimeoutMs
 
@@ -382,7 +394,7 @@ class ProxyChatClient(
             conn.requestMethod = "GET"
             conn.setRequestProperty("X-API-Key", upstreamKey.toString())
             conn.setRequestProperty("Accept", "application/json")
-            conn.setCookies(user.getAuthCookies())
+            conn.setCookies(authCookies())
             conn.connectTimeout = ProxyConfig.connectTimeoutMs
             conn.readTimeout = ProxyConfig.modelsReadTimeoutMs
 

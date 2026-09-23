@@ -14,6 +14,7 @@ import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.fail
 import org.junit.jupiter.api.Assumptions.assumeTrue
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DynamicTest
@@ -37,6 +38,7 @@ class CoreProvidersLiveTest {
     @JvmStatic
     fun registerProviders() {
       CoreProviders.init()
+       log.info("Registered API providers: {}", APIProvider.values().map { it.name }.sorted())
     }
 
     private fun noConfigTest(what: String) = listOf(
@@ -62,6 +64,7 @@ class CoreProvidersLiveTest {
   fun `provider completes a chat request`(): List<DynamicTest> = perProvider("chat completion") { cfg, provider, key, base ->
     val defaults = config!!.defaults
     val model = selectChatModel(cfg, provider, key, base)
+     if (model == null) log.warn("{}: SKIPPING chat completion - no suitable text chat model found (base={})", cfg.name, base)
     assumeTrue(model != null) { "${cfg.name}: no suitable text chat model found" }
     model!!
     log.info("{}: issuing chat request against '{}'", cfg.name, model.modelId)
@@ -96,8 +99,10 @@ class CoreProvidersLiveTest {
     val models = try {
       provider.getEmbeddingModels(key, base).ifEmpty { provider.getEmbeddingModels() }
     } catch (e: UnsupportedOperationException) {
+       log.info("{}: embeddings unsupported by provider implementation: {}", cfg.name, e.message)
       emptyList()
     }
+     if (models.isEmpty()) log.warn("{}: SKIPPING embeddings - no embedding models advertised", cfg.name)
     assumeTrue(models.isNotEmpty()) { "${cfg.name}: no embedding models advertised" }
     val model = cfg.embeddingModel
       ?.let { requested -> models.firstOrNull { it.modelId == requested } }
@@ -123,18 +128,43 @@ class CoreProvidersLiveTest {
       log.warn("'{}' contains no enabled provider with a real key; skipping {}.", cfg.source, what)
       return noConfigTest(what)
     }
+     log.info(
+       "{}: generating {} test(s) from '{}' for provider(s) {}",
+       what, usable.size, cfg.source, usable.map { it.name }
+     )
     return usable.map { providerConfig ->
       DynamicTest.dynamicTest("$what - ${providerConfig.name}") {
-        val provider = runCatching { APIProvider.valueOf(providerConfig.name) }.getOrNull()
-        assumeTrue(provider != null) {
-          "Unknown provider '${providerConfig.name}' in ${cfg.source}; known: ${APIProvider.values().map { it.name }}"
-        }
-        provider!!
+         /* A misspelled / unregistered provider name is a configuration error, not a
+            reason to silently skip: fail loudly and list what *is* registered. */
+         val provider = resolveProvider(providerConfig.name) ?: fail(
+           "Unknown provider '${providerConfig.name}' declared in ${cfg.source}. " +
+               "Registered providers: ${APIProvider.values().map { it.name }.sorted()}"
+         )
         val base = providerConfig.base ?: provider.base
+         log.info("{}: running '{}' against provider '{}' (base={})", providerConfig.name, what, provider.name, base)
         body(providerConfig, provider, providerConfig.apiKey!!.trim().encrypt, base)
       }
     }
   }
+   /**
+    * Resolves a configured provider name against the [DynamicEnum][APIProvider]
+    * registry, tolerating case differences so that `hostedproxy`, `HostedProxy`
+    * and `HOSTEDPROXY` all refer to the same provider.
+    */
+   private fun resolveProvider(name: String): APIProvider? {
+     val trimmed = name.trim()
+     runCatching { APIProvider.valueOf(trimmed) }.getOrNull()?.let { return it }
+     val ciMatch = APIProvider.values().firstOrNull { it.name.equals(trimmed, ignoreCase = true) }
+     if (ciMatch != null) {
+       log.warn("Provider '{}' matched '{}' case-insensitively; consider fixing the configuration.", trimmed, ciMatch.name)
+     } else {
+       log.error(
+         "Provider '{}' is not registered. Registered providers: {}",
+         trimmed, APIProvider.values().map { it.name }.sorted()
+       )
+     }
+     return ciMatch
+   }
 
   private fun selectChatModel(
     cfg: TestApiKeys.ProviderConfig,
@@ -146,6 +176,7 @@ class CoreProvidersLiveTest {
       log.warn("{}: could not list chat models", cfg.name, it)
       emptyList()
     }
+     log.info("{}: {} chat model(s) available for selection", cfg.name, models.size)
     cfg.chatModel?.let { requested ->
       val match = models.firstOrNull { it.modelId == requested || it.name == requested }
       if (match != null) return match

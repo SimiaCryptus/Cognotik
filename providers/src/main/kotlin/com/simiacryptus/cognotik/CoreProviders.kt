@@ -58,9 +58,9 @@ object CoreProviders : CognotikPlugin {
   val HostedProxy: APIProvider = HostedProxyProvider()
 
 
-  override fun init() {
-    log.info("Registering API providers")
-    DynamicEnum.register(APIProvider::class.java, Gemini)
+override fun init() {
+  log.info("Registering API providers")
+  DynamicEnum.register(APIProvider::class.java, Gemini)
     DynamicEnum.register(APIProvider::class.java, OpenAI)
     DynamicEnum.register(APIProvider::class.java, Anthropic)
     DynamicEnum.register(APIProvider::class.java, AWS)
