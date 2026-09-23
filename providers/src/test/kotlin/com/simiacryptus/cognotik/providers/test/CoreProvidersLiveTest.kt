@@ -176,7 +176,7 @@ class CoreProvidersLiveTest {
       log.warn("{}: could not list chat models", cfg.name, it)
       emptyList()
     }
-     log.info("{}: {} chat model(s) available for selection", cfg.name, models.size)
+     log.info("{}: {} chat model(s) available for selection: {}", cfg.name, models.size, models.take(100).joinToString(", ") { it.modelId })
     cfg.chatModel?.let { requested ->
       val match = models.firstOrNull { it.modelId == requested || it.name == requested }
       if (match != null) return match

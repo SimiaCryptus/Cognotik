@@ -146,17 +146,32 @@ abstract class ProxyProvider(
         log.warn("Proxy models request failed (provider='$upstreamProviderName', code=$code, url=$urlString): $err")
         return emptyList()
       }
-     val models: List<ChatModel> = conn.inputStream.use { input ->
+      val models: List<ChatModel> = conn.inputStream.use { input ->
         mapper.readValue(
           input,
           mapper.typeFactory.constructCollectionType(List::class.java, ChatModel::class.java)
         )
       }
-     log.info(
-       "Proxy '{}' returned {} model(s) for upstream={}",
-       name, models.size, upstreamProviderNames
-     )
-     return models
+      log.info(
+        "Proxy '{}' returned {} model(s) for upstream={}",
+        name, models.size, upstreamProviderNames
+      )
+      return models.map {
+        ChatModel(
+          name = it.name,
+          modelId = it.modelId,
+          maxTotalTokens = it.maxTotalTokens,
+          maxOutTokens = it.maxOutTokens,
+          provider = this@ProxyProvider,
+          tokenPricingPerK = it.tokenPricingPerK,
+          supportsTemperature = it.supportsTemperature,
+          supportsReasoning = it.supportsReasoning,
+          deprecated = it.deprecated,
+          inputModalities = it.inputModalities,
+          outputModalities = it.outputModalities,
+          reasoningLevel = it.reasoningLevel
+        )
+      }
     } catch (e: SocketTimeoutException) {
       log.warn("Timeout fetching models from proxy (provider='$upstreamProviderName', url=$urlString): ${e.message}")
       return emptyList()

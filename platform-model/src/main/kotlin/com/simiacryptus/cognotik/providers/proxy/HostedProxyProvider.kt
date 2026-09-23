@@ -6,10 +6,10 @@ import org.slf4j.LoggerFactory
 
 class HostedProxyProvider(
   val url: String = "https://hosted.cognotik.com/api-proxy",
-  vararg name: String = arrayOf(
+  vararg upstreamProviderNames: String = arrayOf(
     "Gemini", "Anthropic", "ElevenLabs", "Groq", "Mistral", "xAI", "DeepSeek"
   )
-) : ProxyProvider("Cognotik", url, *name) {
+) : ProxyProvider("Cognotik", url, *upstreamProviderNames) {
   override fun getAuthCookies(key: SecureString): Map<String, String?> = mapOf(
     AuthenticationInterface.AUTH_COOKIE to key.decrypt,
   )
