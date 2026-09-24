@@ -88,7 +88,8 @@ class UserSettingsServlet : HttpServlet() {
   public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
     val user =
       UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
-    val settings = JsonUtil.fromJson<UserSettings>(request.getParameter("settings"), UserSettings::class.java)
+    val data = request.getParameter("settings") ?: request.reader.use { it.readText() }.ifBlank { null }
+    val settings = data?.let { JsonUtil.fromJson<UserSettings>(it, UserSettings::class.java) } ?: UserSettings()
     val userSettingsManager = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
     val prevSettings =
       userSettingsManager.getUserSettings(user)
@@ -120,3 +121,4 @@ class UserSettingsServlet : HttpServlet() {
 
   companion object
 }
+

@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authenticationManager
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authorizationManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.AuthenticationInterface
@@ -19,7 +18,6 @@ import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.UserProvider
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
@@ -335,77 +333,8 @@ class UserProviderImpl : UserProvider {
   override fun authenticate(
     request: HttpServletRequest,
     response: AbstractHttpServletResponse?
-  ): User? {
-
-    val authCookie = request.getCookie()
-    val claimedUser = authCookie?.let {
-      ApplicationServicesImpl.fileApplicationServices().authenticationManager.getUser(it)
-    } ?: request.getCookie("USER")?.let { username ->
-      val email = request.getCookie("EMAIL") ?: ""
-      User(
-        name = username,
-        email = email,
-      )
-    }
-    if (null != claimedUser) {
-      val userSettings =
-        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
-      val token = authCookie ?: ""
-      val passwordHash = userSettings.passwordHash
-      val internalToken = userSettings.internalToken
-      val verified = try {
-        (if (internalToken != null) {
-          claimedUser.isMatch(LoginServlet.verifySessionToken(token, internalToken))
-        } else null) ?: (if (passwordHash != null) {
-          claimedUser.isMatch(LoginServlet.verifySessionToken(token, passwordHash))
-        } else null) ?: apply {
-          log.warn("No password hash found for user: {}, cannot verify session token", claimedUser.email)
-          null
-        }
-      } catch (e: Exception) {
-        log.warn("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
-        null
-      }
-      if (verified != null) {
-        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.token.isNullOrBlank()) {
-          authenticationManager.putUser(token, claimedUser)
-          log.debug("Session token stored for user: {}", claimedUser.email)
-        } else {
-          log.debug("Session token valid for user: {}", claimedUser.email)
-        }
-        return claimedUser
-      } else {
-        log.warn("No valid session token found for user: {}", claimedUser.email)
-      }
-    }
-    try {
-      val user = authenticationManager.getUser(authCookie)
-      return user
-    } catch (e: RuntimeException) {
-      log.debug(e.message)
-      if (null != response) {
-        response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-        val originalRequest = request.requestURL.toString()
-        val queryString = request.queryString
-        val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-        val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-        response.setHeader("Location", "/login/?target=$encodedTarget")
-      }
-      return null
-    }
-  }
-
-  private fun User.isMatch(
-    result: LoginServlet.Companion.SessionVerificationResult
-  ): LoginServlet.Companion.SessionEnvelope? = when (result) {
-    is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
-    is LoginServlet.Companion.SessionVerificationResult.Failure -> {
-      log.warn(
-        "Session token verification failed for user: {} - {} ({})",
-        email, result.error, result.reason
-      )
-      null
-    }
+  ) = request.getCookie()?.let {
+    ApplicationServicesImpl.fileApplicationServices().authenticationManager.getUser(it)
   }
 }
 
