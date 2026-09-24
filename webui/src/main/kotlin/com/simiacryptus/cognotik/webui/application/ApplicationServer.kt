@@ -369,9 +369,9 @@ class UserProviderImpl : UserProvider {
       if (verified != null) {
         if (authenticationManager.listTokens(claimedUser).firstOrNull()?.token.isNullOrBlank()) {
           authenticationManager.putUser(token, claimedUser)
-          log.warn("Session token stored for user: {}", claimedUser.email)
+          log.debug("Session token stored for user: {}", claimedUser.email)
         } else {
-          log.warn("Session token valid for user: {}", claimedUser.email)
+          log.debug("Session token valid for user: {}", claimedUser.email)
         }
         return claimedUser
       } else {
