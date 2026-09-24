@@ -6,6 +6,7 @@ package com.simiacryptus.cognotik.cli
     import com.simiacryptus.cognotik.platform.ApiData
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.platform.UserSettingsInterface
+    import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
     import com.simiacryptus.cognotik.util.SecureString
     import java.io.File
     import java.io.PrintStream
@@ -263,7 +264,7 @@ package com.simiacryptus.cognotik.cli
 
       private fun installServices() {
         try {
-          CliSupport.installFileServices()
+          DatabaseFacet.root = File(".").absolutePath
         } catch (e: Exception) {
           // Already configured (and possibly locked) by a host process; use whatever is installed.
           System.err.println("warning: using pre-installed application services: ${e.message}")

@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.UI_PREFIX
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.fileserver.StaticZipServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
+import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
@@ -272,7 +273,7 @@ object FileServerCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
-    CliSupport.installFileServices()
+    DatabaseFacet.root = File(".").absolutePath
 
     var port = 8081
     var host = "127.0.0.1"

@@ -18,6 +18,7 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.FileApplicationServices
 import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -110,7 +111,7 @@ object DocOpsCli {
 
   private fun execute(opts: CliOptions): Int {
     val servicesCache = mutableMapOf<File, FileApplicationServices>()
-    CliSupport.installFileServices()
+    DatabaseFacet.root = File(".").absolutePath
     val root = opts.root
     val docsFolder = opts.docsFolder ?: root
     if (!root.isDirectory) throw IllegalArgumentException("root is not a directory: ${root.absolutePath}")

@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -190,6 +191,9 @@ open class DocProcessorServlet() : HttpServlet() {
         return
       }
       val user = resolveUser(request, response) ?: return
+      require(null != user.getAuthCookies()[AuthenticationInterface.AUTH_COOKIE]) {
+        "Missing authentication cookie; ensure the request is authenticated"
+      }
       val root = resolveRoot(request, response, user) ?: return
       val docFile = root.resolve(docPath)
       if (!docFile.canonicalPath.startsWith(root.canonicalPath)) {
@@ -519,7 +523,7 @@ open class DocProcessorServlet() : HttpServlet() {
       models.values.find { it.modelId == modelId }?.let { return it }
       models[modelId]?.let { return it }
       models.entries.firstOrNull { it.key.equals(modelId, ignoreCase = true) }?.let { return it.value }
-      log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
+      log.warn("Model ID '{}' not found in registered models {}; creating unregistered model reference", modelId, models.keys)
       return ChatModel(
         modelId = modelId,
         inputModalities = setOf(ChatMessageModality.TEXT),

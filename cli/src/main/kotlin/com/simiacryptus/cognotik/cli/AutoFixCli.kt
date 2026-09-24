@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.cli
 import com.simiacryptus.cognotik.autofix.AutoFixTask
 import com.simiacryptus.cognotik.cli.CliSupport.email
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import java.awt.Desktop
@@ -39,7 +40,7 @@ object AutoFixCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
-    CliSupport.installFileServices()
+    DatabaseFacet.root = File(".").absolutePath
     val user = CliSupport.defaultUser()
     CliSupport.bootstrapPlatform(user)
     val opts = try {
@@ -80,7 +81,7 @@ object AutoFixCli {
    * server's `autofix` FS action) can drive it in-process.
    */
   fun run(args: Array<String>): Int {
-    CliSupport.installFileServices()
+    DatabaseFacet.root = File(".").absolutePath
     CliSupport.bootstrapPlatform(CliSupport.defaultUser())
     val opts = parse(args)
     if (opts.help) {

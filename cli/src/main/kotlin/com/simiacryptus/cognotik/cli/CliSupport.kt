@@ -7,17 +7,13 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.FileApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.UserSettingsInterface
 import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.fileserver.FileServlet
-import com.simiacryptus.cognotik.platform.IFileApplicationServices
 import com.simiacryptus.cognotik.platform.UserProvider
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -55,26 +51,6 @@ object CliSupport {
     }
   }
   val log = LoggerFactory.getLogger(CliSupport::class.java)
-
-  /**
-   * Points [ApplicationServicesImpl.fileApplicationServices] at per-root instances so user
-   * settings (API keys, model registrations) are read from the project directory.
-   */
-  fun installFileServices() {
-    val path = File(".").absolutePath
-    log.info("Installing FileApplicationServices for rootDir: $path", RuntimeException())
-    DatabaseFacet.root = path
-    val servicesCache = mutableMapOf<File, FileApplicationServices>()
-    ApplicationServicesImpl.fileApplicationServices = { rootDir ->
-      servicesCache.getOrPut(rootDir) {
-        log.info("Initializing FileApplicationServices for rootDir: ${rootDir.absolutePath}", RuntimeException())
-        object : FileApplicationServices(rootDir) {
-          override val userSettingsManager: UserSettingsInterface
-            get() = IFileApplicationServices.userSettingsManagerFn?.invoke(rootDir) ?: UserSettingsManager(rootDir)
-        }
-      }
-    }
-  }
 
   /**
    * Minimal, headless equivalent of what the app server does at boot.
