@@ -7,7 +7,7 @@ supplied. Credential resolution order:
 
 1. `-Dcognotik.test.apiKeys=/path/to/keys.json`
 2. `COGNOTIK_TEST_API_KEYS=/path/to/keys.json`
-3. `providers/src/test/resources/test-api-keys.json` (gitignored)
+3. `resources/test-api-keys.json.disable` (gitignored)
 4. `./test-api-keys.json` or `~/.cognotik/test-api-keys.json`
 
 To enable:

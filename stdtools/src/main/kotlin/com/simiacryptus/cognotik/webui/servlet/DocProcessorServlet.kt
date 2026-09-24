@@ -173,10 +173,16 @@ open class DocProcessorServlet() : HttpServlet() {
    */
 
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    doPost(req, resp)
+    log.info("DocOps GET request: ${req.queryString}")
+    handle(req, resp)
   }
 
   override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    log.info("DocOps POST request: ${request.queryString}")
+    handle(request, response)
+  }
+
+  fun handle(request: HttpServletRequest, response: HttpServletResponse) {
     try {
       val docPath = request.getParameter("doc")
       if (docPath.isNullOrBlank()) {

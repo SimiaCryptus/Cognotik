@@ -17,7 +17,9 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.fileserver.FileServlet
+import com.simiacryptus.cognotik.platform.IFileApplicationServices
 import com.simiacryptus.cognotik.platform.UserProvider
+import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.system.exitProcess
 
@@ -52,19 +54,23 @@ object CliSupport {
       ) = defaultUser()
     }
   }
+  val log = LoggerFactory.getLogger(CliSupport::class.java)
 
   /**
    * Points [ApplicationServicesImpl.fileApplicationServices] at per-root instances so user
    * settings (API keys, model registrations) are read from the project directory.
    */
   fun installFileServices() {
+    val path = File(".").absolutePath
+    log.info("Installing FileApplicationServices for rootDir: $path", RuntimeException())
+    DatabaseFacet.root = path
     val servicesCache = mutableMapOf<File, FileApplicationServices>()
-    DatabaseFacet.root = File(".").absolutePath
     ApplicationServicesImpl.fileApplicationServices = { rootDir ->
       servicesCache.getOrPut(rootDir) {
+        log.info("Initializing FileApplicationServices for rootDir: ${rootDir.absolutePath}", RuntimeException())
         object : FileApplicationServices(rootDir) {
           override val userSettingsManager: UserSettingsInterface
-            get() = UserSettingsManager(rootDir)
+            get() = IFileApplicationServices.userSettingsManagerFn?.invoke(rootDir) ?: UserSettingsManager(rootDir)
         }
       }
     }

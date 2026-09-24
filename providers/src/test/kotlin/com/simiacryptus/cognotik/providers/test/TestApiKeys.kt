@@ -21,7 +21,7 @@ object TestApiKeys {
 
   private val log = LoggerFactory.getLogger(TestApiKeys::class.java)
 
-  const val RESOURCE_NAME = "test-api-keys.json"
+  const val RESOURCE_NAME = "test-api-keys.json.disable"
   const val SYSTEM_PROPERTY = "cognotik.test.apiKeys"
   const val ENV_VARIABLE = "COGNOTIK_TEST_API_KEYS"
 
