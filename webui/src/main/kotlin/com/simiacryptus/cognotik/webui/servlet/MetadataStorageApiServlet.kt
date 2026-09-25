@@ -102,13 +102,15 @@ class MetadataStorageApiServlet(
         }
 
         "sessionOwner" -> {
+          val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionOwnerResponse(metadata.getSessionOwner(session)))
+          writeJson(response, SessionOwnerResponse(metadata.getSessionOwner(user = user, session = session)))
         }
 
         "sessionWorker" -> {
+          val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionWorkerResponse(metadata.getSessionWorker(session)))
+          writeJson(response, SessionWorkerResponse(metadata.getSessionWorker(user = user, session = session)))
         }
 
         "sessionPath" -> {
@@ -136,7 +138,7 @@ class MetadataStorageApiServlet(
 
         "listSessionMetadataByPath" -> {
           val path = requireParam(request, "path")
-          writeJson(response, SessionMetadataListResponse(metadata.listSessionMetadata(path)))
+          writeJson(response, SessionMetadataListResponse(metadata.listSessionMetadata(path = path)))
         }
 
         "listSessionEntries" -> {
@@ -146,7 +148,7 @@ class MetadataStorageApiServlet(
 
         "listSessionEntriesByPath" -> {
           val path = requireParam(request, "path")
-          writeJson(response, SessionListEntryListResponse(metadata.listSessionEntries(path)))
+          writeJson(response, SessionListEntryListResponse(metadata.listSessionEntries(path = path)))
         }
 
         "sessionsForUser" -> {
@@ -156,7 +158,7 @@ class MetadataStorageApiServlet(
 
         "sessionsByPath" -> {
           val path = requireParam(request, "path")
-          writeJson(response, SessionIdsResponse(metadata.listSessionsByPath(path)))
+          writeJson(response, SessionIdsResponse(metadata.listSessionsByPath(path = path)))
         }
 
         else -> writeError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown action")
@@ -196,14 +198,16 @@ class MetadataStorageApiServlet(
         }
 
         "setSessionOwner" -> {
+          val user = currentUser(request)
           val req = readBody(request, SetSessionOwnerRequest::class.java)
-          metadata.setSessionOwner(Session(req.sessionId), req.ownerId)
+          metadata.setSessionOwner(Session(req.sessionId), user, req.ownerId)
           writeJson(response, StatusResponse())
         }
 
         "setSessionWorker" -> {
+          val user = currentUser(request)
           val req = readBody(request, SetSessionWorkerRequest::class.java)
-          metadata.setSessionWorker(Session(req.sessionId), req.workerId)
+          metadata.setSessionWorker(Session(req.sessionId), user = user, ownerId = req.workerId)
           writeJson(response, StatusResponse())
         }
 

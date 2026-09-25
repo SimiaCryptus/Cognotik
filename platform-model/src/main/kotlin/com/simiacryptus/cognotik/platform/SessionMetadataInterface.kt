@@ -83,19 +83,11 @@ interface SessionMetadataInterface {
 
   /** Lists all session IDs associated with [path]. */
   @Suppress("DEPRECATION")
-  fun listSessionsByPath(path: String): List<String> = listSessionsByPath(path)
+  fun listSessionsByPath(user: User? = null, path: String): List<String> = listSessionsByPath(path = path)
 
   /** Lists all session IDs associated with [user]. */
   @Suppress("DEPRECATION")
   fun listSessionsForUser(user: User): List<String> = listSessionsForUser(user)
-
-  /**
-   * Retrieves the owner ID associated with a session.
-   *
-   * @param session The session object containing the session ID
-   * @return The owner ID if set, or null if the session has no recorded owner
-   */
-  fun getSessionOwner(session: Session): String?
 
   /**
    * Sets or updates the owner ID for a session.
@@ -103,33 +95,23 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @param ownerId The owner identifier to associate with the session, or null to clear it
    */
-  fun setSessionOwner(session: Session, ownerId: String?)
+  fun setSessionOwner(session: Session, user: User?, ownerId: String? = user?.id)
 
   /** User-scoped overload, for signature consistency with the rest of the interface. */
-  fun getSessionOwner(user: User?, session: Session): String? = getSessionOwner(session)
-
-  /** User-scoped overload, for signature consistency with the rest of the interface. */
-  fun setSessionOwner(user: User?, session: Session, ownerId: String?) = setSessionOwner(session, ownerId)
-
-  /**
-   * Retrieves the worker (`ip:port`) currently serving a session.
-   *
-   * @return the worker identifier, or null if the session is not assigned to a worker
-   */
-  fun getSessionWorker(session: Session): String?
+  fun getSessionOwner(user: User?, session: Session): String?
 
   /**
    * Assigns (or clears) the worker currently serving a session.
    *
    * @param ownerId the worker identifier (`ip:port`), or null to clear the assignment
    */
-  fun setSessionWorker(session: Session, ownerId: String?)
+  fun setSessionWorker(session: Session, user: User? = null, ownerId: String? = user?.id)
 
   /** User-scoped overload of [getSessionWorker]. */
-  fun getSessionWorker(user: User?, session: Session): String? = getSessionWorker(session)
+  fun getSessionWorker(user: User?, session: Session): String? = getSessionWorker(session = session, user = user)
 
   /** User-scoped overload of [setSessionWorker]. */
-  fun setSessionWorker(user: User?, session: Session, workerId: String?) = setSessionWorker(session, workerId)
+  fun setSessionWorker(user: User?, session: Session, workerId: String?) = setSessionWorker(session, user = user, ownerId = workerId)
 
   /**
    * Retrieves the application path associated with a session.
@@ -191,8 +173,8 @@ interface SessionMetadataInterface {
       name = getSessionName(user, session),
       messageIds = getMessageIds(user, session),
       sessionTime = getSessionTimestamp(user, session)?.let { Date.from(it) },
-      ownerId = getSessionOwner(session),
-      workerId = getSessionWorker(session),
+      ownerId = getSessionOwner(session = session,user=user),
+      workerId = getSessionWorker(session = session,user=user),
       path = getSessionPath(user, session),
     )
   }
@@ -207,8 +189,8 @@ interface SessionMetadataInterface {
     patch.name.ifSet { setSessionName(user, session, it ?: session.sessionId) }
     patch.messageIds.ifSet { setMessageIds(user, session, it) }
     patch.sessionTime.ifSet { if (it != null) setSessionTimestamp(user, session, it) }
-    patch.ownerId.ifSet { setSessionOwner(session, it) }
-    patch.workerId.ifSet { setSessionWorker(session, it) }
+    patch.ownerId.ifSet { setSessionOwner(session=session, user = user, ownerId = it) }
+    patch.workerId.ifSet { setSessionWorker(session=session, user = user, workerId = it) }
     patch.path.ifSet { setSessionPath(user, session, it) }
   }
 
@@ -236,9 +218,9 @@ interface SessionMetadataInterface {
    * @param path The path to search for associated sessions
    * @return A list of [SessionMetadata] objects, one per session
    */
-  fun listSessionMetadata(path: String): List<SessionMetadata> {
-    return listSessionsByPath(path).map { sessionId ->
-      getSessionMetadata(null, Session(sessionId))
+  fun listSessionMetadata(user: User? = null, path: String): List<SessionMetadata> {
+    return listSessionsByPath(path = path).map { sessionId ->
+      getSessionMetadata(user, Session(sessionId))
     }
   }
 
@@ -274,8 +256,8 @@ interface SessionMetadataInterface {
    * [listSessionMetadata]; DB-backed implementations should override this
    * to project only the columns actually needed.
    */
-  fun listSessionEntries(path: String): List<SessionListEntry> {
-    return listSessionMetadata(path).map { it.toEntry() }
+  fun listSessionEntries(user: User? = null, path: String): List<SessionListEntry> {
+    return listSessionMetadata(user, path).map { it.toEntry() }
   }
 
   /** Paged variant of [listSessionEntries]; default pages in memory. */
@@ -283,6 +265,6 @@ interface SessionMetadataInterface {
     listSessionEntries(user).paginate(page)
 
   /** Paged variant of [listSessionEntries]; default pages in memory. */
-  fun listSessionEntries(path: String, page: Page): PageResult<SessionListEntry> =
-    listSessionEntries(path).paginate(page)
+  fun listSessionEntries(user: User? = null, path: String, page: Page): PageResult<SessionListEntry> =
+    listSessionEntries(path = path).paginate(page)
 }

@@ -44,7 +44,7 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val session = Session(request.getParameter("sessionId"))
-        val usage = usageManager.getSessionUsageSummary(session)
+        val usage = usageManager.getSessionUsageSummary(session = session)
         serve(
             resp = response,
             usage = usage,

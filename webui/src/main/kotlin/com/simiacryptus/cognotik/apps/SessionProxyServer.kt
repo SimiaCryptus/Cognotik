@@ -109,7 +109,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
     private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
 
     fun setParentSession(child: Session, parent: Session) {
-      ApplicationServicesImpl.fileApplicationServices().usageDB.setParentSession(child, parent)
+      ApplicationServicesImpl.fileApplicationServices().usageDB.setParentSession(child = child, parent = parent)
     }
 
     var OWNER_ID = "localhost:12345"
@@ -117,7 +117,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
 
     private fun registerSessionOwner(session: Session) {
       try {
-        metadataStorage.setSessionWorker(session, OWNER_ID)
+        metadataStorage.setSessionWorker(session, ownerId = OWNER_ID)
       } catch (e: Exception) {
         log.info("Failed to register session owner for session: $session", e)
       }

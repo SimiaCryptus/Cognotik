@@ -122,7 +122,7 @@ class DataStorage(
     val globalSessions = listSessions(path)
     val userSessions =
       if (user == null) listOf() else metadataStorage.listSessionsByPath(
-        path
+        path = path
       )
     log.debug("Found ${globalSessions.size} global sessions and ${userSessions.size} user sessions for user: ${user?.email}")
     return ((globalSessions.map {
@@ -216,7 +216,7 @@ class DataStorage(
 
   @Deprecated("Use metadataStorage instead")
   fun listSessions(path: String): List<String> =
-    metadataStorage.listSessionsByPath(path)
+    metadataStorage.listSessionsByPath(path = path)
 
   @Deprecated("Use metadataStorage instead")
   fun getSessionName(

@@ -162,7 +162,7 @@ class SessionMetadataDB : SessionMetadataInterface {
     )
   }
 
-  override fun listSessionsByPath(path: String): List<String> {
+  override fun listSessionsByPath(user: User?, path: String): List<String> {
     log.debug("Listing sessions for path: {}", path)
     return tx {
       MetadataTable
@@ -187,13 +187,13 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   @Deprecated("Use listSessionsByPath", ReplaceWith("listSessionsByPath(path)"))
-  fun listSessions(path: String): List<String> = listSessionsByPath(path)
+  fun listSessions(path: String): List<String> = listSessionsByPath(path = path)
 
   @Deprecated("Use listSessionsForUser", ReplaceWith("listSessionsForUser(user)"))
   fun listSessions(user: User): List<String> = listSessionsForUser(user)
 
 
-  override fun getSessionOwner(session: Session): String? {
+  override fun getSessionOwner(user: User?, session: Session): String? {
     log.debug("Fetching session owner for session: {}", session)
     return tx {
       MetadataTable
@@ -209,12 +209,12 @@ class SessionMetadataDB : SessionMetadataInterface {
     }
   }
 
-  override fun setSessionOwner(session: Session, ownerId: String?) {
+  override fun setSessionOwner(session: Session, user: User, ownerId: String?) {
     log.info("Setting session owner for session: {} to {}", session, ownerId)
     upsertMetadata(session.sessionId, "", "owner_id", ownerId)
   }
 
-  override fun getSessionWorker(session: Session): String? {
+  override fun getSessionWorker(user: User?, session: Session): String? {
     log.debug("Fetching session worker for session: {}", session)
     return tx {
       MetadataTable
@@ -230,7 +230,7 @@ class SessionMetadataDB : SessionMetadataInterface {
     }
   }
 
-  override fun setSessionWorker(session: Session, workerId: String?) {
+  override fun setSessionWorker(session: Session, user: User?, workerId: String?) {
     log.info("Setting session worker for session: {} to {}", session, workerId)
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)
@@ -412,7 +412,7 @@ class SessionMetadataDB : SessionMetadataInterface {
     }.also { log.debug("Loaded {} session entries for user: {}", it.size, user.email) }
   }
 
-  override fun listSessionEntries(path: String): List<SessionListEntry> {
+  override fun listSessionEntries(user: User?, path: String): List<SessionListEntry> {
     log.debug("Listing session entries (projection) for path: {}", path)
     return tx {
       val sessionIds = MetadataTable
@@ -438,7 +438,7 @@ class SessionMetadataDB : SessionMetadataInterface {
     }.also { log.debug("Loaded {} session entries for path: {}", it.size, path) }
   }
 
-  override fun listSessionMetadata(path: String): List<SessionMetadata> {
+  override fun listSessionMetadata(user: User?, path: String): List<SessionMetadata> {
     log.debug("Bulk listing session metadata for path: {}", path)
     return tx {
       val sessionIds = MetadataTable

@@ -44,7 +44,7 @@ interface UsageInterface {
    * @return A map where keys are model names and values are [com.simiacryptus.cognotik.platform.model.ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model used in the session
    */
-  fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage>
+  fun getSessionUsageSummary(user: User? = null, session: Session): Map<String, ModelSchema.Usage>
 
   /**
    * Bulk variant of [getSessionUsageSummary] that fetches usage summaries for
@@ -63,19 +63,9 @@ interface UsageInterface {
    * @param sessionIds The set of session IDs to summarize
    * @return A map from session ID to its per-model usage summary
    */
-  fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>): Map<Session, Map<String, ModelSchema.Usage>> {
-    return sessionIds.associateWith { getSessionUsageSummary(it) }
+  fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>, user: User? = null): Map<Session, Map<String, ModelSchema.Usage>> {
+    return sessionIds.associateWith { getSessionUsageSummary(session = it) }
   }
-
-  /**
-   * Aggregated single-row summary across all models for a session, suitable for
-   * compact display in listing UIs.
-   */
-  data class SessionUsageTotals(
-    val totalTokens: Long,
-    val totalCost: Double,
-    val modelCount: Int,
-  )
 
   /**
    * Records and increments usage statistics for a specific AI model invocation.
@@ -102,8 +92,8 @@ interface UsageInterface {
    * Use with caution, typically only for testing or system reset scenarios.
    */
   fun clear()
-  fun setParentSession(child: Session, parent: Session)
-  fun getParentSession(child: Session): Session?
+  fun setParentSession(user: User? = null, child: Session, parent: Session)
+  fun getParentSession(user: User? = null, child: Session): Session?
 
   /**
    * Returns the available budget (in cost units, e.g. USD) for a user.
@@ -178,7 +168,7 @@ interface UsageInterface {
    * @param session The session whose usage rows are to be retrieved
    * @return A list of [UsageRow] entries ordered by ascending datetime
    */
-  fun getSessionUsageRows(session: Session): List<UsageRow>
+  fun getSessionUsageRows(session: Session, user: User? = null): List<UsageRow>
 
   /**
    * Represents a single usage row recorded for a session.

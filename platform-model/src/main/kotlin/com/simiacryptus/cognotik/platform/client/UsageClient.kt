@@ -110,15 +110,18 @@ class UsageClient(
       UsageSummaryResponse::class.java
     ).summary
 
-  override fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage> =
-    JsonUtil.fromJson<UsageSummaryResponse>(
-      get("sessionSummary", mapOf("sessionId" to session.sessionId)),
+  override fun getSessionUsageSummary(user: User?, session: Session): Map<String, ModelSchema.Usage> {
+    requireNotNull(user) { "user is required" }
+    return JsonUtil.fromJson<UsageSummaryResponse>(
+      get("sessionSummary", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
       UsageSummaryResponse::class.java
     ).summary
+  }
 
-  override fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>): Map<Session, Map<String, ModelSchema.Usage>> {
+  override fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>, user: User?): Map<Session, Map<String, ModelSchema.Usage>> {
+    requireNotNull(user) { "user is required" }
     val resp = JsonUtil.fromJson<SessionSummaryBulkResponse>(
-      post("sessionSummaryBulk", SessionSummaryBulkRequest(sessionIds.map { it.sessionId })),
+      post("sessionSummaryBulk", SessionSummaryBulkRequest(sessionIds.map { it.sessionId }), user.getAuthCookies()),
       SessionSummaryBulkResponse::class.java
     )
     return resp.summary.mapKeys { Session(it.key) }
@@ -138,13 +141,18 @@ class UsageClient(
     post("clear", null)
   }
 
-  override fun setParentSession(child: Session, parent: Session) {
-    post("parentSession", ParentSessionRequest(child.sessionId, parent.sessionId))
+  override fun setParentSession(user: User?, child: Session, parent: Session) {
+    requireNotNull(user) { "user is required" }
+    post("parentSession", ParentSessionRequest(child.sessionId, parent.sessionId), user.getAuthCookies())
   }
 
-  override fun getParentSession(child: Session): Session? =
-    JsonUtil.fromJson<ParentSessionResponse>(get("parentSession", mapOf("child" to child.sessionId)), ParentSessionResponse::class.java)
-      .parent?.let { Session(it) }
+  override fun getParentSession(user: User?, child: Session): Session? {
+    requireNotNull(user) { "user is required" }
+    return JsonUtil.fromJson<ParentSessionResponse>(
+      get("parentSession", mapOf("child" to child.sessionId), user.getAuthCookies()),
+      ParentSessionResponse::class.java
+    ).parent?.let { Session(it) }
+  }
 
   override fun getAvailableBudget(user: User): Double =
     JsonUtil.fromJson<BudgetResponse>(get("budget", emptyMap(), user.getAuthCookies()), BudgetResponse::class.java).budget
@@ -167,8 +175,13 @@ class UsageClient(
   override fun getUserBalance(user: User): Double =
     JsonUtil.fromJson<BalanceResponse>(get("balance", emptyMap(), user.getAuthCookies()), BalanceResponse::class.java).balance
 
-  override fun getSessionUsageRows(session: Session): List<UsageInterface.UsageRow> =
-    JsonUtil.fromJson<SessionRowsResponse>(get("sessionRows", mapOf("sessionId" to session.sessionId)), SessionRowsResponse::class.java).rows
+  override fun getSessionUsageRows(session: Session, user: User?): List<UsageInterface.UsageRow> {
+    requireNotNull(user) { "user is required" }
+    return JsonUtil.fromJson<SessionRowsResponse>(
+      get("sessionRows", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
+      SessionRowsResponse::class.java
+    ).rows
+  }
 
   companion object {
     private val log = LoggerFactory.getLogger(UsageClient::class.java)

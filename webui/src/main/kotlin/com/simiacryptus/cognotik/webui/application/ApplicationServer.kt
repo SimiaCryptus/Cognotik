@@ -44,7 +44,7 @@ abstract class ApplicationServer(
   init {
     FileServlet.userResolver = UserProviderImpl()
     FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
-      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(it) }
+      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(session = it) }
       return sessionOwner == null || sessionOwner == user?.id
     }
   }

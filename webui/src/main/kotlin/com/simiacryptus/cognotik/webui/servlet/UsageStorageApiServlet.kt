@@ -79,13 +79,15 @@ class UsageStorageApiServlet(
         }
 
         "sessionSummary" -> {
+          val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, UsageSummaryResponse(usage.getSessionUsageSummary(session)))
+          writeJson(response, UsageSummaryResponse(usage.getSessionUsageSummary(user = user, session = session)))
         }
 
         "sessionRows" -> {
+          val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionRowsResponse(usage.getSessionUsageRows(session)))
+          writeJson(response, SessionRowsResponse(usage.getSessionUsageRows(session, user)))
         }
 
         "budget" -> writeJson(response, BudgetResponse(usage.getAvailableBudget(currentUser(request))))
@@ -107,8 +109,9 @@ class UsageStorageApiServlet(
         }
 
         "parentSession" -> {
+          val user = currentUser(request)
           val child = Session(requireParam(request, "child"))
-          writeJson(response, ParentSessionResponse(usage.getParentSession(child)?.sessionId))
+          writeJson(response, ParentSessionResponse(usage.getParentSession(user = user, child = child)?.sessionId))
         }
 
         else -> writeError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown action")
@@ -127,8 +130,9 @@ class UsageStorageApiServlet(
     try {
       when (action(request)) {
         "sessionSummaryBulk" -> {
+          val user = currentUser(request)
           val req = readBody(request, SessionSummaryBulkRequest::class.java)
-          val result = usage.getSessionUsageSummaryBulk(req.sessionIds.map { Session(it) })
+          val result = usage.getSessionUsageSummaryBulk(req.sessionIds.map { Session(it) }, user)
             .mapKeys { it.key.sessionId }
           writeJson(response, SessionSummaryBulkResponse(result))
         }
@@ -152,8 +156,9 @@ class UsageStorageApiServlet(
         }
 
         "parentSession" -> {
+          val user = currentUser(request)
           val req = readBody(request, ParentSessionRequest::class.java)
-          usage.setParentSession(Session(req.child), Session(req.parent))
+          usage.setParentSession(user = user, child = Session(req.child), parent = Session(req.parent))
           writeJson(response, StatusResponse())
         }
 

@@ -144,7 +144,7 @@ class SessionMetadataClient(
     )
   }
 
-  override fun listSessionsByPath(path: String): List<String> =
+  override fun listSessionsByPath(user: User?, path: String): List<String> =
     JsonUtil.fromJson<SessionIdsResponse>(
       get("sessionsByPath", mapOf("path" to path)),
       SessionIdsResponse::class.java
@@ -156,24 +156,31 @@ class SessionMetadataClient(
       SessionIdsResponse::class.java
     ).sessionIds
 
-  override fun getSessionOwner(session: Session): String? =
-    JsonUtil.fromJson<SessionOwnerResponse>(
-      get("sessionOwner", mapOf("sessionId" to session.sessionId)),
+
+  override fun getSessionOwner(user: User?, session: Session): String? {
+    requireNotNull(user) { "user is required" }
+    return JsonUtil.fromJson<SessionOwnerResponse>(
+      get("sessionOwner", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
       SessionOwnerResponse::class.java
     ).ownerId
-
-  override fun setSessionOwner(session: Session, ownerId: String?) {
-    post("setSessionOwner", SetSessionOwnerRequest(session.sessionId, ownerId))
   }
 
-  override fun getSessionWorker(session: Session): String? =
-    JsonUtil.fromJson<SessionWorkerResponse>(
-      get("sessionWorker", mapOf("sessionId" to session.sessionId)),
+  override fun setSessionOwner(session: Session, user: User?, ownerId: String?) {
+    requireNotNull(user) { "user is required" }
+    post("setSessionOwner", SetSessionOwnerRequest(session.sessionId, ownerId), user.getAuthCookies())
+  }
+
+  override fun getSessionWorker(user: User?, session: Session): String? {
+    requireNotNull(user) { "user is required" }
+    return JsonUtil.fromJson<SessionWorkerResponse>(
+      get("sessionWorker", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
       SessionWorkerResponse::class.java
     ).workerId
+  }
 
-  override fun setSessionWorker(session: Session, ownerId: String?) {
-    post("setSessionWorker", SetSessionWorkerRequest(session.sessionId, ownerId))
+  override fun setSessionWorker(session: Session, user: User?, ownerId: String?) {
+    requireNotNull(user) { "user is required" }
+    post("setSessionWorker", SetSessionWorkerRequest(session.sessionId, ownerId), user.getAuthCookies())
   }
 
   override fun getSessionPath(user: User?, session: Session): String? =
@@ -223,7 +230,7 @@ class SessionMetadataClient(
       SessionMetadataListResponse::class.java
     ).items
 
-  override fun listSessionMetadata(path: String): List<SessionMetadata> =
+  override fun listSessionMetadata(user: User?, path: String): List<SessionMetadata> =
     JsonUtil.fromJson<SessionMetadataListResponse>(
       get("listSessionMetadataByPath", mapOf("path" to path)),
       SessionMetadataListResponse::class.java
@@ -241,7 +248,7 @@ class SessionMetadataClient(
       SessionListEntryListResponse::class.java
     ).items
 
-  override fun listSessionEntries(path: String): List<SessionListEntry> =
+  override fun listSessionEntries(user: User?, path: String): List<SessionListEntry> =
     JsonUtil.fromJson<SessionListEntryListResponse>(
       get("listSessionEntriesByPath", mapOf("path" to path)),
       SessionListEntryListResponse::class.java
