@@ -159,7 +159,7 @@ data/
 
 ### Metadata Storage
 
-The `MetadataStorageInterface` manages high-level session information separately from raw content:
+The `SessionMetadataInterface` manages high-level session information separately from raw content:
 
 - **Session Naming**: Human-readable titles for sessions.
 - **Message Sequences**: Maintaining the order and presence of message IDs.

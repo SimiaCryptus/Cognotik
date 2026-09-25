@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.platform
 
-import com.simiacryptus.cognotik.platform.file.AuthenticationManager
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.h2.AuthenticationDB
 import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
-import com.simiacryptus.cognotik.platform.h2.MetadataStorageDB
+import com.simiacryptus.cognotik.platform.h2.SessionMetadataDB
 import com.simiacryptus.cognotik.platform.h2.UsageDB
 import com.simiacryptus.cognotik.platform.h2.UserSettingsDB
 import java.io.File
@@ -20,8 +19,8 @@ open class FileApplicationServices(override val rootDir: File) : IFileApplicatio
          metadataStorage = metadataDB
        )
   }
-   override val metadataDB: MetadataStorageInterface by lazy {
-     IFileApplicationServices.metadataDBFn?.invoke(rootDir) ?: MetadataStorageDB()
+   override val metadataDB: SessionMetadataInterface by lazy {
+     IFileApplicationServices.metadataDBFn?.invoke(rootDir) ?: SessionMetadataDB()
    }
   override val usageDB: UsageInterface by lazy {
      (IFileApplicationServices.usageDBFn?.invoke(rootDir) ?: UsageDB()).apply {

@@ -26,11 +26,11 @@ import java.util.*
  * an implementation says so.
  *
  * Bulk/listing default implementations here are deliberately naive (N+1). See
- * [AbstractMetadataStorage] for the same fallbacks in an explicitly opt-in base class;
+ * [AbstractSessionMetadata] for the same fallbacks in an explicitly opt-in base class;
  * DB-backed implementations should override them.
  */
 
-interface MetadataStorageInterface {
+interface SessionMetadataInterface {
   /**
    * Retrieves the display name for a session.
    *

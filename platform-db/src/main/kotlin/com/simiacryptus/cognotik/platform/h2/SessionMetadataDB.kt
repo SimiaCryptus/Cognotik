@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.h2
 
-import com.simiacryptus.cognotik.platform.MetadataStorageInterface
+import com.simiacryptus.cognotik.platform.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
 
-class MetadataStorageDB : MetadataStorageInterface {
+class SessionMetadataDB : SessionMetadataInterface {
 
   object MetadataTable : Table("metadata") {
     val sessionId: Column<String> = varchar("session_id", 255)
@@ -694,7 +694,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   private fun <T> tx(block: () -> T): T = transaction(ExposedDatabase.get(facet)) { block() }
 
   companion object {
-    private val log = LoggerFactory.getLogger(MetadataStorageDB::class.java)
+    private val log = LoggerFactory.getLogger(SessionMetadataDB::class.java)
 
     /** Metadata key holding the worker/agent currently assigned to a session. */
     internal const val KEY_WORKER_ID = "worker_id"
