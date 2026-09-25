@@ -50,7 +50,7 @@ class CancelThreadsServlet : HttpServlet() {
       response.writer.write("Session ID is required")
     } else {
       val session = Session(request.getParameter("sessionId"))
-      val user = UserProviderImpl().authenticate(request, response)
+      val user = UserProviderImpl().authenticate(request)
       if (user == null) {
         throw RuntimeException("User must be authenticated to cancel sessions")
       }

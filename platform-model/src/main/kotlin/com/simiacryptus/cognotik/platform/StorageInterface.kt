@@ -34,7 +34,7 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
    *
    * Implementations that still override those accessors need not provide this.
    */
-  val metadataStorage: MetadataStorageInterface?
+  val metadataStorage: SessionMetadataInterface?
     get() = null
 
   /**

@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
@@ -173,17 +174,27 @@ open class DocProcessorServlet() : HttpServlet() {
    */
 
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    doPost(req, resp)
+    log.info("DocOps GET request: ${req.queryString}")
+    handle(req, resp)
   }
 
   override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    log.info("DocOps POST request: ${request.queryString}")
+    handle(request, response)
+  }
+
+  fun handle(request: HttpServletRequest, response: HttpServletResponse) {
     try {
       val docPath = request.getParameter("doc")
       if (docPath.isNullOrBlank()) {
         writeError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameter: doc")
         return
       }
-      val user = resolveUser(request, response) ?: return
+      val user = UserProviderImpl().authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
+      require(null != user.tokenMetadata().firstOrNull()?.token) {
+        "Missing authentication cookie for ${user.toJson()}"
+      }
       val root = resolveRoot(request, response, user) ?: return
       val docFile = root.resolve(docPath)
       if (!docFile.canonicalPath.startsWith(root.canonicalPath)) {
@@ -311,9 +322,6 @@ open class DocProcessorServlet() : HttpServlet() {
       concurrency = defaultConcurrency,
     )
   }
-
-  protected open fun resolveUser(request: HttpServletRequest, response: HttpServletResponse): User? =
-    UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
 
   /** Session the request belongs to, if any (used as the parent of new sessions). */
   protected open fun resolveSession(request: HttpServletRequest): Session? =
@@ -513,7 +521,7 @@ open class DocProcessorServlet() : HttpServlet() {
       models.values.find { it.modelId == modelId }?.let { return it }
       models[modelId]?.let { return it }
       models.entries.firstOrNull { it.key.equals(modelId, ignoreCase = true) }?.let { return it.value }
-      log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
+      log.warn("Model ID '{}' not found in registered models {}; creating unregistered model reference", modelId, models.keys)
       return ChatModel(
         modelId = modelId,
         inputModalities = setOf(ChatMessageModality.TEXT),

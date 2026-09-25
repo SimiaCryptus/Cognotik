@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletResponse
 class LogoutServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     val cookie = request.getCookie()
-    val user = UserProviderImpl().authenticate(request, response)
+    val user = UserProviderImpl().authenticate(request)
     if (null == user) {
       response.status = HttpServletResponse.SC_BAD_REQUEST
     } else {

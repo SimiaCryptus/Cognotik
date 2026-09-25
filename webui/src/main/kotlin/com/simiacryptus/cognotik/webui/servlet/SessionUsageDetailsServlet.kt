@@ -33,7 +33,7 @@ class SessionUsageDetailsServlet : HttpServlet() {
     private val usageDB by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp)
+        val user = UserProviderImpl().authenticate(req)
           ?: throw RuntimeException("User must be authenticated to view session usage details")
 
         val sessionId = req.getParameter("session")?.trim().orEmpty()

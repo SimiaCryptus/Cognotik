@@ -63,7 +63,6 @@ package com.simiacryptus.cognotik.cli
       /** The mount root, as handed to `--task-root` (or the served directory). */
       val taskRoot: File get() = root.canonicalFile
 
-      override fun resolveUser(request: HttpServletRequest, response: HttpServletResponse): User = FileServerCli.user
 
       /** A local mount has no chat session to hang the generated sessions off. */
       override fun resolveSession(request: HttpServletRequest): Session? = null

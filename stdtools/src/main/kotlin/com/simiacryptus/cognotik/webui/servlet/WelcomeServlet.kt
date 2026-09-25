@@ -66,7 +66,8 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
 
     private fun serveUserInfo(request: HttpServletRequest, response: HttpServletResponse) {
         val user =
-          UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+          UserProviderImpl().authenticate(request)
+            ?: throw IllegalStateException("Authentication failed")
         val mapper = jacksonObjectMapper()
         response.contentType = "application/json"
         try {
@@ -79,7 +80,8 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
 
     private fun serveAppList(request: HttpServletRequest, response: HttpServletResponse) {
         val user =
-          UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+          UserProviderImpl().authenticate(request)
+            ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
           val isAuthorized = ApplicationServicesImpl.authorizationManager.isAuthorized(
             ResourceRef.of(it.server.javaClass),

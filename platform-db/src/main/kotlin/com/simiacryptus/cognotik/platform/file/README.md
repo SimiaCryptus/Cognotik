@@ -35,7 +35,7 @@ Handles the storage and retrieval of session data and messages on the filesystem
     - `G-YYYY-MM-DD-ID`: Global sessions accessible to everyone.
     - `U-YYYY-MM-DD-ID`: User-specific private sessions.
 - **Message Management**: Stores individual messages as JSON files within session directories.
-- **Metadata Integration**: Works alongside a `MetadataStorageInterface` to manage session listings and properties.
+- **Metadata Integration**: Works alongside a `SessionMetadataInterface` to manage session listings and properties.
 
 ### [UserSettingsManager](UserSettingsManager.kt)
 

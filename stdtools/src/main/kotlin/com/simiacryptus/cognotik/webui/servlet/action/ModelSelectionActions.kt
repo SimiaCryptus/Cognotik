@@ -175,5 +175,5 @@ object ModelSelectionActions {
 }
 
 val FsActionContext.user: User
-  get() = UserProviderImpl().authenticate(req, resp)
+  get() = UserProviderImpl().authenticate(req)
     ?: throw IllegalStateException("Authentication failed but no error response was sent")

@@ -7,18 +7,14 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.FileApplicationServices
-import com.simiacryptus.cognotik.platform.file.UserSettingsManager
-import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.UserSettingsInterface
-import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.platform.UserProvider
-import java.io.File
+import jakarta.servlet.http.HttpServletRequest
+import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
 
 /**
@@ -42,39 +38,22 @@ object CliSupport {
     ?: System.getProperty("user.email")
     ?: "user@localhost")
 
-  fun defaultUser(): User = User(email = email)
+  var defaultUser: User? = User(email = email)
 
   init {
     FileServlet.userResolver = object : UserProvider {
       override fun authenticate(
-        request: jakarta.servlet.http.HttpServletRequest,
-        response: AbstractHttpServletResponse?
-      ) = defaultUser()
+        request: HttpServletRequest
+      ) = defaultUser
     }
   }
-
-  /**
-   * Points [ApplicationServicesImpl.fileApplicationServices] at per-root instances so user
-   * settings (API keys, model registrations) are read from the project directory.
-   */
-  fun installFileServices() {
-    val servicesCache = mutableMapOf<File, FileApplicationServices>()
-    DatabaseFacet.root = File(".").absolutePath
-    ApplicationServicesImpl.fileApplicationServices = { rootDir ->
-      servicesCache.getOrPut(rootDir) {
-        object : FileApplicationServices(rootDir) {
-          override val userSettingsManager: UserSettingsInterface
-            get() = UserSettingsManager(rootDir)
-        }
-      }
-    }
-  }
+  val log = LoggerFactory.getLogger(CliSupport::class.java)
 
   /**
    * Minimal, headless equivalent of what the app server does at boot.
    * Safe to call more than once.
    */
-  fun bootstrapPlatform(user: User) {
+  fun bootstrapPlatform(user: User?) {
     require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" }
     CoreProviders.init()
     CoreTasks.init()
@@ -83,12 +62,12 @@ object CliSupport {
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }
-    // Also calls PlanHarness.initDynamicEnums() and installs permissive local auth.
-    UnifiedHarness.configurePlatform(user)
     OrchestrationConfig.instanceFn = { model, u ->
       model.instance(user = u)
         ?: throw IllegalStateException("No model/provider configured for ${model.model?.modelId ?: model}")
     }
+    // Also calls PlanHarness.initDynamicEnums() and installs permissive local auth.
+    if(null != user) UnifiedHarness.configurePlatform(user)
   }
 
   fun availableModels(user: User): Map<String, ChatModel> = try {

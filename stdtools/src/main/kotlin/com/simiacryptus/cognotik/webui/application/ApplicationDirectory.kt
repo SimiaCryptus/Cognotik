@@ -1,18 +1,17 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.OutputInterceptor
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
-import com.simiacryptus.cognotik.webui.servlet.GiftedCreditsServlet
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
 import com.simiacryptus.cognotik.webui.servlet.action.ModifyFilesFsAction
 import com.simiacryptus.cognotik.webui.servlet.action.SessionFsRoots
 import com.simiacryptus.cognotik.webui.servlet.payment.NoOpPaymentProvider
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import jakarta.servlet.DispatcherType
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.Servlet
@@ -28,40 +27,36 @@ import org.eclipse.jetty.webapp.WebAppClassLoader
 import org.eclipse.jetty.webapp.WebAppContext
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
 import org.slf4j.LoggerFactory
-import java.net.Inet4Address
-import java.net.InetAddress
-import java.net.NetworkInterface
-import java.net.URI
-import java.net.URL
+import java.net.*
 import java.util.*
 import kotlin.system.exitProcess
 
 abstract class ApplicationDirectory(
-   localName: String = "localhost",
+  localName: String = "localhost",
   val publicName: String? = null,
   val port: Int = 8081,
-   /**
-    * Address passed to `bind()`. May be a wildcard (`0.0.0.0`) - containers usually want this.
-    * It is deliberately *not* used for [localName]/`OWNER_ID`: you cannot advertise
-    * "all interfaces" to a peer.
-    */
-   val bindAddress: String = "0.0.0.0",
+  /**
+   * Address passed to `bind()`. May be a wildcard (`0.0.0.0`) - containers usually want this.
+   * It is deliberately *not* used for [localName]/`OWNER_ID`: you cannot advertise
+   * "all interfaces" to a peer.
+   */
+  val bindAddress: String = "0.0.0.0",
 ) {
-   /**
-    * The routable address peers (session proxy, workers, health checks) use to reach this
-    * process. Never a wildcard: if a wildcard is supplied it is replaced with the first
-    * site-local IPv4 address of an up, non-loopback interface.
-    */
-   val localName: String = sanitizeAdvertisedHost(localName)
+  /**
+   * The routable address peers (session proxy, workers, health checks) use to reach this
+   * process. Never a wildcard: if a wildcard is supplied it is replaced with the first
+   * site-local IPv4 address of an up, non-loopback interface.
+   */
+  val localName: String = sanitizeAdvertisedHost(localName)
 
   init {
-     log.info(
-       "Creating ApplicationDirectory instance with localName='${this.localName}' (requested='$localName'), " +
-           "bindAddress='$bindAddress', publicName='${publicName ?: "null"}', port=$port"
-     )
+    log.info(
+      "Creating ApplicationDirectory instance with localName='${this.localName}' (requested='$localName'), " +
+          "bindAddress='$bindAddress', publicName='${publicName ?: "null"}', port=$port"
+    )
     require(publicName != "localhost")
-     SessionProxyServer.OWNER_ID = "${this.localName}:$port"
-     log.info("Session ownership id (SessionProxyServer.OWNER_ID) = '${SessionProxyServer.OWNER_ID}'")
+    SessionProxyServer.OWNER_ID = "${this.localName}:$port"
+    log.info("Session ownership id (SessionProxyServer.OWNER_ID) = '${SessionProxyServer.OWNER_ID}'")
   }
 
   var domainName: String = ""
@@ -94,6 +89,12 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized LogoutServlet") }
   open val usageServlet: HttpServlet = UsageServlet()
     .also { log.debug("Initialized UsageServlet") }
+
+  open val usageStorageApiServlet: HttpServlet = UsageStorageApiServlet()
+    .also { log.debug("Initialized UsageStorageApiServlet") }
+
+  open val metadataStorageApiServlet: HttpServlet = MetadataStorageApiServlet()
+    .also { log.debug("Initialized MetadataStorageApiServlet") }
   open val welcomeServlet: HttpServlet = WelcomeServlet(this)
     .also { log.debug("Initialized WelcomeServlet") }
   open val apiKeyServlet: HttpServlet = ApiKeyServlet()
@@ -137,8 +138,8 @@ abstract class ApplicationDirectory(
       setupPlatform()
       installFsApiActions()
       ApplicationServicesConfig.isLocked = true
-       log.info("Binding to '$bindAddress':$port; advertising '$localName':$port")
-       val server = start(port, bindAddress, *(webAppContexts()))
+      log.info("Binding to '$bindAddress':$port; advertising '$localName':$port")
+      val server = start(port, bindAddress, *(webAppContexts()))
       log.info("Server started successfully on port $port")
       server.join()
     } catch (e: Throwable) {
@@ -225,6 +226,8 @@ abstract class ApplicationDirectory(
         newWebAppContext("/pluginManager", pluginManagerServlet).configureAuth(ApplicationServer::class.java)
       },
       newWebAppContext("/gifts/*", GiftedCreditsServlet()),
+      newWebAppContext("/sessionMetadata", metadataStorageApiServlet).configureAuth(ApplicationServer::class.java),
+      newWebAppContext("/usageApi", usageStorageApiServlet).configureAuth(ApplicationServer::class.java),
     ).toTypedArray() + childWebApps.map {
       log.debug("Adding child web app context for path: ${it.path}")
       newWebAppContext(it.path, it.server)
@@ -399,44 +402,47 @@ abstract class ApplicationDirectory(
 
   companion object {
     private val log = LoggerFactory.getLogger(ApplicationDirectory::class.java)
-     /** Values meaning "all interfaces": valid for `bind()`, useless as an advertised address. */
-     private val WILDCARD_HOSTS = setOf("", "0.0.0.0", "0", "::", "::0", "[::]", "*")
-     fun isWildcardHost(host: String): Boolean {
-       val trimmed = host.trim().lowercase()
-       if (trimmed in WILDCARD_HOSTS) return true
-       return runCatching { InetAddress.getByName(trimmed).isAnyLocalAddress }.getOrDefault(false)
-     }
-     /**
-      * Replaces a wildcard/blank host with a routable IPv4 address so that it can safely be
-      * advertised to other processes (session ownership, proxy targets, callback URLs).
-      */
-     fun sanitizeAdvertisedHost(host: String): String {
-       val trimmed = host.trim()
-       if (!isWildcardHost(trimmed)) return trimmed
-       val resolved = detectRoutableIpv4() ?: "localhost"
-       log.warn(
-         "Requested localName '$host' is a wildcard address and cannot be advertised to peers; " +
-             "using '$resolved' as the advertised address instead"
-       )
-       return resolved
-     }
-     private fun detectRoutableIpv4(): String? = try {
-       val candidates = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
-         .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
-         .flatMap { runCatching { it.inetAddresses.toList() }.getOrDefault(emptyList()) }
-         .filterIsInstance<Inet4Address>()
-         .filter { !it.isLoopbackAddress && !it.isLinkLocalAddress && !it.isAnyLocalAddress }
-       val chosen = candidates.firstOrNull { it.isSiteLocalAddress } ?: candidates.firstOrNull()
-       log.info(
-         "Advertised-address fallback scan found {}; selected '{}'",
-         candidates.joinToString(", ") { it.hostAddress }.ifEmpty { "no candidates" },
-         chosen?.hostAddress ?: "<none>"
-       )
-       chosen?.hostAddress
-     } catch (e: Exception) {
-       log.warn("Failed to detect a routable IPv4 address: ${e.message}", e)
-       null
-     }
+
+    /** Values meaning "all interfaces": valid for `bind()`, useless as an advertised address. */
+    private val WILDCARD_HOSTS = setOf("", "0.0.0.0", "0", "::", "::0", "[::]", "*")
+    fun isWildcardHost(host: String): Boolean {
+      val trimmed = host.trim().lowercase()
+      if (trimmed in WILDCARD_HOSTS) return true
+      return runCatching { InetAddress.getByName(trimmed).isAnyLocalAddress }.getOrDefault(false)
+    }
+
+    /**
+     * Replaces a wildcard/blank host with a routable IPv4 address so that it can safely be
+     * advertised to other processes (session ownership, proxy targets, callback URLs).
+     */
+    fun sanitizeAdvertisedHost(host: String): String {
+      val trimmed = host.trim()
+      if (!isWildcardHost(trimmed)) return trimmed
+      val resolved = detectRoutableIpv4() ?: "localhost"
+      log.warn(
+        "Requested localName '$host' is a wildcard address and cannot be advertised to peers; " +
+            "using '$resolved' as the advertised address instead"
+      )
+      return resolved
+    }
+
+    private fun detectRoutableIpv4(): String? = try {
+      val candidates = NetworkInterface.getNetworkInterfaces()?.toList().orEmpty()
+        .filter { runCatching { it.isUp && !it.isLoopback }.getOrDefault(false) }
+        .flatMap { runCatching { it.inetAddresses.toList() }.getOrDefault(emptyList()) }
+        .filterIsInstance<Inet4Address>()
+        .filter { !it.isLoopbackAddress && !it.isLinkLocalAddress && !it.isAnyLocalAddress }
+      val chosen = candidates.firstOrNull { it.isSiteLocalAddress } ?: candidates.firstOrNull()
+      log.info(
+        "Advertised-address fallback scan found {}; selected '{}'",
+        candidates.joinToString(", ") { it.hostAddress }.ifEmpty { "no candidates" },
+        chosen?.hostAddress ?: "<none>"
+      )
+      chosen?.hostAddress
+    } catch (e: Exception) {
+      log.warn("Failed to detect a routable IPv4 address: ${e.message}", e)
+      null
+    }
 
     fun allResources(resourceName: String): List<URL> {
       log.debug("Loading all resources for name: $resourceName")

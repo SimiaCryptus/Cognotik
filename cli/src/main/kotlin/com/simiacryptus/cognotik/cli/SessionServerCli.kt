@@ -218,14 +218,16 @@ object SessionServerCli {
   private fun initGit(dir: File) {
     try {
       if (File(dir, ".git").exists()) return
-      val user = CliSupport.defaultUser()
-      val userName = user.name.ifBlank { "DocOps User" }
-      val userEmail = user.email.ifBlank { null } ?: "${
-        UrlEscapers.urlPathSegmentEscaper().escape(user.name.ifBlank { "docops" })
-      }@cognotik.local"
+      val user = CliSupport.defaultUser
       GitOperationHandler.executeCommand(dir, "git", "init")
-      GitOperationHandler.executeCommand(dir, "git", "config", "user.name", userName)
-      GitOperationHandler.executeCommand(dir, "git", "config", "user.email", userEmail)
+      if(null != user) {
+        val userName = user.name.ifBlank { "DocOps User" }
+        val userEmail = user.email.ifBlank { null } ?: "${
+          UrlEscapers.urlPathSegmentEscaper().escape(user.name.ifBlank { "docops" })
+        }@cognotik.local"
+        GitOperationHandler.executeCommand(dir, "git", "config", "user.name", userName)
+        GitOperationHandler.executeCommand(dir, "git", "config", "user.email", userEmail)
+      }
       GitOperationHandler.executeCommand(dir, "git", "add", "-A", ".")
       GitOperationHandler.executeCommand(dir, "git", "commit", "-a", "-m", "Initial commit from session zip")
     } catch (e: Exception) {

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.MetadataStorageInterface
+import com.simiacryptus.cognotik.platform.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
@@ -14,8 +14,8 @@ import org.slf4j.LoggerFactory
 /**
  * Read/write access to the human-readable display name of a session.
  *
- * The name itself lives in [MetadataStorageInterface] (see
- * [MetadataStorageInterface.getSessionName] / [MetadataStorageInterface.setSessionName]),
+ * The name itself lives in [SessionMetadataInterface] (see
+ * [SessionMetadataInterface.getSessionName] / [SessionMetadataInterface.setSessionName]),
  * so this servlet is a thin, authenticated HTTP facade over that store.
  *
  * Endpoints (mounted at `/sessionName`):
@@ -29,13 +29,13 @@ import org.slf4j.LoggerFactory
  */
 class SessionNameServlet(
   private val server: ApplicationServer,
-  private val metadataStorageProvider: () -> MetadataStorageInterface = {
+  private val metadataStorageProvider: () -> SessionMetadataInterface = {
     ApplicationServicesImpl.fileApplicationServices().metadataDB
   },
 ) : HttpServlet() {
   private val logger = LoggerFactory.getLogger(SessionNameServlet::class.java)
 
-  private val metadataStorage: MetadataStorageInterface get() = metadataStorageProvider()
+  private val metadataStorage: SessionMetadataInterface get() = metadataStorageProvider()
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
@@ -47,7 +47,7 @@ class SessionNameServlet(
         return
       }
       val session = Session(sessionId)
-      val user = UserProviderImpl().authenticate(request, response)
+      val user = UserProviderImpl().authenticate(request)
       if (user == null) {
         logger.warn("Authentication failed / redirect issued for sessionName GET on session {}", sessionId)
         return
@@ -92,7 +92,7 @@ class SessionNameServlet(
         return
       }
       val session = Session(sessionId)
-      val user = UserProviderImpl().authenticate(request, response)
+      val user = UserProviderImpl().authenticate(request)
       if (user == null) {
         logger.warn("Authentication failed / redirect issued for sessionName POST on session {}", sessionId)
         return

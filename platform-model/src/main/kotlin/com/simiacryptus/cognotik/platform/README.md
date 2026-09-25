@@ -290,7 +290,7 @@ list; implementations must apply it atomically per session.
 `UnsupportedOperationException`; **implement it**, otherwise callers fall back to raw filesystem
 access just to read what they wrote (§3.3).
 
-### `MetadataStorageInterface`
+### `SessionMetadataInterface`
 
 Per-session metadata: name, message ids, timestamp, owner id, worker id (`ip:port`), path.
 
@@ -306,8 +306,8 @@ only way to *clear* a field.
 * Bulk/listing defaults (`listSessionMetadata`, `listSessionEntries`, `getSessionMetadataMap`,
 `deleteAllForUser`) are deliberately N+1. DB-backed implementations must override them with
 single-round-trip projections; use `SessionListEntry` to avoid loading `messageIds`.
-* Extending **`AbstractMetadataStorage`** is an explicit, reviewable statement that the N+1 fallbacks
-are acceptable for that backend (§3.4). Implement the interface directly if they are not.
+* Extending **`AbstractSessionMetadata`** is an explicit, reviewable statement that the N+1 fallbacks
+  are acceptable for that backend (§3.4). Implement the interface directly if they are not.
 * Read-modify-write helpers are **not** atomic unless your implementation documents that they are.
 
 ### `GiftedCreditsInterface`
@@ -400,7 +400,7 @@ dedicated pool).
 
 **Atomicity.** Only two things are guaranteed atomic, and only when the implementation says so:
 `MessageStore.updateMessage` per session, and the `GiftedCreditsInterface` create/claim transactions.
-`MetadataStorageInterface`'s read-modify-write helpers are explicitly **not** atomic by default.
+`SessionMetadataInterface`'s read-modify-write helpers are explicitly **not** atomic by default.
 
 **Nullability of `User?`.** In the storage/metadata ports, `user == null` means *global / anonymous
 scope* (e.g. a `G-` session), not "unknown". Authorization uses `Principal` instead and should be
@@ -421,7 +421,7 @@ preferred for new APIs.
 
 ## Implementing a backend
 
-Minimal in-memory `MetadataStorageInterface`. Note that it overrides **every self-recursive default**
+Minimal in-memory `SessionMetadataInterface`. Note that it overrides **every self-recursive default**
 and both `getSessionPath`/`setSessionPath`.
 
 ```kotlin
@@ -520,9 +520,9 @@ silent. Treat every row below as *effectively abstract* until it is fixed.
 | Interface | Member | Symptom |
 |---|---|---|
 | `StorageInterface` | `listSessionsForUser(User?, String)` | infinite recursion |
-| `MetadataStorageInterface` | `getSessionTimestamp(User?, Session)` | infinite recursion (also breaks default `exists`) |
-| `MetadataStorageInterface` | `listSessionsByPath(String)` | infinite recursion (also breaks `listSessionMetadata(path)`) |
-| `MetadataStorageInterface` | `listSessionsForUser(User)` | infinite recursion (also breaks `deleteAllForUser`, `listSessionMetadata(user)`) |
+| `SessionMetadataInterface` | `getSessionTimestamp(User?, Session)` | infinite recursion (also breaks default `exists`) |
+| `SessionMetadataInterface` | `listSessionsByPath(String)` | infinite recursion (also breaks `listSessionMetadata(path)`) |
+| `SessionMetadataInterface` | `listSessionsForUser(User)` | infinite recursion (also breaks `deleteAllForUser`, `listSessionMetadata(user)`) |
 | `MessageStore` | `getMessageMap(User?, Session)` | infinite recursion (also breaks default `getMessage`) |
 | `AuthenticationInterface` | `logoutIfMatching(String, User)` | infinite recursion |
 | `AuthorizationInterface` | `isAuthorized(ResourceRef?, Principal, OperationType)` | default delegates to the *same* overload |
@@ -533,8 +533,8 @@ Other rough edges worth knowing:
 
 * `StorageInterface.deleteSessionIfExists` always returns `true` — it cannot actually detect absence.
 * `ApplicationServicesConfig.defaultUser` ignores the lock (see above).
-* `MetadataStorageInterface`'s KDoc references a `setSessionMetadata` member that no longer exists on
-the interface; `SessionMetadata.asPatch()` is the intended bridge.
+* `SessionMetadataInterface`'s KDoc references a `setSessionMetadata` member that no longer exists on
+  the interface; `SessionMetadata.asPatch()` is the intended bridge.
 * `Session`'s `init` calls an `open` member (documented leaking-`this`).
 
 If you fix one of these, the correct shape is: the default keeps the **new** signature and delegates
@@ -599,7 +599,7 @@ Write these as a shared abstract test class per port so every backend runs the s
 - [ ] concurrent `updateMessage` calls for one session lose no messages
 - [ ] `getJson` round-trips `setJson`; returns `null` for a missing slot
 
-**`MetadataStorageInterface`**
+**`SessionMetadataInterface`**
 - [ ] every accessor round-trips, **including `path`**
 - [ ] `exists` is `false` before any write and `true` after (not just after a timestamp write)
 - [ ] `Patch.Set(null)` clears `name`/`ownerId`/`workerId`/`path`; `Patch.Unchanged` preserves them

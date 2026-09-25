@@ -239,7 +239,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   }
   override val git: GitProvider = object : GitProvider(dataStorage) {
     override fun authenticate(request: HttpServletRequest, response: HttpServletResponse) =
-      UserProviderImpl().authenticate(request, response)
+      UserProviderImpl().authenticate(request)
 
     override fun onSession(session: Session, user: User?) {
       this@SessionFileServlet.onSession(session, user)

@@ -27,7 +27,7 @@ Each drawn as a rounded box with a short capability caption:
 2. **User / Identity**
 - "Authenticated user with credentials."
 
-3. **Storage** — `StorageInterface` / `MetadataStorageInterface`
+3. **Storage** — `StorageInterface` / `SessionMetadataInterface`
 - "Persist sessions, messages, metadata."
 - Sub-labels: `DataStorage (file-based)`, `HSQLMetadataStorage (in-memory)`.
 

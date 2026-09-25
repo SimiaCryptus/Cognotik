@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.fileserver
 
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
 import com.simiacryptus.cognotik.platform.UserProvider
 
 import com.simiacryptus.cognotik.fileserver.handler.FileDeleteHandler
@@ -768,8 +767,7 @@ abstract class FileServlet : HttpServlet() {
     var userResolver: UserProvider =
       object : UserProvider {
         override fun authenticate(
-          request: HttpServletRequest,
-          response: AbstractHttpServletResponse?
+          request: HttpServletRequest
         ) = null
       }
     var isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
@@ -783,7 +781,7 @@ abstract class FileServlet : HttpServlet() {
       (request.getAttribute(USER_ATTRIBUTE) as? User)?.let { return it }
       if (request.getAttribute(USER_RESOLVED_ATTRIBUTE) == true) return null
       val user = try {
-        userResolver.authenticate(request, response)
+        userResolver.authenticate(request)
       } catch (e: Exception) {
         log.warn("Failed to resolve user for ${request.requestURI}", e)
         null

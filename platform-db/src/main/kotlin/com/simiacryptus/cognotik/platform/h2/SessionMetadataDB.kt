@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.h2
 
-import com.simiacryptus.cognotik.platform.MetadataStorageInterface
+import com.simiacryptus.cognotik.platform.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
 
-class MetadataStorageDB : MetadataStorageInterface {
+class SessionMetadataDB : SessionMetadataInterface {
 
   object MetadataTable : Table("metadata") {
     val sessionId: Column<String> = varchar("session_id", 255)
@@ -43,7 +43,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
   override fun setSessionName(user: User?, session: Session, name: String) {
-    log.debug("Setting session name for session: {}, user: {} to '{}'", session, user?.email, name)
+    log.info("Setting session name for session: {}, user: {} to '{}'", session, user?.email, name)
     upsertMetadata(session.sessionId, user?.email ?: "", "name", name)
     log.debug("Session name set successfully for session: {}", session)
   }
@@ -135,7 +135,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
   override fun setSessionPath(user: User?, session: Session, path: String?) {
-    log.debug("Setting session path for session: {}, user: {} to {}", session, user?.email, path)
+    log.info("Setting session path for session: {}, user: {} to {}", session, user?.email, path)
     upsertMetadata(session.sessionId, user?.email ?: "", "path", path)
   }
 
@@ -210,7 +210,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
   override fun setSessionOwner(session: Session, ownerId: String?) {
-    log.debug("Setting session owner for session: {} to {}", session, ownerId)
+    log.info("Setting session owner for session: {} to {}", session, ownerId)
     upsertMetadata(session.sessionId, "", "owner_id", ownerId)
   }
 
@@ -231,7 +231,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
   override fun setSessionWorker(session: Session, workerId: String?) {
-    log.debug("Setting session worker for session: {} to {}", session, workerId)
+    log.info("Setting session worker for session: {} to {}", session, workerId)
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)
   }
@@ -275,7 +275,7 @@ class MetadataStorageDB : MetadataStorageInterface {
    * (REVIEW.md §3.4).
    */
   override fun updateSessionMetadata(user: User?, session: Session, patch: SessionMetadataPatch) {
-    log.debug("Patching session metadata for session: {}, user: {}", session, user?.email)
+    log.info("Patching session metadata for session: {}, user: {}", session, user?.email)
     val userEmail = user?.email ?: ""
     val now = Instant.now()
     tx {
@@ -349,7 +349,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
   fun setSessionMetadata(user: User?, session: Session, metadata: SessionMetadata) {
-    log.debug("Setting unified session metadata for session: {}, user: {}", session, user?.email)
+    log.info("Setting unified session metadata for session: {}, user: {}", session, user?.email)
     val userEmail = user?.email ?: ""
     val now = Instant.now()
     metadata.name?.let { upsertMetadata(session.sessionId, userEmail, "name", it, now) }
@@ -694,7 +694,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   private fun <T> tx(block: () -> T): T = transaction(ExposedDatabase.get(facet)) { block() }
 
   companion object {
-    private val log = LoggerFactory.getLogger(MetadataStorageDB::class.java)
+    private val log = LoggerFactory.getLogger(SessionMetadataDB::class.java)
 
     /** Metadata key holding the worker/agent currently assigned to a session. */
     internal const val KEY_WORKER_ID = "worker_id"

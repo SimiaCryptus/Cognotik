@@ -60,7 +60,7 @@ class OrchestrationConfig(
       }
 
   @get:JsonIgnore
-  val defaultFast get() = (fastModel?.instance(user) ?: smartModel?.instance(user)
+  val defaultFast get() = ((fastModel ?: smartModel)?.instance(user)
     ?: throw IllegalStateException("Parsing model not set")).instance(user)
 
   @get:JsonIgnore

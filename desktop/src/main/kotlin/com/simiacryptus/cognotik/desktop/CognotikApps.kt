@@ -299,6 +299,9 @@ open class CognotikApps(
 //            override fun logout(accessToken: String, user: User) {}
 //        }
         ApplicationServicesImpl.authorizationManager = object : AuthorizationManager() {
+            init {
+                log.info("AuthorizationManager initialized with permissive local auth for desktop mode", RuntimeException("Stack Trace"))
+            }
             override fun isAuthorized(
                 applicationClass: Class<*>?,
                 user: User?,
