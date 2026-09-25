@@ -71,7 +71,7 @@ import java.io.File
  */
 object FileServerCli {
 
-  var user: User = CliSupport.defaultUser()
+  var user: User? = CliSupport.defaultUser
   var available: Map<String, ChatModel> = emptyMap()
   var models: CliSupport.Models? = null
 
@@ -382,27 +382,29 @@ object FileServerCli {
 
 
     /* Built after parsing so --email is honoured, then published for the FS actions. */
-    val cliUser = CliSupport.defaultUser()
+    val cliUser = CliSupport.defaultUser
     bootstrapPlatform(cliUser)
-    user = cliUser
-
-
-    available = availableModels(cliUser)
-    /* The pair is runtime state now: the web UI may replace it at any time. */
-    ModelSelection.install(user = { user }, smart = smartModel, fast = fastModel)
-    ModelSelectionActions.install()
-    models = try {
-      CliSupport.resolveModels(
-        user = cliUser,
-        smartModel = ModelSelection.smart,
-        fastModel = ModelSelection.fast,
-        imageModel = imageModel,
-        audioModel = audioModel,
-      )
-    } catch (e: Exception) {
-      /* Starting without a model is no longer fatal - pick one from the web UI. */
-      System.err.println("warning: ${e.message}")
-      null
+    if(null != cliUser) {
+      user = cliUser
+      available = availableModels(cliUser)
+      /* The pair is runtime state now: the web UI may replace it at any time. */
+      ModelSelection.install(user = { cliUser }, smart = smartModel, fast = fastModel)
+      ModelSelectionActions.install()
+      models = try {
+        CliSupport.resolveModels(
+          user = cliUser,
+          smartModel = ModelSelection.smart,
+          fastModel = ModelSelection.fast,
+          imageModel = imageModel,
+          audioModel = audioModel,
+        )
+      } catch (e: Exception) {
+        /* Starting without a model is no longer fatal - pick one from the web UI. */
+        System.err.println("warning: ${e.message}")
+        null
+      }
+    } else {
+      log.info("No user could be created; the server will start without a user or models.")
     }
 
     val baseDir = File(dirArg ?: ".").canonicalFile
@@ -470,7 +472,7 @@ object FileServerCli {
       if (modifyEnabled) ModifyFilesActions.refreshModels()
       models = try {
         CliSupport.resolveModels(
-          user = user,
+          user = user ?: throw IllegalStateException("No user available"),
           smartModel = ModelSelection.smart,
           fastModel = ModelSelection.fast,
           imageModel = imageModel,

@@ -293,7 +293,7 @@ class ChatApiProxyServlet(
     } catch (e: Exception) {
       throw InvalidRequestException("Invalid chat request format: ${e.message}", e)
     }
-    val user = UserProviderImpl().authenticate(request, response)
+    val user = UserProviderImpl().authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy chat request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, requiredBudget = 0.0)
@@ -631,7 +631,7 @@ class ChatApiProxyServlet(
     MDC.put("provider", providerLabel)
     val sessionId = request.getParameter("session")?.let { Session(it) } ?: Session.newUserID()
     val providers = resolveProviders(providerNames)
-    val user = UserProviderImpl().authenticate(request, response)
+    val user = UserProviderImpl().authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy models request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, false, null)
@@ -709,7 +709,7 @@ class ChatApiProxyServlet(
     MDC.put("provider", providerName)
     MDC.put("jobToken", token)
 
-    val user = UserProviderImpl().authenticate(request, response)
+    val user = UserProviderImpl().authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy chat result request")
     MDC.put("user", user.email)
 

@@ -60,7 +60,8 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val userinfo =
-          UserProviderImpl().authenticate(request, response) ?: throw RuntimeException("Authentication failed")
+          UserProviderImpl().authenticate(request)
+            ?: throw RuntimeException("Authentication failed")
         val (from, to) = parseDateRange(request)
 
         val usage = usageManager.getUserUsageSummary(userinfo, from, to)

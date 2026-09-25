@@ -8,10 +8,10 @@ import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
@@ -190,9 +190,10 @@ open class DocProcessorServlet() : HttpServlet() {
         writeError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameter: doc")
         return
       }
-      val user = resolveUser(request, response) ?: return
-      require(null != user.getAuthCookies()[AuthenticationInterface.AUTH_COOKIE]) {
-        "Missing authentication cookie; ensure the request is authenticated"
+      val user = UserProviderImpl().authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
+      require(null != user.tokenMetadata().firstOrNull()?.token) {
+        "Missing authentication cookie for ${user.toJson()}"
       }
       val root = resolveRoot(request, response, user) ?: return
       val docFile = root.resolve(docPath)
@@ -321,9 +322,6 @@ open class DocProcessorServlet() : HttpServlet() {
       concurrency = defaultConcurrency,
     )
   }
-
-  protected open fun resolveUser(request: HttpServletRequest, response: HttpServletResponse): User? =
-    UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
 
   /** Session the request belongs to, if any (used as the parent of new sessions). */
   protected open fun resolveSession(request: HttpServletRequest): Session? =

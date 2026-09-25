@@ -402,14 +402,21 @@ open class UnifiedHarness(
 
     @JvmStatic
     fun configurePlatform(user: User) {
+      log.info("Configuring platform for user: {}", user, RuntimeException("Stack Trace"))
       PlanHarness.initDynamicEnums()
       ApplicationServicesImpl.authenticationManager = object : AuthenticationInterface {
+        init {
+          log.info("AuthenticationManager initialized", RuntimeException("Stack Trace"))
+        }
         override fun getUser(accessToken: String?) = user
         fun getAccessToken(user: User) = "test-token"
         override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
         fun logout(accessToken: String, user: User) {}
       }
       ApplicationServicesImpl.authorizationManager = object : AuthorizationManager() {
+        init {
+          log.info("AuthorizationManager initialized with permissive local auth for desktop mode", RuntimeException("Stack Trace"))
+        }
         override fun isAuthorized(
           applicationClass: Class<*>?,
           user: User?,

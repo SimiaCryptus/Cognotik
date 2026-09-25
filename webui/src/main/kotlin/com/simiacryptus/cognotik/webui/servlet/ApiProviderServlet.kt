@@ -44,7 +44,8 @@ class ApiProviderServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
       val user =
-        UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        UserProviderImpl().authenticate(request)
+          ?: throw IllegalStateException("Authentication failed")
       val userSettings = user.userSettings()
       val providers = userSettings.providerInfos()
       val availableProviders = userSettings.getAvailableProviders()

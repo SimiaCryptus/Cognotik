@@ -24,6 +24,9 @@ import java.util.*
  * Fail-secure: any error results in a denial, never an exception.
  */
 open class AuthorizationManager : AuthorizationInterface {
+  init {
+    log.info("AuthorizationManager initialized", RuntimeException("Stack Trace"))
+  }
 
   override fun isAuthorized(
     resource: ResourceRef?,

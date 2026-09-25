@@ -46,7 +46,7 @@ class RouterServlet(
         request,
         response,
         Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: ""),
-        UserProviderImpl().authenticate(request, response) ?: run {
+        UserProviderImpl().authenticate(request) ?: run {
           response.sendError(
             HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
           )
@@ -61,7 +61,7 @@ class RouterServlet(
     when {
       request.pathInfo?.startsWith("/share/") == true -> {
         val session = Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: "")
-        val user = UserProviderImpl().authenticate(request, response) ?: run {
+        val user = UserProviderImpl().authenticate(request) ?: run {
           response.sendError(
             HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
           )

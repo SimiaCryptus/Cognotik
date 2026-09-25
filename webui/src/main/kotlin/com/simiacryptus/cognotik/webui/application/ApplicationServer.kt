@@ -17,12 +17,12 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
-import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
 import com.simiacryptus.cognotik.platform.UserProvider
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import jakarta.servlet.MultipartConfigElement
+import jakarta.servlet.ServletResponse
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
@@ -270,11 +270,11 @@ abstract class ApplicationServer(
 
 private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 
-fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = FilterHolder { request, response, chain ->
+fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = FilterHolder { request, response: ServletResponse?, chain ->
   val requestPath = (request as HttpServletRequest).requestURI
   val servletPath = request.servletPath
   log.debug("Processing request: {}", requestPath)
-  val user = UserProviderImpl().authenticate(request, response as HttpServletResponse)
+  val user = UserProviderImpl().authenticate(request)
   /*
    * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
    * redirecting its module/CSS requests to the login page would break the page load, while
@@ -283,7 +283,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
   val anonymousOk = servletPath == "/fileIndex" || servletPath == "/ui" || servletPath.startsWith("/ui/")
   val email = if (user == null && !anonymousOk) {
     log.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
-    response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+    (response as HttpServletResponse).status = HttpServletResponse.SC_TEMPORARY_REDIRECT
     val originalRequest = request.requestURL.toString()
     val queryString = request.queryString
     val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
@@ -315,7 +315,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
       user?.email,
       requestPath
     )
-    response.writer?.write("Access Denied")
+    response?.writer?.write("Access Denied")
     (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
   }
 }
@@ -331,8 +331,7 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
 
 class UserProviderImpl : UserProvider {
   override fun authenticate(
-    request: HttpServletRequest,
-    response: AbstractHttpServletResponse?
+    request: HttpServletRequest
   ) = request.getCookie()?.let {
     ApplicationServicesImpl.fileApplicationServices().authenticationManager.getUser(it)
   }

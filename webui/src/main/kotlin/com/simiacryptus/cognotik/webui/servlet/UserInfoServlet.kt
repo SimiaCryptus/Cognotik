@@ -11,7 +11,8 @@ class UserInfoServlet : HttpServlet() {
     response.contentType = "text/json"
     response.status = HttpServletResponse.SC_OK
     val user =
-      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      UserProviderImpl().authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
     response.writer.write(JsonUtil.objectMapper().writeValueAsString(user))
   }
 }

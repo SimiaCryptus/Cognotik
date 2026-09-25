@@ -123,7 +123,8 @@ class PluginManagerServlet(
       request.queryString
     )
     val user =
-      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      UserProviderImpl().authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user: {}", user)
     if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
         ResourceRef.of(PluginManagerServlet::class.java),
@@ -211,7 +212,8 @@ class PluginManagerServlet(
       request.contentType
     )
     val user =
-      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      UserProviderImpl().authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user for POST: {}", user)
     if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
         ResourceRef.of(PluginManagerServlet::class.java),

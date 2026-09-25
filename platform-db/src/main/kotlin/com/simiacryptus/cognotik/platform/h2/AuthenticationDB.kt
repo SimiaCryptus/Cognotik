@@ -34,6 +34,9 @@ import java.util.concurrent.atomic.AtomicLong
  * hot token does not trigger a write on every request.
  */
 open class AuthenticationDB : AuthenticationInterface {
+  init {
+    log.info("AuthenticationManager initialized", RuntimeException("Stack Trace"))
+  }
 
   /**
    * Exposed table definition for access tokens / sessions.
@@ -87,6 +90,12 @@ open class AuthenticationDB : AuthenticationInterface {
 
   private val cacheHits = AtomicLong(0)
   private val cacheMisses = AtomicLong(0)
+  /**
+   * Hardcoded verbose-logging switch, on by default, to make it easy to debug
+   * session lookups/writes at INFO level without changing the logger config.
+   */
+  private val verbose = true
+
 
   /** How often `last_used_at` is flushed to the database, per token. */
   private val touchIntervalMillis: Long =
@@ -102,12 +111,14 @@ open class AuthenticationDB : AuthenticationInterface {
   private fun warmSchema() {
     try {
       transaction(database) { AccessTokensTable.selectAll().limit(1).toList() }
+      if (verbose) log.info("access_tokens schema check succeeded")
     } catch (first: Exception) {
       log.warn("access_tokens schema check failed; retrying once: {}", first.message, first)
       try {
         // `database` re-resolves, picking up any in-memory demotion that happened
         // during the first attempt.
         transaction(database) { AccessTokensTable.selectAll().limit(1).toList() }
+        if (verbose) log.info("access_tokens schema check succeeded on retry")
       } catch (second: Exception) {
         log.error("Failed to initialize the access_tokens schema", second)
       }
@@ -116,11 +127,18 @@ open class AuthenticationDB : AuthenticationInterface {
 
   override fun getUser(accessToken: String?): User? {
     if (accessToken.isNullOrBlank()) return null
-    val entry = cache[accessToken]?.also { cacheHits.incrementAndGet() }
+    val entry = cache[accessToken]?.also {
+      cacheHits.incrementAndGet()
+      if (verbose) log.info("Cache hit for access token (user={})", it.user)
+    }
       ?: synchronized(cache) {
         cache[accessToken] ?: run {
           cacheMisses.incrementAndGet()
-          loadFromDb(accessToken)?.also { cache[accessToken] = it }
+          if (verbose) log.info("Cache miss for access token; loading from database")
+          loadFromDb(accessToken)?.also {
+            cache[accessToken] = it
+            if (verbose) log.info("Loaded session from database for user: {}", it.user)
+          }
         }
       }
       ?: return null
@@ -132,6 +150,7 @@ open class AuthenticationDB : AuthenticationInterface {
       return null
     }
     touch(accessToken, entry, now)
+    if (verbose) log.info("Resolved access token to user: {}", entry.user)
     return entry.user
   }
 
@@ -193,6 +212,7 @@ open class AuthenticationDB : AuthenticationInterface {
       lastPersistedNanos = System.nanoTime(),
     )
     log.debug("Stored session for user: {} (ttl={})", user, ttl)
+    if (verbose) log.info("Stored/updated session in cache and database for user: {} (ttl={})", user, ttl)
     return user
   }
 
@@ -215,6 +235,7 @@ open class AuthenticationDB : AuthenticationInterface {
             )
           }
       }
+      .also { if (verbose) log.info("Listed {} active token(s) for user: {}", it.size, user) }
     } catch (e: Exception) {
       log.error("Failed to list tokens for user: {}: {}", user, e.message, e)
       emptyList()
@@ -232,6 +253,7 @@ open class AuthenticationDB : AuthenticationInterface {
       }
       if (deleted > 0) {
         cache.remove(accessToken)
+        if (verbose) log.info("Logged out access token for user: {}", user)
         true
       } else {
         // Either unknown, or it belongs to somebody else -- do not leak which.
@@ -278,6 +300,7 @@ open class AuthenticationDB : AuthenticationInterface {
       if (deleted > 0) {
         cache.entries.removeIf { it.value.expiresAt?.isBefore(now) == true }
         log.info("Purged {} expired session(s)", deleted)
+        if (verbose) log.info("Cache size after purge: {}", cache.size)
       }
       deleted
     } catch (e: Exception) {
@@ -289,6 +312,7 @@ open class AuthenticationDB : AuthenticationInterface {
   /** Drop the cached copy of [accessToken], forcing the next read to hit the database. */
   fun invalidate(accessToken: String) {
     cache.remove(accessToken)
+    if (verbose) log.info("Invalidated cached session for a single access token")
   }
 
   /** Drop every cached session (does not touch the database). */
@@ -296,6 +320,7 @@ open class AuthenticationDB : AuthenticationInterface {
     val size = cache.size
     cache.clear()
     log.debug("Invalidated all {} cached session entries", size)
+    if (verbose) log.info("Invalidated all {} cached session entries", size)
   }
 
   /** Returns a snapshot of cache statistics: (hits, misses, size). */
@@ -333,6 +358,7 @@ open class AuthenticationDB : AuthenticationInterface {
       transaction(database) {
         AccessTokensTable.update({ AccessTokensTable.token eq accessToken }) {
           it[AccessTokensTable.lastUsedAt] = now
+          if (verbose) log.info("Flushed last_used_at for an access token")
         }
       }
     } catch (e: Exception) {
@@ -374,6 +400,7 @@ open class AuthenticationDB : AuthenticationInterface {
   private fun deleteToken(accessToken: String) {
     try {
       transaction(database) {
+        if (verbose) log.info("Deleting expired access token from database")
         AccessTokensTable.deleteWhere { AccessTokensTable.token eq accessToken }
       }
     } catch (e: Exception) {

@@ -12,30 +12,25 @@ import jakarta.servlet.http.HttpServletResponse
  */
 interface UserProvider {
   fun authenticate(
-    request: HttpServletRequest,
-    response: AbstractHttpServletResponse?
+    request: HttpServletRequest
   ): User?
 
-  fun authenticate(
-    request: HttpServletRequest,
-    response: HttpServletResponse?
-  ): User? = authenticate(request, response?.let {
-    object : AbstractHttpServletResponse {
-      override fun setHeader(key: String, value: String) {
-        it.setHeader(key, value)
-      }
-
-      override var status: Int
-        get() = it.status
-        set(value) {
-          it.status = value
-        }
-    }
-  })
 }
 
 interface AbstractHttpServletResponse {
   fun setHeader(key: String, value: String)
 
   var status: Int
+}
+
+fun HttpServletResponse.abstractHttpServletResponse(): AbstractHttpServletResponse = object : AbstractHttpServletResponse {
+  override fun setHeader(key: String, value: String) {
+    this@abstractHttpServletResponse.setHeader(key, value)
+  }
+
+  override var status: Int
+    get() = this@abstractHttpServletResponse.status
+    set(value) {
+      this@abstractHttpServletResponse.status = value
+    }
 }

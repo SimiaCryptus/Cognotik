@@ -17,7 +17,8 @@ class UserSettingsServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.status = HttpServletResponse.SC_OK
     val user =
-      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      UserProviderImpl().authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
         ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user)
@@ -87,7 +88,8 @@ class UserSettingsServlet : HttpServlet() {
 
   public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
     val user =
-      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      UserProviderImpl().authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
     val data = request.getParameter("settings") ?: request.reader.use { it.readText() }.ifBlank { null }
     val settings = data?.let { JsonUtil.fromJson<UserSettings>(it, UserSettings::class.java) } ?: UserSettings()
     val userSettingsManager = ApplicationServicesImpl.fileApplicationServices().userSettingsManager

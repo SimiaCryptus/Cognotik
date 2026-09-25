@@ -30,7 +30,7 @@ object ModelSelection {
   private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
   @Volatile
-  private var userFn: () -> User = { CliSupport.defaultUser() }
+  private var userFn: () -> User = { CliSupport.defaultUser ?: throw RuntimeException("no default user") }
 
   /** Enumerating provider models costs a network round trip, so it is cached. */
   @Volatile

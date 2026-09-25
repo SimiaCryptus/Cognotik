@@ -94,7 +94,7 @@ package com.simiacryptus.cognotik.cli
         DocOpsFsActions.install(
           DocOpsFsActions.Config(
             root = { servlet.taskRoot },
-            user = { FileServerCli.user },
+            user = { FileServerCli.user ?: throw RuntimeException("no default user") },
             readOnly = cfg.readOnly,
             timeoutMinutes = cfg.timeoutMinutes,
             monitor = cfg.monitor,

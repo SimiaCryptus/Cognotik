@@ -201,6 +201,11 @@ data class User(
       if (at <= 0) return "***"
       return "${email.first()}***@${email.substring(at + 1)}"
     }
+
+    private fun authenticationInterface(): AuthenticationInterface {
+      val services = ApplicationServices.services ?: throw IllegalStateException("ApplicationServices not initialized")
+      return services.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).authenticationManager
+    }
   }
 
   /**
@@ -219,15 +224,17 @@ data class User(
    * Returns an empty map when no token is available for this user.
    */
   @JsonIgnore
-  fun getAuthCookies(): Map<String, String?> {
-    val services = ApplicationServices.services ?: throw IllegalStateException("ApplicationServices not initialized")
-    val tokenMetadata = services.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot)
-      .authenticationManager.listTokens(this).firstOrNull() ?: return emptyMap()
-    return mapOf(
-      AuthenticationInterface.AUTH_COOKIE to tokenMetadata.token,
-      "USER" to name,
-      "EMAIL" to email
-    )
+  fun getAuthCookies(): Map<String, String?> = mapOf(
+    AuthenticationInterface.AUTH_COOKIE to (tokenMetadata().firstOrNull() ?: return emptyMap()).token,
+    "USER" to name,
+    "EMAIL" to email
+  )
+
+
+  fun tokenMetadata(): List<AuthenticationInterface.TokenMetadata> {
+    val authenticationManager = authenticationInterface()
+    val tokenMetadata = authenticationManager.listTokens(this)
+    return tokenMetadata
   }
 
   @JsonIgnore

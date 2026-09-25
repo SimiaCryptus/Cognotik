@@ -23,7 +23,7 @@ package com.simiacryptus.cognotik.cli
       val fast = runCatching { ModelSelection.fast }.getOrNull()
       val available = runCatching { ModelSelection.modelIds().size }.getOrNull()
         ?: FileServerCli.available.size
-      val user = runCatching { FileServerCli.user.email }.getOrNull()
+      val user = runCatching { FileServerCli.user?.email }.getOrNull()
 
       val json = buildString {
         append('{')

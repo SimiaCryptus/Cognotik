@@ -175,7 +175,7 @@ class ApiKeyServlet : HttpServlet() {
   }
 
   private fun authenticate(request: HttpServletRequest, response: HttpServletResponse): User? {
-    val user = userProvider.authenticate(request, response)
+    val user = userProvider.authenticate(request)
     if (user == null) {
       if (!response.isCommitted) {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required")

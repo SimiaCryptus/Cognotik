@@ -18,7 +18,8 @@ class SessionsServlet : HttpServlet() {
     val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
     val usageDB by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        val user = UserProviderImpl().authenticate(req)
+          ?: throw RuntimeException("User must be authenticated")
         val action = req.getParameter("action")?.lowercase()
         when (action) {
             "delete" -> handleDelete(req, resp, user)
@@ -31,7 +32,8 @@ class SessionsServlet : HttpServlet() {
     }
 
     override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        val user = UserProviderImpl().authenticate(req)
+          ?: throw RuntimeException("User must be authenticated")
         handleDelete(req, resp, user)
     }
 
@@ -103,8 +105,8 @@ class SessionsServlet : HttpServlet() {
 
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp)
-            ?: throw RuntimeException("User must be authenticated to list sessions")
+        val user = UserProviderImpl().authenticate(req)
+          ?: throw RuntimeException("User must be authenticated to list sessions")
         val sessions = try {
             metadataDB.listSessionsForUser(user).map { Session(it) }
         } catch (e: Exception) {
