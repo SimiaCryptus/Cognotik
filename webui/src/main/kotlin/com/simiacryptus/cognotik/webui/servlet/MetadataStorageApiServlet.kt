@@ -51,8 +51,6 @@ import java.time.Instant
  * name differs in this codebase.
  */
 class MetadataStorageApiServlet(
-  private val metadata: SessionMetadataInterface = (ServiceMap
-    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
 ) : HttpServlet() {
 
   private fun currentUser(request: HttpServletRequest): User =
@@ -89,82 +87,106 @@ class MetadataStorageApiServlet(
         "sessionName" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionNameResponse(metadata.getSessionName(user, session)))
+          writeJson(response, SessionNameResponse(ServiceMap[ServiceKey.METADATA_DB].getSessionName(user, session)))
         }
 
         "messageIds" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, MessageIdsResponse(metadata.getMessageIds(user, session)))
+          writeJson(response, MessageIdsResponse(ServiceMap[ServiceKey.METADATA_DB].getMessageIds(user, session)))
         }
 
         "sessionTimestamp" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionTimestampResponse(metadata.getSessionTimestamp(user, session)?.toString()))
+          writeJson(response, SessionTimestampResponse(
+            ServiceMap[ServiceKey.METADATA_DB].getSessionTimestamp(
+              user,
+              session
+            )?.toString()))
         }
 
         "sessionOwner" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionOwnerResponse(metadata.getSessionOwner(user = user, session = session)))
+          writeJson(response, SessionOwnerResponse(
+            ServiceMap[ServiceKey.METADATA_DB].getSessionOwner(
+              user = user,
+              session = session
+            )))
         }
 
         "sessionWorker" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionWorkerResponse(metadata.getSessionWorker(user = user, session = session)))
+          writeJson(response, SessionWorkerResponse(
+            ServiceMap[ServiceKey.METADATA_DB].getSessionWorker(
+              user = user,
+              session = session
+            )))
         }
 
         "sessionPath" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionPathResponse(metadata.getSessionPath(user, session)))
+          writeJson(response, SessionPathResponse(ServiceMap[ServiceKey.METADATA_DB].getSessionPath(user, session)))
         }
 
         "exists" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, ExistsResponse(metadata.exists(user, session)))
+          writeJson(response, ExistsResponse(ServiceMap[ServiceKey.METADATA_DB].exists(user, session)))
         }
 
         "sessionMetadata" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, metadata.getSessionMetadata(user, session))
+          writeJson(response, ServiceMap[ServiceKey.METADATA_DB].getSessionMetadata(user, session))
         }
 
         "listSessionMetadata" -> {
           val user = currentUser(request)
-          writeJson(response, SessionMetadataListResponse(metadata.listSessionMetadata(user)))
+          writeJson(response, SessionMetadataListResponse(ServiceMap[ServiceKey.METADATA_DB].listSessionMetadata(user)))
         }
 
         "listSessionMetadataByPath" -> {
           val user = currentUser(request)
           val path = requireParam(request, "path")
-          writeJson(response, SessionMetadataListResponse(metadata.listSessionMetadata(user=user, path = path)))
+          writeJson(response, SessionMetadataListResponse(
+            ServiceMap[ServiceKey.METADATA_DB].listSessionMetadata(
+              user = user,
+              path = path
+            )))
         }
 
         "listSessionEntries" -> {
           val user = currentUser(request)
-          writeJson(response, SessionListEntryListResponse(metadata.listSessionEntries(user)))
+          writeJson(response, SessionListEntryListResponse(ServiceMap[ServiceKey.METADATA_DB].listSessionEntries(user)))
         }
 
         "listSessionEntriesByPath" -> {
           val user = currentUser(request)
           val path = requireParam(request, "path")
-          writeJson(response, SessionListEntryListResponse(metadata.listSessionEntries(user=user, path = path)))
+          writeJson(response, SessionListEntryListResponse(
+            ServiceMap[ServiceKey.METADATA_DB].listSessionEntries(
+              user = user,
+              path = path
+            )))
         }
 
         "sessionsForUser" -> {
           val user = currentUser(request)
-          writeJson(response, SessionIdsResponse(metadata.listSessionsForUser(user)))
+          writeJson(response, SessionIdsResponse(ServiceMap[ServiceKey.METADATA_DB].listSessionsForUser(user)))
         }
 
         "sessionsByPath" -> {
           val user = currentUser(request)
           val path = requireParam(request, "path")
-          writeJson(response, SessionIdsResponse(metadata.listSessionsByPath(user=user, path = path)))
+          writeJson(response, SessionIdsResponse(
+            ServiceMap[ServiceKey.METADATA_DB].listSessionsByPath(
+              user = user,
+              path = path
+            )))
         }
 
         else -> writeError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown action")
@@ -185,61 +207,73 @@ class MetadataStorageApiServlet(
         "setSessionName" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionNameRequest::class.java)
-          metadata.setSessionName(user, Session(req.sessionId), req.name)
+          ServiceMap[ServiceKey.METADATA_DB].setSessionName(user, Session(req.sessionId), req.name)
           writeJson(response, StatusResponse())
         }
 
         "setMessageIds" -> {
           val user = currentUser(request)
           val req = readBody(request, SetMessageIdsRequest::class.java)
-          metadata.setMessageIds(user, Session(req.sessionId), req.ids)
+          ServiceMap[ServiceKey.METADATA_DB].setMessageIds(user, Session(req.sessionId), req.ids)
           writeJson(response, StatusResponse())
         }
 
         "setSessionTimestamp" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionTimestampRequest::class.java)
-          metadata.setSessionTimestamp(user, Session(req.sessionId), Instant.parse(req.timestamp))
+          ServiceMap[ServiceKey.METADATA_DB].setSessionTimestamp(
+            user,
+            Session(req.sessionId),
+            Instant.parse(req.timestamp)
+          )
           writeJson(response, StatusResponse())
         }
 
         "setSessionOwner" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionOwnerRequest::class.java)
-          metadata.setSessionOwner(Session(req.sessionId), user, req.ownerId)
+          ServiceMap[ServiceKey.METADATA_DB].setSessionOwner(Session(req.sessionId), user, req.ownerId)
           writeJson(response, StatusResponse())
         }
 
         "setSessionWorker" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionWorkerRequest::class.java)
-          metadata.setSessionWorker(Session(req.sessionId), user = user, ownerId = req.workerId)
+          ServiceMap[ServiceKey.METADATA_DB].setSessionWorker(
+            Session(req.sessionId),
+            user = user,
+            ownerId = req.workerId
+          )
           writeJson(response, StatusResponse())
         }
 
         "setSessionPath" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionPathRequest::class.java)
-          metadata.setSessionPath(user, Session(req.sessionId), req.path)
+          ServiceMap[ServiceKey.METADATA_DB].setSessionPath(user, Session(req.sessionId), req.path)
           writeJson(response, StatusResponse())
         }
 
         "deleteSession" -> {
           val user = currentUser(request)
           val req = readBody(request, DeleteSessionRequest::class.java)
-          metadata.deleteSession(user, Session(req.sessionId))
+          ServiceMap[ServiceKey.METADATA_DB].deleteSession(user, Session(req.sessionId))
           writeJson(response, StatusResponse())
         }
 
         "deleteAllForUser" -> {
           val user = currentUser(request)
-          writeJson(response, DeleteCountResponse(metadata.deleteAllForUser(user)))
+          writeJson(response, DeleteCountResponse(ServiceMap[ServiceKey.METADATA_DB].deleteAllForUser(user)))
         }
 
         "sessionMetadataMap" -> {
           val user = currentUser(request)
           val req = readBody(request, SessionMetadataMapRequest::class.java)
-          writeJson(response, SessionMetadataMapResponse(metadata.getSessionMetadataMap(user, req.sessionIds)))
+          writeJson(response, SessionMetadataMapResponse(
+            ServiceMap[ServiceKey.METADATA_DB].getSessionMetadataMap(
+              user,
+              req.sessionIds
+            )))
         }
 
         else -> writeError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown action")

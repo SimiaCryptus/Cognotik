@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.model.ChatMessageModality
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
@@ -41,6 +42,7 @@ object CliSupport {
   var defaultUser: User? = User(email = email)
 
   init {
+    CognotikPlatform.init()
     ServiceKey.USER_RESOLVER.factory = {
       object : UserProvider {
         override fun authenticate(
@@ -60,8 +62,7 @@ object CliSupport {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
+      ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }

@@ -17,11 +17,10 @@ import java.util.*
 
 class SessionsServlet : HttpServlet() {
     val metadataDB by lazy {
-        (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+        ServiceMap[ServiceKey.METADATA_DB]
     }
     val usageDB by lazy {
-        (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+        ServiceMap[ServiceKey.USAGE_DB]
     }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = UserProviderImpl().authenticate(req)
@@ -81,8 +80,7 @@ class SessionsServlet : HttpServlet() {
             return
         }
         try {
-            (ServiceMap
-              ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE].deleteSession(user, session)
+            ServiceMap[ServiceKey.DATA_STORAGE].deleteSession(user, session)
             log.info("User ${user.email} deleted session $sessionId")
             resp.status = HttpServletResponse.SC_OK
             resp.contentType = "application/json"

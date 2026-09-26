@@ -12,8 +12,7 @@ fun ChatModel.asChatInterface(
     user: User
 ): ChatInterface {
     val userSettings =
-      (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
+      ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user)
     val name = provider?.name ?: throw IllegalStateException("Provider not specified for model $modelId")
     val secureString = (userSettings.apis.find { it.provider?.name == name }?.key
         ?: throw IllegalStateException("API key for model provider $name not found in user settings"))

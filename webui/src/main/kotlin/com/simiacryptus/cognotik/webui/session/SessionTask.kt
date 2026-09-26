@@ -316,7 +316,7 @@ Stack Trace:
     renderFn: (String) -> String,
   ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
     val session = Session.newUserID()
-    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].setParentSession(
+    ServiceMap[ServiceKey.USAGE_DB].setParentSession(
       user = user,
       child = session,
       parent = ui.sessionId

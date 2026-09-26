@@ -17,8 +17,7 @@ package com.simiacryptus.cognotik.webui.servlet
                 val session = Session(request.getParameter("sessionId"))
                 val user = UserProviderImpl().authenticate(request)
                   ?: throw IllegalStateException("Authentication failed")
-                val pool = (ServiceMap
-                  ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user)
+                val pool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user)
     
     
                 response.writer.write(

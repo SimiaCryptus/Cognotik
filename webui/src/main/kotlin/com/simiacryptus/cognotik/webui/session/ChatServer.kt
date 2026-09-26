@@ -50,8 +50,7 @@ abstract class ChatServer(
             trafficLog.debug("WebSocket connection request for session: {}", session)
             val sessionManager = sessions.computeIfAbsent(session) { s ->
               val user =
-                (ServiceMap
-                  ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(
+                ServiceMap[ServiceKey.AUTHENTICATION].getUser(
                   request.getCookie(
                     AuthenticationInterface.AUTH_COOKIE
                   )

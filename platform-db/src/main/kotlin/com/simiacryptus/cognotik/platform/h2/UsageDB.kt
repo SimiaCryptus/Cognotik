@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.platform.h2
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.AIModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
@@ -94,8 +95,7 @@ class UsageDB : UsageInterface {
 
   private val database: Database get() = ExposedDatabase.get(facet)
   val userSettingsManager by lazy {
-    (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS] }
+    ServiceMap[ServiceKey.USER_SETTINGS] }
 
   /**
    * On-heap cache of per-session usage summaries (subtree-aware).
@@ -819,6 +819,9 @@ class UsageDB : UsageInterface {
   }
 
   companion object {
+    init {
+      CognotikPlatform.init()
+    }
     private val log = LoggerFactory.getLogger(UsageDB::class.java)
 
     var cost_scaling_factor: Double = 1.0

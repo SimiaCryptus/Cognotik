@@ -336,8 +336,7 @@ class ApiProviderServlet : HttpServlet() {
       return providers
     }
     fun User.userSettings(): UserSettings =
-      (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(this)
+      ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(this)
     fun UserSettings.getAvailableProviders(): List<AvailableProviderInfo> =
       APIProvider.values().map { provider ->
         val isConfigured = apis.any {

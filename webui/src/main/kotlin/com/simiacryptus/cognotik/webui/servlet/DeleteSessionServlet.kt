@@ -58,8 +58,7 @@ class DeleteSessionServlet(
         throw RuntimeException("User must be authenticated to delete sessions")
       }
       require(
-        (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+        ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
           ResourceRef.of(javaClass),
           Principal.of(user),
           OperationType.Delete
@@ -67,8 +66,7 @@ class DeleteSessionServlet(
       { "User $user is not authorized to delete sessions" }
       if (session.isGlobal()) {
         require(
-          (ServiceMap
-            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(javaClass),
             Principal.of(user),
             OperationType.Public

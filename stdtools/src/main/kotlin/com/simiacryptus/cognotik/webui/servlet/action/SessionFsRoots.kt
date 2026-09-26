@@ -22,8 +22,7 @@ import java.io.File
     object SessionFsRoots {
 
       private val dataStorage by lazy {
-        (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
+        ServiceMap[ServiceKey.DATA_STORAGE]
       }
 
       fun sessionOf(ctx: FsActionContext): Session {
@@ -36,8 +35,7 @@ import java.io.File
 
       fun userOf(ctx: FsActionContext): User {
         val session = sessionOf(ctx)
-        return (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(ctx.req.getCookie())
+        return ServiceMap[ServiceKey.AUTHENTICATION].getUser(ctx.req.getCookie())
           ?: throw FsException(
             FsErrorCode.EACCES, "fsapi", null,
             "not authenticated for session '${session.sessionId}'; log in and retry"
@@ -46,8 +44,7 @@ import java.io.File
 
       fun rootOf(ctx: FsActionContext): File {
         val session = sessionOf(ctx)
-        val user = (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(ctx.req.getCookie())
+        val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(ctx.req.getCookie())
         if (user == null && !session.isGlobal()) {
           throw FsException(
             FsErrorCode.EACCES, "fsapi", null,

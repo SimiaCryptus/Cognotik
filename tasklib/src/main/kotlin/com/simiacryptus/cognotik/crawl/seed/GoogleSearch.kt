@@ -34,8 +34,7 @@ class GoogleSearch : SeedMethodFactory {
       val searchLimit = resultCount // Reduced from 20 to be more conservative
       SeedMethod.log.debug("Fetching user settings for Google Search API")
       val userSettings =
-        (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(
+        ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
         user
       )
       val key = userSettings
@@ -127,8 +126,7 @@ class GoogleSearch : SeedMethodFactory {
     override fun isEnabled(): Boolean {
       return user?.let {
         val userSettings =
-          (ServiceMap
-            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(it)
+          ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(it)
         userSettings.apis.any { api -> api.provider == Google && api.key?.decrypt?.isNotBlank() == true } &&
             Google.base?.isNotBlank() == true
       } ?: false

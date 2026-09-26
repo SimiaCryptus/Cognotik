@@ -55,8 +55,7 @@ object ModelSelection {
   private val cache = ConcurrentHashMap<String, Map<String, ChatModel>>()
 
   private fun settingsManager() =
-    (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
+    ServiceMap[ServiceKey.USER_SETTINGS]
 
   /**
     * Publishes the request-scoped user resolver. Hosts (CLI, embedding servers) call

@@ -47,7 +47,7 @@ open class DocOpsApp(
   override val inputCnt get() = 0
 
   private val metadataStorage by lazy {
-    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+    ServiceMap[ServiceKey.METADATA_DB]
   }
 
   data class Settings(

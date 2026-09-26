@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory
 class SessionNameServlet(
   private val server: ApplicationServer,
   private val metadataStorageProvider: () -> SessionMetadataInterface = {
-    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+    ServiceMap[ServiceKey.METADATA_DB]
   },
 ) : HttpServlet() {
   private val logger = LoggerFactory.getLogger(SessionNameServlet::class.java)

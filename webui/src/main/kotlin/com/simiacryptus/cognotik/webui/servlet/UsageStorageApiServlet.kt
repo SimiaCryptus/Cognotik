@@ -37,11 +37,7 @@ import java.time.LocalDate
  * exposed for completeness/testing but is destructive - deployments that shouldn't
  * allow it should override [doPost] or replace this servlet entirely.
  */
-class UsageStorageApiServlet(
-  private val usage: UsageInterface = (ServiceMap
-    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
-) : HttpServlet() {
-
+class UsageStorageApiServlet : HttpServlet() {
   private fun currentUser(request: HttpServletRequest): User =
     UserProviderImpl().authenticate(request) ?: throw IllegalStateException("Authentication failed")
 
@@ -77,43 +73,61 @@ class UsageStorageApiServlet(
           val user = currentUser(request)
           val from = LocalDate.parse(requireParam(request, "from"))
           val to = LocalDate.parse(requireParam(request, "to"))
-          writeJson(response, UsageSummaryResponse(usage.getUserUsageSummary(user, from, to)))
+          writeJson(response, UsageSummaryResponse(ServiceMap[ServiceKey.USAGE_DB].getUserUsageSummary(user, from, to)))
         }
 
         "sessionSummary" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, UsageSummaryResponse(usage.getSessionUsageSummary(user = user, session = session)))
+          writeJson(response, UsageSummaryResponse(
+            ServiceMap[ServiceKey.USAGE_DB].getSessionUsageSummary(
+              user = user,
+              session = session
+            )))
         }
 
         "sessionRows" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionRowsResponse(usage.getSessionUsageRows(session, user)))
+          writeJson(response, SessionRowsResponse(ServiceMap[ServiceKey.USAGE_DB].getSessionUsageRows(session, user)))
         }
 
-        "budget" -> writeJson(response, BudgetResponse(usage.getAvailableBudget(currentUser(request))))
+        "budget" -> writeJson(response, BudgetResponse(
+          ServiceMap[ServiceKey.USAGE_DB].getAvailableBudget(
+            currentUser(
+              request
+            )
+          )))
 
-        "balance" -> writeJson(response, BalanceResponse(usage.getUserBalance(currentUser(request))))
+        "balance" -> writeJson(response, BalanceResponse(
+          ServiceMap[ServiceKey.USAGE_DB].getUserBalance(
+            currentUser(
+              request
+            )
+          )))
 
         "dailyUsage" -> {
           val user = currentUser(request)
           val from = LocalDate.parse(requireParam(request, "from"))
           val to = LocalDate.parse(requireParam(request, "to"))
-          writeJson(response, DailyUsageResponse(usage.getUserDailyUsage(user, from, to)))
+          writeJson(response, DailyUsageResponse(ServiceMap[ServiceKey.USAGE_DB].getUserDailyUsage(user, from, to)))
         }
 
         "credits" -> {
           val user = currentUser(request)
           val from = LocalDate.parse(requireParam(request, "from"))
           val to = LocalDate.parse(requireParam(request, "to"))
-          writeJson(response, CreditsResponse(usage.getUserCredits(user, from, to)))
+          writeJson(response, CreditsResponse(ServiceMap[ServiceKey.USAGE_DB].getUserCredits(user, from, to)))
         }
 
         "parentSession" -> {
           val user = currentUser(request)
           val child = Session(requireParam(request, "child"))
-          writeJson(response, ParentSessionResponse(usage.getParentSession(user = user, child = child)?.sessionId))
+          writeJson(response, ParentSessionResponse(
+            ServiceMap[ServiceKey.USAGE_DB].getParentSession(
+              user = user,
+              child = child
+            )?.sessionId))
         }
 
         else -> writeError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown action")
@@ -134,14 +148,15 @@ class UsageStorageApiServlet(
         "sessionSummaryBulk" -> {
           val user = currentUser(request)
           val req = readBody(request, SessionSummaryBulkRequest::class.java)
-          val result = usage.getSessionUsageSummaryBulk(user, req.sessionIds.map { Session(it) })
+          val result =
+            ServiceMap[ServiceKey.USAGE_DB].getSessionUsageSummaryBulk(user, req.sessionIds.map { Session(it) })
             .mapKeys { it.key.sessionId }
           writeJson(response, SessionSummaryBulkResponse(result))
         }
 
         "increment" -> {
           val req = readBody(request, IncrementUsageRequest::class.java)
-          usage.incrementUsage(
+          ServiceMap[ServiceKey.USAGE_DB].incrementUsage(
             session = Session(req.sessionId),
             user = currentUser(request),
             model = req.model,
@@ -153,19 +168,24 @@ class UsageStorageApiServlet(
 
         "credit" -> {
           val req = readBody(request, CreditRequest::class.java)
-          val balance = usage.creditUser(currentUser(request), req.amount, req.comment, req.metadata)
+          val balance =
+            ServiceMap[ServiceKey.USAGE_DB].creditUser(currentUser(request), req.amount, req.comment, req.metadata)
           writeJson(response, CreditResponse(balance))
         }
 
         "parentSession" -> {
           val user = currentUser(request)
           val req = readBody(request, ParentSessionRequest::class.java)
-          usage.setParentSession(user = user, child = Session(req.child), parent = Session(req.parent))
+          ServiceMap[ServiceKey.USAGE_DB].setParentSession(
+            user = user,
+            child = Session(req.child),
+            parent = Session(req.parent)
+          )
           writeJson(response, StatusResponse())
         }
 
         "clear" -> {
-          usage.clear()
+          ServiceMap[ServiceKey.USAGE_DB].clear()
           writeJson(response, StatusResponse())
         }
 

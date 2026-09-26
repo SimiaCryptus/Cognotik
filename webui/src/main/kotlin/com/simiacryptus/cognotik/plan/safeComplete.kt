@@ -44,8 +44,7 @@ fun ISessionTask.safeComplete(message: String, log: Logger) {
 
 fun ChatModel.toApiChatModel(user: User): ApiChatModel {
   val apis =
-    (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user).apis
+    ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user).apis
   return ApiChatModel(
     model = this, provider = ApiData(
       key = apis.find { it.provider == this.provider }?.key

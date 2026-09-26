@@ -125,11 +125,10 @@ abstract class ApplicationDirectory(
   open val sessionUsageDetailsServlet by lazy { SessionUsageDetailsServlet() }
     .also { log.debug("Initialized SessionUsageDetailsServlet") }
 
-  open val creditsServlet: CreditsServlet =
-    CreditsServlet(NoOpPaymentProvider(
-      (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
-    ))
+  open val creditsServlet: CreditsServlet by lazy {
+    CreditsServlet(NoOpPaymentProvider(ServiceMap[ServiceKey.USAGE_DB]))
       .also { log.debug("Initialized CreditsServlet") }
+  }
 
   open fun setupPlatform() {
     log.info("Setting up platform (default implementation - no action taken)")

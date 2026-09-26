@@ -59,8 +59,7 @@ open class ChatSocketManager(
   open val systemPrompt: String,
   var temperature: Double = 0.3,
   applicationClass: Class<out ChatServer>,
-  val storage: StorageInterface = (ServiceMap
-    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
+  val storage: StorageInterface = ServiceMap[ServiceKey.DATA_STORAGE],
   open val fastTopicParsing: Boolean = true,
   val retriable: Boolean = true,
   val budget: Double,

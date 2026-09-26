@@ -285,8 +285,7 @@ class DocProcessor(
       session: Session = Session.newUserID(), concurrency: Int = 4, user: User
     ): FixedConcurrencyProcessor =
       FixedConcurrencyProcessor(
-        (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(
+        ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
           session,
           user
         ), concurrency

@@ -13,6 +13,7 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
@@ -134,8 +135,7 @@ open class UnifiedHarness(
       override fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
         val usageManager =
-          (ServiceMap
-            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+          ServiceMap[ServiceKey.USAGE_DB]
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         super.onComplete(mode, task)
       }
@@ -251,8 +251,7 @@ open class UnifiedHarness(
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
         val usageManager =
-          (ServiceMap
-            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+          ServiceMap[ServiceKey.USAGE_DB]
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         completionLatch.countDown()
         onComplete(result, task)
@@ -290,7 +289,7 @@ open class UnifiedHarness(
 
     if (!serverless) {
       parentSession?.apply {
-        (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].setParentSession(
+        ServiceMap[ServiceKey.USAGE_DB].setParentSession(
           user = user,
           child = session,
           parent = this
@@ -415,6 +414,7 @@ open class UnifiedHarness(
     fun configurePlatform(user: User) {
       log.info("Configuring platform for user: {}", user, RuntimeException("Stack Trace"))
       PlanHarness.initDynamicEnums()
+      CognotikPlatform.init()
       ServiceKey.AUTHENTICATION.factory = {
         object : AuthenticationInterface {
           init {
@@ -427,8 +427,7 @@ open class UnifiedHarness(
           fun logout(accessToken: String, user: User) {}
         }
       }
-      (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationManager() {
+      ServiceMap[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationManager() {
         init {
           log.info(
             "AuthorizationManager initialized with permissive local auth for desktop mode",
@@ -448,7 +447,6 @@ open class UnifiedHarness(
 
 fun ApiChatModel.findApi(user: User): ApiData? {
   val userSettings =
-    (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
+    ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user)
   return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
 }

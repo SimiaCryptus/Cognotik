@@ -17,9 +17,8 @@ import java.io.File
  * - Root instances own ROOT-scoped services and forward GLOBAL-scoped ones to the parent.
  */
 object CognotikPlatform {
-
-
   val log = org.slf4j.LoggerFactory.getLogger(CognotikPlatform::class.java)
+
 
   val rootDir: File get() = ApplicationServicesConfig.dataStorageRoot
 
@@ -35,5 +34,10 @@ object CognotikPlatform {
     ServiceKey.USER_SETTINGS.defaultFactory = { UserSettingsDB() }
     ServiceKey.AUTHENTICATION.defaultFactory = { AuthenticationDB() }
     ServiceKey.GIFTED_CREDITS.defaultFactory = { GiftedCreditsDB(rootDir.resolve("giftsdb")) }
+    log.info("CognotikPlatform initialized with data storage root: ${rootDir.absolutePath}")
+  }
+
+  fun init() {
+    log.debug("Initializing CognotikPlatform with data storage root: ${rootDir.absolutePath}")
   }
 }

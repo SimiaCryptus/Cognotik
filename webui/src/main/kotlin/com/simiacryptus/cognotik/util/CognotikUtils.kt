@@ -27,8 +27,7 @@ object CognotikUtils {
 
   @JvmStatic
   fun userSettings(): UserSettings {
-    return (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user())
+    return ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user())
   }
 
   @JvmStatic
@@ -90,8 +89,7 @@ object CognotikUtils {
   fun configureEnvironmentalKeys() {
     check(!APIProvider.values().isEmpty()) { "No API providers configured" }
     val userSettingsManager =
-      (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
+      ServiceMap[ServiceKey.USER_SETTINGS]
     val user = user()
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false

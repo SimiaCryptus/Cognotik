@@ -112,8 +112,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
     private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
 
     val metadataStorage by lazy {
-      (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+      ServiceMap[ServiceKey.METADATA_DB]
     }
 
     private fun registerSessionOwner(user: User, session: Session) {

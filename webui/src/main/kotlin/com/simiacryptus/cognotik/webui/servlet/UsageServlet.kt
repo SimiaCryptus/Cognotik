@@ -24,8 +24,7 @@ class UsageServlet : HttpServlet() {
         response.status = HttpServletResponse.SC_OK
         val useJson = isJsonRequested(request)
         val usageManager =
-            (ServiceMap
-                ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+            ServiceMap[ServiceKey.USAGE_DB]
 
         if (request.parameterMap.containsKey("sessionId")) {
             handleSessionUsage(request, response, useJson, usageManager)

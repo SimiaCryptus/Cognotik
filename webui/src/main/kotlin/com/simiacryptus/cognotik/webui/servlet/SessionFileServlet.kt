@@ -48,7 +48,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   open val fsApiTerminalEnabled: Boolean = false
   open val fsApiExecEnabled: Boolean = true
   private val metadataDB by lazy {
-    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+    ServiceMap[ServiceKey.METADATA_DB]
   }
 
   /**
@@ -78,8 +78,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       // a proper FS API error here instead, consistent with the "missing session" case
       // above.
       val session = Session(sessionId)
-      val user = (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(req.getCookie())
+      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(req.getCookie())
       if (!session.isGlobal()) {
         if (user == null) {
           log.debug("FS API request rejected (unauthenticated): ${req.pathInfo}")
@@ -123,8 +122,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   override fun getFsApiRoot(req: HttpServletRequest, resp: HttpServletResponse): File? {
     val sessionId = sessionIdOf(req) ?: return null
     val session = Session(sessionId)
-    val user = (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(req.getCookie())
+    val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(req.getCookie())
     if (user == null && !session.isGlobal()) {
       log.warn("FS API: no user for session ${session.sessionId}")
       return null
@@ -181,8 +179,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       val session = Session(pathSegments.first().toString())
       log.debug("Resolved session: ${session.sessionId}")
       val cookie = request.getCookie()
-      val user = (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(cookie)
+      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.warn("No user found for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
@@ -311,8 +308,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       }
       val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie(AuthenticationInterface.AUTH_COOKIE)
-      val user = (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(cookie)
+      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.warn("listContents: could not find user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         if (!response.isCommitted) {
@@ -362,8 +358,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       }
       val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie()
-      val user = (ServiceMap
-        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(cookie)
+      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.debug("isAuthenticatedForSession: no user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         if (!response.isCommitted) {

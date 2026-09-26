@@ -194,8 +194,7 @@ import com.simiacryptus.cognotik.util.SecureString
         val base = baseUrl?.takeIf { it.isNotBlank() } ?: provider.base.ifBlank { null }
         if (verify) verify(provider, secure, base ?: "")
         val manager =
-          (ServiceMap
-            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
+          ServiceMap[ServiceKey.USER_SETTINGS]
         val settings = manager.getUserSettings(user)
         val apis = settings.apis.filterNot { it.provider == provider }.toMutableList()
         apis.add(
@@ -212,8 +211,7 @@ import com.simiacryptus.cognotik.util.SecureString
 
       private fun remove(user: User, provider: APIProvider): Int {
         val manager =
-          (ServiceMap
-            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
+          ServiceMap[ServiceKey.USER_SETTINGS]
         val settings = manager.getUserSettings(user)
         val remaining = settings.apis.filterNot { it.provider == provider }.toMutableList()
         if (remaining.size == settings.apis.size) {
@@ -290,8 +288,7 @@ import com.simiacryptus.cognotik.util.SecureString
         .sortedBy { it.name.lowercase() }
 
       private fun configured(user: User): Map<APIProvider, ApiData> =
-        (ServiceMap
-          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
+        ServiceMap[ServiceKey.USER_SETTINGS]
           .getUserSettings(user).apis
           .mapNotNull { data -> data.provider?.let { it to data } }
           .toMap()

@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.*
@@ -38,15 +39,16 @@ abstract class ApplicationServer(
   showMenubar: Boolean = true,
 ) : ChatServer(resourceBase, showMenubar) {
   init {
+    CognotikPlatform.init()
     ServiceKey.USER_RESOLVER.factory = { UserProviderImpl() }
     FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
-      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(user = user!!, session = it) }
+      val sessionOwner = request.session()?.let {
+        ServiceMap[ServiceKey.METADATA_DB].getSessionOwner(
+          user = user!!,
+          session = it
+        ) }
       return sessionOwner == null || sessionOwner == user?.id
     }
-  }
-
-  private val metadataDB by lazy {
-    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
   }
 
 
@@ -63,7 +65,7 @@ abstract class ApplicationServer(
   }.toMap()
 
   final override val dataStorage: StorageInterface by lazy {
-    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
+    ServiceMap[ServiceKey.DATA_STORAGE]
   }
   protected open val appInfoServlet by lazy {
     ServletHolder("appInfo", AppInfoServlet { session, user ->
@@ -295,8 +297,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
       log.debug("Authenticated user: {} for request: {}", email, requestPath)
       email
     }
-    val canRead = (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+    val canRead = ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
       ResourceRef.of(applicationClass = applicationClass),
       Principal.of(user = user),
       operationType = OperationType.Read
@@ -334,8 +335,7 @@ class UserProviderImpl : UserProvider {
   override fun authenticate(
     request: HttpServletRequest
   ) = request.getCookie()?.let {
-    (ServiceMap
-      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(it)
+    ServiceMap[ServiceKey.AUTHENTICATION].getUser(it)
   }
 }
 
