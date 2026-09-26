@@ -1,13 +1,15 @@
 package com.simiacryptus.cognotik.webui.session
 
 
-import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
+import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.platform.StorageInterface
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -26,6 +28,7 @@ class SessionTask(
   private val spinner: String = SessionTask.spinner,
   val ui: SocketManager
 ) : ISessionTask {
+  override val user: User = ui.owner
 
   override val placeholder: String get() = "<div message-id=\"$messageID\"></div>"
 
@@ -307,26 +310,26 @@ Stack Trace:
     image: BufferedImage
   ) = add("""<img src="${saveFile("images/${Session.randomId(11)}.png", image.toPng())}" />""")
 
-  //  override
-  fun newSession(session: Session, appname: String): SocketManager {
-    SessionProxyServer.setParentSession(session, ui.sessionId)
-    val linkedManager = ui.createLinkedManager(session)
-    SessionProxyServer.agents[session] = linkedManager
+  override fun linkedTask(
+    label: String,
+    renderFn: (String) -> String,
+  ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
+    val session = Session.newUserID()
+    ApplicationServicesImpl.fileApplicationServices().usageDB.setParentSession(
+      user = user,
+      child = session,
+      parent = ui.sessionId
+    )
+    val linkedManager = ui.createLinkedManager(newSession = session)
+    SessionProxyServer.agents[session.withUser(user = user)] = linkedManager
     ApplicationServer.appInfoMap[session] = AppInfoData(
-      applicationName = appname,
+      applicationName = label,
       inputCnt = 1,
       stickyInput = false,
       loadImages = true,
       showMenubar = false,
     )
-    return linkedManager
-  }
-
-  override fun linkedTask(
-    label: String,
-    renderFn: (String) -> String,
-  ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
-    val newSession = newSession(Session.newUserID(), appname = label)
+    val newSession = linkedManager
     val task = newSession.newTask()
     val linkToSession = task.linkToSession(label)
     val str = renderFn(linkToSession)
@@ -380,7 +383,7 @@ Stack Trace:
 
   override fun newTask(showSpinner: Boolean, root: Boolean): ISessionTask {
     val newTask = ui.newTask(root = root)
-    if(root) add(newTask.placeholder, showSpinner = showSpinner)
+    if (root) add(newTask.placeholder, showSpinner = showSpinner)
     return newTask
   }
 

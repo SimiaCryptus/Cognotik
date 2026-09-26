@@ -1,14 +1,6 @@
 package com.simiacryptus.cognotik.platform
 
-import com.simiacryptus.cognotik.platform.model.Page
-import com.simiacryptus.cognotik.platform.model.PageResult
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.SessionListEntry
-import com.simiacryptus.cognotik.platform.model.SessionMetadata
-import com.simiacryptus.cognotik.platform.model.SessionMetadataPatch
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.ifSet
-import com.simiacryptus.cognotik.platform.model.paginate
+import com.simiacryptus.cognotik.platform.model.*
 import java.time.Instant
 import java.util.*
 
@@ -38,7 +30,7 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @return The session name if set, otherwise returns the session ID as default
    */
-  fun getSessionName(user: User?, session: Session): String
+  fun getSessionName(user: User, session: Session): String
 
   /**
    * Sets or updates the display name for a session.
@@ -47,7 +39,7 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @param name The new name to assign to the session
    */
-  fun setSessionName(user: User?, session: Session, name: String)
+  fun setSessionName(user: User, session: Session, name: String)
 
   /**
    * Retrieves the list of message IDs associated with a session.
@@ -59,7 +51,7 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @return A list of message IDs in the order they were stored, or an empty list if none exist
    */
-  fun getMessageIds(user: User?, session: Session): List<String>
+  fun getMessageIds(user: User, session: Session): List<String>
 
   /**
    * Sets or updates the list of message IDs for a session.
@@ -70,20 +62,20 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @param ids The list of message IDs to store for this session
    */
-  fun setMessageIds(user: User?, session: Session, ids: List<String>)
+  fun setMessageIds(user: User, session: Session, ids: List<String>)
 
   /** `java.time` accessor for the session timestamp. */
   @Suppress("DEPRECATION")
-  fun getSessionTimestamp(user: User?, session: Session): Instant? =
+  fun getSessionTimestamp(user: User, session: Session): Instant? =
     getSessionTimestamp(user, session)
 
   /** `java.time` mutator for the session timestamp. */
   @Suppress("DEPRECATION")
-  fun setSessionTimestamp(user: User?, session: Session, time: Instant)
+  fun setSessionTimestamp(user: User, session: Session, time: Instant)
 
   /** Lists all session IDs associated with [path]. */
   @Suppress("DEPRECATION")
-  fun listSessionsByPath(user: User? = null, path: String): List<String> = listSessionsByPath(path = path)
+  fun listSessionsByPath(user: User, path: String): List<String> = listSessionsByPath(user = user, path = path)
 
   /** Lists all session IDs associated with [user]. */
   @Suppress("DEPRECATION")
@@ -95,23 +87,20 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @param ownerId The owner identifier to associate with the session, or null to clear it
    */
-  fun setSessionOwner(session: Session, user: User?, ownerId: String? = user?.id)
+  fun setSessionOwner(session: Session, user: User, ownerId: String? = user?.id)
 
   /** User-scoped overload, for signature consistency with the rest of the interface. */
-  fun getSessionOwner(user: User?, session: Session): String?
+  fun getSessionOwner(user: User, session: Session): String?
 
   /**
    * Assigns (or clears) the worker currently serving a session.
    *
    * @param ownerId the worker identifier (`ip:port`), or null to clear the assignment
    */
-  fun setSessionWorker(session: Session, user: User? = null, ownerId: String? = user?.id)
+  fun setSessionWorker(session: Session, user: User, ownerId: String? = user?.id)
 
   /** User-scoped overload of [getSessionWorker]. */
-  fun getSessionWorker(user: User?, session: Session): String? = getSessionWorker(session = session, user = user)
-
-  /** User-scoped overload of [setSessionWorker]. */
-  fun setSessionWorker(user: User?, session: Session, workerId: String?) = setSessionWorker(session, user = user, ownerId = workerId)
+  fun getSessionWorker(user: User, session: Session): String? = getSessionWorker(session = session, user = user)
 
   /**
    * Retrieves the application path associated with a session.
@@ -120,7 +109,7 @@ interface SessionMetadataInterface {
    * implementations that persist a path MUST override this, otherwise
    * [SessionMetadata.path] is write-only (the bug reported in REVIEW.md §3.4).
    */
-  fun getSessionPath(user: User?, session: Session): String? = null
+  fun getSessionPath(user: User, session: Session): String? = null
 
   /**
    * Sets or clears the application path associated with a session.
@@ -128,7 +117,7 @@ interface SessionMetadataInterface {
    * Default is a no-op for source compatibility; implementations that support
    * paths MUST override this.
    */
-  fun setSessionPath(user: User?, session: Session, path: String?) {
+  fun setSessionPath(user: User, session: Session, path: String?) {
     // no-op by default
   }
 
@@ -139,7 +128,7 @@ interface SessionMetadataInterface {
    * implementations should override with a real existence check so that callers
    * can distinguish "absent" from "default".
    */
-  fun exists(user: User?, session: Session): Boolean = getSessionTimestamp(user, session) != null
+  fun exists(user: User, session: Session): Boolean = getSessionTimestamp(user, session) != null
 
   /**
    * Deletes all metadata associated with a session.
@@ -147,7 +136,7 @@ interface SessionMetadataInterface {
    * @param user The user associated with the session, or null for anonymous sessions
    * @param session The session object containing the session ID to delete
    */
-  fun deleteSession(user: User?, session: Session)
+  fun deleteSession(user: User, session: Session)
 
   /**
    * Deletes metadata for every session belonging to [user].
@@ -167,14 +156,14 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @return A [SessionMetadata] object containing all known metadata for the session
    */
-  fun getSessionMetadata(user: User?, session: Session): SessionMetadata {
+  fun getSessionMetadata(user: User, session: Session): SessionMetadata {
     return SessionMetadata(
       id = session,
       name = getSessionName(user, session),
       messageIds = getMessageIds(user, session),
       sessionTime = getSessionTimestamp(user, session)?.let { Date.from(it) },
-      ownerId = getSessionOwner(session = session,user=user),
-      workerId = getSessionWorker(session = session,user=user),
+      ownerId = getSessionOwner(session = session, user = user),
+      workerId = getSessionWorker(session = session, user = user),
       path = getSessionPath(user, session),
     )
   }
@@ -185,12 +174,12 @@ interface SessionMetadataInterface {
    * Unlike [setSessionMetadata], "absent" and "set to null" are distinguishable,
    * so fields can be cleared.
    */
-  fun updateSessionMetadata(user: User?, session: Session, patch: SessionMetadataPatch) {
+  fun updateSessionMetadata(user: User, session: Session, patch: SessionMetadataPatch) {
     patch.name.ifSet { setSessionName(user, session, it ?: session.sessionId) }
     patch.messageIds.ifSet { setMessageIds(user, session, it) }
     patch.sessionTime.ifSet { if (it != null) setSessionTimestamp(user, session, it) }
-    patch.ownerId.ifSet { setSessionOwner(session=session, user = user, ownerId = it) }
-    patch.workerId.ifSet { setSessionWorker(session=session, user = user, workerId = it) }
+    patch.ownerId.ifSet { setSessionOwner(session = session, user = user, ownerId = it) }
+    patch.workerId.ifSet { setSessionWorker(session = session, user = user, ownerId = it) }
     patch.path.ifSet { setSessionPath(user, session, it) }
   }
 
@@ -218,8 +207,8 @@ interface SessionMetadataInterface {
    * @param path The path to search for associated sessions
    * @return A list of [SessionMetadata] objects, one per session
    */
-  fun listSessionMetadata(user: User? = null, path: String): List<SessionMetadata> {
-    return listSessionsByPath(path = path).map { sessionId ->
+  fun listSessionMetadata(user: User, path: String): List<SessionMetadata> {
+    return listSessionsByPath(user = user, path = path).map { sessionId ->
       getSessionMetadata(user, Session(sessionId))
     }
   }
@@ -230,7 +219,7 @@ interface SessionMetadataInterface {
    * @return a map keyed by session id; ids with no recorded metadata are omitted,
    *         so callers can distinguish "absent" from "default"
    */
-  fun getSessionMetadataMap(user: User?, sessionIds: Collection<String>): Map<String, SessionMetadata> {
+  fun getSessionMetadataMap(user: User, sessionIds: Collection<String>): Map<String, SessionMetadata> {
     return sessionIds.distinct().mapNotNull { sessionId ->
       val session = Session(sessionId)
       if (!exists(user, session)) null else sessionId to getSessionMetadata(user, session)
@@ -256,7 +245,7 @@ interface SessionMetadataInterface {
    * [listSessionMetadata]; DB-backed implementations should override this
    * to project only the columns actually needed.
    */
-  fun listSessionEntries(user: User? = null, path: String): List<SessionListEntry> {
+  fun listSessionEntries(user: User, path: String): List<SessionListEntry> {
     return listSessionMetadata(user, path).map { it.toEntry() }
   }
 
@@ -265,6 +254,6 @@ interface SessionMetadataInterface {
     listSessionEntries(user).paginate(page)
 
   /** Paged variant of [listSessionEntries]; default pages in memory. */
-  fun listSessionEntries(user: User? = null, path: String, page: Page): PageResult<SessionListEntry> =
-    listSessionEntries(path = path).paginate(page)
+  fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
+    listSessionEntries(user = user, path = path).paginate(page)
 }

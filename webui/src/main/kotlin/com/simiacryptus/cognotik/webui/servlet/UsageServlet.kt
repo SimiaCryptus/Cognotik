@@ -44,7 +44,9 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val session = Session(request.getParameter("sessionId"))
-        val usage = usageManager.getSessionUsageSummary(session = session)
+        val user = UserProviderImpl().authenticate(request)
+            ?: throw RuntimeException("Authentication failed")
+        val usage = usageManager.getSessionUsageSummary(user=user, session = session)
         serve(
             resp = response,
             usage = usage,

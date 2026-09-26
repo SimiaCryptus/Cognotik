@@ -55,7 +55,7 @@ class SessionsServlet : HttpServlet() {
         }
         // Authorize: only the owner (or a user with a metadata entry for the session) can delete.
         val ownerId = try {
-            metadataDB.getSessionOwner(session = session)
+            metadataDB.getSessionOwner(user=user, session = session)
         } catch (e: Exception) {
             log.warn("Failed to fetch owner for session $sessionId", e)
             null
@@ -114,7 +114,7 @@ class SessionsServlet : HttpServlet() {
             emptyList()
         }
         val sessionParents = sessions.mapNotNull { session ->
-            usageDB.getParentSession(child = session)?.sessionId?.let { parent -> session to Session(parent) }
+            usageDB.getParentSession(user=user, child = session)?.sessionId?.let { parent -> session to Session(parent) }
         }.toMap()
         val allMetadata = sessions.mapNotNull { sessionId ->
             try {
@@ -151,7 +151,7 @@ class SessionsServlet : HttpServlet() {
         // Compute usage summaries for visible sessions (includes children via getSessionUsageSummary)
         val sessionUsages: Map<SessionMetadata, Map<String, ModelSchema.Usage>> = visibleMetadata.associateWith {
             try {
-                usageDB.getSessionUsageSummary(session = it.id)
+                usageDB.getSessionUsageSummary(user=user, session = it.id)
             } catch (e: Exception) {
                 log.warn("Failed to load usage for session ${it.id}", e)
                 emptyMap()
@@ -169,7 +169,7 @@ class SessionsServlet : HttpServlet() {
             emptyMap()
         } else {
             try {
-                usageDB.getSessionUsageSummaryBulk(childSessionIds)
+                usageDB.getSessionUsageSummaryBulk(user=user, sessionIds=childSessionIds)
             } catch (e: Exception) {
                 log.warn("Failed to bulk-load child session usage summaries", e)
                 emptyMap()

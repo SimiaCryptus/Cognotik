@@ -346,7 +346,7 @@ open class DocProcessorServlet() : HttpServlet() {
     }
     val session = Session(sessionId)
     val sessionDir = dataStorage.getUserDir(user, session)
-    val sessionOwner = metadataDB.getSessionOwner(session = session)
+    val sessionOwner = metadataDB.getSessionOwner(user=user, session = session)
     when {
       null == sessionOwner -> {
         log.info("Session '$session' not found in metadataDB")

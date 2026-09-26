@@ -246,7 +246,7 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getSessionUsageSummary(user: User?, session: Session): Map<String, ModelSchema.Usage> {
+  override fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage> {
     log.debug("Getting session usage summary for session: {}", session)
     // Fast path: serve from on-heap cache when fresh.
     sessionUsageCache[session.sessionId]?.let { entry ->
@@ -332,8 +332,8 @@ class UsageDB : UsageInterface {
   }
 
   override fun getSessionUsageSummaryBulk(
-    sessions: Collection<Session>,
-    user: User?
+    user: User,
+    sessions: Collection<Session>
   ): Map<Session, Map<String, ModelSchema.Usage>> {
     if (sessions.isEmpty()) return emptyMap()
     log.debug("Bulk session usage summary for {} session(s)", sessions.size)
@@ -459,8 +459,8 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun setParentSession(user: User?, child: Session, parent: Session) {
-    log.debug("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
+  override fun setParentSession(user: User, child: Session, parent: Session) {
+    log.info("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
     transaction(database) {
       // insertIgnore translates to ON CONFLICT DO NOTHING / MERGE depending on dialect.
       SessionParentsTable.insertIgnore {
@@ -474,7 +474,7 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getParentSession(user: User?, child: Session): Session? {
+  override fun getParentSession(user: User, child: Session): Session? {
     log.debug("Getting parent session for child: {}", child.sessionId)
     return transaction(database) {
       val row = SessionParentsTable
@@ -626,7 +626,7 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getSessionUsageRows(session: Session, user: User?): List<UsageInterface.UsageRow> {
+  override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> {
     log.debug("Getting session usage rows for session: {}", session)
     return transaction(database) {
       val allSessionIds = collectSessionIds(session.sessionId)

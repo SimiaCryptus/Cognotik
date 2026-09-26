@@ -44,7 +44,7 @@ abstract class ApplicationServer(
   init {
     FileServlet.userResolver = UserProviderImpl()
     FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
-      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(session = it) }
+      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(user=user!!, session = it) }
       return sessionOwner == null || sessionOwner == user?.id
     }
   }
@@ -111,8 +111,8 @@ abstract class ApplicationServer(
   protected open val webUiServlet by lazy { ServletHolder("ui", WebUiServlet()) }
 
   override fun newSession(user: User, session: Session): SocketManager? {
-    (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
-      ?: SessionProxyServer.agents[session])?.apply { return this; }
+    (SessionProxyServer.chats[session.withUser(user)]?.takeIf { it != this }?.newSession(user, session)
+      ?: SessionProxyServer.agents[session.withUser(user)])?.apply { return this; }
     logger.info(
       "Creating new session: {} for user: {} in application: {}",
       session,

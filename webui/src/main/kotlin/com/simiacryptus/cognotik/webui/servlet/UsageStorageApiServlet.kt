@@ -132,7 +132,7 @@ class UsageStorageApiServlet(
         "sessionSummaryBulk" -> {
           val user = currentUser(request)
           val req = readBody(request, SessionSummaryBulkRequest::class.java)
-          val result = usage.getSessionUsageSummaryBulk(req.sessionIds.map { Session(it) }, user)
+          val result = usage.getSessionUsageSummaryBulk(user, req.sessionIds.map { Session(it) })
             .mapKeys { it.key.sessionId }
           writeJson(response, SessionSummaryBulkResponse(result))
         }

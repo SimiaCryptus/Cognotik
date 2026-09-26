@@ -15,6 +15,9 @@ interface ISessionTask {
   val pool: ImmediateExecutorService
   val dataStorage: StorageInterface
   val sessionId: Session
+
+  val user: User
+
   fun append(
     htmlToAppend: String,
     showSpinner: Boolean = true

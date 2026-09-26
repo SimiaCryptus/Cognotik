@@ -119,10 +119,10 @@ class DataStorage(
     path: String
   ): List<Session> {
     log.debug("Listing sessions for user: ${user?.email}")
-    val globalSessions = listSessions(path)
+    val globalSessions = listSessions(user=user!!,path)
     val userSessions =
       if (user == null) listOf() else metadataStorage.listSessionsByPath(
-        path = path
+        user=user,path = path
       )
     log.debug("Found ${globalSessions.size} global sessions and ${userSessions.size} user sessions for user: ${user?.email}")
     return ((globalSessions.map {
@@ -139,10 +139,6 @@ class DataStorage(
       }
     }).toList()).filterNotNull()
   }
-
-  @Deprecated("Use listSessionsForUser", ReplaceWith("listSessionsForUser(user, path)"))
-  fun listSessions(user: User?, path: String): List<Session> = listSessionsForUser(user, path)
-
 
   override fun <T : Any> setJson(
     user: User?,
@@ -198,14 +194,14 @@ class DataStorage(
     Session.validateSessionId(session)
     log.debug("Deleting session: {}, user: {}", session, user?.email)
     val sessionDir = getSystemDir(user, session)
-    metadataStorage.deleteSession(user, session)
+    metadataStorage.deleteSession(user!!, session)
     sessionDir.deleteRecursively()
   }
 
   override fun deleteSessionIfExists(user: User?, session: Session): Boolean {
     Session.validateSessionId(session)
     val sessionDir = getSystemDir(user, session)
-    if (!sessionDir.exists() && !metadataStorage.exists(user, session)) {
+    if (!sessionDir.exists() && !metadataStorage.exists(user!!, session)) {
       log.debug("Session {} does not exist; nothing to delete", session)
       return false
     }
@@ -215,35 +211,35 @@ class DataStorage(
 
 
   @Deprecated("Use metadataStorage instead")
-  fun listSessions(path: String): List<String> =
-    metadataStorage.listSessionsByPath(path = path)
+  fun listSessions(user: User, path: String): List<String> =
+    metadataStorage.listSessionsByPath(user=user,path = path)
 
   @Deprecated("Use metadataStorage instead")
   fun getSessionName(
     user: User?,
     session: Session
   ): String =
-    metadataStorage.getSessionName(user, session)
+    metadataStorage.getSessionName(user!!, session)
 
   @Deprecated("Use metadataStorage instead")
   fun getMessageIds(
     user: User?,
     session: Session
   ): List<String> =
-    metadataStorage.getMessageIds(user, session)
+    metadataStorage.getMessageIds(user!!, session)
 
   @Deprecated("Use metadataStorage instead")
   fun setMessageIds(
     user: User?,
     session: Session,
     ids: List<String>
-  ) = metadataStorage.setMessageIds(user, session, ids)
+  ) = metadataStorage.setMessageIds(user!!, session, ids)
 
   @Deprecated("Use metadataStorage instead")
   fun getSessionTime(
     user: User?,
     session: Session
-  ): Instant? = metadataStorage.getSessionTimestamp(user, session)
+  ): Instant? = metadataStorage.getSessionTimestamp(user!!, session)
 
   companion object {
     val log = LoggerFactory.getLogger(StorageInterface::class.java)

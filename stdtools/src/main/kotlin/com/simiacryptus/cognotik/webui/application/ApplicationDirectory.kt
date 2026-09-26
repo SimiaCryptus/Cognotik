@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.OWNER_ID
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
@@ -55,8 +56,8 @@ abstract class ApplicationDirectory(
           "bindAddress='$bindAddress', publicName='${publicName ?: "null"}', port=$port"
     )
     require(publicName != "localhost")
-    SessionProxyServer.OWNER_ID = "${this.localName}:$port"
-    log.info("Session ownership id (SessionProxyServer.OWNER_ID) = '${SessionProxyServer.OWNER_ID}'")
+    OWNER_ID = "${this.localName}:$port"
+    log.info("Session ownership id (OWNER_ID) = '$OWNER_ID'")
   }
 
   var domainName: String = ""

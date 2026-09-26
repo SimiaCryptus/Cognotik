@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.toJson
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
@@ -39,7 +40,7 @@ class UsageClient(
     val uri = URI.create("$baseUrl/$action" + if (query.isNotEmpty()) "?$query" else "")
     log.info("GET {} - params={} authHeaderKeys={}", uri, params, auth.keys)
     val builder = HttpRequest.newBuilder(uri).GET()
-    auth.forEach { (k, v) -> builder.header(k, v) }
+    cookieHeader(auth)?.let { builder.header("Cookie", it) }
     val startTime = System.currentTimeMillis()
     val response = try {
       httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString())
@@ -49,7 +50,13 @@ class UsageClient(
     }
     val elapsed = System.currentTimeMillis() - startTime
     if (response.statusCode() in 200..299) {
-      log.debug("GET {} succeeded in {}ms - status={} bodyLength={}", uri, elapsed, response.statusCode(), response.body().length)
+      log.debug(
+        "GET {} succeeded in {}ms - status={} bodyLength={}",
+        uri,
+        elapsed,
+        response.statusCode(),
+        response.body().length
+      )
     } else {
       log.warn("GET {} failed in {}ms - status={} body={}", uri, elapsed, response.statusCode(), response.body())
     }
@@ -58,14 +65,17 @@ class UsageClient(
     if (looksLikeHtml(body)) {
       throw IllegalStateException(
         "GET $uri returned an HTML page instead of JSON (likely an authentication redirect/expired session): " +
-          body.take(200).replace("\n", " ")
+            mapOf(
+              "auth" to auth.mapValues { it?.value?.truncate(5) },
+            ).toJson()
       )
     }
     return body
   }
 
-  private fun post(action: String, body: Any?, auth: Map<String, String?> = emptyMap()
-     ): String {
+  private fun post(
+    action: String, body: Any?, auth: Map<String, String?> = emptyMap()
+  ): String {
     val uri = URI.create("$baseUrl/$action")
     val jsonBody = JsonUtil.toJson(body ?: emptyMap<String, Any>())
     log.info("POST {} - authHeaderKeys={} bodyLength={}", uri, auth.keys, jsonBody.length)
@@ -75,7 +85,7 @@ class UsageClient(
     val builder = HttpRequest.newBuilder(uri)
       .header("Content-Type", "application/json")
       .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-    auth.forEach { (k, v) -> builder.header(k, v) }
+    cookieHeader(auth)?.let { builder.header("Cookie", it) }
     val startTime = System.currentTimeMillis()
     val response = try {
       httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString())
@@ -85,7 +95,13 @@ class UsageClient(
     }
     val elapsed = System.currentTimeMillis() - startTime
     if (response.statusCode() in 200..299) {
-      log.debug("POST {} succeeded in {}ms - status={} bodyLength={}", uri, elapsed, response.statusCode(), response.body().length)
+      log.debug(
+        "POST {} succeeded in {}ms - status={} bodyLength={}",
+        uri,
+        elapsed,
+        response.statusCode(),
+        response.body().length
+      )
     } else {
       log.warn("POST {} failed in {}ms - status={} body={}", uri, elapsed, response.statusCode(), response.body())
     }
@@ -94,14 +110,21 @@ class UsageClient(
     if (looksLikeHtml(responseBody)) {
       throw IllegalStateException(
         "POST $uri returned an HTML page instead of JSON (likely an authentication redirect/expired session): " +
-          responseBody.take(200).replace("\n", " ")
+            responseBody.take(200).replace("\n", " ")
       )
     }
     return responseBody
   }
+
   private fun looksLikeHtml(body: String): Boolean {
     val trimmed = body.trimStart()
     return trimmed.startsWith("<!DOCTYPE", ignoreCase = true) || trimmed.startsWith("<html", ignoreCase = true)
+  }
+
+  private fun cookieHeader(auth: Map<String, String?>): String? {
+    val entries = auth.filterValues { !it.isNullOrEmpty() }
+    if (entries.isEmpty()) return null
+    return entries.entries.joinToString("; ") { (k, v) -> "$k=$v" }
   }
 
   override fun getUserUsageSummary(user: User, from: LocalDate, to: LocalDate): Map<String, ModelSchema.Usage> =
@@ -110,15 +133,19 @@ class UsageClient(
       UsageSummaryResponse::class.java
     ).summary
 
-  override fun getSessionUsageSummary(user: User?, session: Session): Map<String, ModelSchema.Usage> {
+  override fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage> {
     requireNotNull(user) { "user is required" }
+    log.info("Fetching usage summary for session={} user={}", session.sessionId, user.toJson())
     return JsonUtil.fromJson<UsageSummaryResponse>(
       get("sessionSummary", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
       UsageSummaryResponse::class.java
     ).summary
   }
 
-  override fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>, user: User?): Map<Session, Map<String, ModelSchema.Usage>> {
+  override fun getSessionUsageSummaryBulk(
+    user: User,
+    sessionIds: Collection<Session>
+  ): Map<Session, Map<String, ModelSchema.Usage>> {
     requireNotNull(user) { "user is required" }
     val resp = JsonUtil.fromJson<SessionSummaryBulkResponse>(
       post("sessionSummaryBulk", SessionSummaryBulkRequest(sessionIds.map { it.sessionId }), user.getAuthCookies()),
@@ -141,12 +168,13 @@ class UsageClient(
     post("clear", null)
   }
 
-  override fun setParentSession(user: User?, child: Session, parent: Session) {
+  override fun setParentSession(user: User, child: Session, parent: Session) {
+    log.info("Setting parent session: child={}, parent={}, user={}", child.sessionId, parent.sessionId, user)
     requireNotNull(user) { "user is required" }
     post("parentSession", ParentSessionRequest(child.sessionId, parent.sessionId), user.getAuthCookies())
   }
 
-  override fun getParentSession(user: User?, child: Session): Session? {
+  override fun getParentSession(user: User, child: Session): Session? {
     requireNotNull(user) { "user is required" }
     return JsonUtil.fromJson<ParentSessionResponse>(
       get("parentSession", mapOf("child" to child.sessionId), user.getAuthCookies()),
@@ -155,10 +183,16 @@ class UsageClient(
   }
 
   override fun getAvailableBudget(user: User): Double =
-    JsonUtil.fromJson<BudgetResponse>(get("budget", emptyMap(), user.getAuthCookies()), BudgetResponse::class.java).budget
+    JsonUtil.fromJson<BudgetResponse>(
+      get("budget", emptyMap(), user.getAuthCookies()),
+      BudgetResponse::class.java
+    ).budget
 
   override fun creditUser(user: User, amount: Double, comment: String?, metadata: Map<String, String>?): Double =
-    JsonUtil.fromJson<CreditResponse>(post("credit", CreditRequest(amount, comment, metadata), user.getAuthCookies()), CreditResponse::class.java).balance
+    JsonUtil.fromJson<CreditResponse>(
+      post("credit", CreditRequest(amount, comment, metadata), user.getAuthCookies()),
+      CreditResponse::class.java
+    ).balance
 
   override fun getUserDailyUsage(user: User, from: LocalDate, to: LocalDate): List<UsageInterface.DailyUsage> =
     JsonUtil.fromJson<DailyUsageResponse>(
@@ -173,9 +207,12 @@ class UsageClient(
     ).entries
 
   override fun getUserBalance(user: User): Double =
-    JsonUtil.fromJson<BalanceResponse>(get("balance", emptyMap(), user.getAuthCookies()), BalanceResponse::class.java).balance
+    JsonUtil.fromJson<BalanceResponse>(
+      get("balance", emptyMap(), user.getAuthCookies()),
+      BalanceResponse::class.java
+    ).balance
 
-  override fun getSessionUsageRows(session: Session, user: User?): List<UsageInterface.UsageRow> {
+  override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> {
     requireNotNull(user) { "user is required" }
     return JsonUtil.fromJson<SessionRowsResponse>(
       get("sessionRows", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
@@ -187,3 +224,5 @@ class UsageClient(
     private val log = LoggerFactory.getLogger(UsageClient::class.java)
   }
 }
+
+fun String.truncate(i: Int) = if (this.length <= i) this else this.substring(0, i) + "..."

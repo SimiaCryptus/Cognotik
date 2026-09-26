@@ -233,8 +233,8 @@ object ModifyFilesFsAction {
     val label = ctx.req.getParameter("name")?.takeIf { it.isNotBlank() }
       ?: prompt?.lineSequence()?.firstOrNull()?.trim()?.take(60)
       ?: "ModifyFiles @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-    SessionProxyServer.metadataStorage.setSessionName(null, session, label)
-    SessionProxyServer.agents[session] = PatchChatManager(
+    SessionProxyServer.metadataStorage.setSessionName(user=user, session, label)
+    SessionProxyServer.agents[session.withUser(user)] = PatchChatManager(
       session = session,
       model = models.smart.asChatInterface(user),
       fastModel = models.fast.asChatInterface(user),

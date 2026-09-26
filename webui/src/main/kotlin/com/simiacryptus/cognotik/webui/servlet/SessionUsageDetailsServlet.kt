@@ -54,7 +54,7 @@ class SessionUsageDetailsServlet : HttpServlet() {
         }
 
         val rows = try {
-            usageDB.getSessionUsageRows(session)
+            usageDB.getSessionUsageRows(user=user, session=session)
         } catch (e: Exception) {
             log.error("Failed to load usage rows for session {}", sessionId, e)
             emptyList()

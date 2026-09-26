@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.toJson
 import org.slf4j.LoggerFactory
 import java.net.URI
 import java.net.URLEncoder
@@ -40,7 +41,7 @@ class SessionMetadataClient(
     val uri = URI.create("$baseUrl/$action" + if (query.isNotEmpty()) "?$query" else "")
     log.info("GET {} - params={} authHeaderKeys={}", uri, params, auth.keys)
     val builder = HttpRequest.newBuilder(uri).GET()
-    auth.forEach { (k, v) -> builder.header(k, v) }
+    cookieHeader(auth)?.let { builder.header("Cookie", it) }
     val startTime = System.currentTimeMillis()
     val response = try {
       httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString())
@@ -50,7 +51,13 @@ class SessionMetadataClient(
     }
     val elapsed = System.currentTimeMillis() - startTime
     if (response.statusCode() in 200..299) {
-      log.debug("GET {} succeeded in {}ms - status={} bodyLength={}", uri, elapsed, response.statusCode(), response.body().length)
+      log.debug(
+        "GET {} succeeded in {}ms - status={} bodyLength={}",
+        uri,
+        elapsed,
+        response.statusCode(),
+        response.body().length
+      )
     } else {
       log.warn("GET {} failed in {}ms - status={} body={}", uri, elapsed, response.statusCode(), response.body())
     }
@@ -59,7 +66,9 @@ class SessionMetadataClient(
     if (looksLikeHtml(body)) {
       throw IllegalStateException(
         "GET $uri returned an HTML page instead of JSON (likely an authentication redirect/expired session): " +
-          body.take(200).replace("\n", " ")
+            mapOf(
+              "auth" to auth.mapValues { it?.value?.truncate(5) },
+            ).toJson()
       )
     }
     return body
@@ -75,7 +84,7 @@ class SessionMetadataClient(
     val builder = HttpRequest.newBuilder(uri)
       .header("Content-Type", "application/json")
       .POST(HttpRequest.BodyPublishers.ofString(jsonBody))
-    auth.forEach { (k, v) -> builder.header(k, v) }
+    cookieHeader(auth)?.let { builder.header("Cookie", it) }
     val startTime = System.currentTimeMillis()
     val response = try {
       httpClient.send(builder.build(), HttpResponse.BodyHandlers.ofString())
@@ -85,7 +94,13 @@ class SessionMetadataClient(
     }
     val elapsed = System.currentTimeMillis() - startTime
     if (response.statusCode() in 200..299) {
-      log.debug("POST {} succeeded in {}ms - status={} bodyLength={}", uri, elapsed, response.statusCode(), response.body().length)
+      log.debug(
+        "POST {} succeeded in {}ms - status={} bodyLength={}",
+        uri,
+        elapsed,
+        response.statusCode(),
+        response.body().length
+      )
     } else {
       log.warn("POST {} failed in {}ms - status={} body={}", uri, elapsed, response.statusCode(), response.body())
     }
@@ -94,17 +109,24 @@ class SessionMetadataClient(
     if (looksLikeHtml(responseBody)) {
       throw IllegalStateException(
         "POST $uri returned an HTML page instead of JSON (likely an authentication redirect/expired session): " +
-          responseBody.take(200).replace("\n", " ")
+            responseBody.take(200).replace("\n", " ")
       )
     }
     return responseBody
   }
+
+  private fun cookieHeader(auth: Map<String, String?>): String? {
+    val entries = auth.filterValues { !it.isNullOrEmpty() }
+    if (entries.isEmpty()) return null
+    return entries.entries.joinToString("; ") { (k, v) -> "$k=$v" }
+  }
+
   private fun looksLikeHtml(body: String): Boolean {
     val trimmed = body.trimStart()
     return trimmed.startsWith("<!DOCTYPE", ignoreCase = true) || trimmed.startsWith("<html", ignoreCase = true)
   }
 
-  override fun getSessionName(user: User?, session: Session): String =
+  override fun getSessionName(user: User, session: Session): String =
     JsonUtil.fromJson<SessionNameResponse>(
       get(
         "sessionName",
@@ -113,11 +135,11 @@ class SessionMetadataClient(
       ), SessionNameResponse::class.java
     ).name
 
-  override fun setSessionName(user: User?, session: Session, name: String) {
+  override fun setSessionName(user: User, session: Session, name: String) {
     post("setSessionName", SetSessionNameRequest(session.sessionId, name), user?.getAuthCookies() ?: emptyMap())
   }
 
-  override fun getMessageIds(user: User?, session: Session): List<String> =
+  override fun getMessageIds(user: User, session: Session): List<String> =
     JsonUtil.fromJson<MessageIdsResponse>(
       get(
         "messageIds",
@@ -126,17 +148,17 @@ class SessionMetadataClient(
       ), MessageIdsResponse::class.java
     ).ids
 
-  override fun setMessageIds(user: User?, session: Session, ids: List<String>) {
+  override fun setMessageIds(user: User, session: Session, ids: List<String>) {
     post("setMessageIds", SetMessageIdsRequest(session.sessionId, ids), user?.getAuthCookies() ?: emptyMap())
   }
 
-  override fun getSessionTimestamp(user: User?, session: Session): Instant? =
+  override fun getSessionTimestamp(user: User, session: Session): Instant? =
     JsonUtil.fromJson<SessionTimestampResponse>(
       get("sessionTimestamp", mapOf("sessionId" to session.sessionId), user?.getAuthCookies() ?: emptyMap()),
       SessionTimestampResponse::class.java
     ).timestamp?.let { Instant.parse(it) }
 
-  override fun setSessionTimestamp(user: User?, session: Session, time: Instant) {
+  override fun setSessionTimestamp(user: User, session: Session, time: Instant) {
     post(
       "setSessionTimestamp",
       SetSessionTimestampRequest(session.sessionId, time.toString()),
@@ -144,7 +166,7 @@ class SessionMetadataClient(
     )
   }
 
-  override fun listSessionsByPath(user: User?, path: String): List<String> =
+  override fun listSessionsByPath(user: User, path: String): List<String> =
     JsonUtil.fromJson<SessionIdsResponse>(
       get("sessionsByPath", mapOf("path" to path)),
       SessionIdsResponse::class.java
@@ -157,7 +179,7 @@ class SessionMetadataClient(
     ).sessionIds
 
 
-  override fun getSessionOwner(user: User?, session: Session): String? {
+  override fun getSessionOwner(user: User, session: Session): String? {
     requireNotNull(user) { "user is required" }
     return JsonUtil.fromJson<SessionOwnerResponse>(
       get("sessionOwner", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
@@ -165,12 +187,12 @@ class SessionMetadataClient(
     ).ownerId
   }
 
-  override fun setSessionOwner(session: Session, user: User?, ownerId: String?) {
+  override fun setSessionOwner(session: Session, user: User, ownerId: String?) {
     requireNotNull(user) { "user is required" }
     post("setSessionOwner", SetSessionOwnerRequest(session.sessionId, ownerId), user.getAuthCookies())
   }
 
-  override fun getSessionWorker(user: User?, session: Session): String? {
+  override fun getSessionWorker(user: User, session: Session): String? {
     requireNotNull(user) { "user is required" }
     return JsonUtil.fromJson<SessionWorkerResponse>(
       get("sessionWorker", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
@@ -178,12 +200,13 @@ class SessionMetadataClient(
     ).workerId
   }
 
-  override fun setSessionWorker(session: Session, user: User?, ownerId: String?) {
+  override fun setSessionWorker(session: Session, user: User, ownerId: String?) {
+      log.info("setSessionWorker called with sessionId=${session.sessionId}, ownerId=$ownerId, user=${user}", RuntimeException("Stack Trace"))
     requireNotNull(user) { "user is required" }
     post("setSessionWorker", SetSessionWorkerRequest(session.sessionId, ownerId), user.getAuthCookies())
   }
 
-  override fun getSessionPath(user: User?, session: Session): String? =
+  override fun getSessionPath(user: User, session: Session): String? =
     JsonUtil.fromJson<SessionPathResponse>(
       get(
         "sessionPath",
@@ -192,11 +215,11 @@ class SessionMetadataClient(
       ), SessionPathResponse::class.java
     ).path
 
-  override fun setSessionPath(user: User?, session: Session, path: String?) {
+  override fun setSessionPath(user: User, session: Session, path: String?) {
     post("setSessionPath", SetSessionPathRequest(session.sessionId, path), user?.getAuthCookies() ?: emptyMap())
   }
 
-  override fun exists(user: User?, session: Session): Boolean =
+  override fun exists(user: User, session: Session): Boolean =
     JsonUtil.fromJson<ExistsResponse>(
       get(
         "exists",
@@ -205,7 +228,7 @@ class SessionMetadataClient(
       ), ExistsResponse::class.java
     ).exists
 
-  override fun deleteSession(user: User?, session: Session) {
+  override fun deleteSession(user: User, session: Session) {
     post("deleteSession", DeleteSessionRequest(session.sessionId), user?.getAuthCookies() ?: emptyMap())
   }
 
@@ -215,7 +238,7 @@ class SessionMetadataClient(
       DeleteCountResponse::class.java
     ).deleted
 
-  override fun getSessionMetadata(user: User?, session: Session): SessionMetadata =
+  override fun getSessionMetadata(user: User, session: Session): SessionMetadata =
     JsonUtil.fromJson(
       get(
         "sessionMetadata",
@@ -230,13 +253,13 @@ class SessionMetadataClient(
       SessionMetadataListResponse::class.java
     ).items
 
-  override fun listSessionMetadata(user: User?, path: String): List<SessionMetadata> =
+  override fun listSessionMetadata(user: User, path: String): List<SessionMetadata> =
     JsonUtil.fromJson<SessionMetadataListResponse>(
       get("listSessionMetadataByPath", mapOf("path" to path)),
       SessionMetadataListResponse::class.java
     ).items
 
-  override fun getSessionMetadataMap(user: User?, sessionIds: Collection<String>): Map<String, SessionMetadata> =
+  override fun getSessionMetadataMap(user: User, sessionIds: Collection<String>): Map<String, SessionMetadata> =
     JsonUtil.fromJson<SessionMetadataMapResponse>(
       post("sessionMetadataMap", SessionMetadataMapRequest(sessionIds.toList()), user?.getAuthCookies() ?: emptyMap()),
       SessionMetadataMapResponse::class.java
@@ -248,7 +271,7 @@ class SessionMetadataClient(
       SessionListEntryListResponse::class.java
     ).items
 
-  override fun listSessionEntries(user: User?, path: String): List<SessionListEntry> =
+  override fun listSessionEntries(user: User, path: String): List<SessionListEntry> =
     JsonUtil.fromJson<SessionListEntryListResponse>(
       get("listSessionEntriesByPath", mapOf("path" to path)),
       SessionListEntryListResponse::class.java

@@ -6,10 +6,10 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import java.time.LocalDate
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicLong
+import java.time.LocalDate
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Interface for managing and tracking AI model usage across users and sessions.
@@ -44,7 +44,7 @@ interface UsageInterface {
    * @return A map where keys are model names and values are [com.simiacryptus.cognotik.platform.model.ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model used in the session
    */
-  fun getSessionUsageSummary(user: User? = null, session: Session): Map<String, ModelSchema.Usage>
+  fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage>
 
   /**
    * Bulk variant of [getSessionUsageSummary] that fetches usage summaries for
@@ -63,8 +63,11 @@ interface UsageInterface {
    * @param sessionIds The set of session IDs to summarize
    * @return A map from session ID to its per-model usage summary
    */
-  fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>, user: User? = null): Map<Session, Map<String, ModelSchema.Usage>> {
-    return sessionIds.associateWith { getSessionUsageSummary(session = it) }
+  fun getSessionUsageSummaryBulk(
+    user: User,
+    sessionIds: Collection<Session>
+  ): Map<Session, Map<String, ModelSchema.Usage>> {
+    return sessionIds.associateWith { getSessionUsageSummary(user = user, session = it) }
   }
 
   /**
@@ -92,8 +95,8 @@ interface UsageInterface {
    * Use with caution, typically only for testing or system reset scenarios.
    */
   fun clear()
-  fun setParentSession(user: User? = null, child: Session, parent: Session)
-  fun getParentSession(user: User? = null, child: Session): Session?
+  fun setParentSession(user: User, child: Session, parent: Session)
+  fun getParentSession(user: User, child: Session): Session?
 
   /**
    * Returns the available budget (in cost units, e.g. USD) for a user.
@@ -168,7 +171,7 @@ interface UsageInterface {
    * @param session The session whose usage rows are to be retrieved
    * @return A list of [UsageRow] entries ordered by ascending datetime
    */
-  fun getSessionUsageRows(session: Session, user: User? = null): List<UsageRow>
+  fun getSessionUsageRows(session: Session, user: User): List<UsageRow>
 
   /**
    * Represents a single usage row recorded for a session.
@@ -241,7 +244,7 @@ interface UsageInterface {
       tokens.counts.forEach { (type, count) ->
         tokenCounts.computeIfAbsent(type) { AtomicLong() }.addAndGet(count)
       }
-      if(tokens.counts.isEmpty() && tokens.total_tokens > 0) {
+      if (tokens.counts.isEmpty() && tokens.total_tokens > 0) {
         tokenCounts.computeIfAbsent(TokenTypes.Prompt) { AtomicLong() }.addAndGet(tokens.total_tokens)
       }
       this.cost.addAndGet(cost ?: 0.0)

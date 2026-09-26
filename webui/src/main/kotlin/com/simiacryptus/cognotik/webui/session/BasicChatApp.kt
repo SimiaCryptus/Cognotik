@@ -41,8 +41,8 @@ class BasicChatApp(
   override fun <T : Any> initSettings(session: Session, user: User): T = Settings() as T
 
   override fun newSession(user: User, session: Session): SocketManager {
-    (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
-      ?: SessionProxyServer.agents[session])?.apply {
+    (SessionProxyServer.chats[session.withUser(user)]?.takeIf { it != this }?.newSession(user, session)
+      ?: SessionProxyServer.agents[session.withUser(user)])?.apply {
       return this;
     }
     val settings = getSettings(session, user, Settings::class.java) ?: Settings(   )

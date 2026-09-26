@@ -137,8 +137,9 @@ class MetadataStorageApiServlet(
         }
 
         "listSessionMetadataByPath" -> {
+          val user = currentUser(request)
           val path = requireParam(request, "path")
-          writeJson(response, SessionMetadataListResponse(metadata.listSessionMetadata(path = path)))
+          writeJson(response, SessionMetadataListResponse(metadata.listSessionMetadata(user=user, path = path)))
         }
 
         "listSessionEntries" -> {
@@ -147,8 +148,9 @@ class MetadataStorageApiServlet(
         }
 
         "listSessionEntriesByPath" -> {
+          val user = currentUser(request)
           val path = requireParam(request, "path")
-          writeJson(response, SessionListEntryListResponse(metadata.listSessionEntries(path = path)))
+          writeJson(response, SessionListEntryListResponse(metadata.listSessionEntries(user=user, path = path)))
         }
 
         "sessionsForUser" -> {
@@ -157,8 +159,9 @@ class MetadataStorageApiServlet(
         }
 
         "sessionsByPath" -> {
+          val user = currentUser(request)
           val path = requireParam(request, "path")
-          writeJson(response, SessionIdsResponse(metadata.listSessionsByPath(path = path)))
+          writeJson(response, SessionIdsResponse(metadata.listSessionsByPath(user=user, path = path)))
         }
 
         else -> writeError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown action")

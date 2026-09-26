@@ -133,7 +133,7 @@ open class UnifiedHarness(
       override fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
         val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
-        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session = session).toJson())
+        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         super.onComplete(mode, task)
       }
 
@@ -183,7 +183,7 @@ open class UnifiedHarness(
     }
 
     if (!serverless) {
-      SessionProxyServer.chats[session] = planApp
+      SessionProxyServer.chats[session.withUser(user)] = planApp
       ApplicationServer.appInfoMap[session] = AppInfoData(
         applicationName = name,
         inputCnt = 0,
@@ -196,7 +196,7 @@ open class UnifiedHarness(
       planApp.initSettings<Any>(session, user)
       val socketManager = planApp.newSession(user, session)
       if (!serverless) {
-        SessionProxyServer.agents[session] = socketManager
+        SessionProxyServer.agents[session.withUser(user)] = socketManager
         val url = "http://localhost:$port/#$session"
         log.info("Plan available at $url")
 
@@ -248,7 +248,7 @@ open class UnifiedHarness(
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
         val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
-        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session = session).toJson())
+        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         completionLatch.countDown()
         onComplete(result, task)
       }
@@ -270,7 +270,7 @@ open class UnifiedHarness(
             owner = user,
             clazz = this.javaClass
           )
-          SessionProxyServer.agents[session] = socketManager
+          SessionProxyServer.agents[session.withUser(user)] = socketManager
           startSession(
             session,
             user,
@@ -284,8 +284,14 @@ open class UnifiedHarness(
     }
 
     if (!serverless) {
-      parentSession?.apply { SessionProxyServer.setParentSession(child = session, parent = this) }
-      SessionProxyServer.chats[session] = singleTaskApp
+      parentSession?.apply {
+        ApplicationServicesImpl.fileApplicationServices().usageDB.setParentSession(
+          user = user,
+          child = session,
+          parent = this
+        )
+      }
+      SessionProxyServer.chats[session.withUser(user)] = singleTaskApp
       ApplicationServer.appInfoMap[session] = AppInfoData(
         applicationName = name,
         inputCnt = 0,
@@ -298,7 +304,7 @@ open class UnifiedHarness(
     val socketManager = singleTaskApp.newSession(user, session)
 
     if (!serverless) {
-      SessionProxyServer.agents[session] = socketManager
+      SessionProxyServer.agents[session.withUser(user)] = socketManager
       val url = "http://localhost:$port/#$session"
       log.info("Task available at $url")
 
