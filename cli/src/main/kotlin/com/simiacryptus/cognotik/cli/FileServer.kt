@@ -598,7 +598,7 @@ open class FileServer {
     terminalEnabled: Boolean = true,
     execPermissive: Boolean = true,
     shell: List<String> = emptyList(),
-    tasksEnabled: Boolean = false,
+    tasksEnabled: Boolean = true,
     defaultFixCommand: String = "",
     modifyEnabled: Boolean = false,
     lineNumbers: Boolean = false,
@@ -606,7 +606,13 @@ open class FileServer {
     landing: String? = null,
   ): Server {
 
-    val server = server(host, port, baseDir)
+    val server = server(host, port)
+    /* ONE root context: every servlet below must be registered on the instance Jetty serves. */
+    val context = ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
+      this.contextPath = "/"
+      this.resourceBase = baseDir.absolutePath
+    }
+    ensureWebSocketSupport(context)
 
     serverInfo = ServerInfo(
       servedDir = baseDir.absolutePath,
@@ -624,42 +630,18 @@ open class FileServer {
       landingPath = landingPathFor(landing, homeEnabled, uiEnabled),
     )
     registerFileServlets(
-      ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-        this.contextPath = "/"
-        this.resourceBase = baseDir.absolutePath
-      }, baseDir, gitEnabled, readOnly, uiEnabled, terminalEnabled,
+      context, baseDir, gitEnabled, readOnly, uiEnabled, terminalEnabled,
       execPermissive, shell, tasksEnabled && ServerTaskActions.isEnabled, defaultFixCommand,
       modifyEnabled && !readOnly && ModifyFilesActions.isEnabled, lineNumbers
     )
-    registerDocOps(ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-      this.contextPath = "/"
-      this.resourceBase = baseDir.absolutePath
-    })
-    registerAssets(ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-      this.contextPath = "/"
-      this.resourceBase = baseDir.absolutePath
-    }, uiEnabled)
-    if (homeEnabled) registerHome(ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-      this.contextPath = "/"
-      this.resourceBase = baseDir.absolutePath
-    })
-    registerGateway(ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-      this.contextPath = "/"
-      this.resourceBase = baseDir.absolutePath
-    })
+    registerDocOps(context)
+    registerAssets(context, uiEnabled)
+    if (homeEnabled) registerHome(context)
+    registerGateway(context)
     try {
-      configureContext(ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-        this.contextPath = "/"
-        this.resourceBase = baseDir.absolutePath
-      })
+      configureContext(context)
     } catch (e: Exception) {
-      log.error(
-        "configureContext hook failed for '{}'; continuing without customisations",
-        ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-          this.contextPath = "/"
-          this.resourceBase = baseDir.absolutePath
-        }.contextPath, e
-      )
+      log.error("configureContext hook failed for '{}'; continuing without customisations", context.contextPath, e)
     }
 
 
@@ -671,15 +653,7 @@ open class FileServer {
       System.err.println("warning: chat UI disabled: ${e.message ?: e.javaClass.simpleName}")
       null
     }
-    server.handler = if (sessionContext != null) ContextHandlerCollection(
-      sessionContext,
-      ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-        this.contextPath = "/"
-        this.resourceBase = baseDir.absolutePath
-      }) else ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-      this.contextPath = "/"
-      this.resourceBase = baseDir.absolutePath
-    }
+    server.handler = if (sessionContext != null) ContextHandlerCollection(sessionContext, context) else context
     server.stopAtShutdown = true
     log.debug("Starting server: dir={}, host={}, port={}, info={}", baseDir, host, port, serverInfo)
     val startMs = System.currentTimeMillis()
@@ -705,17 +679,13 @@ open class FileServer {
     return server
   }
 
-  private fun server(host: String, port: Int, baseDir: File): Server {
+  private fun server(host: String, port: Int): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
       this.host = host
       this.port = port
     }
     server.addConnector(connector)
-    ensureWebSocketSupport(ServletContextHandler(ServletContextHandler.NO_SESSIONS).apply {
-      this.contextPath = "/"
-      this.resourceBase = baseDir.absolutePath
-    })
     return server
   }
 
