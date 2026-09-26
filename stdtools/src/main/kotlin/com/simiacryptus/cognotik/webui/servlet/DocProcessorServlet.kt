@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
@@ -195,7 +196,7 @@ open class DocProcessorServlet() : HttpServlet() {
         writeError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameter: doc")
         return
       }
-      val user = UserProviderImpl().authenticate(request)
+      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
       require(null != user.tokenMetadata().firstOrNull()?.token) {
         "Missing authentication cookie for ${user.toJson()}"

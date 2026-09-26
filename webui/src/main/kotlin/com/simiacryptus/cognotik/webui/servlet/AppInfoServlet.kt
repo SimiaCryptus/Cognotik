@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -11,7 +13,7 @@ class AppInfoServlet<T>(val info: (String?, User) -> T) : HttpServlet() {
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     val session = request.getParameter("session")
     val user =
-      UserProviderImpl().authenticate(request)
+      ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     response.contentType = "text/json"
     response.status = HttpServletResponse.SC_OK

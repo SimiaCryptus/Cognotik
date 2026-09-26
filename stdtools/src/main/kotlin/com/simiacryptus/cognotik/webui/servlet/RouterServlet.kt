@@ -6,6 +6,8 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.fileserver.handler.FileAccessControl
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -46,7 +48,7 @@ class RouterServlet(
         request,
         response,
         Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: ""),
-        UserProviderImpl().authenticate(request) ?: run {
+        ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request) ?: run {
           response.sendError(
             HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
           )
@@ -61,7 +63,7 @@ class RouterServlet(
     when {
       request.pathInfo?.startsWith("/share/") == true -> {
         val session = Session(request.pathInfo.removePrefix("/share/").split('/').firstOrNull() ?: "")
-        val user = UserProviderImpl().authenticate(request) ?: run {
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request) ?: run {
           response.sendError(
             HttpServletResponse.SC_UNAUTHORIZED, "Authentication required to share session"
           )

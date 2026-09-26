@@ -48,7 +48,7 @@ class SessionNameServlet(
         return
       }
       val session = Session(sessionId)
-      val user = UserProviderImpl().authenticate(request)
+      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
       if (user == null) {
         logger.warn("Authentication failed / redirect issued for sessionName GET on session {}", sessionId)
         return
@@ -93,7 +93,7 @@ class SessionNameServlet(
         return
       }
       val session = Session(sessionId)
-      val user = UserProviderImpl().authenticate(request)
+      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
       if (user == null) {
         logger.warn("Authentication failed / redirect issued for sessionName POST on session {}", sessionId)
         return

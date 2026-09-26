@@ -54,7 +54,7 @@ class MetadataStorageApiServlet(
 ) : HttpServlet() {
 
   private fun currentUser(request: HttpServletRequest): User =
-    UserProviderImpl().authenticate(request) ?: throw IllegalStateException("Authentication failed")
+    ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request) ?: throw IllegalStateException("Authentication failed")
 
   private fun action(request: HttpServletRequest): String =
     (request.pathInfo ?: request.servletPath)

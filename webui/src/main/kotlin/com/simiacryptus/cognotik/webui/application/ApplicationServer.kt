@@ -276,7 +276,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
     val requestPath = (request as HttpServletRequest).requestURI
     val servletPath = request.servletPath
     log.debug("Processing request: {}", requestPath)
-    val user = UserProviderImpl().authenticate(request)
+    val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
     /*
      * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
      * redirecting its module/CSS requests to the login page would break the page load, while

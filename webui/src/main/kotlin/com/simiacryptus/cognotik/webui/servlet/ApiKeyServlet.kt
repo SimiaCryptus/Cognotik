@@ -38,7 +38,7 @@ class ApiKeyServlet : HttpServlet() {
     ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
   }
   private val authenticationManager: AuthenticationInterface by lazy { services[ServiceKey.AUTHENTICATION] }
-  private val userProvider by lazy { UserProviderImpl() }
+  private val userProvider by lazy { ServiceMap[ServiceKey.USER_RESOLVER] }
   private val mapper = ObjectMapper()
   private val random = SecureRandom()
 

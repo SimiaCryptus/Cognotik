@@ -124,7 +124,7 @@ class PluginManagerServlet(
       request.queryString
     )
     val user =
-      UserProviderImpl().authenticate(request)
+      ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user: {}", user)
     if (!ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
@@ -213,7 +213,7 @@ class PluginManagerServlet(
       request.contentType
     )
     val user =
-      UserProviderImpl().authenticate(request)
+      ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user for POST: {}", user)
     if (!ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(

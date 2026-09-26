@@ -218,7 +218,7 @@ class GiftedCreditsServlet : HttpServlet() {
         try {
             response.status = HttpServletResponse.SC_OK
             val user = try {
-              UserProviderImpl().authenticate(request)
+              ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
             } catch (e: Exception) {
                 log.warn("Authentication error during GET from {}: {}", remoteAddr, e.message, e)
                 null
@@ -1090,7 +1090,7 @@ class GiftedCreditsServlet : HttpServlet() {
         log.debug("Handling POST request from {} for {} action={}", remoteAddr, requestUri, action)
 
         val user = try {
-          UserProviderImpl().authenticate(request)
+          ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
         } catch (e: Exception) {
             log.warn("Authentication error during POST from {}: {}", remoteAddr, e.message, e)
             if (!response.isCommitted) {

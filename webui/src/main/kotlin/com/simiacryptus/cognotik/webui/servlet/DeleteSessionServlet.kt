@@ -53,7 +53,7 @@ class DeleteSessionServlet(
       response.writer.write("Session ID is required")
     } else {
       val session = Session(request.getParameter("sessionId"))
-      val user = UserProviderImpl().authenticate(request)
+      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
       if (user == null) {
         throw RuntimeException("User must be authenticated to delete sessions")
       }

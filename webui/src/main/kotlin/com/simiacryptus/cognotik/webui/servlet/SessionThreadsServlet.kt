@@ -15,7 +15,7 @@ package com.simiacryptus.cognotik.webui.servlet
             response.status = HttpServletResponse.SC_OK
             if (request.parameterMap.containsKey("sessionId")) {
                 val session = Session(request.getParameter("sessionId"))
-                val user = UserProviderImpl().authenticate(request)
+                val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
                   ?: throw IllegalStateException("Authentication failed")
                 val pool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user)
     

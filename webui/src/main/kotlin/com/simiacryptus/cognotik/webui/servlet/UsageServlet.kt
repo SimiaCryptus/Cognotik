@@ -46,7 +46,7 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val session = Session(request.getParameter("sessionId"))
-        val user = UserProviderImpl().authenticate(request)
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
             ?: throw RuntimeException("Authentication failed")
         val usage = usageManager.getSessionUsageSummary(user=user, session = session)
         serve(
@@ -64,7 +64,7 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val userinfo =
-          UserProviderImpl().authenticate(request)
+          ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
             ?: throw RuntimeException("Authentication failed")
         val (from, to) = parseDateRange(request)
 

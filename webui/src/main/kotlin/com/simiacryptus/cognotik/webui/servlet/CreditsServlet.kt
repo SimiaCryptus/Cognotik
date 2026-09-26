@@ -54,7 +54,7 @@ open class CreditsServlet(
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req)
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
           ?: throw RuntimeException("User must be authenticated to purchase credits")
         if (authorizedProviders(user).isEmpty()) {
             resp.status = HttpServletResponse.SC_FORBIDDEN
@@ -73,7 +73,7 @@ open class CreditsServlet(
     }
 
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req)
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
           ?: throw RuntimeException("User must be authenticated to purchase credits")
         if (authorizedProviders(user).isEmpty()) {
             resp.status = HttpServletResponse.SC_FORBIDDEN

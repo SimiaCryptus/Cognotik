@@ -38,7 +38,7 @@ class SessionUsageDetailsServlet : HttpServlet() {
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req)
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
           ?: throw RuntimeException("User must be authenticated to view session usage details")
 
         val sessionId = req.getParameter("session")?.trim().orEmpty()

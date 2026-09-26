@@ -23,7 +23,7 @@ class SessionsServlet : HttpServlet() {
         ServiceMap[ServiceKey.USAGE_DB]
     }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req)
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
           ?: throw RuntimeException("User must be authenticated")
         val action = req.getParameter("action")?.lowercase()
         when (action) {
@@ -37,7 +37,7 @@ class SessionsServlet : HttpServlet() {
     }
 
     override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req)
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
           ?: throw RuntimeException("User must be authenticated")
         handleDelete(req, resp, user)
     }
@@ -110,7 +110,7 @@ class SessionsServlet : HttpServlet() {
 
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req)
+        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
           ?: throw RuntimeException("User must be authenticated to list sessions")
         val sessions = try {
             metadataDB.listSessionsForUser(user).map { Session(it) }
