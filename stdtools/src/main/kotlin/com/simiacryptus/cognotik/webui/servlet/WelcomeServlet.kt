@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -84,24 +84,29 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
           UserProviderImpl().authenticate(request)
             ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
-          val isAuthorized = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          val isAuthorized = (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Read
           )
             isAuthorized
         }.map {
-          val canRead = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          val canRead = (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Read
           )
-          val canWrite = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          val canWrite = (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Write
           )
-          val canWritePublic = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          val canWritePublic =
+            (ServiceMap.services
+              ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Public

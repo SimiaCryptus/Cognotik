@@ -3,12 +3,12 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -51,7 +51,7 @@ class ChatApiProxyServlet(
   private val workPool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
   private val scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2))
   private val fileApplicationServices =
-    CognotikPlatform.services
+    ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
   private val usageManager = fileApplicationServices[ServiceKey.USAGE_DB]
 
   /**

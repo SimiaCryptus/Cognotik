@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.util.jsonCast
@@ -22,7 +22,8 @@ class UserSettingsServlet : HttpServlet() {
         ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
-        CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user)
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
       val visibleSettings = UserSettings(
         apis = settings.apis.map { apiData ->
           ApiData(
@@ -94,7 +95,8 @@ class UserSettingsServlet : HttpServlet() {
     val data = request.getParameter("settings") ?: request.reader.use { it.readText() }.ifBlank { null }
     val settings = data?.let { JsonUtil.fromJson<UserSettings>(it, UserSettings::class.java) } ?: UserSettings()
     val userSettingsManager =
-      CognotikPlatform.services[ServiceKey.USER_SETTINGS]
+      (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
     val prevSettings =
       userSettingsManager.getUserSettings(user)
     val reconstructedApis = settings.apis.mapIndexed { index, apiData ->

@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
     
-    import com.simiacryptus.cognotik.platform.CognotikPlatform
     import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.platform.ThreadPoolManager
     import com.simiacryptus.cognotik.platform.ServiceKey
+    import com.simiacryptus.cognotik.platform.ServiceMap
     import com.simiacryptus.cognotik.webui.application.UserProviderImpl
     import jakarta.servlet.http.HttpServlet
     import jakarta.servlet.http.HttpServletRequest
@@ -17,7 +17,8 @@ package com.simiacryptus.cognotik.webui.servlet
                 val session = Session(request.getParameter("sessionId"))
                 val user = UserProviderImpl().authenticate(request)
                   ?: throw IllegalStateException("Authentication failed")
-                val pool = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user)
+                val pool = (ServiceMap.services
+                  ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user)
     
     
                 response.writer.write(

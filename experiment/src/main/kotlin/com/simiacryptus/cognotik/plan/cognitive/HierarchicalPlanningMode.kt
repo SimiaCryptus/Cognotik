@@ -9,7 +9,6 @@ import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.TabbedDisplay
@@ -17,6 +16,7 @@ import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -123,7 +123,9 @@ open class HierarchicalPlanningMode(
       tabs["Session Log"] = sessionLog.toString().renderMarkdown()
     }
 
-    val scheduledExecutorService = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
+    val scheduledExecutorService =
+      (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
       session = session,
       user = user
     )

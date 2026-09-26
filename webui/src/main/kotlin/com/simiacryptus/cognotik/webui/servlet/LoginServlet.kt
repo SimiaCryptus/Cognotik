@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.Companion.AUTH_COOKIE
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -734,7 +734,7 @@ class LoginServlet : HttpServlet() {
         //provider = methodName
       )
       val fileServices = try {
-        CognotikPlatform.services
+        ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
       } catch (e: Exception) {
         log.error("Failed to get fileApplicationServices for login: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -763,7 +763,8 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, inputHash)
       try {
-        CognotikPlatform.services[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register user with authentication manager: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -811,7 +812,8 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (token.isNullOrBlank()) return false
       val user = try {
-        CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(token)
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(token)
       } catch (e: Exception) {
         log.debug("Error checking existing authentication", e)
         null
@@ -850,12 +852,14 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (!token.isNullOrBlank()) {
         try {
-          val user = CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(token)
+          val user = (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(token)
           if (user == null) {
             log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
           } else {
             try {
-              CognotikPlatform.services[ServiceKey.AUTHENTICATION].logoutIfMatching(token, user)
+              (ServiceMap.services
+                ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].logoutIfMatching(token, user)
               log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
             } catch (e: Exception) {
               log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)
@@ -935,7 +939,7 @@ class LoginServlet : HttpServlet() {
         name = username,
       )
       val fileServices = try {
-        CognotikPlatform.services
+        ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
       } catch (e: Exception) {
         log.error("Failed to get fileApplicationServices for registration: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -999,7 +1003,8 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, hashPassword(password))
       try {
-        CognotikPlatform.services[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register newly-registered user with authentication manager: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)

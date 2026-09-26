@@ -13,13 +13,13 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import java.io.File
 import java.util.Locale.getDefault
 import kotlin.io.path.Path
@@ -214,7 +214,8 @@ class OrchestrationConfig(
 }
 
 fun String.instance(user: User): ApiChatModel? {
-  val userSettings = CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user)
+  val userSettings = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
   val chatModel = userSettings.apis
     .filter { it.provider != null && it.key != null }
     .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl ?: it.provider?.base!!) }

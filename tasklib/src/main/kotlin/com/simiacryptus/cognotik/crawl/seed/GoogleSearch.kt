@@ -5,9 +5,9 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.models.ServiceProviders.Google
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -34,7 +34,8 @@ class GoogleSearch : SeedMethodFactory {
       val searchLimit = resultCount // Reduced from 20 to be more conservative
       SeedMethod.log.debug("Fetching user settings for Google Search API")
       val userSettings =
-        CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(
         user
       )
       val key = userSettings
@@ -126,7 +127,8 @@ class GoogleSearch : SeedMethodFactory {
     override fun isEnabled(): Boolean {
       return user?.let {
         val userSettings =
-          CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(it)
+          (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(it)
         userSettings.apis.any { api -> api.provider == Google && api.key?.decrypt?.isNotBlank() == true } &&
             Google.base?.isNotBlank() == true
       } ?: false

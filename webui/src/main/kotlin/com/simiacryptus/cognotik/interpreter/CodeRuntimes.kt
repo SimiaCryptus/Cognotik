@@ -115,7 +115,12 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "cmd",
-          commandResolver = { listOf("cmd", "/c").map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
+          commandResolver = {
+            listOf(
+              "cmd",
+              "/c"
+            ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
+          }
         )
       }
       registerConstructor(PythonRuntime) { defs ->
@@ -131,9 +136,12 @@ class CodeRuntimes(
             }
             listOf(
               string.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-                ?: throw IllegalArgumentException("Executable '${string}' not found relative to root '${
-                  CognotikPlatform.services
-                    .rootDir}' or on system PATH")
+                ?: throw IllegalArgumentException(
+                  "Executable '${string}' not found relative to root '${
+                    CognotikPlatform
+                      .rootDir
+                  }' or on system PATH"
+                )
             )
           }
         )
@@ -144,12 +152,16 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "javascript",
-          commandResolver = { listOf(
-            "node".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"node"}' not found relative to root '${
-                CognotikPlatform.services
-                  .rootDir}' or on system PATH")
-          ) }
+          commandResolver = {
+            listOf(
+              "node".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException(
+                  "Executable '${"node"}' not found relative to root '${
+                    CognotikPlatform.rootDir
+                  }' or on system PATH"
+                )
+            )
+          }
         )
       }
       registerConstructor(RubyRuntime) { defs ->
@@ -158,12 +170,16 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "ruby",
-          commandResolver = { listOf(
-            "ruby".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"ruby"}' not found relative to root '${
-                CognotikPlatform.services
-                  .rootDir}' or on system PATH")
-          ) }
+          commandResolver = {
+            listOf(
+              "ruby".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException(
+                  "Executable '${"ruby"}' not found relative to root '${
+                    CognotikPlatform.rootDir
+                  }' or on system PATH"
+                )
+            )
+          }
         )
       }
       registerConstructor(PerlRuntime) { defs ->
@@ -172,12 +188,16 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "perl",
-          commandResolver = { listOf(
-            "perl".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"perl"}' not found relative to root '${
-                CognotikPlatform.services
-                  .rootDir}' or on system PATH")
-          ) }
+          commandResolver = {
+            listOf(
+              "perl".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException(
+                  "Executable '${"perl"}' not found relative to root '${
+                    CognotikPlatform.rootDir
+                  }' or on system PATH"
+                )
+            )
+          }
         )
       }
       registerConstructor(RRuntime) { defs ->
@@ -186,12 +206,16 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "r",
-          commandResolver = { listOf(
-            "Rscript".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"Rscript"}' not found relative to root '${
-                CognotikPlatform.services
-                  .rootDir}' or on system PATH")
-          ) }
+          commandResolver = {
+            listOf(
+              "Rscript".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException(
+                  "Executable '${"Rscript"}' not found relative to root '${
+                    CognotikPlatform.rootDir
+                  }' or on system PATH"
+                )
+            )
+          }
         )
       }
       registerConstructor(PhpRuntime) { defs ->
@@ -200,12 +224,16 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "php",
-          commandResolver = { listOf(
-            "php".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"php"}' not found relative to root '${
-                CognotikPlatform.services
-                  .rootDir}' or on system PATH")
-          ) }
+          commandResolver = {
+            listOf(
+              "php".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException(
+                  "Executable '${"php"}' not found relative to root '${
+                    CognotikPlatform.rootDir
+                  }' or on system PATH"
+                )
+            )
+          }
         )
       }
       registerConstructor(LuaRuntime) { defs ->
@@ -214,12 +242,16 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "lua",
-          commandResolver = { listOf(
-            "lua".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"lua"}' not found relative to root '${
-                CognotikPlatform.services
-                  .rootDir}' or on system PATH")
-          ) }
+          commandResolver = {
+            listOf(
+              "lua".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException(
+                  "Executable '${"lua"}' not found relative to root '${
+                    CognotikPlatform.rootDir
+                  }' or on system PATH"
+                )
+            )
+          }
         )
       }
       registerConstructor(GoRuntime) { defs ->
@@ -228,7 +260,12 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "go",
-          commandResolver = { listOf("go", "run").map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
+          commandResolver = {
+            listOf(
+              "go",
+              "run"
+            ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
+          }
         )
       }
       registerConstructor(RustRuntime) { defs ->
@@ -237,9 +274,11 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "rust",
-          commandResolver = { listOf(
-            "rust-script"
-          ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
+          commandResolver = {
+            listOf(
+              "rust-script"
+            ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
+          }
         )
       }
       registerConstructor(ScalaRuntime) { defs ->
@@ -248,12 +287,16 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "scala",
-          commandResolver = { listOf(
-            "scala".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-              ?: throw IllegalArgumentException("Executable '${"scala"}' not found relative to root '${
-                CognotikPlatform.services
-                  .rootDir}' or on system PATH")
-          ) }
+          commandResolver = {
+            listOf(
+              "scala".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+                ?: throw IllegalArgumentException(
+                  "Executable '${"scala"}' not found relative to root '${
+                    CognotikPlatform.rootDir
+                  }' or on system PATH"
+                )
+            )
+          }
         )
       }
     }

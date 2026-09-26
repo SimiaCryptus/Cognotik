@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.OWNER_ID
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
@@ -126,7 +127,7 @@ abstract class ApplicationDirectory(
 
   open val creditsServlet: CreditsServlet =
     CreditsServlet(NoOpPaymentProvider(
-      CognotikPlatform.services[ServiceKey.USAGE_DB]
+      (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     ))
       .also { log.debug("Initialized CreditsServlet") }
 

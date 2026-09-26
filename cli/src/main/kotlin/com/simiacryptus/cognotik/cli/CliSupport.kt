@@ -11,9 +11,9 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.fileserver.FileServlet
-import com.simiacryptus.cognotik.platform.CognotikPlatform
-import com.simiacryptus.cognotik.platform.UserProvider
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
@@ -42,10 +42,12 @@ object CliSupport {
   var defaultUser: User? = User(email = email)
 
   init {
-    FileServlet.userResolver = object : UserProvider {
-      override fun authenticate(
-        request: HttpServletRequest
-      ) = defaultUser
+    ServiceKey.USER_RESOLVER.factory = {
+      object : UserProvider {
+        override fun authenticate(
+          request: HttpServletRequest
+        ) = defaultUser
+      }
     }
   }
   val log = LoggerFactory.getLogger(CliSupport::class.java)
@@ -59,7 +61,8 @@ object CliSupport {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
+      (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }

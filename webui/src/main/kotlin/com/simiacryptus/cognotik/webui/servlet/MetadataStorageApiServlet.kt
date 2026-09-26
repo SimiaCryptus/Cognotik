@@ -27,6 +27,7 @@ import com.simiacryptus.cognotik.platform.client.StatusResponse
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -50,7 +51,8 @@ import java.time.Instant
  * name differs in this codebase.
  */
 class MetadataStorageApiServlet(
-  private val metadata: SessionMetadataInterface = CognotikPlatform.services[ServiceKey.METADATA_DB]
+  private val metadata: SessionMetadataInterface = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
 ) : HttpServlet() {
 
   private fun currentUser(request: HttpServletRequest): User =

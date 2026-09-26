@@ -2,11 +2,11 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -17,10 +17,11 @@ import java.util.*
 
 class SessionsServlet : HttpServlet() {
     val metadataDB by lazy {
-        CognotikPlatform.services[ServiceKey.METADATA_DB]
+        (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
     }
     val usageDB by lazy {
-        CognotikPlatform.services[ServiceKey.USAGE_DB]
+        (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = UserProviderImpl().authenticate(req)
@@ -80,7 +81,8 @@ class SessionsServlet : HttpServlet() {
             return
         }
         try {
-            CognotikPlatform.services[ServiceKey.DATA_STORAGE].deleteSession(user, session)
+            (ServiceMap.services
+                ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE].deleteSession(user, session)
             log.info("User ${user.email} deleted session $sessionId")
             resp.status = HttpServletResponse.SC_OK
             resp.contentType = "application/json"

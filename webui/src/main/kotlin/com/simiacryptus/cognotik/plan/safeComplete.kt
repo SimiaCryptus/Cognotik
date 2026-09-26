@@ -1,6 +1,5 @@
 package com.simiacryptus.cognotik.plan
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
@@ -8,6 +7,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import org.slf4j.Logger
 
 /**
@@ -44,7 +44,8 @@ fun ISessionTask.safeComplete(message: String, log: Logger) {
 
 fun ChatModel.toApiChatModel(user: User): ApiChatModel {
   val apis =
-    CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user).apis
+    (ServiceMap.services
+      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user).apis
   return ApiChatModel(
     model = this, provider = ApiData(
       key = apis.find { it.provider == this.provider }?.key

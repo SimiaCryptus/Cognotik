@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.agents.ParsedAgent
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.platform.model.ModelSchema
@@ -11,6 +10,7 @@ import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toContentList
 import org.slf4j.LoggerFactory
@@ -31,7 +31,8 @@ open class SmartChatSocketManager(
   override val systemPrompt: String,
   temperature: Double = 0.3,
   applicationClass: Class<out ChatServer>,
-  storage: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
+  storage: StorageInterface = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   override val fastTopicParsing: Boolean = true,
   retriable: Boolean = true,
   budget: Double,

@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import java.util.concurrent.ConcurrentHashMap
@@ -54,7 +55,8 @@ object ModelSelection {
   private val cache = ConcurrentHashMap<String, Map<String, ChatModel>>()
 
   private fun settingsManager() =
-    CognotikPlatform.services[ServiceKey.USER_SETTINGS]
+    (ServiceMap.services
+      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
 
   /**
     * Publishes the request-scoped user resolver. Hosts (CLI, embedding servers) call

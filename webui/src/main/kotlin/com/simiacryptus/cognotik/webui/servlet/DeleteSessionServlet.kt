@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -58,7 +58,8 @@ class DeleteSessionServlet(
         throw RuntimeException("User must be authenticated to delete sessions")
       }
       require(
-        CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
           ResourceRef.of(javaClass),
           Principal.of(user),
           OperationType.Delete
@@ -66,7 +67,8 @@ class DeleteSessionServlet(
       { "User $user is not authorized to delete sessions" }
       if (session.isGlobal()) {
         require(
-          CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(javaClass),
             Principal.of(user),
             OperationType.Public

@@ -6,12 +6,12 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -27,7 +27,8 @@ object CognotikUtils {
 
   @JvmStatic
   fun userSettings(): UserSettings {
-    return CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user())
+    return (ServiceMap.services
+      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user())
   }
 
   @JvmStatic
@@ -89,7 +90,8 @@ object CognotikUtils {
   fun configureEnvironmentalKeys() {
     check(!APIProvider.values().isEmpty()) { "No API providers configured" }
     val userSettingsManager =
-      CognotikPlatform.services[ServiceKey.USER_SETTINGS]
+      (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
     val user = user()
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false

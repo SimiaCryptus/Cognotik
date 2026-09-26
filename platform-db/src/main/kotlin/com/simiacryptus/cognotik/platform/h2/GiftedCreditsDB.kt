@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.platform.h2
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -134,7 +134,7 @@ class GiftedCreditsDB(
 
     // Check creator has sufficient credit balance
     val usageManager =
-      CognotikPlatform.services[ServiceKey.USAGE_DB]
+      (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     val creatorBalance = try {
       usageManager.getUserBalance(creator)
     } catch (e: Exception) {
@@ -265,7 +265,9 @@ class GiftedCreditsDB(
         val creator = gift.createdBy
         if (creator != null) {
           try {
-            val creatorBalance = CognotikPlatform.services[ServiceKey.USAGE_DB].getUserBalance(creator)
+            val creatorBalance =
+              (ServiceMap.services
+                ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].getUserBalance(creator)
             log.debug(
               "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
               creator.id, creatorBalance, gift.amountGranted

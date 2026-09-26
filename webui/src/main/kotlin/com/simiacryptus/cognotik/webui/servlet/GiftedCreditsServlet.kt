@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -370,7 +370,8 @@ class GiftedCreditsServlet : HttpServlet() {
             // Gift creation is now available to all authenticated users.
             // Show current balance so users know what they can afford.
             val currentBalance = try {
-                CognotikPlatform.services[ServiceKey.USAGE_DB].getUserBalance(user)
+                (ServiceMap.services
+                    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].getUserBalance(user)
             } catch (e: Exception) {
                 log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
                 0.0
@@ -1452,7 +1453,7 @@ class GiftedCreditsServlet : HttpServlet() {
             "Gift claimed successfully by user={} giftId={} amountGranted={} theme={}",
             userinfo, giftId, gift.amountGranted, theme.id
         )
-        CognotikPlatform.services[ServiceKey.USAGE_DB].creditUser(
+        (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].creditUser(
             user = userinfo,
             amount = gift.amountGranted,
             comment = "Claimed gift $giftId",

@@ -20,50 +20,15 @@ import java.util.concurrent.ConcurrentHashMap
  * - Root instances own ROOT-scoped services and forward GLOBAL-scoped ones to the parent.
  */
 class CognotikPlatform private constructor(
-  private val root: File?,
-  private val parent: ServiceMap?,
-) : ServiceMap {
+  parent: ServiceMap?,
+) : ServiceMap(parent) {
 
-  constructor() : this(null, null)
-
-  override val rootDir: File get() = root ?: ApplicationServicesConfig.dataStorageRoot
-
-  private val instances = ConcurrentHashMap<ServiceKey<*>, Any>()
-
-  private fun owns(key: ServiceKey<*>) = (key.scope == ServiceKey.Scope.GLOBAL) == (parent == null)
-
-  private fun delegateFor(key: ServiceKey<*>): ServiceMap =
-    parent ?: throw IllegalStateException("Cannot resolve root-scoped service '${key.name}': no parent available")
-
-  @Suppress("UNCHECKED_CAST")
-  override fun <T : Any> get(key: ServiceKey<T>): T {
-    if (!owns(key)) return delegateFor(key)[key]
-    (instances[key] as T?)?.let { return it }
-    // synchronized (re-entrant) rather than computeIfAbsent: factories may resolve other services
-    return synchronized(instances) {
-      (instances[key] as T?) ?: key.create(this).also {
-        instances[key] = it
-        onCreated(key, it)
-      }
-    }
-  }
-
-  override fun <T : Any> set(key: ServiceKey<T>, value: T) {
-    if (!owns(key)) return delegateFor(key).set(key, value)
-    instances[key] = value
-    onCreated(key, value)
-  }
-
-  private fun onCreated(key: ServiceKey<*>, value: Any) {
-    if (key == ServiceKey.USAGE_DB) {
-      val usage = value as UsageInterface
-      ChatModel.ON_USAGE = { model, u, user, session, data -> usage.incrementUsage(session, user, model, u, data) }
-    }
-  }
-
+  constructor() : this(null)
 
   companion object {
     val log = org.slf4j.LoggerFactory.getLogger(CognotikPlatform::class.java)
+
+    val rootDir: File get() = ApplicationServicesConfig.dataStorageRoot
 
     init {
       ServiceKey.PLUGIN_MANAGER.defaultFactory = { PluginManager() }
@@ -71,17 +36,13 @@ class CognotikPlatform private constructor(
       ServiceKey.THREAD_POOL_MANAGER.defaultFactory = { ThreadPoolManager() }
       ServiceKey.METADATA_DB.defaultFactory = { SessionMetadataDB() }
       ServiceKey.DATA_STORAGE.defaultFactory = {
-        DataStorage(dataDir = it.rootDir.resolve("data"), metadataStorage = it[ServiceKey.METADATA_DB])
+        DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = it[ServiceKey.METADATA_DB])
       }
       ServiceKey.USAGE_DB.defaultFactory = { UsageDB() }
       ServiceKey.USER_SETTINGS.defaultFactory = { UserSettingsDB() }
       ServiceKey.AUTHENTICATION.defaultFactory = { AuthenticationDB() }
-      ServiceKey.GIFTED_CREDITS.defaultFactory = { GiftedCreditsDB(it.rootDir.resolve("giftsdb")) }
-      ServiceMap.services = CognotikPlatform()
+      ServiceKey.GIFTED_CREDITS.defaultFactory = { GiftedCreditsDB(rootDir.resolve("giftsdb")) }
     }
-
-    val services: ServiceMap get() =
-      ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
 
   }
 }

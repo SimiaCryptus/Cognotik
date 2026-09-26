@@ -2,13 +2,13 @@ package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.CoreProviders
     import com.simiacryptus.cognotik.platform.model.APIProvider
-    import com.simiacryptus.cognotik.platform.CognotikPlatform
-    import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.ApiData
     import com.simiacryptus.cognotik.platform.model.User
     import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
     import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.ServiceKey
-    import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.util.SecureString
     import java.io.File
     import java.io.PrintStream
     import kotlin.system.exitProcess
@@ -194,7 +194,8 @@ import com.simiacryptus.cognotik.platform.ServiceKey
         val base = baseUrl?.takeIf { it.isNotBlank() } ?: provider.base.ifBlank { null }
         if (verify) verify(provider, secure, base ?: "")
         val manager =
-          CognotikPlatform.services[ServiceKey.USER_SETTINGS]
+          (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
         val settings = manager.getUserSettings(user)
         val apis = settings.apis.filterNot { it.provider == provider }.toMutableList()
         apis.add(
@@ -211,7 +212,8 @@ import com.simiacryptus.cognotik.platform.ServiceKey
 
       private fun remove(user: User, provider: APIProvider): Int {
         val manager =
-          CognotikPlatform.services[ServiceKey.USER_SETTINGS]
+          (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
         val settings = manager.getUserSettings(user)
         val remaining = settings.apis.filterNot { it.provider == provider }.toMutableList()
         if (remaining.size == settings.apis.size) {
@@ -288,7 +290,8 @@ import com.simiacryptus.cognotik.platform.ServiceKey
         .sortedBy { it.name.lowercase() }
 
       private fun configured(user: User): Map<APIProvider, ApiData> =
-        CognotikPlatform.services[ServiceKey.USER_SETTINGS]
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
           .getUserSettings(user).apis
           .mapNotNull { data -> data.provider?.let { it to data } }
           .toMap()

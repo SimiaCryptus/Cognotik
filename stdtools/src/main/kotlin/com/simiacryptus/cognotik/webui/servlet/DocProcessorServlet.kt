@@ -7,10 +7,10 @@ import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -64,10 +64,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 open class DocProcessorServlet() : HttpServlet() {
   private val dataStorage by lazy {
-    CognotikPlatform.services[ServiceKey.DATA_STORAGE]
+    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
   }
   private val metadataDB by lazy {
-    CognotikPlatform.services[ServiceKey.METADATA_DB]
+    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
   }
 
   /*

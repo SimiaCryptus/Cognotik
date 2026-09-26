@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -31,10 +31,11 @@ import java.util.*
  */
 class SessionUsageDetailsServlet : HttpServlet() {
     private val metadataDB by lazy {
-        CognotikPlatform.services[ServiceKey.METADATA_DB]
+        (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
     }
     private val usageDB by lazy {
-        CognotikPlatform.services[ServiceKey.USAGE_DB]
+        (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {

@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.platform.service.StorageInterface
@@ -11,6 +10,7 @@ import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -316,7 +316,7 @@ Stack Trace:
     renderFn: (String) -> String,
   ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
     val session = Session.newUserID()
-    CognotikPlatform.services[ServiceKey.USAGE_DB].setParentSession(
+    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].setParentSession(
       user = user,
       child = session,
       parent = ui.sessionId

@@ -2,12 +2,12 @@
 
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
@@ -16,7 +16,8 @@ import java.time.Instant
 
 class DataStorage(
   private val dataDir: File,
-  override val metadataStorage: SessionMetadataInterface = CognotikPlatform.services[ServiceKey.METADATA_DB]
+  override val metadataStorage: SessionMetadataInterface = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
 ) : StorageInterface {
 
   init {

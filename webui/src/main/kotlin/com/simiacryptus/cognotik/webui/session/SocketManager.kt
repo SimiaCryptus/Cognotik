@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -20,7 +20,8 @@ import java.util.function.Consumer
 
 abstract class SocketManager(
   val sessionId: Session,
-  val dataStorage: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
+  val dataStorage: StorageInterface = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   val owner: User,
   private val applicationClass: Class<*>,
 ) {
@@ -92,8 +93,10 @@ abstract class SocketManager(
   private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
   private val queueProcessing: MutableSet<ChatSocket> = ConcurrentHashMap.newKeySet()
   private val messageVersions = ConcurrentHashMap<String, AtomicInteger>()
-  val pool get() = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getPool(sessionId, owner)
-  val scheduledThreadPoolExecutor get() = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
+  val pool get() = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(sessionId, owner)
+  val scheduledThreadPoolExecutor get() = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
     sessionId,
     owner
   )
@@ -131,7 +134,8 @@ abstract class SocketManager(
       session.remoteAddress
     )
 
-    if (!CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+    if (!(ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
         ResourceRef.of(applicationClass = applicationClass),
         Principal.of(user = user),
         operationType = OperationType.Read
@@ -480,7 +484,9 @@ abstract class SocketManager(
     }
   }
 
-  open fun canWrite(user: User?) = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+  open fun canWrite(user: User?) =
+    (ServiceMap.services
+      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
     ResourceRef.of(applicationClass = applicationClass),
     Principal.of(user = user),
     operationType = OperationType.Write
@@ -616,7 +622,8 @@ abstract class SocketManager(
     fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {
       log.debug("Getting user from session: {}", session)
       trafficLog.trace("Getting user from session: {}", session.remoteAddress)
-      return CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(
+      return (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
           ?.value) ?: throw RuntimeException("User must be authenticated to connect to WebSocket")
@@ -627,7 +634,8 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
   newSession: Session,
-  storageInterface: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
+  storageInterface: StorageInterface = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   owner: User,
   clazz: Class<*>
 ) : SocketManager(
@@ -649,7 +657,8 @@ class ReadonlySocketManager(
 class ServerlessSocketManager(
   session: Session,
   val messageEvents: OutputStream? = null,
-  storageInterface: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
+  storageInterface: StorageInterface = (ServiceMap.services
+    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   owner: User,
   clazz: Class<*>
 ) : SocketManager(

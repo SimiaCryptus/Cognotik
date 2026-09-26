@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.apps
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.model.OWNER_ID
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSession
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatServer
@@ -112,7 +112,8 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
     private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
 
     val metadataStorage by lazy {
-      CognotikPlatform.services[ServiceKey.METADATA_DB]
+      (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
     }
 
     private fun registerSessionOwner(user: User, session: Session) {

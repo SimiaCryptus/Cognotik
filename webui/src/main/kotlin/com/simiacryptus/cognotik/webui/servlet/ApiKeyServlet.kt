@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -35,7 +35,7 @@ import java.util.Base64
 class ApiKeyServlet : HttpServlet() {
 
   private val services by lazy {
-    CognotikPlatform.services
+    ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
   }
   private val authenticationManager: AuthenticationInterface by lazy { services[ServiceKey.AUTHENTICATION] }
   private val userProvider by lazy { UserProviderImpl() }

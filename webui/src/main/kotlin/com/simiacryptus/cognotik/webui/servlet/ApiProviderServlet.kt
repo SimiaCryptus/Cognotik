@@ -1,12 +1,12 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -336,7 +336,8 @@ class ApiProviderServlet : HttpServlet() {
       return providers
     }
     fun User.userSettings(): UserSettings =
-      CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(this)
+      (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(this)
     fun UserSettings.getAvailableProviders(): List<AvailableProviderInfo> =
       APIProvider.values().map { provider ->
         val isConfigured = apis.any {

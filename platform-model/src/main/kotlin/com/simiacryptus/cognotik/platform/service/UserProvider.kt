@@ -1,8 +1,7 @@
-package com.simiacryptus.cognotik.platform
+package com.simiacryptus.cognotik.platform.service
 
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.HttpServletRequest
-import jakarta.servlet.http.HttpServletResponse
 
 /**
  * Resolves the authenticated [User] for an inbound HTTP request.

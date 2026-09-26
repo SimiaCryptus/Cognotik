@@ -8,13 +8,13 @@ import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
@@ -187,7 +187,9 @@ open class CognotikApps(
 
     fun checkIsAlive() {
         try {
-            val threadPoolManager = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER]
+            val threadPoolManager =
+                (ServiceMap.services
+                    ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER]
             val alive = threadPoolManager.isAlive()
             val systemTrayManager = systemTrayManager
             if (systemTrayManager != null) {
@@ -211,14 +213,16 @@ open class CognotikApps(
         //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
-        CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
     }
 
     open fun init(actualPort: Int, args: Array<out String>) {
         initSystemTray()
         startSocketServer(actualPort + 1)
-        CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].apply {
+        (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].apply {
             getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
             subscribeToChanges()
         }
@@ -299,7 +303,8 @@ open class CognotikApps(
 //            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
 //            override fun logout(accessToken: String, user: User) {}
 //        }
-        CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationManager() {
+        (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationManager() {
             init {
                 log.info(
                     "AuthorizationManager initialized with permissive local auth for desktop mode",
@@ -550,14 +555,16 @@ fun String?.urlEncode(): String {
 fun ApiChatModel.instance(
     user: User,
     session: Session = globalID,
-    service: ExecutorService = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user),
+    service: ExecutorService = (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user),
     temperature: Double = 0.1
 ) = model?.instance(
     key = when (provider?.key) {
         null -> null
         "NONE".encrypt -> null
         else -> provider?.key
-    } ?: CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user).apis.let {
+    } ?: (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user).apis.let {
         it.firstOrNull { it.provider == this.provider }?.key
             ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
             ?: throw IllegalStateException("No API key configured for model $model")
@@ -566,7 +573,8 @@ fun ApiChatModel.instance(
     ?: throw IllegalStateException("No API base configured for model $model"),
     workPool = service,
     temperature = temperature,
-    scheduledPool = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, user),
+    scheduledPool = (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, user),
     session = session,
     user = user,
 )

@@ -1,25 +1,21 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.platform.CognotikPlatform
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.OperationType
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.service.StorageInterface
-import com.simiacryptus.cognotik.platform.model.Principal
-import com.simiacryptus.cognotik.platform.model.ResourceRef
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
-import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
-import com.simiacryptus.cognotik.platform.UserProvider
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.webui.session.ChatServer
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.webui.servlet.*
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.ServletResponse
@@ -42,14 +38,15 @@ abstract class ApplicationServer(
   showMenubar: Boolean = true,
 ) : ChatServer(resourceBase, showMenubar) {
   init {
-    FileServlet.userResolver = UserProviderImpl()
+    ServiceKey.USER_RESOLVER.factory = { UserProviderImpl() }
     FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
-      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(user=user!!, session = it) }
+      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(user = user!!, session = it) }
       return sessionOwner == null || sessionOwner == user?.id
     }
   }
+
   private val metadataDB by lazy {
-    CognotikPlatform.services[ServiceKey.METADATA_DB]
+    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
   }
 
 
@@ -66,7 +63,7 @@ abstract class ApplicationServer(
   }.toMap()
 
   final override val dataStorage: StorageInterface by lazy {
-    CognotikPlatform.services[ServiceKey.DATA_STORAGE]
+    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
   }
   protected open val appInfoServlet by lazy {
     ServletHolder("appInfo", AppInfoServlet { session, user ->
@@ -272,55 +269,57 @@ abstract class ApplicationServer(
 
 private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 
-fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = FilterHolder { request, response: ServletResponse?, chain ->
-  val requestPath = (request as HttpServletRequest).requestURI
-  val servletPath = request.servletPath
-  log.debug("Processing request: {}", requestPath)
-  val user = UserProviderImpl().authenticate(request)
-  /*
-   * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
-   * redirecting its module/CSS requests to the login page would break the page load, while
-   * every byte of data it shows still goes through the authenticated FS API.
-   */
-  val anonymousOk = servletPath == "/fileIndex" || servletPath == "/ui" || servletPath.startsWith("/ui/")
-  val email = if (user == null && !anonymousOk) {
-    log.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
-    (response as HttpServletResponse).status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-    val originalRequest = request.requestURL.toString()
-    val queryString = request.queryString
-    val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-    val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-    response.setHeader("Location", "/login/?target=$encodedTarget")
-    return@FilterHolder
-  } else {
-    val email = user?.email ?: "anonymous"
-    log.debug("Authenticated user: {} for request: {}", email, requestPath)
-    email
-  }
-  val canRead = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
-    ResourceRef.of(applicationClass = applicationClass),
-    Principal.of(user = user),
-    operationType = OperationType.Read
-  )
-  log.debug(
-    "Authorization check result: {} for user: {} on path: {}",
-    canRead,
-    email,
-    requestPath
-  )
-  if (canRead) {
-    log.debug("Access granted for request: {}", requestPath)
-    chain?.doFilter(request, response)
-  } else {
-    log.warn(
-      "Access denied for user: {} on path: {}",
-      user?.email,
+fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
+  FilterHolder { request, response: ServletResponse?, chain ->
+    val requestPath = (request as HttpServletRequest).requestURI
+    val servletPath = request.servletPath
+    log.debug("Processing request: {}", requestPath)
+    val user = UserProviderImpl().authenticate(request)
+    /*
+     * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
+     * redirecting its module/CSS requests to the login page would break the page load, while
+     * every byte of data it shows still goes through the authenticated FS API.
+     */
+    val anonymousOk = servletPath == "/fileIndex" || servletPath == "/ui" || servletPath.startsWith("/ui/")
+    val email = if (user == null && !anonymousOk) {
+      log.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
+      (response as HttpServletResponse).status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+      val originalRequest = request.requestURL.toString()
+      val queryString = request.queryString
+      val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+      val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+      response.setHeader("Location", "/login/?target=$encodedTarget")
+      return@FilterHolder
+    } else {
+      val email = user?.email ?: "anonymous"
+      log.debug("Authenticated user: {} for request: {}", email, requestPath)
+      email
+    }
+    val canRead = (ServiceMap.services
+      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+      ResourceRef.of(applicationClass = applicationClass),
+      Principal.of(user = user),
+      operationType = OperationType.Read
+    )
+    log.debug(
+      "Authorization check result: {} for user: {} on path: {}",
+      canRead,
+      email,
       requestPath
     )
-    response?.writer?.write("Access Denied")
-    (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
+    if (canRead) {
+      log.debug("Access granted for request: {}", requestPath)
+      chain?.doFilter(request, response)
+    } else {
+      log.warn(
+        "Access denied for user: {} on path: {}",
+        user?.email,
+        requestPath
+      )
+      response?.writer?.write("Access Denied")
+      (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
+    }
   }
-}
 
 fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
   cookies?.find { it.name == name }?.value.also { cookie ->
@@ -335,7 +334,8 @@ class UserProviderImpl : UserProvider {
   override fun authenticate(
     request: HttpServletRequest
   ) = request.getCookie()?.let {
-    CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(it)
+    (ServiceMap.services
+      ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(it)
   }
 }
 

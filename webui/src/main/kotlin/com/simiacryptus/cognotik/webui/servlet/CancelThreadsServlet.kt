@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -55,7 +55,8 @@ class CancelThreadsServlet : HttpServlet() {
         throw RuntimeException("User must be authenticated to cancel sessions")
       }
       require(
-        CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+        (ServiceMap.services
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
           ResourceRef.of(javaClass),
           Principal.of(user),
           OperationType.Delete
@@ -64,7 +65,8 @@ class CancelThreadsServlet : HttpServlet() {
       { "User $user is not authorized to cancel sessions" }
       if (session.isGlobal()) {
         require(
-          CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          (ServiceMap.services
+            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(javaClass),
             Principal.of(user),
             OperationType.Public
@@ -72,7 +74,8 @@ class CancelThreadsServlet : HttpServlet() {
         )
         { "User $user is not authorized to cancel global sessions" }
       }
-      val pool = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user ?: return)
+      val pool = (ServiceMap.services
+        ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user ?: return)
       pool.shutdownNow()
       response.sendRedirect("/")
     }
