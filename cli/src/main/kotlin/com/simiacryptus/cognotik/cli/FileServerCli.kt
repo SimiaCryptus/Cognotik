@@ -55,7 +55,7 @@ object FileServerCli : FileServer() {
 
   @JvmStatic
   fun main(args: Array<String>) {
-    super._main(args)
+    super.run(args)
   }
 }
 

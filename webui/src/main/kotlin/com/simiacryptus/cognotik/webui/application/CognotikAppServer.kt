@@ -41,16 +41,7 @@ class CognotikAppServer(
       server.handler = ContextHandlerCollection().apply {
         this.handlers = arrayOf(
           newWebAppContext(SessionProxyServer(), "/")
-        ).map {
-          try {
-            it.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
-            log.debug("Added CORS filter to context: ${it.contextPath}")
-            it
-          } catch (e: Exception) {
-            log.error("Failed to add CORS filter to context", e)
-            throw e
-          }
-        }.toMutableList().toTypedArray<WebAppContext>()
+        )
       }
       server
     } catch (e: Exception) {
@@ -63,63 +54,14 @@ class CognotikAppServer(
     private set
 
   private fun newWebAppContext(server: ChatServer, vararg paths: String): WebAppContext {
-    require(paths.isNotEmpty()) { "At least one path must be provided" }
-    val normalizedPaths = paths.map { if (it.startsWith("/")) it else "/$it" }.distinct()
-    val primaryPath = normalizedPaths.first()
-    return try {
-      log.debug("Creating new WebAppContext for paths: ${normalizedPaths.joinToString(", ")}")
-      require(this.context == null) { "WebAppContext has already been initialized" }
-      val context = WebAppContext()
-      this.context = context
-      JettyWebSocketServletContainerInitializer.configure(context, null)
-      context.baseResource = server.baseResource
-      context.classLoader = CognotikAppServer::class.java.classLoader
-      context.contextPath = primaryPath
-      context.welcomeFiles = arrayOf("index.html")
 
-      if (normalizedPaths.size > 1) {
-        val aliases = normalizedPaths.drop(1)
-        context.setAttribute("cognotik.contextPathAliases", aliases)
-        log.debug("Registered context path aliases: ${aliases.joinToString(", ")}")
-      }
-      server.configure(context)
-      registerSharedAssets(context)
-      log.info("Successfully created WebAppContext for paths: ${normalizedPaths.joinToString(", ")}")
-      context
-    } catch (e: Exception) {
-      log.error("Failed to create WebAppContext for paths: ${normalizedPaths.joinToString(", ")}", e)
-      throw e
-    }
-  }
 
-  /**
-   * Mounts the shared web assets read from the classpath (never from disk):
-   * `web/lib` at [LIB_PREFIX] and `web/app` at [APP_PREFIX], matching
-   * `FileServerCli` so the same front-end bundles work in both servers.
-   */
-  private fun registerSharedAssets(context: WebAppContext) {
-    registerAssetServlet(context, "web-lib", "web/lib", LIB_PREFIX)
-    registerAssetServlet(context, "web-app", "web/app", APP_PREFIX)
-  }
 
-  private fun registerAssetServlet(
-    context: WebAppContext,
-    name: String,
-    resourceRoot: String,
-    prefix: String
-  ) {
-    try {
-      val holder = ServletHolder(name, ClasspathAssetServlet(resourceRoot)).apply {
-        isAsyncSupported = true
-        initOrder = 1
-      }
 
-      context.addServlet(holder, "$prefix/*")
-      log.info("Mounted classpath assets '$resourceRoot' at $prefix/")
-    } catch (e: Exception) {
-      log.error("Failed to mount classpath assets '$resourceRoot' at $prefix/", e)
-      throw e
-    }
+    require(this.context == null) { "WebAppContext has already been initialized" }
+    val context = newSessionContext(server, *paths)
+    this.context = context
+    return context
   }
 
   fun start(): Server {
@@ -169,6 +111,52 @@ class CognotikAppServer(
 
     /** @see LIB_PREFIX */
     const val APP_PREFIX = "/app"
+    /**
+     * Builds a fully configured session (chat) context: websocket support, the
+     * [ChatServer]'s servlets, shared classpath assets and a CORS filter. It does not
+     * own a [Server], so it can be mounted next to other contexts on one port
+     * (this is how FileServer serves the chat UI under `/proxy`).
+     */
+    fun newSessionContext(chatServer: ChatServer = SessionProxyServer(), vararg paths: String): WebAppContext {
+      require(paths.isNotEmpty()) { "At least one path must be provided" }
+      val normalizedPaths = paths.map { if (it.startsWith("/")) it else "/$it" }.distinct()
+      val primaryPath = normalizedPaths.first()
+      return try {
+        log.debug("Creating new WebAppContext for paths: ${normalizedPaths.joinToString(", ")}")
+        val context = WebAppContext()
+        JettyWebSocketServletContainerInitializer.configure(context, null)
+        context.baseResource = chatServer.baseResource
+        context.classLoader = CognotikAppServer::class.java.classLoader
+        context.contextPath = primaryPath
+        context.welcomeFiles = arrayOf("index.html")
+        if (normalizedPaths.size > 1) {
+          val aliases = normalizedPaths.drop(1)
+          context.setAttribute("cognotik.contextPathAliases", aliases)
+          log.debug("Registered context path aliases: ${aliases.joinToString(", ")}")
+        }
+        chatServer.configure(context)
+        registerSharedAssets(context)
+        context.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
+        log.info("Successfully created WebAppContext for paths: ${normalizedPaths.joinToString(", ")}")
+        context
+      } catch (e: Exception) {
+        log.error("Failed to create WebAppContext for paths: ${normalizedPaths.joinToString(", ")}", e)
+        throw e
+      }
+    }
+    /** Mounts classpath `web/lib` at [LIB_PREFIX] and `web/app` at [APP_PREFIX]. */
+    private fun registerSharedAssets(context: WebAppContext) {
+      registerAssetServlet(context, "web-lib", "web/lib", LIB_PREFIX)
+      registerAssetServlet(context, "web-app", "web/app", APP_PREFIX)
+    }
+    private fun registerAssetServlet(context: WebAppContext, name: String, resourceRoot: String, prefix: String) {
+      val holder = ServletHolder(name, ClasspathAssetServlet(resourceRoot)).apply {
+        isAsyncSupported = true
+        initOrder = 1
+      }
+      context.addServlet(holder, "$prefix/*")
+      log.info("Mounted classpath assets '$resourceRoot' at ${context.contextPath}$prefix/")
+    }
 
 
     @Transient

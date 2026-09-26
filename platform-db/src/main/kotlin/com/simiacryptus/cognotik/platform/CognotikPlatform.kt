@@ -34,6 +34,7 @@ object CognotikPlatform {
     ServiceKey.USER_SETTINGS.defaultFactory = { UserSettingsDB() }
     ServiceKey.AUTHENTICATION.defaultFactory = { AuthenticationDB() }
     ServiceKey.GIFTED_CREDITS.defaultFactory = { GiftedCreditsDB(rootDir.resolve("giftsdb")) }
+
     log.info("CognotikPlatform initialized with data storage root: ${rootDir.absolutePath}")
   }
 

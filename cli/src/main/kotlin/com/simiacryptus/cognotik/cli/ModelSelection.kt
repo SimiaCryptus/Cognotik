@@ -74,7 +74,7 @@ object ModelSelection {
     if (!refresh) {
       if (cache.isNotEmpty()) return cache
       /* Reuse whatever the server already resolved at start-up. */
-      FileServerCli.available.takeIf { it.isNotEmpty() }?.let {
+      FileServer.available.takeIf { it.isNotEmpty() }?.let {
         cache = it
         return it
       }
@@ -87,7 +87,7 @@ object ModelSelection {
     }
     if (fresh.isNotEmpty()) {
       cache = fresh
-      FileServerCli.available = fresh
+      FileServer.available = fresh
     }
     return if (fresh.isNotEmpty()) fresh else cache
   }

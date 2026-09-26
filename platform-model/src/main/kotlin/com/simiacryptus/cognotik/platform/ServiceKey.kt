@@ -1,14 +1,6 @@
 package com.simiacryptus.cognotik.platform
 
-import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
-import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
-import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
-import com.simiacryptus.cognotik.platform.service.StorageInterface
-import com.simiacryptus.cognotik.platform.service.UsageInterface
-import com.simiacryptus.cognotik.platform.service.UserProvider
-import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.service.*
 import org.slf4j.LoggerFactory
 import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
@@ -25,18 +17,35 @@ class ServiceKey<T : Any>(
   @Volatile
   var factory: ((ServiceMap) -> T)? = null
     set(value) {
-      log.info("Registering factory for service '$name': $value", RuntimeException("Stack trace"))
-      field = value
+      when {
+        null == value -> throw IllegalArgumentException("Factory cannot be null")
+        null != field -> log.info("Ignoring duplicate factory registration for service '$name': $value", RuntimeException("Stack trace"))
+        else -> {
+          log.info("Registering factory for service '$name': $value", RuntimeException("Stack trace"))
+          field = value
+        }
+      }
     }
 
   @Volatile
   var defaultFactory: ((ServiceMap) -> T)? = null
+    set(value) {
+      when {
+        null == value -> throw IllegalArgumentException("Factory cannot be null")
+        null != field -> throw IllegalArgumentException("Duplicate factory registration for service '$name': $value", RuntimeException("Stack trace"))
+        else -> {
+          log.info("Registering default factory for service '$name': $value")
+          field = value
+        }
+      }
+    }
 
   fun create(services: ServiceMap): T {
-    log.info("Creating service instance for '$name'", RuntimeException("Stack trace"))
-    return (factory ?: defaultFactory
-    ?: throw UnsupportedOperationException("No factory registered for service '$name'"))
-      .invoke(services)
+    val factory = factory ?: defaultFactory
+    ?: throw UnsupportedOperationException("No factory registered for service '$name'")
+    val newInstance = (factory).invoke(services)
+    log.info("Created service instance for '$name': $newInstance")
+    return newInstance
   }
 
   init {

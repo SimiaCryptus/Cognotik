@@ -31,10 +31,6 @@ package com.simiacryptus.cognotik.cli
     class CliDocProcessorServlet(
       private val root: File,
       private val docsFolder: File? = null,
-      private val smartModel: String? = null,
-      private val fastModel: String? = null,
-      private val imageModel: String? = System.getenv("COGNOTIK_IMAGE_MODEL"),
-      private val audioModel: String? = System.getenv("COGNOTIK_AUDIO_MODEL"),
       private val readOnly: Boolean = false,
       private val mode: String = ServerDocOps.DEFAULT_MODE,
       private val concurrency: Int = 4,
@@ -78,7 +74,7 @@ package com.simiacryptus.cognotik.cli
 
       /** Prefers the set the server already resolved at start-up; falls back to the user's. */
       override fun availableModels(user: User): Map<String, ChatModel> {
-        val cached = FileServerCli.available
+        val cached = FileServer.available
         if (cached.isNotEmpty()) return cached
         return try {
           CliSupport.availableModels(user)
