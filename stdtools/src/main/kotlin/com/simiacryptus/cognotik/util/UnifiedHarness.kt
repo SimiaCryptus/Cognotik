@@ -134,7 +134,7 @@ open class UnifiedHarness(
       override fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
         val usageManager =
-          (ServiceMap.services
+          (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         super.onComplete(mode, task)
@@ -251,7 +251,7 @@ open class UnifiedHarness(
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
         val usageManager =
-          (ServiceMap.services
+          (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
         task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         completionLatch.countDown()
@@ -290,7 +290,7 @@ open class UnifiedHarness(
 
     if (!serverless) {
       parentSession?.apply {
-        (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].setParentSession(
+        (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].setParentSession(
           user = user,
           child = session,
           parent = this
@@ -427,7 +427,7 @@ open class UnifiedHarness(
           fun logout(accessToken: String, user: User) {}
         }
       }
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationManager() {
         init {
           log.info(
@@ -448,7 +448,7 @@ open class UnifiedHarness(
 
 fun ApiChatModel.findApi(user: User): ApiData? {
   val userSettings =
-    (ServiceMap.services
+    (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
   return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
 }

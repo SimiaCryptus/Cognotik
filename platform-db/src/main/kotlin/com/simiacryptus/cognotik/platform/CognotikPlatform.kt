@@ -8,10 +8,7 @@ import com.simiacryptus.cognotik.platform.h2.SessionMetadataDB
 import com.simiacryptus.cognotik.platform.h2.UsageDB
 import com.simiacryptus.cognotik.platform.h2.UserSettingsDB
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.service.UsageInterface
 import java.io.File
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Unified service container.
@@ -19,30 +16,24 @@ import java.util.concurrent.ConcurrentHashMap
  *   to the service set for the current [ApplicationServicesConfig.dataStorageRoot].
  * - Root instances own ROOT-scoped services and forward GLOBAL-scoped ones to the parent.
  */
-class CognotikPlatform private constructor(
-  parent: ServiceMap?,
-) : ServiceMap(parent) {
+object CognotikPlatform {
 
-  constructor() : this(null)
 
-  companion object {
-    val log = org.slf4j.LoggerFactory.getLogger(CognotikPlatform::class.java)
+  val log = org.slf4j.LoggerFactory.getLogger(CognotikPlatform::class.java)
 
-    val rootDir: File get() = ApplicationServicesConfig.dataStorageRoot
+  val rootDir: File get() = ApplicationServicesConfig.dataStorageRoot
 
-    init {
-      ServiceKey.PLUGIN_MANAGER.defaultFactory = { PluginManager() }
-      ServiceKey.AUTHORIZATION_MANAGER.defaultFactory = { AuthorizationManager() }
-      ServiceKey.THREAD_POOL_MANAGER.defaultFactory = { ThreadPoolManager() }
-      ServiceKey.METADATA_DB.defaultFactory = { SessionMetadataDB() }
-      ServiceKey.DATA_STORAGE.defaultFactory = {
-        DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = it[ServiceKey.METADATA_DB])
-      }
-      ServiceKey.USAGE_DB.defaultFactory = { UsageDB() }
-      ServiceKey.USER_SETTINGS.defaultFactory = { UserSettingsDB() }
-      ServiceKey.AUTHENTICATION.defaultFactory = { AuthenticationDB() }
-      ServiceKey.GIFTED_CREDITS.defaultFactory = { GiftedCreditsDB(rootDir.resolve("giftsdb")) }
+  init {
+    ServiceKey.PLUGIN_MANAGER.defaultFactory = { PluginManager() }
+    ServiceKey.AUTHORIZATION_MANAGER.defaultFactory = { AuthorizationManager() }
+    ServiceKey.THREAD_POOL_MANAGER.defaultFactory = { ThreadPoolManager() }
+    ServiceKey.METADATA_DB.defaultFactory = { SessionMetadataDB() }
+    ServiceKey.DATA_STORAGE.defaultFactory = {
+      DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = it[ServiceKey.METADATA_DB])
     }
-
+    ServiceKey.USAGE_DB.defaultFactory = { UsageDB() }
+    ServiceKey.USER_SETTINGS.defaultFactory = { UserSettingsDB() }
+    ServiceKey.AUTHENTICATION.defaultFactory = { AuthenticationDB() }
+    ServiceKey.GIFTED_CREDITS.defaultFactory = { GiftedCreditsDB(rootDir.resolve("giftsdb")) }
   }
 }

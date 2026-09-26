@@ -20,7 +20,7 @@ import java.util.function.Consumer
 
 abstract class SocketManager(
   val sessionId: Session,
-  val dataStorage: StorageInterface = (ServiceMap.services
+  val dataStorage: StorageInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   val owner: User,
   private val applicationClass: Class<*>,
@@ -93,9 +93,9 @@ abstract class SocketManager(
   private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
   private val queueProcessing: MutableSet<ChatSocket> = ConcurrentHashMap.newKeySet()
   private val messageVersions = ConcurrentHashMap<String, AtomicInteger>()
-  val pool get() = (ServiceMap.services
+  val pool get() = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(sessionId, owner)
-  val scheduledThreadPoolExecutor get() = (ServiceMap.services
+  val scheduledThreadPoolExecutor get() = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
     sessionId,
     owner
@@ -134,7 +134,7 @@ abstract class SocketManager(
       session.remoteAddress
     )
 
-    if (!(ServiceMap.services
+    if (!(ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
         ResourceRef.of(applicationClass = applicationClass),
         Principal.of(user = user),
@@ -485,7 +485,7 @@ abstract class SocketManager(
   }
 
   open fun canWrite(user: User?) =
-    (ServiceMap.services
+    (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
     ResourceRef.of(applicationClass = applicationClass),
     Principal.of(user = user),
@@ -622,7 +622,7 @@ abstract class SocketManager(
     fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {
       log.debug("Getting user from session: {}", session)
       trafficLog.trace("Getting user from session: {}", session.remoteAddress)
-      return (ServiceMap.services
+      return (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
@@ -634,7 +634,7 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
   newSession: Session,
-  storageInterface: StorageInterface = (ServiceMap.services
+  storageInterface: StorageInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   owner: User,
   clazz: Class<*>
@@ -657,7 +657,7 @@ class ReadonlySocketManager(
 class ServerlessSocketManager(
   session: Session,
   val messageEvents: OutputStream? = null,
-  storageInterface: StorageInterface = (ServiceMap.services
+  storageInterface: StorageInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   owner: User,
   clazz: Class<*>

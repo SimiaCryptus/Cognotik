@@ -776,7 +776,7 @@ abstract class FileServlet : HttpServlet() {
       (request.getAttribute(USER_ATTRIBUTE) as? User)?.let { return it }
       if (request.getAttribute(USER_RESOLVED_ATTRIBUTE) == true) return null
       val user = try {
-        ServiceMap.services[ServiceKey.USER_RESOLVER].authenticate(request)
+        ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
       } catch (e: Exception) {
         log.warn("Failed to resolve user for ${request.requestURI}", e)
         null

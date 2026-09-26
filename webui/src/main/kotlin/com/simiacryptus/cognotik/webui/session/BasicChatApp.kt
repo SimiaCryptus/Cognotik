@@ -49,7 +49,7 @@ class BasicChatApp(
 
     fun instance(model: String): ChatInterface? {
       val userSettings =
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
       val chatModel = userSettings.apis
         .filter { it.provider != null && it.key != null && it.baseUrl != null }
@@ -60,7 +60,7 @@ class BasicChatApp(
           it.provider?.name == chatModel.provider?.name
         } ?: return null
         val threadPoolManager =
-          (ServiceMap.services
+          (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER]
         chatModel.instance(
           key = api.key!!,

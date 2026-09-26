@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.webui.session.SocketManager
 abstract class ApplicationSocketManager(
   session: Session,
   owner: User,
-  dataStorage: StorageInterface = (ServiceMap.services
+  dataStorage: StorageInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   applicationClass: Class<*>,
 ) : SocketManager(

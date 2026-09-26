@@ -46,7 +46,7 @@ abstract class ApplicationServer(
   }
 
   private val metadataDB by lazy {
-    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
   }
 
 
@@ -63,7 +63,7 @@ abstract class ApplicationServer(
   }.toMap()
 
   final override val dataStorage: StorageInterface by lazy {
-    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
+    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
   }
   protected open val appInfoServlet by lazy {
     ServletHolder("appInfo", AppInfoServlet { session, user ->
@@ -295,7 +295,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
       log.debug("Authenticated user: {} for request: {}", email, requestPath)
       email
     }
-    val canRead = (ServiceMap.services
+    val canRead = (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
       ResourceRef.of(applicationClass = applicationClass),
       Principal.of(user = user),
@@ -334,7 +334,7 @@ class UserProviderImpl : UserProvider {
   override fun authenticate(
     request: HttpServletRequest
   ) = request.getCookie()?.let {
-    (ServiceMap.services
+    (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(it)
   }
 }

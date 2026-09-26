@@ -30,7 +30,7 @@ open class CreditsServlet(
 ) : HttpServlet() {
 
     val usageDB: UsageInterface by lazy {
-        (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+        (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     }
 
     private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()

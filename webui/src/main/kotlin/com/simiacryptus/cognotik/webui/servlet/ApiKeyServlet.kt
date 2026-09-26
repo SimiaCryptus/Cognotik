@@ -35,7 +35,7 @@ import java.util.Base64
 class ApiKeyServlet : HttpServlet() {
 
   private val services by lazy {
-    ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
+    ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
   }
   private val authenticationManager: AuthenticationInterface by lazy { services[ServiceKey.AUTHENTICATION] }
   private val userProvider by lazy { UserProviderImpl() }

@@ -55,7 +55,7 @@ object ModelSelection {
   private val cache = ConcurrentHashMap<String, Map<String, ChatModel>>()
 
   private fun settingsManager() =
-    (ServiceMap.services
+    (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
 
   /**

@@ -16,7 +16,7 @@ import java.time.Instant
 
 class DataStorage(
   private val dataDir: File,
-  override val metadataStorage: SessionMetadataInterface = (ServiceMap.services
+  override val metadataStorage: SessionMetadataInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
 ) : StorageInterface {
 

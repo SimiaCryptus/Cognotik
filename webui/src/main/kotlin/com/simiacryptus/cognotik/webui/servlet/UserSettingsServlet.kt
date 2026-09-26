@@ -22,7 +22,7 @@ class UserSettingsServlet : HttpServlet() {
         ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
       val visibleSettings = UserSettings(
         apis = settings.apis.map { apiData ->
@@ -95,7 +95,7 @@ class UserSettingsServlet : HttpServlet() {
     val data = request.getParameter("settings") ?: request.reader.use { it.readText() }.ifBlank { null }
     val settings = data?.let { JsonUtil.fromJson<UserSettings>(it, UserSettings::class.java) } ?: UserSettings()
     val userSettingsManager =
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS]
     val prevSettings =
       userSettingsManager.getUserSettings(user)

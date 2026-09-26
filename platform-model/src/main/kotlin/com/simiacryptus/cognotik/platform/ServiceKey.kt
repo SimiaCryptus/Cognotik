@@ -14,15 +14,13 @@ import java.util.concurrent.CopyOnWriteArrayList
 import kotlin.reflect.KClass
 
 /**
- * Typed descriptor for a service: name, type, scope, and factory delegates.
+ * Typed descriptor for a service: name, type, and factory delegates.
  * [factory] is the global user override; [defaultFactory] is registered by the implementing module.
  */
 class ServiceKey<T : Any>(
   val name: String,
   val type: KClass<T>,
-  val scope: Scope = Scope.ROOT,
 ) {
-  enum class Scope { GLOBAL, ROOT }
 
   @Volatile
   var factory: ((ServiceMap) -> T)? = null
@@ -45,15 +43,15 @@ class ServiceKey<T : Any>(
     all.add(this)
   }
 
-  override fun toString() = "ServiceKey($name: ${type.simpleName}, $scope)"
+  override fun toString() = type.simpleName ?: super.toString()
 
   companion object {
     val log = LoggerFactory.getLogger(ServiceKey::class.java)
-    val all: MutableList<ServiceKey<*>> = CopyOnWriteArrayList()
+    private val all: MutableList<ServiceKey<*>> = CopyOnWriteArrayList()
 
-    val PLUGIN_MANAGER = ServiceKey("pluginManager", PluginManagerInterface::class, Scope.GLOBAL)
-    val AUTHORIZATION_MANAGER = ServiceKey("authorizationManager", AuthorizationInterface::class, Scope.GLOBAL)
-    val THREAD_POOL_MANAGER = ServiceKey("threadPoolManager", ThreadPoolManager::class, Scope.GLOBAL)
+    val PLUGIN_MANAGER = ServiceKey("pluginManager", PluginManagerInterface::class)
+    val AUTHORIZATION_MANAGER = ServiceKey("authorizationManager", AuthorizationInterface::class)
+    val THREAD_POOL_MANAGER = ServiceKey("threadPoolManager", ThreadPoolManager::class)
     val DATA_STORAGE = ServiceKey("dataStorage", StorageInterface::class)
     val METADATA_DB = ServiceKey("metadataDB", SessionMetadataInterface::class)
     val USAGE_DB = ServiceKey("usageDB", UsageInterface::class)

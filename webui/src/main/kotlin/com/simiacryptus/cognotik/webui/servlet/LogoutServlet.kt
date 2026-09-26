@@ -15,7 +15,7 @@ class LogoutServlet : HttpServlet() {
     if (null == user) {
       response.status = HttpServletResponse.SC_BAD_REQUEST
     } else {
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].logoutIfMatching(cookie ?: "", user)
       response.sendRedirect("/")
     }

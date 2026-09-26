@@ -84,7 +84,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
           UserProviderImpl().authenticate(request)
             ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
-          val isAuthorized = (ServiceMap.services
+          val isAuthorized = (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
@@ -92,20 +92,20 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
           )
             isAuthorized
         }.map {
-          val canRead = (ServiceMap.services
+          val canRead = (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Read
           )
-          val canWrite = (ServiceMap.services
+          val canWrite = (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Write
           )
           val canWritePublic =
-            (ServiceMap.services
+            (ServiceMap
               ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),

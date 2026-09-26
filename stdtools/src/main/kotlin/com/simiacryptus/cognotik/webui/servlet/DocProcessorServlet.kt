@@ -64,10 +64,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 open class DocProcessorServlet() : HttpServlet() {
   private val dataStorage by lazy {
-    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
+    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE]
   }
   private val metadataDB by lazy {
-    (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+    (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
   }
 
   /*

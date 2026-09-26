@@ -124,7 +124,7 @@ open class HierarchicalPlanningMode(
     }
 
     val scheduledExecutorService =
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
       session = session,
       user = user

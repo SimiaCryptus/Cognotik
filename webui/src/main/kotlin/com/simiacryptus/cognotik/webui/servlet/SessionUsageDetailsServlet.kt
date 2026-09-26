@@ -31,11 +31,11 @@ import java.util.*
  */
 class SessionUsageDetailsServlet : HttpServlet() {
     private val metadataDB by lazy {
-        (ServiceMap.services
-            ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
+        (ServiceMap
+          ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
     }
     private val usageDB by lazy {
-        (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+        (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {

@@ -370,7 +370,7 @@ class GiftedCreditsServlet : HttpServlet() {
             // Gift creation is now available to all authenticated users.
             // Show current balance so users know what they can afford.
             val currentBalance = try {
-                (ServiceMap.services
+                (ServiceMap
                     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].getUserBalance(user)
             } catch (e: Exception) {
                 log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
@@ -1453,7 +1453,7 @@ class GiftedCreditsServlet : HttpServlet() {
             "Gift claimed successfully by user={} giftId={} amountGranted={} theme={}",
             userinfo, giftId, gift.amountGranted, theme.id
         )
-        (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].creditUser(
+        (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].creditUser(
             user = userinfo,
             amount = gift.amountGranted,
             comment = "Claimed gift $giftId",

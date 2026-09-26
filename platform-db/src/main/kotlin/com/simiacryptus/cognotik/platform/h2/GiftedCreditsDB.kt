@@ -134,7 +134,7 @@ class GiftedCreditsDB(
 
     // Check creator has sufficient credit balance
     val usageManager =
-      (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+      (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     val creatorBalance = try {
       usageManager.getUserBalance(creator)
     } catch (e: Exception) {
@@ -266,7 +266,7 @@ class GiftedCreditsDB(
         if (creator != null) {
           try {
             val creatorBalance =
-              (ServiceMap.services
+              (ServiceMap
                 ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB].getUserBalance(creator)
             log.debug(
               "Creator '{}' balance check at claim time: balance={}, amountGranted={}",

@@ -127,7 +127,7 @@ abstract class ApplicationDirectory(
 
   open val creditsServlet: CreditsServlet =
     CreditsServlet(NoOpPaymentProvider(
-      (ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
+      (ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
     ))
       .also { log.debug("Initialized CreditsServlet") }
 

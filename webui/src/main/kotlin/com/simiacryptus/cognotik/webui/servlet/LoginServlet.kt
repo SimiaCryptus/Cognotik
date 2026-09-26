@@ -734,7 +734,7 @@ class LoginServlet : HttpServlet() {
         //provider = methodName
       )
       val fileServices = try {
-        ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
+        ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
       } catch (e: Exception) {
         log.error("Failed to get fileApplicationServices for login: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -763,7 +763,7 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, inputHash)
       try {
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register user with authentication manager: {}", username, e)
@@ -812,7 +812,7 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (token.isNullOrBlank()) return false
       val user = try {
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(token)
       } catch (e: Exception) {
         log.debug("Error checking existing authentication", e)
@@ -852,13 +852,13 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (!token.isNullOrBlank()) {
         try {
-          val user = (ServiceMap.services
+          val user = (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].getUser(token)
           if (user == null) {
             log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
           } else {
             try {
-              (ServiceMap.services
+              (ServiceMap
                 ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].logoutIfMatching(token, user)
               log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
             } catch (e: Exception) {
@@ -939,7 +939,7 @@ class LoginServlet : HttpServlet() {
         name = username,
       )
       val fileServices = try {
-        ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
+        ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
       } catch (e: Exception) {
         log.error("Failed to get fileApplicationServices for registration: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -1003,7 +1003,7 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, hashPassword(password))
       try {
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register newly-registered user with authentication manager: {}", username, e)

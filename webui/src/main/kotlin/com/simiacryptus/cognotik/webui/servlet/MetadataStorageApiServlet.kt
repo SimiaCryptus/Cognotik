@@ -51,7 +51,7 @@ import java.time.Instant
  * name differs in this codebase.
  */
 class MetadataStorageApiServlet(
-  private val metadata: SessionMetadataInterface = (ServiceMap.services
+  private val metadata: SessionMetadataInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.METADATA_DB]
 ) : HttpServlet() {
 

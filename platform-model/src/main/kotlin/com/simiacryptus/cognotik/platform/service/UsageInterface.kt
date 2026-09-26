@@ -18,7 +18,6 @@ import java.util.concurrent.atomic.AtomicLong
  * for AI models, including token counts and associated costs. Implementations of this
  * interface handle the persistence and retrieval of usage data.
  */
-
 interface UsageInterface {
   /**
    * Retrieves a summary of AI model usage for a specific user within a required date range.

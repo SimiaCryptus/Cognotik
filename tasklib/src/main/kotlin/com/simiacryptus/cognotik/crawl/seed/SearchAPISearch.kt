@@ -36,7 +36,7 @@ open class SearchAPISearch(
       val searchLimit = 20
       SeedMethod.log.debug("Fetching user settings for SearchAPI.io")
       val userSettings =
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(
           user
         )
@@ -104,7 +104,7 @@ open class SearchAPISearch(
     }
 
     override fun isEnabled() =
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
       .apis.any { api -> api.provider == SearchAPI && api.key?.decrypt != null }
   }

@@ -35,7 +35,7 @@ class TaskOrchestrator(
   val timeoutMinutes: Long = 15
 ) {
   val pool: ExecutorService by lazy {
-    (ServiceMap.services
+    (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(
       session,
       user

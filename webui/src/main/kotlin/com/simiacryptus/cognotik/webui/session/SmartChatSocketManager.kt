@@ -31,7 +31,7 @@ open class SmartChatSocketManager(
   override val systemPrompt: String,
   temperature: Double = 0.3,
   applicationClass: Class<out ChatServer>,
-  storage: StorageInterface = (ServiceMap.services
+  storage: StorageInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.DATA_STORAGE],
   override val fastTopicParsing: Boolean = true,
   retriable: Boolean = true,

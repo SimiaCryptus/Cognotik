@@ -204,7 +204,7 @@ data class User(
     }
 
     private fun authenticationInterface(): AuthenticationInterface {
-      val services = ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
+      val services = ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
       return services[ServiceKey.AUTHENTICATION]
     }
   }

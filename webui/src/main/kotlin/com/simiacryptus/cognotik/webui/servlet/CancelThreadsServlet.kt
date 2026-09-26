@@ -55,7 +55,7 @@ class CancelThreadsServlet : HttpServlet() {
         throw RuntimeException("User must be authenticated to cancel sessions")
       }
       require(
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
           ResourceRef.of(javaClass),
           Principal.of(user),
@@ -65,7 +65,7 @@ class CancelThreadsServlet : HttpServlet() {
       { "User $user is not authorized to cancel sessions" }
       if (session.isGlobal()) {
         require(
-          (ServiceMap.services
+          (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
             ResourceRef.of(javaClass),
             Principal.of(user),
@@ -74,7 +74,7 @@ class CancelThreadsServlet : HttpServlet() {
         )
         { "User $user is not authorized to cancel global sessions" }
       }
-      val pool = (ServiceMap.services
+      val pool = (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user ?: return)
       pool.shutdownNow()
       response.sendRedirect("/")

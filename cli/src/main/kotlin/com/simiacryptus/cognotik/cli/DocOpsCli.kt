@@ -255,7 +255,7 @@ object DocOpsCli {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
@@ -624,7 +624,7 @@ object DocOpsCli {
 fun ApiChatModel.instance(
   user: User,
   session: Session = globalID,
-  service: ExecutorService = (ServiceMap.services
+  service: ExecutorService = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user),
   temperature: Double = 0.1
 ) = model?.instance(
@@ -632,7 +632,7 @@ fun ApiChatModel.instance(
     null -> null
     "NONE".encrypt -> null
     else -> provider?.key
-  } ?: (ServiceMap.services
+  } ?: (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user).apis.let {
     it.firstOrNull { it.provider == this.provider }?.key
       ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
@@ -642,7 +642,7 @@ fun ApiChatModel.instance(
   ?: throw IllegalStateException("No API base configured for model $model"),
   workPool = service,
   temperature = temperature,
-  scheduledPool = (ServiceMap.services
+  scheduledPool = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, user),
   session = session,
   user = user,

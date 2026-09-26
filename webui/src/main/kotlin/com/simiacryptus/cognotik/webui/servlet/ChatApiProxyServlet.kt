@@ -51,7 +51,7 @@ class ChatApiProxyServlet(
   private val workPool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
   private val scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2))
   private val fileApplicationServices =
-    ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
+    ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
   private val usageManager = fileApplicationServices[ServiceKey.USAGE_DB]
 
   /**

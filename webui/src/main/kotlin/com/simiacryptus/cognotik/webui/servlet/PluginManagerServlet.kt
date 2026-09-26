@@ -62,7 +62,7 @@ class PluginManagerServlet(
    * without depending on this servlet.
    */
   private fun subscribeToPluginEvents() {
-    val pm = (ServiceMap.services
+    val pm = (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER]
     eventSubscriptionIds += pm.subscribe(PluginEvents.REGISTER_AUTH_CHAIN) { data ->
       if (data is PluginEvents.AuthChainRegistration) {
@@ -108,7 +108,7 @@ class PluginManagerServlet(
 
   override fun destroy() {
     // Clean up event subscriptions when servlet is destroyed
-    val pm = (ServiceMap.services
+    val pm = (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER]
     eventSubscriptionIds.forEach { pm.unsubscribe(it) }
     eventSubscriptionIds.clear()
@@ -129,7 +129,7 @@ class PluginManagerServlet(
       UserProviderImpl().authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user: {}", user)
-    if (!(ServiceMap.services
+    if (!(ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
         ResourceRef.of(PluginManagerServlet::class.java),
         Principal.of(user),
@@ -153,7 +153,7 @@ class PluginManagerServlet(
         val jarFiles = pluginDirectory.listFiles { f -> f.name.endsWith(".jar") } ?: emptyArray()
         log.debug("Found {} JAR files in plugin directory", jarFiles.size)
         val available = jarFiles.map { f ->
-          val isLoaded = (ServiceMap.services
+          val isLoaded = (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].isLoaded(f)
           log.trace("JAR file: {} (size: {} bytes, loaded: {})", f.name, f.length(), isLoaded)
           mapOf(
@@ -185,7 +185,7 @@ class PluginManagerServlet(
         log.info("Listing loaded plugins")
         response.contentType = "application/json"
         response.status = HttpServletResponse.SC_OK
-        val loadedPlugins = (ServiceMap.services
+        val loadedPlugins = (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
         log.debug("Found {} loaded plugin JARs", loadedPlugins.size)
         val pluginData = loadedPlugins.map { (jarPath, plugins) ->
@@ -221,7 +221,7 @@ class PluginManagerServlet(
       UserProviderImpl().authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user for POST: {}", user)
-    if (!(ServiceMap.services
+    if (!(ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
         ResourceRef.of(PluginManagerServlet::class.java),
         Principal.of(user),
@@ -647,11 +647,11 @@ class PluginManagerServlet(
       val plugins = if (!entryPoint.isNullOrBlank()) {
         log.info("Loading plugin from JAR: {} with entry point: {}", jarFile.canonicalPath, entryPoint)
         listOf(
-          (ServiceMap.services
+          (ServiceMap
             ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].loadPlugin(jarFile, entryPoint))
       } else {
         log.info("Loading all plugins from JAR: {}", jarFile.canonicalPath)
-        (ServiceMap.services
+        (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].loadPlugin(jarFile)
       }
       log.info(
@@ -698,7 +698,7 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     try {
       log.info("Unloading plugin JAR: {}", jarFile.canonicalPath)
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].unloadPlugin(jarFile)
       log.info("Successfully unloaded plugin JAR: {}", jarFile.canonicalPath)
       response.status = HttpServletResponse.SC_OK
@@ -760,7 +760,7 @@ class PluginManagerServlet(
       log.debug("Auto-load after upload: {}", autoLoad)
       if (autoLoad) {
         log.info("Auto-loading uploaded plugin JAR: {}", destFile.canonicalPath)
-        val plugins = (ServiceMap.services
+        val plugins = (ServiceMap
           ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].loadPlugin(destFile)
         log.info(
           "Auto-loaded {} plugin(s) from uploaded JAR: {} - plugins: {}",
@@ -808,7 +808,7 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     try {
       log.info("Loading all plugins from directory: {}", directory.canonicalPath)
-      val results = (ServiceMap.services
+      val results = (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].loadPluginsFromDirectory(directory)
       log.info("Loaded plugins from {} JAR(s) in directory: {}", results.size, directory.canonicalPath)
       val summary = results.map { (file, plugins) ->
@@ -856,7 +856,7 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     try {
       log.info("Deleting plugin JAR: {}", jarFile.canonicalPath)
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].deletePlugin(jarFile)
       log.info("Successfully deleted plugin JAR: {}", jarFile.canonicalPath)
       response.status = HttpServletResponse.SC_OK

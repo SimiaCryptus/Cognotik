@@ -94,7 +94,7 @@ class UsageDB : UsageInterface {
 
   private val database: Database get() = ExposedDatabase.get(facet)
   val userSettingsManager by lazy {
-    (ServiceMap.services
+    (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS] }
 
   /**

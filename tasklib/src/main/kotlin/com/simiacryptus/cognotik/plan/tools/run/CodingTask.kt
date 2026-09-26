@@ -46,7 +46,7 @@ open class CodingTask<T : CodeRuntime>(
 
 
   open val canPlay by lazy {
-    (ServiceMap.services
+    (ServiceMap
       ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
       ResourceRef.of(this::class.java),
       Principal.of(user),

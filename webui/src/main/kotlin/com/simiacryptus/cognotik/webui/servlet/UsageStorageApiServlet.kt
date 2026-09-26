@@ -38,7 +38,7 @@ import java.time.LocalDate
  * allow it should override [doPost] or replace this servlet entirely.
  */
 class UsageStorageApiServlet(
-  private val usage: UsageInterface = (ServiceMap.services
+  private val usage: UsageInterface = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USAGE_DB]
 ) : HttpServlet() {
 

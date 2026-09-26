@@ -109,7 +109,7 @@ class GitHubSearchTask(
       val searchResults = performGitHubSearch(
         agent.user
           .let {
-            (ServiceMap.services
+            (ServiceMap
               ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(it) }
           .apis.firstOrNull { it.provider == ServiceProviders.Github }?.key?.decrypt?.trim()
           ?: throw RuntimeException("GitHub API token is required")

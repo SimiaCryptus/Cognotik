@@ -214,7 +214,7 @@ class OrchestrationConfig(
 }
 
 fun String.instance(user: User): ApiChatModel? {
-  val userSettings = (ServiceMap.services
+  val userSettings = (ServiceMap
     ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.USER_SETTINGS].getUserSettings(user)
   val chatModel = userSettings.apis
     .filter { it.provider != null && it.key != null }

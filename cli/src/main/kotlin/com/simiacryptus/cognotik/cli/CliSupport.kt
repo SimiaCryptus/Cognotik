@@ -10,7 +10,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
-import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
@@ -61,7 +60,7 @@ object CliSupport {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      (ServiceMap.services
+      (ServiceMap
         ?: throw IllegalStateException("ApplicationServices not initialized"))[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
