@@ -45,7 +45,7 @@ open class FileServer {
     val shell: List<String> = emptyList(),
     val dir: String? = null,
     val email: String? = null,
-    val tasksEnabled: Boolean = false,
+    val tasksEnabled: Boolean = true,
     val taskRoot: String? = null,
     val smartModel: String? = System.getenv("COGNOTIK_SMART_MODEL"),
     val fastModel: String? = System.getenv("COGNOTIK_FAST_MODEL"),
