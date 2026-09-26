@@ -7,9 +7,9 @@ import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums

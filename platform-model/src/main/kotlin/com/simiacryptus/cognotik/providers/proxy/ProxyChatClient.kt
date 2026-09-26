@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.providers.proxy
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.SecureString
-import com.simiacryptus.cognotik.util.jsonCast
 import org.slf4j.LoggerFactory
 import java.io.BufferedOutputStream
 import java.io.IOException

@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.client.BalanceResponse
 import com.simiacryptus.cognotik.platform.client.BudgetResponse
 import com.simiacryptus.cognotik.platform.client.CreditRequest

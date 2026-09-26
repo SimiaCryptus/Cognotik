@@ -1,10 +1,14 @@
 package com.simiacryptus.cognotik.platform
 
-import com.simiacryptus.cognotik.platform.IFileApplicationServices.Companion.authenticationManagerFn
-import com.simiacryptus.cognotik.platform.file.AuthenticationManager
+import com.simiacryptus.cognotik.platform.service.IFileApplicationServices.Companion.authenticationManagerFn
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
+import com.simiacryptus.cognotik.platform.service.ApplicationServices
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.IFileApplicationServices
+import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
 import com.simiacryptus.cognotik.util.LazyReference
 import java.io.File
 import java.util.concurrent.ConcurrentHashMap

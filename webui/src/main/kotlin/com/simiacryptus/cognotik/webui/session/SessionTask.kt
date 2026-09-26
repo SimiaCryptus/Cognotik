@@ -6,7 +6,7 @@ import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.Description
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User

@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform
+package com.simiacryptus.cognotik.platform.service
 
 import java.io.File
 

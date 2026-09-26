@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.AuthenticationInterface.TokenMetadata
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet

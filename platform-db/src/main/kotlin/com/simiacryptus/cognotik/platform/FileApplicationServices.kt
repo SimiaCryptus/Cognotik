@@ -7,6 +7,13 @@ import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
 import com.simiacryptus.cognotik.platform.h2.SessionMetadataDB
 import com.simiacryptus.cognotik.platform.h2.UsageDB
 import com.simiacryptus.cognotik.platform.h2.UserSettingsDB
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
+import com.simiacryptus.cognotik.platform.service.IFileApplicationServices
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import java.io.File
 
 open class FileApplicationServices(override val rootDir: File) : IFileApplicationServices {

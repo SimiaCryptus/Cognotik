@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.AuthenticationInterface.TokenMetadata
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
 import java.security.MessageDigest

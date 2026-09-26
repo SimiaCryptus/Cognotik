@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.client
 
-import com.simiacryptus.cognotik.platform.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.AIModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session

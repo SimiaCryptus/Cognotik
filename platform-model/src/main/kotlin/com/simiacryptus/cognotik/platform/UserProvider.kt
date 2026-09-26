@@ -16,21 +16,3 @@ interface UserProvider {
   ): User?
 
 }
-
-interface AbstractHttpServletResponse {
-  fun setHeader(key: String, value: String)
-
-  var status: Int
-}
-
-fun HttpServletResponse.abstractHttpServletResponse(): AbstractHttpServletResponse = object : AbstractHttpServletResponse {
-  override fun setHeader(key: String, value: String) {
-    this@abstractHttpServletResponse.setHeader(key, value)
-  }
-
-  override var status: Int
-    get() = this@abstractHttpServletResponse.status
-    set(value) {
-      this@abstractHttpServletResponse.status = value
-    }
-}

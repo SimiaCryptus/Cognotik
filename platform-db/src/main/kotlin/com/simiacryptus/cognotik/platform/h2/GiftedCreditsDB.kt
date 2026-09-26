@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
-import com.simiacryptus.cognotik.platform.GiftedCreditsInterface
+import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.model.User
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.ResultRow

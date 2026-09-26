@@ -13,10 +13,10 @@ import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApiData
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage

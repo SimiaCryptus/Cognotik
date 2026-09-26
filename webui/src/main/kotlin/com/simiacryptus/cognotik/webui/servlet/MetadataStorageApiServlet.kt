@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.client.DeleteCountResponse
 import com.simiacryptus.cognotik.platform.client.DeleteSessionRequest
 import com.simiacryptus.cognotik.platform.client.ErrorResponse

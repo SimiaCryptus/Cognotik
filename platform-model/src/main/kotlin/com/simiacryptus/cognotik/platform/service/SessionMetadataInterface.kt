@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform
+package com.simiacryptus.cognotik.platform.service
 
 import com.simiacryptus.cognotik.platform.model.*
 import java.time.Instant
@@ -18,7 +18,7 @@ import java.util.*
  * an implementation says so.
  *
  * Bulk/listing default implementations here are deliberately naive (N+1). See
- * [AbstractSessionMetadata] for the same fallbacks in an explicitly opt-in base class;
+ * [com.simiacryptus.cognotik.platform.AbstractSessionMetadata] for the same fallbacks in an explicitly opt-in base class;
  * DB-backed implementations should override them.
  */
 

@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User

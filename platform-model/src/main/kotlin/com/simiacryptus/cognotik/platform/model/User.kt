@@ -3,8 +3,8 @@ package com.simiacryptus.cognotik.platform.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.ApplicationServices
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User.Companion.FIELD_DELIMITER
 import java.security.MessageDigest
 import java.util.*

@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.fileserver
 
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.HttpServletRequest

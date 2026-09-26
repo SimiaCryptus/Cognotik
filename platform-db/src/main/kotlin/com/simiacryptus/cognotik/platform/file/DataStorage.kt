@@ -3,8 +3,8 @@
 package com.simiacryptus.cognotik.platform.file
 
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.SessionMetadataInterface
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil

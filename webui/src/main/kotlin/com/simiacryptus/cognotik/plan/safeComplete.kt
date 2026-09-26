@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.plan
 
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApiData
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.platform.model.ISessionTask

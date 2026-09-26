@@ -4,10 +4,10 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authorizationManager
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User

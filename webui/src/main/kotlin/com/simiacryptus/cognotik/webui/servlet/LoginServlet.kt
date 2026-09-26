@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.AuthenticationInterface.Companion.AUTH_COOKIE
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.Companion.AUTH_COOKIE
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet

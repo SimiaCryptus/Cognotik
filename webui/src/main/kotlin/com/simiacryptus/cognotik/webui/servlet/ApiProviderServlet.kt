@@ -5,7 +5,7 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet

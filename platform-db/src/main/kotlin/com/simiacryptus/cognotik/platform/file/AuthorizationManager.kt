@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef

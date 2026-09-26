@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform
+package com.simiacryptus.cognotik.platform.service
 
 import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.ClaimResult

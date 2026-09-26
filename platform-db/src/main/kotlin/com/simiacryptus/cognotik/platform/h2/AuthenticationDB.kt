@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.platform.h2
 
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.AuthenticationInterface.TokenMetadata
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson

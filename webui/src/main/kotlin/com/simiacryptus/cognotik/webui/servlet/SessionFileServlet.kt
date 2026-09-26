@@ -4,8 +4,8 @@ import com.simiacryptus.cognotik.fileserver.FilesystemServlet
 import com.simiacryptus.cognotik.fileserver.GitProvider
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.application.getCookie

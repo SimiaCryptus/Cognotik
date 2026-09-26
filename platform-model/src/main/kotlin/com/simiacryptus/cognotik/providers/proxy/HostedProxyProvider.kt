@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.providers.proxy
 
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 

@@ -4,12 +4,11 @@ import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApiData
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.FileApplicationServices
-import com.simiacryptus.cognotik.platform.IFileApplicationServices
-import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.platform.service.IFileApplicationServices
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig

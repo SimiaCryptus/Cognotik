@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform
 
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.User
 

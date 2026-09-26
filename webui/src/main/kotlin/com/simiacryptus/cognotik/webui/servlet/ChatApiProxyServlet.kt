@@ -3,9 +3,9 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.ApiData
+import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.util.SecureString

@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authenticationManager
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import org.eclipse.jetty.servlet.DefaultServlet

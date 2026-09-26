@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.platform.model.PluginEvents
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.lang.Thread.sleep

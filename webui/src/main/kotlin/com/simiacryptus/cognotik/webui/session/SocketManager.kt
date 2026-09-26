@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.threadPoolManager
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.renderMarkdown
 import org.slf4j.LoggerFactory

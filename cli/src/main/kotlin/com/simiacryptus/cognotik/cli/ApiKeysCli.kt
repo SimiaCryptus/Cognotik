@@ -3,9 +3,9 @@ package com.simiacryptus.cognotik.cli
     import com.simiacryptus.cognotik.CoreProviders
     import com.simiacryptus.cognotik.platform.model.APIProvider
     import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-    import com.simiacryptus.cognotik.platform.ApiData
+    import com.simiacryptus.cognotik.platform.model.ApiData
     import com.simiacryptus.cognotik.platform.model.User
-    import com.simiacryptus.cognotik.platform.UserSettingsInterface
+    import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
     import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
     import com.simiacryptus.cognotik.util.SecureString
     import java.io.File
