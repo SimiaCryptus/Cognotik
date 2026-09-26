@@ -26,6 +26,7 @@ import java.util.Collections
 import java.util.WeakHashMap
 
 open class FileServer {
+   private val log = LoggerFactory.getLogger(FileServer::class.java)
 
 
   var user: User? = CliSupport.defaultUser
@@ -89,11 +90,12 @@ open class FileServer {
     if (!webSocketContexts.add(context)) return true
     return try {
       JettyWebSocketServletContainerInitializer.configure(context, null)
+       log.debug("Websocket support enabled on context '{}'", context.contextPath)
       true
-    } catch (e: Throwable) {
+     } catch (e: Exception) {
       webSocketContexts.remove(context)
-      log.warn("Could not enable websocket support on ${context.contextPath}: ${e.message}")
-      System.err.println("warning: could not enable websocket support: ${e.message}")
+       log.warn("Could not enable websocket support on context '{}'", context.contextPath, e)
+       System.err.println("warning: could not enable websocket support: ${e.message ?: e.javaClass.simpleName}")
       false
     }
   }
@@ -102,9 +104,13 @@ open class FileServer {
   private fun startNewHolders(context: ServletContextHandler) {
     if (!context.isStarted) return
     context.servletHandler.servlets.forEach { holder ->
-      if (!holder.isStarted) runCatching { holder.start() }
+       if (!holder.isStarted) {
+         runCatching { holder.start() }
+           .onFailure { log.error("Failed to start servlet holder '{}'", holder.name, it) }
+       }
     }
-    runCatching { context.servletHandler.initialize() }
+     runCatching { context.servletHandler.initialize() }
+       .onFailure { log.error("Failed to initialize servlet handler for '{}'", context.contextPath, it) }
   }
 
   /**
@@ -122,14 +128,20 @@ open class FileServer {
    */
   private inner class RootGatewayServlet : HttpServlet() {
     override fun service(req: HttpServletRequest, resp: HttpServletResponse) {
+       if (resp.isCommitted) {
+         log.debug("Gateway: response already committed for {}", req.requestURI)
+         return
+       }
       val path = req.requestURI.removePrefix(req.contextPath).ifEmpty { "/" }
       val query = req.queryString?.takeIf { it.isNotBlank() }?.let { "?$it" } ?: ""
+       try {
       if (!req.getParameter("session").isNullOrBlank()) {
         resp.sendRedirect("${FileServerCli.PROXY_PREFIX}/$query")
         return
       }
       if (path != "/") {
         /* Reached via the default mapping: nothing else claimed this path. */
+           log.debug("Gateway: 404 for unmatched path {}", path)
         resp.sendError(HttpServletResponse.SC_NOT_FOUND, "No such resource: $path")
         return
       }
@@ -137,6 +149,9 @@ open class FileServer {
       val target = serverInfo.landingPath.takeIf { it.isNotBlank() && it != "/" } ?: "${FileServerCli.HOME_PREFIX}/"
       resp.setHeader("Cache-Control", "no-store")
       resp.sendRedirect(target + query)
+       } catch (e: IllegalStateException) {
+         log.debug("Gateway: could not respond to {} (response committed)", path, e)
+       }
     }
   }
 
@@ -343,6 +358,7 @@ open class FileServer {
         )
       } catch (e: Exception) {
         /* Starting without a model is no longer fatal - pick one from the web UI. */
+         log.warn("Could not resolve models at start-up; continuing without them", e)
         System.err.println("warning: ${e.message}")
         null
       }
@@ -383,7 +399,27 @@ open class FileServer {
      * (CognotikAppServer) is only started by the first successful modify request.
      */
     if (modifyEnabled) {
-      val appServer = CognotikAppServer.getServer(host, chatPort)
+       val appServer = try {
+         CognotikAppServer.getServer(host, chatPort)
+       } catch (e: Exception) {
+         log.warn("Could not create chat app server on {}:{}; patch chat disabled", host, chatPort, e)
+         System.err.println("warning: patch chat disabled: ${e.message}")
+         modifyEnabled = false
+         null
+       }
+     }
+     if (modifyEnabled) {
+       val appServer = try {
+         CognotikAppServer.getServer(host, chatPort)
+       } catch (e: Exception) {
+         log.warn("Could not create chat app server on {}:{}; patch chat disabled", host, chatPort, e)
+         System.err.println("warning: patch chat disabled: ${e.message}")
+         null
+       }
+       if (appServer == null) modifyEnabled = false
+     }
+     if (modifyEnabled) {
+       val appServer = CognotikAppServer.getServer(host, chatPort) // cached instance
       ModifyFilesActions.install(
         ModifyFilesActions.Config(
           root = taskRoot,
@@ -411,8 +447,10 @@ open class FileServer {
     }
     /* One selection, every toolchain: re-bind whatever is installed when it changes. */
     ModelSelection.onChange {
-      if (tasksEnabled) ServerTaskActions.refreshModels()
-      if (modifyEnabled) ModifyFilesActions.refreshModels()
+       if (tasksEnabled) runCatching { ServerTaskActions.refreshModels() }
+         .onFailure { log.warn("Failed to refresh task models", it) }
+       if (modifyEnabled) runCatching { ModifyFilesActions.refreshModels() }
+         .onFailure { log.warn("Failed to refresh modify models", it) }
       models = try {
         CliSupport.resolveModels(
           user = user ?: throw IllegalStateException("No user available"),
@@ -422,9 +460,11 @@ open class FileServer {
           audioModel = audioModel,
           quiet = true,
         )
-      } catch (_: Exception) {
+       } catch (e: Exception) {
+         log.warn("Model re-resolution failed after selection change; keeping previous models", e)
         models
       }
+       log.info("Model selection changed: {}", ModelSelection.summary())
       println("Models -> ${ModelSelection.summary()}")
     }
 
@@ -498,8 +538,8 @@ open class FileServer {
       println("\nShutting down...")
       try {
         server.stop()
-      } catch (_: Exception) {
-        // best effort
+       } catch (e: Exception) {
+         log.debug("Error while stopping server (ignored)", e)
       }
     })
 
@@ -635,7 +675,15 @@ open class FileServer {
 
     server.handler = context
     server.stopAtShutdown = true
-    server.start()
+     log.debug("Starting server: dir={}, host={}, port={}, info={}", baseDir, host, port, serverInfo)
+     try {
+       server.start()
+     } catch (e: Exception) {
+       log.error("Failed to start server on {}:{} (port in use?)", host, port, e)
+       runCatching { server.stop() }.onFailure { log.debug("Cleanup stop failed", it) }
+       throw e
+     }
+     log.info("Server started on {}:{}", host, (server.connectors.first() as ServerConnector).localPort)
     /*
      * Identify this process as the owner of the sessions it creates: SessionProxyServer
      * records a worker id per session, and it is only meaningful once the port is bound
@@ -696,13 +744,13 @@ open class FileServer {
     pathSpec: String
   ): Boolean {
     if (isMapped(context, pathSpec)) {
-      log.info("Skipping servlet '{}' at {}: path already mapped", holder.name, pathSpec)
+       log.warn("Skipping servlet '{}' at {}: path already mapped", holder.name, pathSpec)
       return false
     }
     context.addServlet(holder, pathSpec)
+     log.debug("Mapped servlet '{}' at {}", holder.name, pathSpec)
     return true
   }
 
 
-  val log = LoggerFactory.getLogger(FileServerCli::class.java)
 }
