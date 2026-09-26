@@ -84,7 +84,7 @@ val user = User(
 
 ### 3. Application Services
 
-`ApplicationServicesImpl` is the central registry for all platform services:
+`CognotikPlatform` is the central registry for all platform services:
 
 ```kotlin
 // Access services

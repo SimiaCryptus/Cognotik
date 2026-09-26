@@ -2,10 +2,11 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -15,8 +16,12 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class SessionsServlet : HttpServlet() {
-    val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
-    val usageDB by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
+    val metadataDB by lazy {
+        CognotikPlatform.services[ServiceKey.METADATA_DB]
+    }
+    val usageDB by lazy {
+        CognotikPlatform.services[ServiceKey.USAGE_DB]
+    }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = UserProviderImpl().authenticate(req)
           ?: throw RuntimeException("User must be authenticated")
@@ -75,7 +80,7 @@ class SessionsServlet : HttpServlet() {
             return
         }
         try {
-            ApplicationServicesImpl.fileApplicationServices().dataStorageFactory.deleteSession(user, session)
+            CognotikPlatform.services[ServiceKey.DATA_STORAGE].deleteSession(user, session)
             log.info("User ${user.email} deleted session $sessionId")
             resp.status = HttpServletResponse.SC_OK
             resp.contentType = "application/json"

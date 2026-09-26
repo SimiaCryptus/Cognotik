@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -48,7 +48,8 @@ class BasicChatApp(
     val settings = getSettings(session, user, Settings::class.java) ?: Settings(   )
 
     fun instance(model: String): ChatInterface? {
-      val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
+      val userSettings =
+        CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user)
       val chatModel = userSettings.apis
         .filter { it.provider != null && it.key != null && it.baseUrl != null }
         .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) ?: emptyList() }
@@ -57,7 +58,7 @@ class BasicChatApp(
         val api = userSettings.apis.find {
           it.provider?.name == chatModel.provider?.name
         } ?: return null
-        val threadPoolManager = ApplicationServicesImpl.threadPoolManager
+        val threadPoolManager = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER]
         chatModel.instance(
           key = api.key!!,
           base = api.apiBase,

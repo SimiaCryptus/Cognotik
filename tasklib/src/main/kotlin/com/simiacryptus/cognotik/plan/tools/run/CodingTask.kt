@@ -7,8 +7,8 @@ import com.simiacryptus.cognotik.describe.AbbrevWhitelistYamlDescriber
 import com.simiacryptus.cognotik.describe.TypeDescriber
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
 import com.simiacryptus.cognotik.interpreter.CodeRuntime
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.service.StorageInterface
@@ -20,6 +20,7 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.platform.model.ISessionTask
+import com.simiacryptus.cognotik.platform.ServiceKey
 import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -45,7 +46,7 @@ open class CodingTask<T : CodeRuntime>(
 
 
   open val canPlay by lazy {
-    ApplicationServicesImpl.authorizationManager.isAuthorized(
+    CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
       ResourceRef.of(this::class.java),
       Principal.of(user),
       OperationType.Execute

@@ -3,8 +3,9 @@ package com.simiacryptus.cognotik.crawl.seed
 import com.simiacryptus.cognotik.models.ServiceProviders.SearchAPI
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.JsonUtil
 import java.net.URI
 import java.net.URLEncoder
@@ -35,7 +36,7 @@ open class SearchAPISearch(
       val searchLimit = 20
       SeedMethod.log.debug("Fetching user settings for SearchAPI.io")
       val userSettings =
-        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(
+        CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(
           user
         )
       val apiKey = userSettings
@@ -101,7 +102,8 @@ open class SearchAPISearch(
       }
     }
 
-    override fun isEnabled() = ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user)
+    override fun isEnabled() =
+      CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user)
       .apis.any { api -> api.provider == SearchAPI && api.key?.decrypt != null }
   }
 

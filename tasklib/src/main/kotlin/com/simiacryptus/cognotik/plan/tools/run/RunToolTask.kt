@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.ui.TabbedDisplay
@@ -89,7 +89,9 @@ class RunToolTask(
           ?: File(orchestrationConfig.absoluteWorkingDir ?: ".")
         val executionConfig = this.executionConfig ?: throw IllegalStateException("Execution config is null")
         val executable = tool.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-          ?: throw IllegalArgumentException("Executable '$tool' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
+          ?: throw IllegalArgumentException("Executable '$tool' not found relative to root '${
+            CognotikPlatform.services
+              .rootDir}' or on system PATH")
         val command = listOf(executable?.absolutePath
           ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
         ) + args

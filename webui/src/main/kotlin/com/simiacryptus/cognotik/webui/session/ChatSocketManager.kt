@@ -1,13 +1,14 @@
 package com.simiacryptus.cognotik.webui.session
 
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.ui.Retryable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
@@ -58,7 +59,7 @@ open class ChatSocketManager(
   open val systemPrompt: String,
   var temperature: Double = 0.3,
   applicationClass: Class<out ChatServer>,
-  val storage: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  val storage: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
   open val fastTopicParsing: Boolean = true,
   val retriable: Boolean = true,
   val budget: Double,

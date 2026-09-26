@@ -1,11 +1,12 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -29,8 +30,12 @@ import java.util.*
  *   - sortDir   (optional): "asc" or "desc" (default "desc")
  */
 class SessionUsageDetailsServlet : HttpServlet() {
-    private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
-    private val usageDB by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
+    private val metadataDB by lazy {
+        CognotikPlatform.services[ServiceKey.METADATA_DB]
+    }
+    private val usageDB by lazy {
+        CognotikPlatform.services[ServiceKey.USAGE_DB]
+    }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = UserProviderImpl().authenticate(req)

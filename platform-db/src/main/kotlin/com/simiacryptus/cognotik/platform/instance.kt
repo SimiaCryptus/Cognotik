@@ -6,5 +6,5 @@ import com.simiacryptus.cognotik.platform.model.User
 
 fun ChatModel.instance(user: User) = ApiChatModel(
   model = this,
-  provider = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
+  provider = CognotikPlatform.services[ServiceKey.USER_SETTINGS]
     .getUserSettings(user).apis.find { it.provider == this.provider })

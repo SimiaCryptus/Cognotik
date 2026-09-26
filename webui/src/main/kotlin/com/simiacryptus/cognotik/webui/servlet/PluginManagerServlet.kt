@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.PluginEvents
 import com.simiacryptus.cognotik.auth.AuthorizationChain
 import com.simiacryptus.cognotik.auth.PendingAuthorization
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.annotation.MultipartConfig
@@ -61,7 +62,7 @@ class PluginManagerServlet(
    * without depending on this servlet.
    */
   private fun subscribeToPluginEvents() {
-    val pm = ApplicationServicesImpl.pluginManager
+    val pm = CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER]
     eventSubscriptionIds += pm.subscribe(PluginEvents.REGISTER_AUTH_CHAIN) { data ->
       if (data is PluginEvents.AuthChainRegistration) {
         val chain = data.chain
@@ -106,7 +107,7 @@ class PluginManagerServlet(
 
   override fun destroy() {
     // Clean up event subscriptions when servlet is destroyed
-    val pm = ApplicationServicesImpl.pluginManager
+    val pm = CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER]
     eventSubscriptionIds.forEach { pm.unsubscribe(it) }
     eventSubscriptionIds.clear()
     handlerToSessionMap.clear()
@@ -126,7 +127,7 @@ class PluginManagerServlet(
       UserProviderImpl().authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user: {}", user)
-    if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
+    if (!CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
         ResourceRef.of(PluginManagerServlet::class.java),
         Principal.of(user),
         OperationType.Admin
@@ -149,7 +150,7 @@ class PluginManagerServlet(
         val jarFiles = pluginDirectory.listFiles { f -> f.name.endsWith(".jar") } ?: emptyArray()
         log.debug("Found {} JAR files in plugin directory", jarFiles.size)
         val available = jarFiles.map { f ->
-          val isLoaded = ApplicationServicesImpl.pluginManager.isLoaded(f)
+          val isLoaded = CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].isLoaded(f)
           log.trace("JAR file: {} (size: {} bytes, loaded: {})", f.name, f.length(), isLoaded)
           mapOf(
             "name" to f.name, "path" to f.canonicalPath, "size" to f.length(), "loaded" to isLoaded
@@ -180,7 +181,7 @@ class PluginManagerServlet(
         log.info("Listing loaded plugins")
         response.contentType = "application/json"
         response.status = HttpServletResponse.SC_OK
-        val loadedPlugins = ApplicationServicesImpl.pluginManager.getLoadedPlugins()
+        val loadedPlugins = CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
         log.debug("Found {} loaded plugin JARs", loadedPlugins.size)
         val pluginData = loadedPlugins.map { (jarPath, plugins) ->
           log.trace("Loaded JAR: {} with {} plugins", jarPath, plugins.size)
@@ -215,7 +216,7 @@ class PluginManagerServlet(
       UserProviderImpl().authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     log.debug("Authenticated user for POST: {}", user)
-    if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
+    if (!CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
         ResourceRef.of(PluginManagerServlet::class.java),
         Principal.of(user),
         OperationType.Admin
@@ -639,10 +640,10 @@ class PluginManagerServlet(
     try {
       val plugins = if (!entryPoint.isNullOrBlank()) {
         log.info("Loading plugin from JAR: {} with entry point: {}", jarFile.canonicalPath, entryPoint)
-        listOf(ApplicationServicesImpl.pluginManager.loadPlugin(jarFile, entryPoint))
+        listOf(CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].loadPlugin(jarFile, entryPoint))
       } else {
         log.info("Loading all plugins from JAR: {}", jarFile.canonicalPath)
-        ApplicationServicesImpl.pluginManager.loadPlugin(jarFile)
+        CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].loadPlugin(jarFile)
       }
       log.info(
         "Successfully loaded {} plugin(s) from JAR: {} - plugins: {}",
@@ -688,7 +689,7 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     try {
       log.info("Unloading plugin JAR: {}", jarFile.canonicalPath)
-      ApplicationServicesImpl.pluginManager.unloadPlugin(jarFile)
+      CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].unloadPlugin(jarFile)
       log.info("Successfully unloaded plugin JAR: {}", jarFile.canonicalPath)
       response.status = HttpServletResponse.SC_OK
       response.writer.write(
@@ -749,7 +750,7 @@ class PluginManagerServlet(
       log.debug("Auto-load after upload: {}", autoLoad)
       if (autoLoad) {
         log.info("Auto-loading uploaded plugin JAR: {}", destFile.canonicalPath)
-        val plugins = ApplicationServicesImpl.pluginManager.loadPlugin(destFile)
+        val plugins = CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].loadPlugin(destFile)
         log.info(
           "Auto-loaded {} plugin(s) from uploaded JAR: {} - plugins: {}",
           plugins.size,
@@ -796,7 +797,7 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     try {
       log.info("Loading all plugins from directory: {}", directory.canonicalPath)
-      val results = ApplicationServicesImpl.pluginManager.loadPluginsFromDirectory(directory)
+      val results = CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].loadPluginsFromDirectory(directory)
       log.info("Loaded plugins from {} JAR(s) in directory: {}", results.size, directory.canonicalPath)
       val summary = results.map { (file, plugins) ->
         log.debug(
@@ -843,7 +844,7 @@ class PluginManagerServlet(
     response.contentType = "application/json"
     try {
       log.info("Deleting plugin JAR: {}", jarFile.canonicalPath)
-      ApplicationServicesImpl.pluginManager.deletePlugin(jarFile)
+      CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].deletePlugin(jarFile)
       log.info("Successfully deleted plugin JAR: {}", jarFile.canonicalPath)
       response.status = HttpServletResponse.SC_OK
       response.writer.write(

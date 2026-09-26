@@ -21,7 +21,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
@@ -30,6 +30,7 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.asChatInterface
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.platform.model.ISessionTask
+import com.simiacryptus.cognotik.platform.ServiceKey
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.CompletableFuture
@@ -284,7 +285,7 @@ class DocProcessor(
       session: Session = Session.newUserID(), concurrency: Int = 4, user: User
     ): FixedConcurrencyProcessor =
       FixedConcurrencyProcessor(
-        ApplicationServicesImpl.threadPoolManager.getPool(
+        CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getPool(
           session,
           user
         ), concurrency

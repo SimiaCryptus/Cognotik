@@ -1,8 +1,9 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
@@ -30,7 +31,7 @@ import org.slf4j.LoggerFactory
 class SessionNameServlet(
   private val server: ApplicationServer,
   private val metadataStorageProvider: () -> SessionMetadataInterface = {
-    ApplicationServicesImpl.fileApplicationServices().metadataDB
+    CognotikPlatform.services[ServiceKey.METADATA_DB]
   },
 ) : HttpServlet() {
   private val logger = LoggerFactory.getLogger(SessionNameServlet::class.java)

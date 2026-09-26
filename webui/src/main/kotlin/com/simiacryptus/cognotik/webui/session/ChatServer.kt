@@ -1,10 +1,11 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authenticationManager
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import org.eclipse.jetty.servlet.DefaultServlet
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -49,7 +50,11 @@ abstract class ChatServer(
             trafficLog.debug("WebSocket connection request for session: {}", session)
             val sessionManager = sessions.computeIfAbsent(session) { s ->
               val user =
-                authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
+                CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(
+                  request.getCookie(
+                    AuthenticationInterface.AUTH_COOKIE
+                  )
+                )
               if (user == null) {
                 throw RuntimeException("User must be authenticated to connect to WebSocket for session: $s")
               }

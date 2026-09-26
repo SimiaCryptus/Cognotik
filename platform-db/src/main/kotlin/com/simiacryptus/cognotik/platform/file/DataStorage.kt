@@ -2,11 +2,12 @@
 
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
@@ -15,7 +16,7 @@ import java.time.Instant
 
 class DataStorage(
   private val dataDir: File,
-  override val metadataStorage: SessionMetadataInterface = ApplicationServicesImpl.fileApplicationServices(dataDir.parentFile).metadataDB
+  override val metadataStorage: SessionMetadataInterface = CognotikPlatform.services[ServiceKey.METADATA_DB]
 ) : StorageInterface {
 
   init {

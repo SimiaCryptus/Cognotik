@@ -1,8 +1,7 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authorizationManager
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
@@ -18,6 +17,7 @@ import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.UserProvider
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.session.SocketManager
@@ -48,7 +48,9 @@ abstract class ApplicationServer(
       return sessionOwner == null || sessionOwner == user?.id
     }
   }
-  private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
+  private val metadataDB by lazy {
+    CognotikPlatform.services[ServiceKey.METADATA_DB]
+  }
 
 
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
@@ -64,7 +66,7 @@ abstract class ApplicationServer(
   }.toMap()
 
   final override val dataStorage: StorageInterface by lazy {
-    ApplicationServicesImpl.fileApplicationServices().dataStorageFactory
+    CognotikPlatform.services[ServiceKey.DATA_STORAGE]
   }
   protected open val appInfoServlet by lazy {
     ServletHolder("appInfo", AppInfoServlet { session, user ->
@@ -295,7 +297,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = Filte
     log.debug("Authenticated user: {} for request: {}", email, requestPath)
     email
   }
-  val canRead = authorizationManager.isAuthorized(
+  val canRead = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
     ResourceRef.of(applicationClass = applicationClass),
     Principal.of(user = user),
     operationType = OperationType.Read
@@ -333,7 +335,7 @@ class UserProviderImpl : UserProvider {
   override fun authenticate(
     request: HttpServletRequest
   ) = request.getCookie()?.let {
-    ApplicationServicesImpl.fileApplicationServices().authenticationManager.getUser(it)
+    CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(it)
   }
 }
 

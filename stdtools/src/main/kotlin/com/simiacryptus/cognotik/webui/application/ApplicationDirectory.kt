@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.OutputInterceptor
-import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
 import com.simiacryptus.cognotik.platform.model.OWNER_ID
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
@@ -125,7 +125,9 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized SessionUsageDetailsServlet") }
 
   open val creditsServlet: CreditsServlet =
-    CreditsServlet(NoOpPaymentProvider(ApplicationServicesImpl.fileApplicationServices().usageDB))
+    CreditsServlet(NoOpPaymentProvider(
+      CognotikPlatform.services[ServiceKey.USAGE_DB]
+    ))
       .also { log.debug("Initialized CreditsServlet") }
 
   open fun setupPlatform() {
@@ -340,11 +342,11 @@ abstract class ApplicationDirectory(
     // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
     if (!isAndroid()) {
       log.debug("Using WebAppClassLoader for context: $path")
-      context.classLoader = WebAppClassLoader(ApplicationServicesImpl::class.java.classLoader, context)
+      context.classLoader = WebAppClassLoader(CognotikPlatform::class.java.classLoader, context)
       context.isParentLoaderPriority = true
     } else {
       log.debug("Using standard class loader for Android compatibility in context: $path")
-      context.classLoader = ApplicationServicesImpl::class.java.classLoader
+      context.classLoader = CognotikPlatform::class.java.classLoader
     }
     if (baseResource != null) {
       log.debug("Setting base resource for context $path: ${baseResource.javaClass.simpleName}")
@@ -372,11 +374,11 @@ abstract class ApplicationDirectory(
     // Use standard class loader on Android to avoid WebAppClassLoader compatibility issues
     if (!isAndroid()) {
       log.debug("Using WebAppClassLoader for servlet context: $path")
-      context.classLoader = WebAppClassLoader(ApplicationServicesImpl::class.java.classLoader, context)
+      context.classLoader = WebAppClassLoader(CognotikPlatform::class.java.classLoader, context)
       context.isParentLoaderPriority = true
     } else {
       log.debug("Using standard class loader for Android compatibility in servlet context: $path")
-      context.classLoader = ApplicationServicesImpl::class.java.classLoader
+      context.classLoader = CognotikPlatform::class.java.classLoader
     }
     context.contextPath = path
     log.debug("New WebAppContext created for servlet at path: $path")

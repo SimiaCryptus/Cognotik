@@ -15,12 +15,12 @@ import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
 import com.simiacryptus.cognotik.docops.status.TaskStatus
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.FileApplicationServices
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.encrypt
@@ -110,7 +110,6 @@ object DocOpsCli {
 
 
   private fun execute(opts: CliOptions): Int {
-    val servicesCache = mutableMapOf<File, FileApplicationServices>()
     DatabaseFacet.root = File(".").absolutePath
     val root = opts.root
     val docsFolder = opts.docsFolder ?: root
@@ -256,7 +255,7 @@ object DocOpsCli {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      ApplicationServicesImpl.pluginManager.getLoadedPlugins()
+      CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }
@@ -624,14 +623,14 @@ object DocOpsCli {
 fun ApiChatModel.instance(
   user: User,
   session: Session = globalID,
-  service: ExecutorService = ApplicationServicesImpl.threadPoolManager.getPool(session, user),
+  service: ExecutorService = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user),
   temperature: Double = 0.1
 ) = model?.instance(
   key = when (provider?.key) {
     null -> null
     "NONE".encrypt -> null
     else -> provider?.key
-  } ?: ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user).apis.let {
+  } ?: CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user).apis.let {
     it.firstOrNull { it.provider == this.provider }?.key
       ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
       ?: throw IllegalStateException("No API key configured for model $model")
@@ -640,7 +639,7 @@ fun ApiChatModel.instance(
   ?: throw IllegalStateException("No API base configured for model $model"),
   workPool = service,
   temperature = temperature,
-  scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(session, user),
+  scheduledPool = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, user),
   session = session,
   user = user,
 )

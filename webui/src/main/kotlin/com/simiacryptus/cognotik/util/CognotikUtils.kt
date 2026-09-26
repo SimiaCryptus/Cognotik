@@ -6,12 +6,12 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.service.IFileApplicationServices
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.ServiceKey
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -19,10 +19,6 @@ import java.io.File
 import java.util.concurrent.Executors
 
 object CognotikUtils {
-  @JvmStatic
-  fun fileApplicationServices(): IFileApplicationServices {
-    return ApplicationServicesImpl.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot)
-  }
 
   @JvmStatic
   fun user(): User {
@@ -31,7 +27,7 @@ object CognotikUtils {
 
   @JvmStatic
   fun userSettings(): UserSettings {
-    return fileApplicationServices().userSettingsManager.getUserSettings(user())
+    return CognotikPlatform.services[ServiceKey.USER_SETTINGS].getUserSettings(user())
   }
 
   @JvmStatic
@@ -93,7 +89,7 @@ object CognotikUtils {
   fun configureEnvironmentalKeys() {
     check(!APIProvider.values().isEmpty()) { "No API providers configured" }
     val userSettingsManager =
-      ApplicationServicesImpl.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).userSettingsManager
+      CognotikPlatform.services[ServiceKey.USER_SETTINGS]
     val user = user()
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false

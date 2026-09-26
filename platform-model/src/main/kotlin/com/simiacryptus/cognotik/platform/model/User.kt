@@ -3,9 +3,10 @@ package com.simiacryptus.cognotik.platform.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.simiacryptus.cognotik.platform.service.ApplicationServices
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User.Companion.FIELD_DELIMITER
+import com.simiacryptus.cognotik.platform.ServiceKey
 import java.security.MessageDigest
 import java.util.*
 import javax.crypto.Mac
@@ -203,8 +204,8 @@ data class User(
     }
 
     private fun authenticationInterface(): AuthenticationInterface {
-      val services = ApplicationServices.services ?: throw IllegalStateException("ApplicationServices not initialized")
-      return services.fileApplicationServices(ApplicationServicesConfig.dataStorageRoot).authenticationManager
+      val services = ServiceMap.services ?: throw IllegalStateException("ApplicationServices not initialized")
+      return services[ServiceKey.AUTHENTICATION]
     }
   }
 

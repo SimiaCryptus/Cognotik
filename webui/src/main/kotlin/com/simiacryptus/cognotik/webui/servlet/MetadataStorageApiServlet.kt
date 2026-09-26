@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.client.DeleteCountResponse
 import com.simiacryptus.cognotik.platform.client.DeleteSessionRequest
@@ -26,6 +26,7 @@ import com.simiacryptus.cognotik.platform.client.SetSessionWorkerRequest
 import com.simiacryptus.cognotik.platform.client.StatusResponse
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -45,11 +46,11 @@ import java.time.Instant
  * own semantics, where `user` is mostly informational/for auditing).
  *
  * NOTE: the constructor default assumes a `metadataStorage` property on
- * [ApplicationServicesImpl.fileApplicationServices]; adjust if the actual property
+ * [CognotikPlatform.fileApplicationServices]; adjust if the actual property
  * name differs in this codebase.
  */
 class MetadataStorageApiServlet(
-  private val metadata: SessionMetadataInterface = ApplicationServicesImpl.fileApplicationServices().metadataDB
+  private val metadata: SessionMetadataInterface = CognotikPlatform.services[ServiceKey.METADATA_DB]
 ) : HttpServlet() {
 
   private fun currentUser(request: HttpServletRequest): User =

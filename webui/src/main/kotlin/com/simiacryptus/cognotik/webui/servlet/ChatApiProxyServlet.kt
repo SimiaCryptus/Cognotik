@@ -3,11 +3,12 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.common.util.concurrent.MoreExecutors
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -49,8 +50,9 @@ class ChatApiProxyServlet(
   private val mapper = ObjectMapper().registerKotlinModule()
   private val workPool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
   private val scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2))
-  private val fileApplicationServices = ApplicationServicesImpl.fileApplicationServices()
-  private val usageManager = fileApplicationServices.usageDB
+  private val fileApplicationServices =
+    CognotikPlatform.services
+  private val usageManager = fileApplicationServices[ServiceKey.USAGE_DB]
 
   /**
    * Holds the state of an asynchronous chat request.
@@ -793,7 +795,7 @@ class ChatApiProxyServlet(
       throw InsufficientBudgetException("No available budget for user ${user.email}")
     }
     val baseSettings = try {
-      fileApplicationServices.userSettingsManager.getUserSettings(user)
+      fileApplicationServices[ServiceKey.USER_SETTINGS].getUserSettings(user)
     } catch (e: Exception) {
       log.error("Failed to load user settings for user '{}'", user.email, e)
       throw RuntimeException("Failed to load user settings: ${e.message}", e)

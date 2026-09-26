@@ -1,11 +1,15 @@
-package com.simiacryptus.cognotik.platform.service
+package com.simiacryptus.cognotik.platform
 
-import com.simiacryptus.cognotik.platform.ThreadPoolManager
-import java.io.File
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
+import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import java.util.concurrent.CopyOnWriteArrayList
-import kotlin.properties.ReadWriteProperty
 import kotlin.reflect.KClass
-import kotlin.reflect.KProperty
 
 /**
  * Typed descriptor for a service: name, type, scope, and factory delegates.
@@ -19,12 +23,12 @@ class ServiceKey<T : Any>(
   enum class Scope { GLOBAL, ROOT }
 
   @Volatile
-  var factory: ((ApplicationServices) -> T)? = null
+  var factory: ((ServiceMap) -> T)? = null
 
   @Volatile
-  var defaultFactory: ((ApplicationServices) -> T)? = null
+  var defaultFactory: ((ServiceMap) -> T)? = null
 
-  fun create(services: ApplicationServices): T =
+  fun create(services: ServiceMap): T =
     (factory ?: defaultFactory ?: throw UnsupportedOperationException("No factory registered for service '$name'"))
       .invoke(services)
 
@@ -40,25 +44,11 @@ class ServiceKey<T : Any>(
     val PLUGIN_MANAGER = ServiceKey("pluginManager", PluginManagerInterface::class, Scope.GLOBAL)
     val AUTHORIZATION_MANAGER = ServiceKey("authorizationManager", AuthorizationInterface::class, Scope.GLOBAL)
     val THREAD_POOL_MANAGER = ServiceKey("threadPoolManager", ThreadPoolManager::class, Scope.GLOBAL)
-
     val DATA_STORAGE = ServiceKey("dataStorage", StorageInterface::class)
     val METADATA_DB = ServiceKey("metadataDB", SessionMetadataInterface::class)
     val USAGE_DB = ServiceKey("usageDB", UsageInterface::class)
     val USER_SETTINGS = ServiceKey("userSettingsManager", UserSettingsInterface::class)
     val AUTHENTICATION = ServiceKey("authenticationManager", AuthenticationInterface::class)
     val GIFTED_CREDITS = ServiceKey("giftedCreditsDB", GiftedCreditsInterface::class)
-  }
-}
-
-/** Adapts a legacy `(File) -> T` factory property onto a [ServiceKey]. */
-internal class LegacyFileFactory<T : Any>(private val key: ServiceKey<T>) : ReadWriteProperty<Any?, ((File) -> T)?> {
-  @Volatile
-  private var legacy: ((File) -> T)? = null
-
-  override fun getValue(thisRef: Any?, property: KProperty<*>): ((File) -> T)? = legacy
-
-  override fun setValue(thisRef: Any?, property: KProperty<*>, value: ((File) -> T)?) {
-    legacy = value
-    key.factory = value?.let { fn -> { services: ApplicationServices -> fn(services.rootDir) } }
   }
 }

@@ -61,7 +61,7 @@ Content:
 ### Data Directory
 
 The `DataStorage` and `UserSettingsManager` require a root directory on the filesystem. This is typically configured
-during application startup via `ApplicationServicesImpl`.
+during application startup via `CognotikPlatform`.
 
 ## Implementation Details
 

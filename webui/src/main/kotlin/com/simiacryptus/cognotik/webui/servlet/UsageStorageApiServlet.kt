@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.client.BalanceResponse
 import com.simiacryptus.cognotik.platform.client.BudgetResponse
@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.platform.client.StatusResponse
 import com.simiacryptus.cognotik.platform.client.UsageSummaryResponse
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
@@ -37,7 +38,7 @@ import java.time.LocalDate
  * allow it should override [doPost] or replace this servlet entirely.
  */
 class UsageStorageApiServlet(
-  private val usage: UsageInterface = ApplicationServicesImpl.fileApplicationServices().usageDB
+  private val usage: UsageInterface = CognotikPlatform.services[ServiceKey.USAGE_DB]
 ) : HttpServlet() {
 
   private fun currentUser(request: HttpServletRequest): User =

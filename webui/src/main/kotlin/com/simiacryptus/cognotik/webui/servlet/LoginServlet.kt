@@ -2,9 +2,10 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.Companion.AUTH_COOKIE
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceKey
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -733,14 +734,14 @@ class LoginServlet : HttpServlet() {
         //provider = methodName
       )
       val fileServices = try {
-        ApplicationServicesImpl.fileApplicationServices()
+        CognotikPlatform.services
       } catch (e: Exception) {
         log.error("Failed to get fileApplicationServices for login: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
         return
       }
       val settings = try {
-        fileServices.userSettingsManager.getUserSettings(user)
+        fileServices[ServiceKey.USER_SETTINGS].getUserSettings(user)
       } catch (e: Exception) {
         log.error("Failed to load user settings for login: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -762,7 +763,7 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, inputHash)
       try {
-        ApplicationServicesImpl.authenticationManager.putUser(accessToken, user)
+        CognotikPlatform.services[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register user with authentication manager: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -810,7 +811,7 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (token.isNullOrBlank()) return false
       val user = try {
-        ApplicationServicesImpl.authenticationManager.getUser(token)
+        CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(token)
       } catch (e: Exception) {
         log.debug("Error checking existing authentication", e)
         null
@@ -849,12 +850,12 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (!token.isNullOrBlank()) {
         try {
-          val user = ApplicationServicesImpl.authenticationManager.getUser(token)
+          val user = CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(token)
           if (user == null) {
             log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
           } else {
             try {
-              ApplicationServicesImpl.authenticationManager.logoutIfMatching(token, user)
+              CognotikPlatform.services[ServiceKey.AUTHENTICATION].logoutIfMatching(token, user)
               log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
             } catch (e: Exception) {
               log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)
@@ -934,7 +935,7 @@ class LoginServlet : HttpServlet() {
         name = username,
       )
       val fileServices = try {
-        ApplicationServicesImpl.fileApplicationServices()
+        CognotikPlatform.services
       } catch (e: Exception) {
         log.error("Failed to get fileApplicationServices for registration: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -974,7 +975,7 @@ class LoginServlet : HttpServlet() {
       }
 
       val existingSettings = try {
-        fileServices.userSettingsManager.getUserSettings(user)
+        fileServices[ServiceKey.USER_SETTINGS].getUserSettings(user)
       } catch (e: Exception) {
         log.error("Failed to load existing settings for registration: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -987,7 +988,7 @@ class LoginServlet : HttpServlet() {
       }
       val newSettings = existingSettings.copy(passwordHash = hashPassword(password))
       try {
-        fileServices.userSettingsManager.updateUserSettings(user, newSettings)
+        fileServices[ServiceKey.USER_SETTINGS].updateUserSettings(user, newSettings)
       } catch (e: Exception) {
         log.error("Failed to persist user settings during registration: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -998,7 +999,7 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, hashPassword(password))
       try {
-        ApplicationServicesImpl.authenticationManager.putUser(accessToken, user)
+        CognotikPlatform.services[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register newly-registered user with authentication manager: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)

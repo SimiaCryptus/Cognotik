@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.threadPoolManager
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.util.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -20,7 +20,7 @@ import java.util.function.Consumer
 
 abstract class SocketManager(
   val sessionId: Session,
-  val dataStorage: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  val dataStorage: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
   val owner: User,
   private val applicationClass: Class<*>,
 ) {
@@ -92,8 +92,11 @@ abstract class SocketManager(
   private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
   private val queueProcessing: MutableSet<ChatSocket> = ConcurrentHashMap.newKeySet()
   private val messageVersions = ConcurrentHashMap<String, AtomicInteger>()
-  val pool get() = threadPoolManager.getPool(sessionId, owner)
-  val scheduledThreadPoolExecutor get() = threadPoolManager.getScheduledPool(sessionId, owner)
+  val pool get() = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getPool(sessionId, owner)
+  val scheduledThreadPoolExecutor get() = CognotikPlatform.services[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
+    sessionId,
+    owner
+  )
 
   fun removeSocket(socket: ChatSocket) {
     log.debug("Removing socket: {} (id: {})", socket, System.identityHashCode(socket))
@@ -128,7 +131,7 @@ abstract class SocketManager(
       session.remoteAddress
     )
 
-    if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
+    if (!CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
         ResourceRef.of(applicationClass = applicationClass),
         Principal.of(user = user),
         operationType = OperationType.Read
@@ -477,7 +480,7 @@ abstract class SocketManager(
     }
   }
 
-  open fun canWrite(user: User?) = ApplicationServicesImpl.authorizationManager.isAuthorized(
+  open fun canWrite(user: User?) = CognotikPlatform.services[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
     ResourceRef.of(applicationClass = applicationClass),
     Principal.of(user = user),
     operationType = OperationType.Write
@@ -613,7 +616,7 @@ abstract class SocketManager(
     fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {
       log.debug("Getting user from session: {}", session)
       trafficLog.trace("Getting user from session: {}", session.remoteAddress)
-      return ApplicationServicesImpl.authenticationManager.getUser(
+      return CognotikPlatform.services[ServiceKey.AUTHENTICATION].getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
           ?.value) ?: throw RuntimeException("User must be authenticated to connect to WebSocket")
@@ -624,7 +627,7 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
   newSession: Session,
-  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
   owner: User,
   clazz: Class<*>
 ) : SocketManager(
@@ -646,7 +649,7 @@ class ReadonlySocketManager(
 class ServerlessSocketManager(
   session: Session,
   val messageEvents: OutputStream? = null,
-  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = CognotikPlatform.services[ServiceKey.DATA_STORAGE],
   owner: User,
   clazz: Class<*>
 ) : SocketManager(

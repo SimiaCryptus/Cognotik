@@ -6,13 +6,14 @@ import com.simiacryptus.cognotik.platform.model.ChatMessageModality
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.fileserver.FileServlet
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.UserProvider
+import com.simiacryptus.cognotik.platform.ServiceKey
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
@@ -58,7 +59,7 @@ object CliSupport {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      ApplicationServicesImpl.pluginManager.getLoadedPlugins()
+      CognotikPlatform.services[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }
