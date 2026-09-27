@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform.client
 
+import com.simiacryptus.cognotik.platform.CognotikConfig.controllerEndpoint
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
@@ -25,7 +26,7 @@ import java.time.Instant
  * server-side restriction.
  */
 class SessionMetadataClient(
-  private val baseUrl: String = "https://hosted.cognotik.com/sessionMetadata",
+  private val baseUrl: String = controllerEndpoint + "/sessionMetadata",
   private val httpClient: HttpClient = HttpClient.newBuilder()
     .followRedirects(HttpClient.Redirect.NORMAL)
     .build(),

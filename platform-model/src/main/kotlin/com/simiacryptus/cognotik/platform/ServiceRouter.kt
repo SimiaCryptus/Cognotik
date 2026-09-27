@@ -487,6 +487,11 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     ownerId: String?
   ) = ServiceMap[ServiceKey.METADATA_DB].setSessionWorker(session, user, ownerId)
 
+  override fun getSessionWorker(
+    user: User,
+    session: Session
+  ): String? = ServiceMap[ServiceKey.METADATA_DB].getSessionWorker(user, session)
+
   override fun deleteSession(
     user: User,
     session: Session

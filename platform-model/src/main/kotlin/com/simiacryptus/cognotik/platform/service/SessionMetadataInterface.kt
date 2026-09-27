@@ -100,7 +100,7 @@ interface SessionMetadataInterface {
   fun setSessionWorker(session: Session, user: User, ownerId: String? = user?.id)
 
   /** User-scoped overload of [getSessionWorker]. */
-  fun getSessionWorker(user: User, session: Session): String? = getSessionWorker(session = session, user = user)
+  fun getSessionWorker(user: User, session: Session): String?
 
   /**
    * Retrieves the application path associated with a session.

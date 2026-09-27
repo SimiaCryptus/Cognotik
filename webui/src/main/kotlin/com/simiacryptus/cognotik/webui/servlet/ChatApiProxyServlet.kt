@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.webui.servlet.ChatApiProxyServlet.ProxyMetrics.Companion.STATIC_KEYS
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -875,6 +876,7 @@ class ChatApiProxyServlet(
    * providers work without a code change.
    */
   private fun envKeyFor(provider: APIProvider): String? {
+    STATIC_KEYS[provider]?.decrypt?.apply { return this }
     val candidates = LinkedHashSet<String>()
     when (provider.name.lowercase()) {
       "anthropic" -> candidates.add("ANTHROPIC_API_KEY")
@@ -886,14 +888,17 @@ class ChatApiProxyServlet(
       "deepseek" -> candidates.add("DEEPSEEK_API_KEY")
     }
     candidates.add(provider.name.uppercase().replace(Regex("[^A-Z0-9]"), "_") + "_API_KEY")
-    return candidates.firstNotNullOfOrNull { name ->
+    val key = candidates.firstNotNullOfOrNull { name ->
       try {
-        System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() }
+        val rawval = System.getenv(name)
+        val takeIf = rawval?.trim()?.takeIf { it.isNotEmpty() }
+        takeIf
       } catch (e: SecurityException) {
         log.warn("Not permitted to read environment variable '{}': {}", name, e.message)
         null
       }
     }
+    return key
   }
 
   /**
@@ -1019,6 +1024,8 @@ class ChatApiProxyServlet(
     }
 
     companion object {
+      val STATIC_KEYS : MutableMap<APIProvider, SecureString> = mutableMapOf()
+
       /**
        * Standard tag keys used throughout the proxy. Centralizing these avoids
        * tag-name drift between call sites and makes dashboards/alerts portable

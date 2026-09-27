@@ -47,6 +47,10 @@ object CognotikConfig {
     email = "user@localhost"
   )
 
+  @JvmField
+  @Volatile
+  var controllerEndpoint = "https://hosted.cognotik.com"
+
 
   val defaultUser: User get() = localUser
 

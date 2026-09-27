@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform.client
 
+import com.simiacryptus.cognotik.platform.CognotikConfig.controllerEndpoint
 import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.AIModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema
@@ -26,7 +27,7 @@ import java.time.LocalDate
  * @param baseUrl e.g. `http://host:port/usageStorageApi` (no trailing slash)
  */
 class UsageClient(
-  private val baseUrl: String = "https://hosted.cognotik.com/usageApi",
+  private val baseUrl: String = controllerEndpoint + "/usageApi",
   private val httpClient: HttpClient = HttpClient.newBuilder()
     .followRedirects(HttpClient.Redirect.NORMAL)
     .build(),

@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig.controllerEndpoint
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
@@ -69,7 +70,7 @@ open class CognotikApps(
                 log.info("Parsing server options...")
                 var port = 12891
                 var host = "localhost"
-                var publicName = "hosted.cognotik.com"
+                var publicName = controllerEndpoint
                 var i = 0
                 while (i < args.size) {
                     when (args[i]) {
