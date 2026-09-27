@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.model.OWNER_ID
+import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSession
@@ -117,7 +117,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
 
     private fun registerSessionOwner(user: User, session: Session) {
       try {
-        metadataStorage.setSessionWorker(user=user, session=session, ownerId = OWNER_ID)
+        metadataStorage.setSessionWorker(user=user, session=session, ownerId = LOCAL_WORKER_ID)
       } catch (e: Exception) {
         log.info("Failed to register session owner for session: $session", e)
       }

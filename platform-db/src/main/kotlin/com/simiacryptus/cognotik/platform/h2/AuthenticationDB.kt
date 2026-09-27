@@ -129,7 +129,7 @@ open class AuthenticationDB : AuthenticationInterface {
     if (accessToken.isNullOrBlank()) return null
     val entry = cache[accessToken]?.also {
       cacheHits.incrementAndGet()
-      if (verbose) log.info("Cache hit for access token (user={})", it.user)
+      if (verbose) log.debug("Cache hit for access token (user={})", it.user)
     }
       ?: synchronized(cache) {
         cache[accessToken] ?: run {
@@ -150,7 +150,7 @@ open class AuthenticationDB : AuthenticationInterface {
       return null
     }
     touch(accessToken, entry, now)
-    if (verbose) log.info("Resolved access token to user: {}", entry.user)
+    if (verbose) log.debug("Resolved access token to user: {}", entry.user)
     return entry.user
   }
 

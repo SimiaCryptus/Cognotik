@@ -82,8 +82,8 @@
 
     ## Configuration
 
-    Many services in this package are configured via `ApplicationServicesConfig`. Call
-    `ApplicationServicesConfig.lock()` exactly once from bootstrap to prevent modification of core services after the
+    Many services in this package are configured via `CognotikConfig`. Call
+    `CognotikConfig.lock()` exactly once from bootstrap to prevent modification of core services after the
     application has initialized.
 
     ### AWS System Properties

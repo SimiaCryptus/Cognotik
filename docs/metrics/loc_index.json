@@ -96,7 +96,7 @@
   {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/StorageInterface.kt", "ext": "kt", "lines": 266, "blank": 39, "comment": 152, "code": 75, "bytes": 8089},
   {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/PluginEvents.kt", "ext": "kt", "lines": 30, "blank": 3, "comment": 18, "code": 9, "bytes": 977},
   {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/MetadataStorageInterface.kt", "ext": "kt", "lines": 190, "blank": 18, "comment": 134, "code": 38, "bytes": 7994},
-  {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/ApplicationServicesConfig.kt", "ext": "kt", "lines": 22, "blank": 5, "comment": 0, "code": 17, "bytes": 598},
+  {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/CognotikConfig.kt", "ext": "kt", "lines": 22, "blank": 5, "comment": 0, "code": 17, "bytes": 598},
   {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/AuthorizationInterface.kt", "ext": "kt", "lines": 101, "blank": 10, "comment": 74, "code": 17, "bytes": 3639},
   {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/UsageInterface.kt", "ext": "kt", "lines": 192, "blank": 19, "comment": 121, "code": 52, "bytes": 7436},
   {"path": "/home/andrew/code/Cognotik/webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/CloudPlatformInterface.kt", "ext": "kt", "lines": 98, "blank": 9, "comment": 73, "code": 16, "bytes": 4404},

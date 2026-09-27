@@ -29,7 +29,7 @@ data class SessionMetadata(
   val messageIds: List<String> = emptyList(),
   override val sessionTime: Date? = null,
   override val ownerId: String? = null,
-  override val workerId: String? = OWNER_ID,
+  override val workerId: String? = LOCAL_WORKER_ID,
   override val path: String? = null,
 ) : SessionSummary {
 
@@ -48,10 +48,10 @@ data class SessionMetadata(
   }
 }
 
-var OWNER_ID : String? = null
+var LOCAL_WORKER_ID : String? = null
   set(value) {
     if(field != value) {
-      SessionMetadata.log.info("Setting session owner id to $value (was $field)", RuntimeException("Stack trace"))
+      SessionMetadata.log.info("Setting session worker id to $value (was $field)", RuntimeException("Stack trace"))
       field = value
     }
   }

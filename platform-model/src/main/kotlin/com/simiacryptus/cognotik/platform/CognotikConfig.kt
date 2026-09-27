@@ -48,4 +48,6 @@ object CognotikConfig {
   )
 
 
+  val defaultUser: User get() = localUser
+
 }

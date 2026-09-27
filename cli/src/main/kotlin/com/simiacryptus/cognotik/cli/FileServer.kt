@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.fileserver.StaticZipServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.model.OWNER_ID
+import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
@@ -674,7 +674,7 @@ open class FileServer {
      * records a worker id per session, and it is only meaningful once the port is bound
      * (port 0 means "pick a free one").
      */
-    OWNER_ID = workerId(server, host)
+    LOCAL_WORKER_ID = workerId(server, host)
     runningServer = server
     return server
   }

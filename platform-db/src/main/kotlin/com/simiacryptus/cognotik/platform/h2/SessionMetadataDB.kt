@@ -27,13 +27,13 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun getSessionName(user: User, session: Session): String {
-    log.debug("Fetching session name for session: {}, user: {}", session, user?.email)
+    log.debug("Fetching session name for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "name")
         }
         .limit(1)
@@ -43,19 +43,19 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun setSessionName(user: User, session: Session, name: String) {
-    log.info("Setting session name for session: {}, user: {} to '{}'", session, user?.email, name)
-    upsertMetadata(session.sessionId, user?.email ?: "", "name", name)
+    log.info("Setting session name for session: {}, user: {} to '{}'", session, user.email, name)
+    upsertMetadata(session.sessionId, user.email, "name", name)
     log.debug("Session name set successfully for session: {}", session)
   }
 
   override fun getMessageIds(user: User, session: Session): List<String> {
-    log.debug("Fetching message IDs for session: {}, user: {}", session, user?.email)
+    log.debug("Fetching message IDs for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "message_ids")
         }
         .limit(1)
@@ -69,8 +69,8 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun setMessageIds(user: User, session: Session, ids: List<String>) {
-    log.debug("Setting {} message IDs for session: {}, user: {}", ids.size, session, user?.email)
-    upsertMetadata(session.sessionId, user?.email ?: "", "message_ids", ids.joinToString(","))
+    log.debug("Setting {} message IDs for session: {}, user: {}", ids.size, session, user.email)
+    upsertMetadata(session.sessionId, user.email, "message_ids", ids.joinToString(","))
   }
 
   override fun setSessionTimestamp(
@@ -78,10 +78,10 @@ class SessionMetadataDB : SessionMetadataInterface {
     session: Session,
     time: Instant
   ) {
-    log.debug("Setting session timestamp for session: {}, user: {} to {}", session, user?.email, time)
+    log.debug("Setting session timestamp for session: {}, user: {} to {}", session, user.email, time)
     upsertMetadata(
       session.sessionId,
-      user?.email ?: "",
+      user.email,
       "session_time",
       time.toEpochMilli().toString(),
       time
@@ -89,13 +89,13 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun getSessionTimestamp(user: User, session: Session): Instant? {
-    log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
+    log.debug("Fetching session time for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "session_time")
         }
         .limit(1)
@@ -107,7 +107,7 @@ class SessionMetadataDB : SessionMetadataInterface {
           } catch (e: NumberFormatException) {
             log.warn(
               "Invalid session time value '{}' for session: {}, user: {}; falling back to row timestamp",
-              time, session, user?.email, e
+              time, session, user.email, e
             )
             Date.from(row[MetadataTable.timestamp]).toInstant()
           }
@@ -119,13 +119,13 @@ class SessionMetadataDB : SessionMetadataInterface {
   @Deprecated("Use getSessionTimestamp", ReplaceWith("getSessionTimestamp(user, session)"))
   fun getSessionTime(user: User, session: Session): Instant? = getSessionTimestamp(user, session)
   override fun getSessionPath(user: User, session: Session): String? {
-    log.debug("Fetching session path for session: {}, user: {}", session, user?.email)
+    log.debug("Fetching session path for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "path")
         }
         .limit(1)
@@ -135,8 +135,8 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun setSessionPath(user: User, session: Session, path: String?) {
-    log.info("Setting session path for session: {}, user: {} to {}", session, user?.email, path)
-    upsertMetadata(session.sessionId, user?.email ?: "", "path", path)
+    log.info("Setting session path for session: {}, user: {} to {}", session, user.email, path)
+    upsertMetadata(session.sessionId, user.email, "path", path)
   }
 
   override fun exists(user: User, session: Session): Boolean = tx {
@@ -144,22 +144,10 @@ class SessionMetadataDB : SessionMetadataInterface {
       .selectAll()
       .where {
         (MetadataTable.sessionId eq session.sessionId) and
-            ((MetadataTable.userEmail eq (user?.email ?: "")) or (MetadataTable.userEmail eq ""))
+            ((MetadataTable.userEmail eq user.email) or (MetadataTable.userEmail eq ""))
       }
       .limit(1)
       .any()
-  }
-
-
-  fun setSessionTime(user: User, session: Session, time: Instant) {
-    log.debug("Setting session time for session: {}, user: {} to {}", session, user?.email, time)
-    upsertMetadata(
-      session.sessionId,
-      user?.email ?: "",
-      "session_time",
-      time.toEpochMilli().toString(),
-      time
-    )
   }
 
   override fun listSessionsByPath(user: User, path: String): List<String> {
@@ -210,7 +198,7 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun setSessionOwner(session: Session, user: User, ownerId: String?) {
-    log.info("Setting session owner for session: {} to {}", session, ownerId)
+    log.info("setSessionOwner for session: {} to {}", session, ownerId)
     upsertMetadata(session.sessionId, "", "owner_id", ownerId)
   }
 
@@ -231,26 +219,26 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun setSessionWorker(session: Session, user: User, workerId: String?) {
-    log.info("Setting session worker for session: ${session} to ${workerId}", RuntimeException("Stack Trace"))
+    log.info("setSessionWorker for session: ${session} to ${workerId}", RuntimeException("Stack Trace"))
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)
   }
 
   override fun deleteSession(user: User, session: Session) {
-    log.info("Deleting session: {}, user: {}", session, user?.email)
+    log.info("Deleting session: {}, user: {}", session, user.email)
     try {
       val deleted = tx {
         MetadataTable.deleteWhere {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: ""))
+              (MetadataTable.userEmail eq user.email)
         }
       }
       log.info(
         "Deleted {} metadata row(s) for session: {} user: {}",
-        deleted, session, user?.email ?: "anonymous"
+        deleted, session, user.email
       )
     } catch (e: Exception) {
-      log.error("Failed to delete session: {} for user: {}", session, user?.email ?: "anonymous", e)
+      log.error("Failed to delete session: {} for user: {}", session, user.email, e)
       throw e
     }
   }
@@ -275,8 +263,8 @@ class SessionMetadataDB : SessionMetadataInterface {
    * (REVIEW.md §3.4).
    */
   override fun updateSessionMetadata(user: User, session: Session, patch: SessionMetadataPatch) {
-    log.info("Patching session metadata for session: {}, user: {}", session, user?.email)
-    val userEmail = user?.email ?: ""
+    log.info("Patching session metadata for session: {}, user: {}", session, user.email)
+    val userEmail = user.email
     val now = Instant.now()
     tx {
       patch.name.ifSet { upsertMetadata(session.sessionId, userEmail, "name", it, now) }
@@ -294,9 +282,9 @@ class SessionMetadataDB : SessionMetadataInterface {
 
 
   override fun getSessionMetadata(user: User, session: Session): SessionMetadata {
-    log.debug("Fetching unified session metadata for session: {}, user: {}", session, user?.email)
+    log.debug("Fetching unified session metadata for session: {}, user: {}", session, user.email)
     return tx {
-      val userEmail = user?.email ?: ""
+      val userEmail = user.email
       val rows: List<ResultRow> = MetadataTable
         .selectAll()
         .where {
@@ -326,7 +314,7 @@ class SessionMetadataDB : SessionMetadataInterface {
           } catch (e: Exception) {
             log.warn(
               "Invalid session_time value '{}' for session: {}, user: {}; falling back to row timestamp",
-              v, session, user?.email, e
+              v, session, user.email, e
             )
             Date.from(row[MetadataTable.timestamp])
           }
@@ -348,31 +336,9 @@ class SessionMetadataDB : SessionMetadataInterface {
     }
   }
 
-  fun setSessionMetadata(user: User, session: Session, metadata: SessionMetadata) {
-    log.info("Setting unified session metadata for session: {}, user: {}", session, user?.email)
-    val userEmail = user?.email ?: ""
-    val now = Instant.now()
-    metadata.name?.let { upsertMetadata(session.sessionId, userEmail, "name", it, now) }
-    if (metadata.messageIds.isNotEmpty()) {
-      upsertMetadata(session.sessionId, userEmail, "message_ids", metadata.messageIds.joinToString(","), now)
-    }
-    metadata.sessionTime?.let {
-      upsertMetadata(session.sessionId, userEmail, "session_time", it.time.toString(), it.toInstant())
-    }
-    metadata.ownerId?.let { upsertMetadata(session.sessionId, "", "owner_id", it, now) }
-    metadata.workerId?.let { upsertMetadata(session.sessionId, "", KEY_WORKER_ID, it, now) }
-    metadata.path?.let { upsertMetadata(session.sessionId, userEmail, "path", it, now) }
-    log.debug("Unified session metadata set successfully for session: {}", session)
-  }
-
   override fun listSessionMetadata(user: User): List<SessionMetadata> {
     log.debug("Bulk listing session metadata for user: {}", user.email)
     return tx {
-      // First find all session IDs that have at least one row authored by
-      // this user. Then pull every metadata row for those sessions
-      // (including user-agnostic rows such as owner_id) in a single
-      // query. This keeps the result-set bounded to the user's sessions
-      // and avoids pulling every owner_id row in the database.
       val userSessionIds = sessionIdsForUser(user.email)
       if (userSessionIds.isEmpty()) return@tx emptyList()
       val rows = MetadataTable
@@ -465,7 +431,7 @@ class SessionMetadataDB : SessionMetadataInterface {
     sessionIds: Collection<String>
   ): Map<String, SessionMetadata> {
     if (sessionIds.isEmpty()) return emptyMap()
-    val userEmail = user?.email ?: ""
+    val userEmail = user.email
     val sessionIdSet = sessionIds.toSet()
     log.debug("Bulk fetching session metadata map for {} session(s), user: {}", sessionIdSet.size, userEmail)
     return tx {
@@ -478,13 +444,6 @@ class SessionMetadataDB : SessionMetadataInterface {
         .toList()
       buildSessionMetadataMap(rows)
     }
-  }
-
-  fun getSessionMetadataBulk(user: User, sessionIds: Collection<String>): List<SessionMetadata> {
-    if (sessionIds.isEmpty()) return emptyList()
-    val byId = getSessionMetadataMap(user, sessionIds)
-    // Preserve caller-provided ordering and fill blanks for unknown sessions.
-    return sessionIds.map { id -> byId[id] ?: SessionMetadata(id = Session(id)) }
   }
 
   /**

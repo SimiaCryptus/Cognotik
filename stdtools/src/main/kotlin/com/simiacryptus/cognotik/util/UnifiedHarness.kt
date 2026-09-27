@@ -429,10 +429,7 @@ open class UnifiedHarness(
       }
       ServiceMap[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationManager() {
         init {
-          log.info(
-            "AuthorizationManager initialized with permissive local auth for desktop mode",
-            RuntimeException("Stack Trace")
-          )
+          log.info("AuthorizationManager initialized with permissive local auth for desktop mode")
         }
 
         override fun isAuthorized(

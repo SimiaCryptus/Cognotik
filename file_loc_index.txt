@@ -101,7 +101,7 @@
 265 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/StorageInterface.kt
 29 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/PluginEvents.kt
 189 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/MetadataStorageInterface.kt
-21 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/ApplicationServicesConfig.kt
+21 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/CognotikConfig.kt
 100 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/AuthorizationInterface.kt
 191 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/UsageInterface.kt
 97 ./docs/reports/../../webui/src/main/kotlin/com/simiacryptus/cognotik/platform/model/CloudPlatformInterface.kt
@@ -976,7 +976,7 @@
 56 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/StorageInterface.class
 70 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/MetadataStorageInterface.class
 15 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/PluginEvents.class
-64 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/ApplicationServicesConfig.class
+64 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/CognotikConfig.class
 37 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/UsageInterface.class
 4 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/UsageInterface$DefaultImpls.class
 50 ./docs/reports/../../webui/build/classes/kotlin/main/com/simiacryptus/cognotik/platform/model/UsageInterface$UsageKey.class

@@ -38,18 +38,6 @@ abstract class ApplicationServer(
   open val root: File = dataStorageRoot,
   showMenubar: Boolean = true,
 ) : ChatServer(resourceBase, showMenubar) {
-  init {
-    CognotikPlatform.init()
-    ServiceKey.USER_RESOLVER.factory = { UserProviderImpl() }
-    FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
-      val sessionOwner = request.session()?.let {
-        ServiceMap[ServiceKey.METADATA_DB].getSessionOwner(
-          user = user!!,
-          session = it
-        ) }
-      return sessionOwner == null || sessionOwner == user?.id
-    }
-  }
 
 
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
@@ -253,6 +241,18 @@ abstract class ApplicationServer(
   }
 
   companion object {
+    init {
+      CognotikPlatform.init()
+      ServiceKey.USER_RESOLVER.factory = { UserProviderImpl() }
+      FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
+        val sessionOwner = request.session()?.let {
+          ServiceMap[ServiceKey.METADATA_DB].getSessionOwner(
+            user = user!!,
+            session = it
+          ) }
+        return sessionOwner == null || sessionOwner == user?.id
+      }
+    }
 
     @Suppress("unused")
     @JvmStatic

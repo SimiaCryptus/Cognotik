@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.CognotikConfig
-import com.simiacryptus.cognotik.platform.model.OWNER_ID
+import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.webui.servlet.*
@@ -57,8 +57,8 @@ abstract class ApplicationDirectory(
           "bindAddress='$bindAddress', publicName='${publicName ?: "null"}', port=$port"
     )
     require(publicName != "localhost")
-    OWNER_ID = "${this.localName}:$port"
-    log.info("Session ownership id (OWNER_ID) = '$OWNER_ID'")
+    LOCAL_WORKER_ID = "${this.localName}:$port"
+    log.info("Session worker id (LOCAL_WORKER_ID) = '$LOCAL_WORKER_ID'")
   }
 
   var domainName: String = ""

@@ -283,7 +283,7 @@ val decrypted = awsPlatform.decrypt(encryptedData)
 ApplicationServices.dataStorageRoot = File("/custom/data/path")
 
 // Lock configuration to prevent changes
-ApplicationServicesConfig.isLocked = true
+CognotikConfig.isLocked = true
 ```
 
 ### Custom Service Implementation
