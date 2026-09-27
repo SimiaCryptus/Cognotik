@@ -9,8 +9,8 @@ import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.util.renderMarkdown
@@ -316,7 +316,7 @@ Stack Trace:
     renderFn: (String) -> String,
   ): ISessionTask { // U-20260811-SSCV4qto inner U-20260811-v7j3PP4o outer
     val session = Session.newUserID()
-    ServiceMap[ServiceKey.USAGE_DB].setParentSession(
+    ServiceRouter.setParentSession(
       user = user,
       child = session,
       parent = ui.sessionId

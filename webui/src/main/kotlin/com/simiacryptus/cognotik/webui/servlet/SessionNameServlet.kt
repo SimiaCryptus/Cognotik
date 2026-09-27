@@ -2,11 +2,10 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -31,7 +30,7 @@ import org.slf4j.LoggerFactory
 class SessionNameServlet(
   private val server: ApplicationServer,
   private val metadataStorageProvider: () -> SessionMetadataInterface = {
-    ServiceMap[ServiceKey.METADATA_DB]
+    ServiceRouter as SessionMetadataInterface
   },
 ) : HttpServlet() {
   private val logger = LoggerFactory.getLogger(SessionNameServlet::class.java)
@@ -48,7 +47,7 @@ class SessionNameServlet(
         return
       }
       val session = Session(sessionId)
-      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+      val user = ServiceRouter.authenticate(request)
       if (user == null) {
         logger.warn("Authentication failed / redirect issued for sessionName GET on session {}", sessionId)
         return
@@ -93,7 +92,7 @@ class SessionNameServlet(
         return
       }
       val session = Session(sessionId)
-      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+      val user = ServiceRouter.authenticate(request)
       if (user == null) {
         logger.warn("Authentication failed / redirect issued for sessionName POST on session {}", sessionId)
         return

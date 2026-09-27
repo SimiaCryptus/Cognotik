@@ -5,10 +5,10 @@ import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -67,7 +67,7 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
 
     private fun serveUserInfo(request: HttpServletRequest, response: HttpServletResponse) {
         val user =
-          ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+          ServiceRouter.authenticate(request)
             ?: throw IllegalStateException("Authentication failed")
         val mapper = jacksonObjectMapper()
         response.contentType = "application/json"
@@ -81,32 +81,32 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
 
     private fun serveAppList(request: HttpServletRequest, response: HttpServletResponse) {
         val user =
-          ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+          ServiceRouter.authenticate(request)
             ?: throw IllegalStateException("Authentication failed")
         val authorizedApps = parent.childWebApps.filter {
-          val isAuthorized = ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          val isAuthorized = ServiceRouter.isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Read
           )
             isAuthorized
         }.map {
-          val canRead = ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          val canRead = ServiceRouter.isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Read
           )
-          val canWrite = ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          val canWrite = ServiceRouter.isAuthorized(
             ResourceRef.of(it.server.javaClass),
             Principal.of(user),
             OperationType.Write
           )
           val canWritePublic =
-            ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
-            ResourceRef.of(it.server.javaClass),
-            Principal.of(user),
-            OperationType.Public
-          )
+            ServiceRouter.isAuthorized(
+              ResourceRef.of(it.server.javaClass),
+              Principal.of(user),
+              OperationType.Public
+            )
             mapOf(
                 "path" to it.path,
                 "thumbnail" to it.thumbnail,

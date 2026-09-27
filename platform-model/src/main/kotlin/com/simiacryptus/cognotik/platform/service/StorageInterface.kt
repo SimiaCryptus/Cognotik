@@ -67,7 +67,7 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
    * @param session The session identifier to delete
    * @throws IllegalArgumentException if the session ID is invalid
    */
-  fun deleteSession(user: User?, session: Session)
+  fun deleteSessionData(user: User?, session: Session)
 
   /**
    * Deletes a session, reporting whether anything was removed.
@@ -75,7 +75,7 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
    * @return true if the session existed and was deleted, false if it did not exist
    */
   fun deleteSessionIfExists(user: User?, session: Session): Boolean {
-    deleteSession(user, session)
+    deleteSessionData(user, session)
     return true
   }
 

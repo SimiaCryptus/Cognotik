@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.fileserver.action.FsActionContext
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import java.util.concurrent.ConcurrentHashMap
@@ -55,7 +55,7 @@ object ModelSelection {
   private val cache = ConcurrentHashMap<String, Map<String, ChatModel>>()
 
   private fun settingsManager() =
-    ServiceMap[ServiceKey.USER_SETTINGS]
+    ServiceRouter as UserSettingsInterface
 
   /**
     * Publishes the request-scoped user resolver. Hosts (CLI, embedding servers) call

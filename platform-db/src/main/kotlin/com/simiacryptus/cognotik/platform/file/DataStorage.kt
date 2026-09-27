@@ -6,8 +6,7 @@ import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
@@ -16,7 +15,7 @@ import java.time.Instant
 
 class DataStorage(
   private val dataDir: File,
-  override val metadataStorage: SessionMetadataInterface = ServiceMap[ServiceKey.METADATA_DB]
+  override val metadataStorage: SessionMetadataInterface = ServiceRouter as SessionMetadataInterface
 ) : StorageInterface {
 
   init {
@@ -191,7 +190,7 @@ class DataStorage(
   fun userRoot(user: User?): File =
     userRootFor(user ?: throw IllegalArgumentException("User required for private session"))
 
-  override fun deleteSession(user: User?, session: Session) {
+  override fun deleteSessionData(user: User?, session: Session) {
     Session.validateSessionId(session)
     log.debug("Deleting session: {}, user: {}", session, user?.email)
     val sessionDir = getSystemDir(user, session)
@@ -206,7 +205,7 @@ class DataStorage(
       log.debug("Session {} does not exist; nothing to delete", session)
       return false
     }
-    deleteSession(user, session)
+    deleteSessionData(user, session)
     return true
   }
 

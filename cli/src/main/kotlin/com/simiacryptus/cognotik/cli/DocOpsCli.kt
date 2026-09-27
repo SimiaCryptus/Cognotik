@@ -19,8 +19,10 @@ import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.encrypt
@@ -255,7 +257,7 @@ object DocOpsCli {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
+      ServiceRouter.getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }
@@ -623,14 +625,14 @@ object DocOpsCli {
 fun ApiChatModel.instance(
   user: User,
   session: Session = globalID,
-  service: ExecutorService = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user),
+  service: ExecutorService = ThreadPoolManager.getPool(session, user),
   temperature: Double = 0.1
 ) = model?.instance(
   key = when (provider?.key) {
     null -> null
     "NONE".encrypt -> null
     else -> provider?.key
-  } ?: ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user).apis.let {
+  } ?: ServiceRouter.getUserSettings(user).apis.let {
     it.firstOrNull { it.provider == this.provider }?.key
       ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
       ?: throw IllegalStateException("No API key configured for model $model")
@@ -639,7 +641,7 @@ fun ApiChatModel.instance(
   ?: throw IllegalStateException("No API base configured for model $model"),
   workPool = service,
   temperature = temperature,
-  scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, user),
+  scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
   session = session,
   user = user,
 )

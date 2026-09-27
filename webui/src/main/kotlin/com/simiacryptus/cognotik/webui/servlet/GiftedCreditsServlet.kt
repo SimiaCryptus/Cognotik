@@ -3,10 +3,10 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -218,7 +218,7 @@ class GiftedCreditsServlet : HttpServlet() {
         try {
             response.status = HttpServletResponse.SC_OK
             val user = try {
-              ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+              ServiceRouter.authenticate(request)
             } catch (e: Exception) {
                 log.warn("Authentication error during GET from {}: {}", remoteAddr, e.message, e)
                 null
@@ -370,7 +370,7 @@ class GiftedCreditsServlet : HttpServlet() {
             // Gift creation is now available to all authenticated users.
             // Show current balance so users know what they can afford.
             val currentBalance = try {
-                ServiceMap[ServiceKey.USAGE_DB].getUserBalance(user)
+              ServiceRouter.getUserBalance(user)
             } catch (e: Exception) {
                 log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
                 0.0
@@ -1090,7 +1090,7 @@ class GiftedCreditsServlet : HttpServlet() {
         log.debug("Handling POST request from {} for {} action={}", remoteAddr, requestUri, action)
 
         val user = try {
-          ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+          ServiceRouter.authenticate(request)
         } catch (e: Exception) {
             log.warn("Authentication error during POST from {}: {}", remoteAddr, e.message, e)
             if (!response.isCommitted) {
@@ -1452,11 +1452,11 @@ class GiftedCreditsServlet : HttpServlet() {
             "Gift claimed successfully by user={} giftId={} amountGranted={} theme={}",
             userinfo, giftId, gift.amountGranted, theme.id
         )
-        ServiceMap[ServiceKey.USAGE_DB].creditUser(
-            user = userinfo,
-            amount = gift.amountGranted,
-            comment = "Claimed gift $giftId",
-        )
+      ServiceRouter.creditUser(
+        user = userinfo,
+        amount = gift.amountGranted,
+        comment = "Claimed gift $giftId",
+      )
         response.contentType = "text/html"
         response.status = HttpServletResponse.SC_OK
         response.writer.write(

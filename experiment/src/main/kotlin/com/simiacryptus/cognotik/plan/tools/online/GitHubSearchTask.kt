@@ -13,8 +13,8 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.util.MarkdownUtil
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -109,7 +109,7 @@ class GitHubSearchTask(
       val searchResults = performGitHubSearch(
         agent.user
           .let {
-            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(it) }
+            ServiceRouter.getUserSettings(it) }
           .apis.firstOrNull { it.provider == ServiceProviders.Github }?.key?.decrypt?.trim()
           ?: throw RuntimeException("GitHub API token is required")
       )

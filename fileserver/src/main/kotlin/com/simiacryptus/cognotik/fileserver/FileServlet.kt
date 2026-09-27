@@ -16,8 +16,8 @@ import com.simiacryptus.cognotik.fileserver.render.git.GitHtml
 import com.simiacryptus.cognotik.fileserver.render.git.GitScripts
 import com.simiacryptus.cognotik.fileserver.render.git.GitStyles
 import com.simiacryptus.cognotik.fileserver.util.MimeTypeResolver
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -776,7 +776,7 @@ abstract class FileServlet : HttpServlet() {
       (request.getAttribute(USER_ATTRIBUTE) as? User)?.let { return it }
       if (request.getAttribute(USER_RESOLVED_ATTRIBUTE) == true) return null
       val user = try {
-        ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+        ServiceRouter.authenticate(request)
       } catch (e: Exception) {
         log.warn("Failed to resolve user for ${request.requestURI}", e)
         null

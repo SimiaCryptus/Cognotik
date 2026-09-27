@@ -4,9 +4,10 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -50,12 +51,12 @@ class CancelThreadsServlet : HttpServlet() {
       response.writer.write("Session ID is required")
     } else {
       val session = Session(request.getParameter("sessionId"))
-      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+      val user = ServiceRouter.authenticate(request)
       if (user == null) {
         throw RuntimeException("User must be authenticated to cancel sessions")
       }
       require(
-        ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+        ServiceRouter.isAuthorized(
           ResourceRef.of(javaClass),
           Principal.of(user),
           OperationType.Delete
@@ -64,7 +65,7 @@ class CancelThreadsServlet : HttpServlet() {
       { "User $user is not authorized to cancel sessions" }
       if (session.isGlobal()) {
         require(
-          ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+          ServiceRouter.isAuthorized(
             ResourceRef.of(javaClass),
             Principal.of(user),
             OperationType.Public
@@ -72,7 +73,7 @@ class CancelThreadsServlet : HttpServlet() {
         )
         { "User $user is not authorized to cancel global sessions" }
       }
-      val pool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user ?: return)
+      val pool = ThreadPoolManager.getPool(session, user)
       pool.shutdownNow()
       response.sendRedirect("/")
     }

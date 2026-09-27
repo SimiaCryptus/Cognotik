@@ -3,24 +3,24 @@ package com.simiacryptus.cognotik.desktop
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.apps.ResourceApps
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
-import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.webui.application.AppEntry
 import com.simiacryptus.cognotik.webui.application.ApplicationDirectory
-import com.simiacryptus.cognotik.webui.session.BasicChatApp
-import com.simiacryptus.cognotik.webui.servlet.DocOpsApp
 import com.simiacryptus.cognotik.webui.servlet.CorsFilter
+import com.simiacryptus.cognotik.webui.servlet.DocOpsApp
+import com.simiacryptus.cognotik.webui.session.BasicChatApp
 import jakarta.servlet.DispatcherType
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
@@ -187,8 +187,8 @@ open class CognotikApps(
 
     fun checkIsAlive() {
         try {
-            val threadPoolManager =
-                ServiceMap[ServiceKey.THREAD_POOL_MANAGER]
+          val threadPoolManager =
+            ServiceRouter as ThreadPoolManager
             val alive = threadPoolManager.isAlive()
             val systemTrayManager = systemTrayManager
             if (systemTrayManager != null) {
@@ -212,17 +212,17 @@ open class CognotikApps(
         //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
-        ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+      ServiceRouter.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         initDynamicEnums()
     }
 
     open fun init(actualPort: Int, args: Array<out String>) {
         initSystemTray()
         startSocketServer(actualPort + 1)
-        ServiceMap[ServiceKey.PLUGIN_MANAGER].apply {
-            getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
-            subscribeToChanges()
-        }
+      ServiceRouter.apply {
+        getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        subscribeToChanges()
+      }
 
         Runtime.getRuntime().addShutdownHook(Thread {
             log.info("Shutdown hook triggered, stopping server...")
@@ -300,19 +300,21 @@ open class CognotikApps(
 //            override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
 //            override fun logout(accessToken: String, user: User) {}
 //        }
-        ServiceMap[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationManager() {
-            init {
-                log.info(
-                    "AuthorizationManager initialized with permissive local auth for desktop mode",
-                    RuntimeException("Stack Trace")
-                )
-            }
+        ServiceKey.AUTHORIZATION_MANAGER.factory = {
+            object : AuthorizationManager() {
+                init {
+                    log.info(
+                        "AuthorizationManager initialized with permissive local auth for desktop mode",
+                        RuntimeException("Stack Trace")
+                    )
+                }
 
-              override fun isAuthorized(
-                  applicationClass: Class<*>?,
-                  user: User?,
-                  operationType: OperationType
-              ): Boolean = true
+                override fun isAuthorized(
+                    applicationClass: Class<*>?,
+                    user: User?,
+                    operationType: OperationType
+                ): Boolean = true
+            }
         }
     }
 
@@ -549,16 +551,16 @@ fun String?.urlEncode(): String {
 }
 
 fun ApiChatModel.instance(
-    user: User,
-    session: Session = globalID,
-    service: ExecutorService = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user),
-    temperature: Double = 0.1
+  user: User,
+  session: Session = globalID,
+  service: ExecutorService = ThreadPoolManager.getPool(session, user),
+  temperature: Double = 0.1
 ) = model?.instance(
     key = when (provider?.key) {
         null -> null
         "NONE".encrypt -> null
         else -> provider?.key
-    } ?: ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user).apis.let {
+    } ?: ServiceRouter.getUserSettings(user).apis.let {
         it.firstOrNull { it.provider == this.provider }?.key
             ?: it.firstOrNull { (it.provider?.name ?: "b") == (this.model?.provider?.name ?: "a") }?.key
             ?: throw IllegalStateException("No API key configured for model $model")
@@ -567,7 +569,7 @@ fun ApiChatModel.instance(
     ?: throw IllegalStateException("No API base configured for model $model"),
     workPool = service,
     temperature = temperature,
-    scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, user),
+    scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
     session = session,
     user = user,
 )

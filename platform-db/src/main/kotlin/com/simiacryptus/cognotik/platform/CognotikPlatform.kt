@@ -7,6 +7,7 @@ import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
 import com.simiacryptus.cognotik.platform.h2.SessionMetadataDB
 import com.simiacryptus.cognotik.platform.h2.UsageDB
 import com.simiacryptus.cognotik.platform.h2.UserSettingsDB
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import java.io.File
 
 /**
@@ -27,7 +28,7 @@ object CognotikPlatform {
       ServiceKey.AUTHORIZATION_MANAGER.defaultFactory = { AuthorizationManager() }
       ServiceKey.METADATA_DB.defaultFactory = { SessionMetadataDB() }
       ServiceKey.DATA_STORAGE.defaultFactory = {
-        DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = it[ServiceKey.METADATA_DB])
+        DataStorage(dataDir = rootDir.resolve("data"), metadataStorage = ServiceRouter as SessionMetadataInterface)
       }
       ServiceKey.USAGE_DB.defaultFactory = { UsageDB() }
       ServiceKey.USER_SETTINGS.defaultFactory = { UserSettingsDB() }

@@ -2,9 +2,8 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.webui.servlet.payment.NoOpPaymentProvider
 import com.simiacryptus.cognotik.webui.servlet.payment.PaymentProvider
 import jakarta.servlet.http.HttpServlet
@@ -30,7 +29,7 @@ open class CreditsServlet(
 ) : HttpServlet() {
 
     val usageDB: UsageInterface by lazy {
-        ServiceMap[ServiceKey.USAGE_DB]
+      ServiceRouter as UsageInterface
     }
 
     private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
@@ -54,7 +53,7 @@ open class CreditsServlet(
     }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
+        val user = ServiceRouter.authenticate(req)
           ?: throw RuntimeException("User must be authenticated to purchase credits")
         if (authorizedProviders(user).isEmpty()) {
             resp.status = HttpServletResponse.SC_FORBIDDEN
@@ -73,7 +72,7 @@ open class CreditsServlet(
     }
 
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
+        val user = ServiceRouter.authenticate(req)
           ?: throw RuntimeException("User must be authenticated to purchase credits")
         if (authorizedProviders(user).isEmpty()) {
             resp.status = HttpServletResponse.SC_FORBIDDEN

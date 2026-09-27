@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.webui.servlet.*
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
 import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
@@ -126,7 +126,7 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized SessionUsageDetailsServlet") }
 
   open val creditsServlet: CreditsServlet by lazy {
-    CreditsServlet(NoOpPaymentProvider(ServiceMap[ServiceKey.USAGE_DB]))
+    CreditsServlet(NoOpPaymentProvider())
       .also { log.debug("Initialized CreditsServlet") }
   }
 

@@ -16,7 +16,7 @@ class ServiceKey<T : Any>(
 ) {
 
   @Volatile
-  var factory: ((ServiceMap) -> T)? = null
+  var factory: (() -> T)? = null
     set(value) {
       when {
         null == value -> fail("Factory cannot be null")
@@ -37,7 +37,7 @@ class ServiceKey<T : Any>(
   }
 
   @Volatile
-  var defaultFactory: ((ServiceMap) -> T)? = null
+  var defaultFactory: (() -> T)? = null
     set(value) {
       when {
         null == value -> fail("Factory cannot be null")
@@ -49,10 +49,10 @@ class ServiceKey<T : Any>(
       }
     }
 
-  fun create(services: ServiceMap): T {
+  fun create(): T {
     val factory = factory ?: defaultFactory
     ?: throw UnsupportedOperationException("No factory registered for service '$name'")
-    val newInstance = (factory).invoke(services)
+    val newInstance = (factory).invoke()
     log.info("Created service instance for '$name': $newInstance")
     return newInstance
   }
@@ -69,8 +69,6 @@ class ServiceKey<T : Any>(
 
     val PLUGIN_MANAGER = ServiceKey("pluginManager", PluginManagerInterface::class)
     val AUTHORIZATION_MANAGER = ServiceKey("authorizationManager", AuthorizationInterface::class)
-    val THREAD_POOL_MANAGER = ServiceKey("threadPoolManager", ThreadPoolManager::class)
-      .apply { defaultFactory = { ThreadPoolManager() } }
     val DATA_STORAGE = ServiceKey("dataStorage", StorageInterface::class)
     val METADATA_DB = ServiceKey("metadataDB", SessionMetadataInterface::class)
     val USAGE_DB = ServiceKey("usageDB", UsageInterface::class)
@@ -80,3 +78,5 @@ class ServiceKey<T : Any>(
     val GIFTED_CREDITS = ServiceKey("giftedCreditsDB", GiftedCreditsInterface::class)
   }
 }
+
+

@@ -26,10 +26,9 @@ import com.simiacryptus.cognotik.platform.client.SetSessionWorkerRequest
 import com.simiacryptus.cognotik.platform.client.StatusResponse
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -54,7 +53,7 @@ class MetadataStorageApiServlet(
 ) : HttpServlet() {
 
   private fun currentUser(request: HttpServletRequest): User =
-    ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request) ?: throw IllegalStateException("Authentication failed")
+    ServiceRouter.authenticate(request) ?: throw IllegalStateException("Authentication failed")
 
   private fun action(request: HttpServletRequest): String =
     (request.pathInfo ?: request.servletPath)
@@ -87,20 +86,28 @@ class MetadataStorageApiServlet(
         "sessionName" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionNameResponse(ServiceMap[ServiceKey.METADATA_DB].getSessionName(user, session)))
+          writeJson(response, SessionNameResponse(
+            ServiceRouter.getSessionName(
+              user,
+              session
+            )))
         }
 
         "messageIds" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, MessageIdsResponse(ServiceMap[ServiceKey.METADATA_DB].getMessageIds(user, session)))
+          writeJson(response, MessageIdsResponse(
+            ServiceRouter.getMessageIds(
+              user,
+              session
+            )))
         }
 
         "sessionTimestamp" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
           writeJson(response, SessionTimestampResponse(
-            ServiceMap[ServiceKey.METADATA_DB].getSessionTimestamp(
+            ServiceRouter.getSessionTimestamp(
               user,
               session
             )?.toString()))
@@ -110,7 +117,7 @@ class MetadataStorageApiServlet(
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
           writeJson(response, SessionOwnerResponse(
-            ServiceMap[ServiceKey.METADATA_DB].getSessionOwner(
+            ServiceRouter.getSessionOwner(
               user = user,
               session = session
             )))
@@ -120,7 +127,7 @@ class MetadataStorageApiServlet(
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
           writeJson(response, SessionWorkerResponse(
-            ServiceMap[ServiceKey.METADATA_DB].getSessionWorker(
+            ServiceRouter.getSessionWorker(
               user = user,
               session = session
             )))
@@ -129,31 +136,38 @@ class MetadataStorageApiServlet(
         "sessionPath" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionPathResponse(ServiceMap[ServiceKey.METADATA_DB].getSessionPath(user, session)))
+          writeJson(response, SessionPathResponse(
+            ServiceRouter.getSessionPath(
+              user,
+              session
+            )))
         }
 
         "exists" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, ExistsResponse(ServiceMap[ServiceKey.METADATA_DB].exists(user, session)))
+          writeJson(response, ExistsResponse(ServiceRouter.exists(user, session)))
         }
 
         "sessionMetadata" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, ServiceMap[ServiceKey.METADATA_DB].getSessionMetadata(user, session))
+          writeJson(response, ServiceRouter.getSessionMetadata(user, session))
         }
 
         "listSessionMetadata" -> {
           val user = currentUser(request)
-          writeJson(response, SessionMetadataListResponse(ServiceMap[ServiceKey.METADATA_DB].listSessionMetadata(user)))
+          writeJson(response, SessionMetadataListResponse(
+            ServiceRouter.listSessionMetadata(
+              user
+            )))
         }
 
         "listSessionMetadataByPath" -> {
           val user = currentUser(request)
           val path = requireParam(request, "path")
           writeJson(response, SessionMetadataListResponse(
-            ServiceMap[ServiceKey.METADATA_DB].listSessionMetadata(
+            ServiceRouter.listSessionMetadata(
               user = user,
               path = path
             )))
@@ -161,14 +175,17 @@ class MetadataStorageApiServlet(
 
         "listSessionEntries" -> {
           val user = currentUser(request)
-          writeJson(response, SessionListEntryListResponse(ServiceMap[ServiceKey.METADATA_DB].listSessionEntries(user)))
+          writeJson(response, SessionListEntryListResponse(
+            ServiceRouter.listSessionEntries(
+              user
+            )))
         }
 
         "listSessionEntriesByPath" -> {
           val user = currentUser(request)
           val path = requireParam(request, "path")
           writeJson(response, SessionListEntryListResponse(
-            ServiceMap[ServiceKey.METADATA_DB].listSessionEntries(
+            ServiceRouter.listSessionEntries(
               user = user,
               path = path
             )))
@@ -176,14 +193,14 @@ class MetadataStorageApiServlet(
 
         "sessionsForUser" -> {
           val user = currentUser(request)
-          writeJson(response, SessionIdsResponse(ServiceMap[ServiceKey.METADATA_DB].listSessionsForUser(user)))
+          writeJson(response, SessionIdsResponse(ServiceRouter.listSessionsForUser(user)))
         }
 
         "sessionsByPath" -> {
           val user = currentUser(request)
           val path = requireParam(request, "path")
           writeJson(response, SessionIdsResponse(
-            ServiceMap[ServiceKey.METADATA_DB].listSessionsByPath(
+            ServiceRouter.listSessionsByPath(
               user = user,
               path = path
             )))
@@ -207,21 +224,21 @@ class MetadataStorageApiServlet(
         "setSessionName" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionNameRequest::class.java)
-          ServiceMap[ServiceKey.METADATA_DB].setSessionName(user, Session(req.sessionId), req.name)
+          ServiceRouter.setSessionName(user, Session(req.sessionId), req.name)
           writeJson(response, StatusResponse())
         }
 
         "setMessageIds" -> {
           val user = currentUser(request)
           val req = readBody(request, SetMessageIdsRequest::class.java)
-          ServiceMap[ServiceKey.METADATA_DB].setMessageIds(user, Session(req.sessionId), req.ids)
+          ServiceRouter.setMessageIds(user, Session(req.sessionId), req.ids)
           writeJson(response, StatusResponse())
         }
 
         "setSessionTimestamp" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionTimestampRequest::class.java)
-          ServiceMap[ServiceKey.METADATA_DB].setSessionTimestamp(
+          ServiceRouter.setSessionTimestamp(
             user,
             Session(req.sessionId),
             Instant.parse(req.timestamp)
@@ -232,14 +249,14 @@ class MetadataStorageApiServlet(
         "setSessionOwner" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionOwnerRequest::class.java)
-          ServiceMap[ServiceKey.METADATA_DB].setSessionOwner(Session(req.sessionId), user, req.ownerId)
+          ServiceRouter.setSessionOwner(Session(req.sessionId), user, req.ownerId)
           writeJson(response, StatusResponse())
         }
 
         "setSessionWorker" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionWorkerRequest::class.java)
-          ServiceMap[ServiceKey.METADATA_DB].setSessionWorker(
+          ServiceRouter.setSessionWorker(
             Session(req.sessionId),
             user = user,
             ownerId = req.workerId
@@ -250,27 +267,27 @@ class MetadataStorageApiServlet(
         "setSessionPath" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionPathRequest::class.java)
-          ServiceMap[ServiceKey.METADATA_DB].setSessionPath(user, Session(req.sessionId), req.path)
+          ServiceRouter.setSessionPath(user, Session(req.sessionId), req.path)
           writeJson(response, StatusResponse())
         }
 
         "deleteSession" -> {
           val user = currentUser(request)
           val req = readBody(request, DeleteSessionRequest::class.java)
-          ServiceMap[ServiceKey.METADATA_DB].deleteSession(user, Session(req.sessionId))
+          ServiceRouter.deleteSession(user, Session(req.sessionId))
           writeJson(response, StatusResponse())
         }
 
         "deleteAllForUser" -> {
           val user = currentUser(request)
-          writeJson(response, DeleteCountResponse(ServiceMap[ServiceKey.METADATA_DB].deleteAllForUser(user)))
+          writeJson(response, DeleteCountResponse(ServiceRouter.deleteAllForUser(user)))
         }
 
         "sessionMetadataMap" -> {
           val user = currentUser(request)
           val req = readBody(request, SessionMetadataMapRequest::class.java)
           writeJson(response, SessionMetadataMapResponse(
-            ServiceMap[ServiceKey.METADATA_DB].getSessionMetadataMap(
+            ServiceRouter.getSessionMetadataMap(
               user,
               req.sessionIds
             )))

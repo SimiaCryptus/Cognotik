@@ -5,9 +5,11 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -17,13 +19,13 @@ import java.util.*
 
 class SessionsServlet : HttpServlet() {
     val metadataDB by lazy {
-        ServiceMap[ServiceKey.METADATA_DB]
+      ServiceRouter as SessionMetadataInterface
     }
     val usageDB by lazy {
-        ServiceMap[ServiceKey.USAGE_DB]
+      ServiceRouter as UsageInterface
     }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
+        val user = ServiceRouter.authenticate(req)
           ?: throw RuntimeException("User must be authenticated")
         val action = req.getParameter("action")?.lowercase()
         when (action) {
@@ -37,7 +39,7 @@ class SessionsServlet : HttpServlet() {
     }
 
     override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
+        val user = ServiceRouter.authenticate(req)
           ?: throw RuntimeException("User must be authenticated")
         handleDelete(req, resp, user)
     }
@@ -80,7 +82,7 @@ class SessionsServlet : HttpServlet() {
             return
         }
         try {
-            ServiceMap[ServiceKey.DATA_STORAGE].deleteSession(user, session)
+          ServiceRouter.deleteSession(user, session)
             log.info("User ${user.email} deleted session $sessionId")
             resp.status = HttpServletResponse.SC_OK
             resp.contentType = "application/json"
@@ -110,7 +112,7 @@ class SessionsServlet : HttpServlet() {
 
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
+        val user = ServiceRouter.authenticate(req)
           ?: throw RuntimeException("User must be authenticated to list sessions")
         val sessions = try {
             metadataDB.listSessionsForUser(user).map { Session(it) }

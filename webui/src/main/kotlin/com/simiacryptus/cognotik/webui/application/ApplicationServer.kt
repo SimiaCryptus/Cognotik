@@ -6,11 +6,13 @@ import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -53,7 +55,7 @@ abstract class ApplicationServer(
   }.toMap()
 
   final override val dataStorage: StorageInterface by lazy {
-    ServiceMap[ServiceKey.DATA_STORAGE]
+    ServiceRouter as StorageInterface
   }
   protected open val appInfoServlet by lazy {
     ServletHolder("appInfo", AppInfoServlet { session, user ->
@@ -246,7 +248,7 @@ abstract class ApplicationServer(
       ServiceKey.USER_RESOLVER.factory = { UserProviderImpl() }
       FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
         val sessionOwner = request.session()?.let {
-          ServiceMap[ServiceKey.METADATA_DB].getSessionOwner(
+          ServiceRouter.getSessionOwner(
             user = user!!,
             session = it
           ) }
@@ -276,7 +278,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
     val requestPath = (request as HttpServletRequest).requestURI
     val servletPath = request.servletPath
     log.debug("Processing request: {}", requestPath)
-    val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+    val user = ServiceRouter.authenticate(request)
     /*
      * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
      * redirecting its module/CSS requests to the login page would break the page load, while
@@ -297,7 +299,7 @@ fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
       log.debug("Authenticated user: {} for request: {}", email, requestPath)
       email
     }
-    val canRead = ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+    val canRead = ServiceRouter.isAuthorized(
       ResourceRef.of(applicationClass = applicationClass),
       Principal.of(user = user),
       operationType = OperationType.Read
@@ -335,7 +337,7 @@ class UserProviderImpl : UserProvider {
   override fun authenticate(
     request: HttpServletRequest
   ) = request.getCookie()?.let {
-    ServiceMap[ServiceKey.AUTHENTICATION].getUser(it)
+    ServiceRouter.getUser(it)
   }
 }
 

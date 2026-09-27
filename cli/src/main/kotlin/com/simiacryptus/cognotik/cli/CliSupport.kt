@@ -13,7 +13,8 @@ import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.mode
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
 import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import kotlin.system.exitProcess
@@ -62,7 +63,7 @@ object CliSupport {
     CoreProviders.init()
     CoreTasks.init()
     try {
-      ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins()
+      ServiceRouter.getLoadedPlugins()
     } catch (e: Exception) {
       System.err.println("warning: plugin loading failed: ${e.message}")
     }

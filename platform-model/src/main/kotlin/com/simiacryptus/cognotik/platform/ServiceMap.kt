@@ -14,7 +14,7 @@ object ServiceMap {
     (instances[key] as T?)?.let { return it }
     // synchronized (re-entrant) rather than computeIfAbsent: factories may resolve other services
     return synchronized(instances) {
-      (instances[key] as T?) ?: key.create(this).also {
+      (instances[key] as T?) ?: key.create().also {
         instances[key] = it
         onCreated(key, it)
       }

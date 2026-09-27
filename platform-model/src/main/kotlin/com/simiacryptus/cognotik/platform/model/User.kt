@@ -3,10 +3,9 @@ package com.simiacryptus.cognotik.platform.model
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
-import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.User.Companion.FIELD_DELIMITER
-import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import java.security.MessageDigest
 import java.util.*
 import javax.crypto.Mac
@@ -203,10 +202,6 @@ data class User(
       return "${email.first()}***@${email.substring(at + 1)}"
     }
 
-    private fun authenticationInterface(): AuthenticationInterface {
-      val services = ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
-      return services[ServiceKey.AUTHENTICATION]
-    }
   }
 
   /**
@@ -233,7 +228,7 @@ data class User(
 
 
   fun tokenMetadata(): List<AuthenticationInterface.TokenMetadata> {
-    val authenticationManager = authenticationInterface()
+    val authenticationManager = ServiceRouter as AuthenticationInterface
     val tokenMetadata = authenticationManager.listTokens(this)
     return tokenMetadata
   }

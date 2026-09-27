@@ -10,8 +10,8 @@ import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.CognotikConfig
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -27,7 +27,7 @@ object CognotikUtils {
 
   @JvmStatic
   fun userSettings(): UserSettings {
-    return ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user())
+    return ServiceRouter.getUserSettings(user())
   }
 
   @JvmStatic
@@ -89,7 +89,7 @@ object CognotikUtils {
   fun configureEnvironmentalKeys() {
     check(!APIProvider.values().isEmpty()) { "No API providers configured" }
     val userSettingsManager =
-      ServiceMap[ServiceKey.USER_SETTINGS]
+      ServiceRouter as UserSettingsInterface
     val user = user()
     val userSettings = userSettingsManager.getUserSettings(user)
     var anythingChanged = false

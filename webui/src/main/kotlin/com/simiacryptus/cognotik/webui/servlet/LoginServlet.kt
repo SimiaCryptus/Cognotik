@@ -2,10 +2,9 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.JsonObject
-import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.Companion.AUTH_COOKIE
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.Companion.AUTH_COOKIE
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -733,15 +732,8 @@ class LoginServlet : HttpServlet() {
         name = username,
         //provider = methodName
       )
-      val fileServices = try {
-        ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
-      } catch (e: Exception) {
-        log.error("Failed to get fileApplicationServices for login: {}", username, e)
-        serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
-        return
-      }
       val settings = try {
-        fileServices[ServiceKey.USER_SETTINGS].getUserSettings(user)
+        ServiceRouter.getUserSettings(user)
       } catch (e: Exception) {
         log.error("Failed to load user settings for login: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -763,7 +755,7 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, inputHash)
       try {
-        ServiceMap[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
+        ServiceRouter.putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register user with authentication manager: {}", username, e)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
@@ -811,7 +803,7 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (token.isNullOrBlank()) return false
       val user = try {
-        ServiceMap[ServiceKey.AUTHENTICATION].getUser(token)
+        ServiceRouter.getUser(token)
       } catch (e: Exception) {
         log.debug("Error checking existing authentication", e)
         null
@@ -850,12 +842,12 @@ class LoginServlet : HttpServlet() {
       val token = authCookie?.value
       if (!token.isNullOrBlank()) {
         try {
-          val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(token)
+          val user = ServiceRouter.getUser(token)
           if (user == null) {
             log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
           } else {
             try {
-              ServiceMap[ServiceKey.AUTHENTICATION].logoutIfMatching(token, user)
+              ServiceRouter.logoutIfMatching(token, user)
               log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
             } catch (e: Exception) {
               log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)
@@ -934,13 +926,6 @@ class LoginServlet : HttpServlet() {
         email = username,
         name = username,
       )
-      val fileServices = try {
-        ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
-      } catch (e: Exception) {
-        log.error("Failed to get fileApplicationServices for registration: {}", username, e)
-        serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
-        return
-      }
       // Debounce registration attempts by IP + username
       val throttleKey = "${req.remoteAddr}:$username"
       if (isThrottled(throttleKey)) {
@@ -975,7 +960,7 @@ class LoginServlet : HttpServlet() {
       }
 
       val existingSettings = try {
-        fileServices[ServiceKey.USER_SETTINGS].getUserSettings(user)
+        ServiceRouter.getUserSettings(user)
       } catch (e: Exception) {
         log.error("Failed to load existing settings for registration: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -988,7 +973,7 @@ class LoginServlet : HttpServlet() {
       }
       val newSettings = existingSettings.copy(passwordHash = hashPassword(password))
       try {
-        fileServices[ServiceKey.USER_SETTINGS].updateUserSettings(user, newSettings)
+        ServiceRouter.updateUserSettings(user, newSettings)
       } catch (e: Exception) {
         log.error("Failed to persist user settings during registration: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
@@ -999,7 +984,7 @@ class LoginServlet : HttpServlet() {
 
       val accessToken = createSessionToken(username, hashPassword(password))
       try {
-        ServiceMap[ServiceKey.AUTHENTICATION].putUser(accessToken, user)
+        ServiceRouter.putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register newly-registered user with authentication manager: {}", username, e)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)

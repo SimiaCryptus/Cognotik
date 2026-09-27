@@ -18,8 +18,8 @@ import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import java.io.File
 import java.util.Locale.getDefault
 import kotlin.io.path.Path
@@ -214,7 +214,7 @@ class OrchestrationConfig(
 }
 
 fun String.instance(user: User): ApiChatModel? {
-  val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(user)
+  val userSettings = ServiceRouter.getUserSettings(user)
   val chatModel = userSettings.apis
     .filter { it.provider != null && it.key != null }
     .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl ?: it.provider?.base!!) }

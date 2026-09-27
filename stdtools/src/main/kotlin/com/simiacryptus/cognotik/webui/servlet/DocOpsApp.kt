@@ -8,8 +8,8 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.asPatch
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.fileserver.handler.GitOperationHandler
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
@@ -47,7 +47,7 @@ open class DocOpsApp(
   override val inputCnt get() = 0
 
   private val metadataStorage by lazy {
-    ServiceMap[ServiceKey.METADATA_DB]
+    ServiceRouter as SessionMetadataInterface
   }
 
   data class Settings(

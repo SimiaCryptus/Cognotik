@@ -7,14 +7,14 @@ import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import jakarta.servlet.http.HttpServlet
@@ -65,10 +65,10 @@ import java.util.concurrent.atomic.AtomicBoolean
  */
 open class DocProcessorServlet() : HttpServlet() {
   private val dataStorage by lazy {
-    ServiceMap[ServiceKey.DATA_STORAGE]
+    ServiceRouter as StorageInterface
   }
   private val metadataDB by lazy {
-    ServiceMap[ServiceKey.METADATA_DB]
+    ServiceRouter as SessionMetadataInterface
   }
 
   /*
@@ -196,7 +196,7 @@ open class DocProcessorServlet() : HttpServlet() {
         writeError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameter: doc")
         return
       }
-      val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+      val user = ServiceRouter.authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
       require(null != user.tokenMetadata().firstOrNull()?.token) {
         "Missing authentication cookie for ${user.toJson()}"

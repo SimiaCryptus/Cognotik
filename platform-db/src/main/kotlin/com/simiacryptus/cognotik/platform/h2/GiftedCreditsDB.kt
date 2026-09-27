@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -134,7 +134,7 @@ class GiftedCreditsDB(
 
     // Check creator has sufficient credit balance
     val usageManager =
-      ServiceMap[ServiceKey.USAGE_DB]
+      ServiceRouter as UsageInterface
     val creatorBalance = try {
       usageManager.getUserBalance(creator)
     } catch (e: Exception) {
@@ -266,7 +266,7 @@ class GiftedCreditsDB(
         if (creator != null) {
           try {
             val creatorBalance =
-              ServiceMap[ServiceKey.USAGE_DB].getUserBalance(creator)
+              ServiceRouter.getUserBalance(creator)
             log.debug(
               "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
               creator.id, creatorBalance, gift.amountGranted

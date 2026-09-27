@@ -15,8 +15,8 @@ import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isBinaryFile
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -35,7 +35,7 @@ class TaskOrchestrator(
   val timeoutMinutes: Long = 15
 ) {
   val pool: ExecutorService by lazy {
-    ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
+    ThreadPoolManager.getPool(
       session,
       user
     ) }

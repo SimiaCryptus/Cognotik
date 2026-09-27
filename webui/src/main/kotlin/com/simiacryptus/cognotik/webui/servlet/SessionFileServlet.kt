@@ -6,15 +6,15 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.webui.application.getCookie
 import com.simiacryptus.cognotik.fileserver.handler.FsApiConfig
 import com.simiacryptus.cognotik.fileserver.handler.FsApiRoute
 import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
 import com.simiacryptus.cognotik.fileserver.handler.FsErrors
 import com.simiacryptus.cognotik.fileserver.handler.FsException
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -48,7 +48,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   open val fsApiTerminalEnabled: Boolean = false
   open val fsApiExecEnabled: Boolean = true
   private val metadataDB by lazy {
-    ServiceMap[ServiceKey.METADATA_DB]
+    ServiceRouter as SessionMetadataInterface
   }
 
   /**
@@ -78,7 +78,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       // a proper FS API error here instead, consistent with the "missing session" case
       // above.
       val session = Session(sessionId)
-      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(req.getCookie())
+      val user = ServiceRouter.getUser(req.getCookie())
       if (!session.isGlobal()) {
         if (user == null) {
           log.debug("FS API request rejected (unauthenticated): ${req.pathInfo}")
@@ -122,7 +122,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   override fun getFsApiRoot(req: HttpServletRequest, resp: HttpServletResponse): File? {
     val sessionId = sessionIdOf(req) ?: return null
     val session = Session(sessionId)
-    val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(req.getCookie())
+    val user = ServiceRouter.getUser(req.getCookie())
     if (user == null && !session.isGlobal()) {
       log.warn("FS API: no user for session ${session.sessionId}")
       return null
@@ -179,7 +179,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       val session = Session(pathSegments.first().toString())
       log.debug("Resolved session: ${session.sessionId}")
       val cookie = request.getCookie()
-      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(cookie)
+      val user = ServiceRouter.getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.warn("No user found for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
@@ -242,7 +242,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
   }
   override val git: GitProvider = object : GitProvider(dataStorage) {
     override fun authenticate(request: HttpServletRequest, response: HttpServletResponse) =
-      ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+      ServiceRouter.authenticate(request)
 
     override fun onSession(session: Session, user: User?) {
       this@SessionFileServlet.onSession(session, user)
@@ -308,7 +308,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       }
       val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie(AuthenticationInterface.AUTH_COOKIE)
-      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(cookie)
+      val user = ServiceRouter.getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.warn("listContents: could not find user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         if (!response.isCommitted) {
@@ -358,7 +358,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       }
       val session = Session(pathSegments.toList().first().toString())
       val cookie = request.getCookie()
-      val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(cookie)
+      val user = ServiceRouter.getUser(cookie)
       if (user == null && !session.isGlobal()) {
         log.debug("isAuthenticatedForSession: no user for token (cookie present: ${cookie != null}) for session ${session.sessionId}; redirecting to login")
         if (!response.isCommitted) {

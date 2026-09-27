@@ -8,13 +8,12 @@ import com.simiacryptus.cognotik.fileserver.action.ActionUi
 import com.simiacryptus.cognotik.fileserver.action.FsAction
 import com.simiacryptus.cognotik.fileserver.action.FsActionContext
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
 import com.simiacryptus.cognotik.fileserver.handler.FsErrors
 import com.simiacryptus.cognotik.fileserver.handler.FsException
 import com.simiacryptus.cognotik.fileserver.util.FsJson
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServletResponse
 
 /**
@@ -177,5 +176,5 @@ object ModelSelectionActions {
 }
 
 val FsActionContext.user: User
-  get() = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(req)
+  get() = ServiceRouter.authenticate(req)
     ?: throw IllegalStateException("Authentication failed but no error response was sent")

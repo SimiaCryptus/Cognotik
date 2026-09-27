@@ -3,14 +3,11 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.util.SecureString
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -23,7 +20,6 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.collections.iterator
 
 /**
  * Server-side servlet that handles proxied chat requests from ProxyProvider clients.
@@ -50,9 +46,7 @@ class ChatApiProxyServlet(
   private val mapper = ObjectMapper().registerKotlinModule()
   private val workPool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
   private val scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2))
-  private val fileApplicationServices =
-    ServiceMap ?: throw IllegalStateException("ApplicationServices not initialized")
-  private val usageManager = fileApplicationServices[ServiceKey.USAGE_DB]
+  private val usageManager = ServiceRouter as UsageInterface
 
   /**
    * Holds the state of an asynchronous chat request.
@@ -295,7 +289,7 @@ class ChatApiProxyServlet(
     } catch (e: Exception) {
       throw InvalidRequestException("Invalid chat request format: ${e.message}", e)
     }
-    val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+    val user = ServiceRouter.authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy chat request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, requiredBudget = 0.0)
@@ -633,7 +627,7 @@ class ChatApiProxyServlet(
     MDC.put("provider", providerLabel)
     val sessionId = request.getParameter("session")?.let { Session(it) } ?: Session.newUserID()
     val providers = resolveProviders(providerNames)
-    val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+    val user = ServiceRouter.authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy models request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, false, null)
@@ -711,7 +705,7 @@ class ChatApiProxyServlet(
     MDC.put("provider", providerName)
     MDC.put("jobToken", token)
 
-    val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+    val user = ServiceRouter.authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy chat result request")
     MDC.put("user", user.email)
 
@@ -795,7 +789,7 @@ class ChatApiProxyServlet(
       throw InsufficientBudgetException("No available budget for user ${user.email}")
     }
     val baseSettings = try {
-      fileApplicationServices[ServiceKey.USER_SETTINGS].getUserSettings(user)
+      ServiceRouter.getUserSettings(user)
     } catch (e: Exception) {
       log.error("Failed to load user settings for user '{}'", user.email, e)
       throw RuntimeException("Failed to load user settings: ${e.message}", e)

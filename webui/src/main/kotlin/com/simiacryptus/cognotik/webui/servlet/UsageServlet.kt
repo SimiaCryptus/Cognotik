@@ -5,10 +5,9 @@ import com.google.gson.GsonBuilder
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.service.UsageInterface
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -23,8 +22,8 @@ class UsageServlet : HttpServlet() {
     public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
         response.status = HttpServletResponse.SC_OK
         val useJson = isJsonRequested(request)
-        val usageManager =
-            ServiceMap[ServiceKey.USAGE_DB]
+      val usageManager =
+        ServiceRouter as UsageInterface
 
         if (request.parameterMap.containsKey("sessionId")) {
             handleSessionUsage(request, response, useJson, usageManager)
@@ -46,7 +45,7 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val session = Session(request.getParameter("sessionId"))
-        val user = ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+        val user = ServiceRouter.authenticate(request)
             ?: throw RuntimeException("Authentication failed")
         val usage = usageManager.getSessionUsageSummary(user=user, session = session)
         serve(
@@ -64,7 +63,7 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val userinfo =
-          ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+          ServiceRouter.authenticate(request)
             ?: throw RuntimeException("Authentication failed")
         val (from, to) = parseDateRange(request)
 

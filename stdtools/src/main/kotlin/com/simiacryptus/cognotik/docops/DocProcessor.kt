@@ -29,8 +29,8 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.asChatInterface
 import com.simiacryptus.cognotik.util.jsonCast
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.CompletableFuture
@@ -285,7 +285,7 @@ class DocProcessor(
       session: Session = Session.newUserID(), concurrency: Int = 4, user: User
     ): FixedConcurrencyProcessor =
       FixedConcurrencyProcessor(
-        ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
+        ThreadPoolManager.getPool(
           session,
           user
         ), concurrency

@@ -7,8 +7,9 @@ import com.simiacryptus.cognotik.platform.model.Session
     import com.simiacryptus.cognotik.fileserver.handler.FsApiRoute
     import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
     import com.simiacryptus.cognotik.fileserver.handler.FsException
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import java.io.File
 
     /**
@@ -22,7 +23,7 @@ import java.io.File
     object SessionFsRoots {
 
       private val dataStorage by lazy {
-        ServiceMap[ServiceKey.DATA_STORAGE]
+        ServiceRouter as StorageInterface
       }
 
       fun sessionOf(ctx: FsActionContext): Session {
@@ -35,7 +36,7 @@ import java.io.File
 
       fun userOf(ctx: FsActionContext): User {
         val session = sessionOf(ctx)
-        return ServiceMap[ServiceKey.AUTHENTICATION].getUser(ctx.req.getCookie())
+        return ServiceRouter.getUser(ctx.req.getCookie())
           ?: throw FsException(
             FsErrorCode.EACCES, "fsapi", null,
             "not authenticated for session '${session.sessionId}'; log in and retry"
@@ -44,7 +45,7 @@ import java.io.File
 
       fun rootOf(ctx: FsActionContext): File {
         val session = sessionOf(ctx)
-        val user = ServiceMap[ServiceKey.AUTHENTICATION].getUser(ctx.req.getCookie())
+        val user = ServiceRouter.getUser(ctx.req.getCookie())
         if (user == null && !session.isGlobal()) {
           throw FsException(
             FsErrorCode.EACCES, "fsapi", null,

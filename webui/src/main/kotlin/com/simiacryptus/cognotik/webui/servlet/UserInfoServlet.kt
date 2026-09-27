@@ -1,9 +1,8 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -13,7 +12,7 @@ class UserInfoServlet : HttpServlet() {
     response.contentType = "text/json"
     response.status = HttpServletResponse.SC_OK
     val user =
-      ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+      ServiceRouter.authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     response.writer.write(JsonUtil.objectMapper().writeValueAsString(user))
   }

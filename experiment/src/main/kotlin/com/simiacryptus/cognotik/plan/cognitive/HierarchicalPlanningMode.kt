@@ -15,8 +15,8 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.set
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -124,10 +124,10 @@ open class HierarchicalPlanningMode(
     }
 
     val scheduledExecutorService =
-      ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
-      session = session,
-      user = user
-    )
+      ThreadPoolManager.getScheduledPool(
+        session = session,
+        user = user
+      )
     debouncedUpdateGoalTreeUI = createDebouncedUpdate(scheduledExecutorService, updateGoalTreeUI, 500)
     periodicUpdateFuture = scheduledExecutorService.scheduleWithFixedDelay({
       if (!stopRequested.get() && isRunning.get()) {

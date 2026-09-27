@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -30,7 +29,7 @@ class SessionSettingsServlet(
         logger.debug("Processing request for session: $sessionId")
         val session = Session(sessionId)
         val user =
-          ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+          ServiceRouter.authenticate(request)
             ?: throw IllegalStateException("Authentication failed")
         logger.debug("User identified: ${user.id ?: "anonymous"}")
 
@@ -109,7 +108,7 @@ class SessionSettingsServlet(
 
           val settings = JsonUtil.fromJson<Any>(settingsJson, settingsClass)
           val user =
-            ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request)
+            ServiceRouter.authenticate(request)
               ?: throw IllegalStateException("Authentication failed")
           logger.debug("User identified for settings update: ${user.id ?: "anonymous"}")
 

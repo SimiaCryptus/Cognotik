@@ -18,10 +18,9 @@ import com.simiacryptus.cognotik.platform.client.StatusResponse
 import com.simiacryptus.cognotik.platform.client.UsageSummaryResponse
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -39,7 +38,7 @@ import java.time.LocalDate
  */
 class UsageStorageApiServlet : HttpServlet() {
   private fun currentUser(request: HttpServletRequest): User =
-    ServiceMap[ServiceKey.USER_RESOLVER].authenticate(request) ?: throw IllegalStateException("Authentication failed")
+    ServiceRouter.authenticate(request) ?: throw IllegalStateException("Authentication failed")
 
   private fun action(request: HttpServletRequest): String =
     (request.pathInfo ?: request.servletPath)
@@ -73,14 +72,14 @@ class UsageStorageApiServlet : HttpServlet() {
           val user = currentUser(request)
           val from = LocalDate.parse(requireParam(request, "from"))
           val to = LocalDate.parse(requireParam(request, "to"))
-          writeJson(response, UsageSummaryResponse(ServiceMap[ServiceKey.USAGE_DB].getUserUsageSummary(user, from, to)))
+          writeJson(response, UsageSummaryResponse(ServiceRouter.getUserUsageSummary(user, from, to)))
         }
 
         "sessionSummary" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
           writeJson(response, UsageSummaryResponse(
-            ServiceMap[ServiceKey.USAGE_DB].getSessionUsageSummary(
+            ServiceRouter.getSessionUsageSummary(
               user = user,
               session = session
             )))
@@ -89,18 +88,18 @@ class UsageStorageApiServlet : HttpServlet() {
         "sessionRows" -> {
           val user = currentUser(request)
           val session = Session(requireParam(request, "sessionId"))
-          writeJson(response, SessionRowsResponse(ServiceMap[ServiceKey.USAGE_DB].getSessionUsageRows(session, user)))
+          writeJson(response, SessionRowsResponse(ServiceRouter.getSessionUsageRows(session, user)))
         }
 
         "budget" -> writeJson(response, BudgetResponse(
-          ServiceMap[ServiceKey.USAGE_DB].getAvailableBudget(
+          ServiceRouter.getAvailableBudget(
             currentUser(
               request
             )
           )))
 
         "balance" -> writeJson(response, BalanceResponse(
-          ServiceMap[ServiceKey.USAGE_DB].getUserBalance(
+          ServiceRouter.getUserBalance(
             currentUser(
               request
             )
@@ -110,21 +109,21 @@ class UsageStorageApiServlet : HttpServlet() {
           val user = currentUser(request)
           val from = LocalDate.parse(requireParam(request, "from"))
           val to = LocalDate.parse(requireParam(request, "to"))
-          writeJson(response, DailyUsageResponse(ServiceMap[ServiceKey.USAGE_DB].getUserDailyUsage(user, from, to)))
+          writeJson(response, DailyUsageResponse(ServiceRouter.getUserDailyUsage(user, from, to)))
         }
 
         "credits" -> {
           val user = currentUser(request)
           val from = LocalDate.parse(requireParam(request, "from"))
           val to = LocalDate.parse(requireParam(request, "to"))
-          writeJson(response, CreditsResponse(ServiceMap[ServiceKey.USAGE_DB].getUserCredits(user, from, to)))
+          writeJson(response, CreditsResponse(ServiceRouter.getUserCredits(user, from, to)))
         }
 
         "parentSession" -> {
           val user = currentUser(request)
           val child = Session(requireParam(request, "child"))
           writeJson(response, ParentSessionResponse(
-            ServiceMap[ServiceKey.USAGE_DB].getParentSession(
+            ServiceRouter.getParentSession(
               user = user,
               child = child
             )?.sessionId))
@@ -149,14 +148,14 @@ class UsageStorageApiServlet : HttpServlet() {
           val user = currentUser(request)
           val req = readBody(request, SessionSummaryBulkRequest::class.java)
           val result =
-            ServiceMap[ServiceKey.USAGE_DB].getSessionUsageSummaryBulk(user, req.sessionIds.map { Session(it) })
+            ServiceRouter.getSessionUsageSummaryBulk(user, req.sessionIds.map { Session(it) })
             .mapKeys { it.key.sessionId }
           writeJson(response, SessionSummaryBulkResponse(result))
         }
 
         "increment" -> {
           val req = readBody(request, IncrementUsageRequest::class.java)
-          ServiceMap[ServiceKey.USAGE_DB].incrementUsage(
+          ServiceRouter.incrementUsage(
             session = Session(req.sessionId),
             user = currentUser(request),
             model = req.model,
@@ -169,14 +168,14 @@ class UsageStorageApiServlet : HttpServlet() {
         "credit" -> {
           val req = readBody(request, CreditRequest::class.java)
           val balance =
-            ServiceMap[ServiceKey.USAGE_DB].creditUser(currentUser(request), req.amount, req.comment, req.metadata)
+            ServiceRouter.creditUser(currentUser(request), req.amount, req.comment, req.metadata)
           writeJson(response, CreditResponse(balance))
         }
 
         "parentSession" -> {
           val user = currentUser(request)
           val req = readBody(request, ParentSessionRequest::class.java)
-          ServiceMap[ServiceKey.USAGE_DB].setParentSession(
+          ServiceRouter.setParentSession(
             user = user,
             child = Session(req.child),
             parent = Session(req.parent)
@@ -185,7 +184,7 @@ class UsageStorageApiServlet : HttpServlet() {
         }
 
         "clear" -> {
-          ServiceMap[ServiceKey.USAGE_DB].clear()
+          ServiceRouter.clear()
           writeJson(response, StatusResponse())
         }
 

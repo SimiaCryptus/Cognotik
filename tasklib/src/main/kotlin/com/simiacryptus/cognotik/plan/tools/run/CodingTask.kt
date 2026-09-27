@@ -19,8 +19,8 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.ui.Retryable.Companion.async
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
 import org.slf4j.LoggerFactory.getLogger
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
@@ -46,7 +46,7 @@ open class CodingTask<T : CodeRuntime>(
 
 
   open val canPlay by lazy {
-    ServiceMap[ServiceKey.AUTHORIZATION_MANAGER].isAuthorized(
+    ServiceRouter.isAuthorized(
       ResourceRef.of(this::class.java),
       Principal.of(user),
       OperationType.Execute

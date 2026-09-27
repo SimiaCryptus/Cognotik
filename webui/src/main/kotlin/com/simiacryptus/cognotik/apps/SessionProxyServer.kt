@@ -5,8 +5,8 @@ import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSession
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatServer
@@ -112,7 +112,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
     private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
 
     val metadataStorage by lazy {
-      ServiceMap[ServiceKey.METADATA_DB]
+      ServiceRouter as SessionMetadataInterface
     }
 
     private fun registerSessionOwner(user: User, session: Session) {
