@@ -849,6 +849,10 @@ open class FileServer {
     return true
   }
 
+  fun stop() {
+    runningServer?.stop()
+  }
+
   companion object {
     @Volatile
     var docProcessorServlet: CliDocProcessorServlet? = null
