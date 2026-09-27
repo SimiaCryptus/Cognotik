@@ -1,5 +1,6 @@
 package cognotik.actions.agent
 
+
 import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -9,23 +10,23 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.Description
-import com.simiacryptus.cognotik.text.patch.PatchProcessor
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
-import com.simiacryptus.cognotik.platform.ApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.StorageInterface
-import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.Retryable
-import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.SessionRenderer
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -39,7 +40,7 @@ import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.Semaphore
 import java.util.concurrent.atomic.AtomicReference
 
@@ -63,12 +64,12 @@ class MultiStepPatchAction : BaseAction() {
                 if (null != selectedFile) {
                     DataStorage.userPaths[session] = selectedFile.toFile
                 }
-                SessionProxyServer.metadataStorage.setSessionName(
-                    null,
+              SessionProxyServer.metadataStorage.setSessionName(
+                localUser,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.chats[session] = AutoDevApp(event = e)
+              SessionProxyServer.chats[session.withUser(localUser)] = AutoDevApp(event = e)
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
                     inputCnt = 1,
@@ -106,10 +107,10 @@ class MultiStepPatchAction : BaseAction() {
         }
 
         override fun userMessage(
-            session: Session,
-            user: User,
-            userMessage: String,
-            ui: SocketManager
+          session: Session,
+          user: User,
+          userMessage: String,
+          ui: SocketManager
         ) {
             val settings = getSettings(session, user) ?: Settings(
                 budget = DEFAULT_BUDGET,
@@ -129,9 +130,9 @@ class MultiStepPatchAction : BaseAction() {
         }
 
         data class Settings(
-            val budget: Double? = 2.00,
-            val tools: List<String> = emptyList(),
-            val model: ChatInterface? = null,
+          val budget: Double? = 2.00,
+          val tools: List<String> = emptyList(),
+          val model: ChatInterface? = null,
         )
 
         override val settingsClass: Class<*> get() = Settings::class.java
@@ -232,7 +233,7 @@ class MultiStepPatchAction : BaseAction() {
                     }
                     description = renderMarkdown(description, tabs = false)
                     val task = ui.newTask(false).apply { taskTabs[description] = placeholder }
-                    ApplicationServices.services!!.threadPoolManager.getPool(session, user).submit {
+                  ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, user).submit {
                         task.header("Task: $description", 2)
                       Retryable(task) {
                         try {
@@ -294,7 +295,7 @@ class MultiStepPatchAction : BaseAction() {
 
     companion object {
         private val log = getLogger(MultiStepPatchAction::class.java)
-        val root: File get() = File(AppSettingsState.Companion.pluginHome, "code_chat")
+      val root: File get() = File(AppSettingsState.pluginHome, "code_chat")
 
         data class TaskList(
             @Description("List of tasks to be performed in this project")

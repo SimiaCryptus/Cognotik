@@ -1,5 +1,6 @@
 package cognotik.actions.chat
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -8,16 +9,15 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.generator.nova.GenerationSpec.Companion.nullIfEmpty
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docs.getDocumentReader
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatMessage
-import com.simiacryptus.cognotik.platform.model.ModelSchema.ContentPart
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.text.util.isBinary
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
+import com.simiacryptus.cognotik.text.util.isBinary
 import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -26,7 +26,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.awt.image.BufferedImage
 import java.io.File
@@ -58,11 +57,11 @@ class ImageChatAction : BaseAction() {
                 progress.text = "Setting up chat session..."
                 val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
-                    null,
+                    localUser,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.agents[session] = CodeChatManager(
+                SessionProxyServer.agents[session.withUser(localUser)] = CodeChatManager(
                     session = session,
                     model = AppSettingsState.instance.imageChatClient,
                     fastModel = AppSettingsState.instance.fastChatClient,
@@ -128,14 +127,14 @@ class ImageChatAction : BaseAction() {
         ${codeSummary()}
       """.trimIndent()
 
-        override val sysMessage: ChatMessage
-            get() = ChatMessage(
+        override val sysMessage: ModelSchema.ChatMessage
+            get() = ModelSchema.ChatMessage(
                 ModelSchema.Role.system, listOf(
-                ContentPart(text = super.systemPrompt)
-            ) + codeFiles.filter { isImg(it.name) }.map { path ->
-                val bufferedImage = root.resolve(path.toFile()).readBufferedImage()
-                ContentPart(text = "${path}").apply { image = bufferedImage }
-            })
+                    ModelSchema.ContentPart(text = super.systemPrompt)
+                ) + codeFiles.filter { isImg(it.name) }.map { path ->
+                    val bufferedImage = root.resolve(path.toFile()).readBufferedImage()
+                    ModelSchema.ContentPart(text = "${path}").apply { image = bufferedImage }
+                })
 
         fun File.readBufferedImage(): BufferedImage? {
             return try {

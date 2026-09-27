@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.dictation
 
+
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.StatusBar
@@ -12,9 +13,8 @@ import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSession
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.event.Level
@@ -127,19 +127,19 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
                     findAudioModel(it)
                 } ?: throw IOException("Transcription model not configured")
                 val apiData =
-                  fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.find { it.provider == model.provider }
+                    ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(localUser).apis.find { it.provider == model.provider }
                 return TranscriptionClient(
                     key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
                     apiBase = apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"),
                     logLevel = Level.DEBUG,
                     logStreams = mutableListOf(),
-                    workPool = ApplicationServicesImpl.threadPoolManager.getPool(
+                    workPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
                         currentSession,
-                      AppSettingsState.localUser
+                        AppSettingsState.localUser
                     ),
-                    scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(
+                    scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
                         currentSession,
-                      AppSettingsState.localUser
+                        AppSettingsState.localUser
                     ),
                     provider = model.provider
                 )

@@ -1,5 +1,6 @@
 package cognotik.actions.chat
 
+
 import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -9,8 +10,12 @@ import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.Editor
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.text.ui.InMemoryFileSystem
@@ -20,12 +25,9 @@ import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.ComputerLanguage
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
-import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.intellij.lang.annotations.Language
 import org.slf4j.LoggerFactory.getLogger
 import java.nio.file.Paths
@@ -105,20 +107,20 @@ class DiffChatAction : BaseAction() {
     ) {
         var selectionEnd = selectionEnd
 
-        SessionProxyServer.metadataStorage.setSessionName(
-            null,
+      SessionProxyServer.metadataStorage.setSessionName(
+        localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
-        SessionProxyServer.agents[session] = object : CodeChatSocketManager(
-            session = session,
-            language = language,
-            codeSelection = rawText,
-            filename = filename,
-            model = AppSettingsState.instance.smartChatClient,
-            fastModel = AppSettingsState.instance.fastChatClient,
-            storage = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory
-        ) {
+      SessionProxyServer.agents[session.withUser(localUser)] = object : CodeChatSocketManager(
+        session = session,
+        language = language,
+        codeSelection = rawText,
+        filename = filename,
+        model = AppSettingsState.instance.smartChatClient,
+        fastModel = AppSettingsState.instance.fastChatClient,
+        storage = ServiceMap[ServiceKey.DATA_STORAGE]
+      ) {
             override val systemPrompt: String
                 @Language("Markdown")
                 get() = super.systemPrompt + """

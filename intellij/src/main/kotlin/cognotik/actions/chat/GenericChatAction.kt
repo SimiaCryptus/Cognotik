@@ -4,16 +4,15 @@ import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
-import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
-
 import org.slf4j.LoggerFactory
 import java.text.SimpleDateFormat
 
@@ -32,11 +31,11 @@ class GenericChatAction : BaseAction() {
 
                 val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
-                    null,
+                    localUser,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.agents[session] = ChatSocketManager(
+                SessionProxyServer.agents[session.withUser(localUser)] = ChatSocketManager(
                   session = session,
                   smartModel = AppSettingsState.instance.smartChatClient,
                   fastModel = AppSettingsState.instance.fastChatClient,

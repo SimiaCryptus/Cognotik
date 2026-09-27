@@ -8,6 +8,8 @@ var transcriptionModel: String = AudioModels.Whisper.modelName
  * configuration settings. It uses the IntelliJ Platform's persistence
  * framework to save settings across IDE restarts.
  */
+
+
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.intellij.openapi.actionSystem.AnActionEvent
@@ -18,27 +20,20 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
+import com.simiacryptus.cognotik.interpreter.CodeRuntimes
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
-import com.simiacryptus.cognotik.interpreter.CodeRuntimes
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser
-import com.simiacryptus.cognotik.platform.model.EmbeddingModel
-import com.simiacryptus.cognotik.platform.model.ImageClientInterface
-import com.simiacryptus.cognotik.platform.model.ImageModel
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import org.slf4j.LoggerFactory
 import java.io.File
-import kotlin.jvm.java
 import kotlin.random.Random
 
 
@@ -291,7 +286,7 @@ data class AppSettingsState(
             //ResourceApps("/apps/disabled_apps.json").init()
             CoreProviders.init()
             CoreTasks.init()
-            ApplicationServicesImpl.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
             initDynamicEnums()
         }
 
@@ -309,7 +304,7 @@ data class AppSettingsState(
         }
 
         val currentSession = Session.Companion.newUserID()
-      val workPool = ApplicationServicesImpl.threadPoolManager.getPool(currentSession, AppSettingsState.localUser)
+      val workPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(currentSession, AppSettingsState.localUser)
         val pluginHome: File by lazy {
             run {
                 var logPath: String? = null
@@ -335,9 +330,9 @@ fun ApiChatModel.instance(): ChatInterface? {
             ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
         workPool = AppSettingsState.workPool,
         temperature = AppSettingsState.instance.temperature,
-        scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(
+        scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
             AppSettingsState.currentSession,
-          AppSettingsState.localUser
+            AppSettingsState.localUser
         ),
         session = AppSettingsState.currentSession,
         user = AppSettingsState.localUser,
@@ -358,9 +353,9 @@ fun ApiImageModel.instance(): ImageClientInterface? {
         key = provider.key ?: throw IllegalArgumentException("API key is not set"),
         base = provider.apiBase,
         workPool = AppSettingsState.workPool,
-        scheduledPool = ApplicationServicesImpl.threadPoolManager.getScheduledPool(
+        scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
             AppSettingsState.currentSession,
-          AppSettingsState.localUser
+            AppSettingsState.localUser
         ),
     )
 }

@@ -1,5 +1,6 @@
 package cognotik.actions.find
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -13,8 +14,8 @@ import com.intellij.usages.Usage
 import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.ui.Retryable
@@ -24,7 +25,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.text.SimpleDateFormat
 import javax.swing.Icon
@@ -55,13 +55,13 @@ class FindResultsChatAction(
 
             val session = Session.newUserID()
             SessionProxyServer.metadataStorage.setSessionName(
-                null,
+                localUser,
                 session,
                 "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
             )
 
             val fileListMap = usages.groupBy { getFile(it) }
-            SessionProxyServer.chats[session] = ChatApp(
+            SessionProxyServer.chats[session.withUser(localUser)] = ChatApp(
                 root = root,
                 project = project,
                 usages = fileListMap

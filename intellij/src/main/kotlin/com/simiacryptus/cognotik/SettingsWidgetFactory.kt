@@ -10,17 +10,18 @@ import com.intellij.openapi.wm.StatusBarWidget
 import com.intellij.openapi.wm.StatusBarWidgetFactory
 import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.config.UsageTable
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.UserSettings
-import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.config.UsageTable
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.util.BrowseUtil
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import icons.MyIcons
@@ -60,11 +61,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             }
             return smartModelTree!!
         }
-        val settings: UserSettings get() = ApplicationServices.services!!.fileApplicationServices(
-                AppSettingsState.pluginHome
-            ).userSettingsManager.getUserSettings(
-                localUser
-            )
+        val settings: UserSettings get() = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+            localUser
+        )
 
         private fun getFastModelTree(settings: UserSettings): Tree {
             if (fastModelTree == null) {
@@ -345,16 +344,16 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         private fun kill(session: Session) {
-          ApplicationServices.services!!.threadPoolManager.getPool(session, localUser)
+            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, localUser)
             .shutdownNow()
-          ApplicationServices.services!!.threadPoolManager.getScheduledPool(session, localUser)
+            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, localUser)
             .shutdownNow()
         }
 
         fun updateSessionsList() {
             sessionsListModel.clear()
             (SessionProxyServer.chats.keys + SessionProxyServer.agents.keys).distinct().forEach {
-                sessionsListModel.addElement(it)
+                sessionsListModel.addElement(it.session)
             }
         }
 
@@ -370,14 +369,14 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 label.text = if (value != null) {
                     try {
                         val sessionName =
-                            ApplicationServices.services!!.fileApplicationServices(AppSettingsState.pluginHome).metadataDB.getSessionName(
-                                null,
+                            ServiceMap[ServiceKey.METADATA_DB].getSessionName(
+                                localUser,
                                 value
                             )
 
-                      val threadFactory = ApplicationServices.services!!.threadPoolManager.getPool(
-                        value,
-                        localUser
+                      val threadFactory = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
+                          value,
+                          localUser
                       ).threadFactory
                         val activeThreads = threadFactory.threads.filter {
                             when (it.state) {
@@ -530,7 +529,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             val usagePanel = JPanel(BorderLayout())
             usagePanel.add(
-                UsageTable(ApplicationServices.services!!.fileApplicationServices(AppSettingsState.pluginHome).usageDB),
+                UsageTable(ServiceMap[ServiceKey.USAGE_DB]),
                 BorderLayout.CENTER
             )
 

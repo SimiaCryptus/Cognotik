@@ -1,5 +1,6 @@
 package cognotik.actions.find
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -16,13 +17,13 @@ import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
-import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.SessionRenderer
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
-
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
 import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
@@ -30,7 +31,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import java.io.File
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -64,12 +64,12 @@ class FindResultsModificationAction(
     try {
       val session = Session.newUserID()
       SessionProxyServer.metadataStorage.setSessionName(
-        null,
+        localUser,
         session,
         "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
       )
       val fileListMap = usages.groupBy { getFile(it) }
-      SessionProxyServer.chats[session] = PatchApp(
+      SessionProxyServer.chats[session.withUser(localUser)] = PatchApp(
         root = root.toFile(),
         modificationParams = modificationParams,
         project = event.project ?: return,

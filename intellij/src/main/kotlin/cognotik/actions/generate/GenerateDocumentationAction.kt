@@ -1,5 +1,6 @@
 package cognotik.actions.generate
 
+
 import cognotik.actions.FileContextAction
 import cognotik.actions.test.TestResultAutofixAction.Companion.getProjectStructure
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -15,11 +16,10 @@ import com.intellij.ui.CheckBoxList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.components.JBTextField
-import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ModelSchema.*
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.util.toContentList
@@ -275,14 +275,14 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
         ChatRequest(
           model = model.model.modelId,
           messages = listOf(
-            ModelSchema.ChatMessage(
-              ModelSchema.Role.system,
+            ChatMessage(
+              Role.system,
               """
-                            You will combine natural language instructions with a user provided code example to document code.
-                            """.trimIndent().toContentList(),
+                        You will combine natural language instructions with a user provided code example to document code.
+                        """.trimIndent().toContentList(),
             ),
-            ModelSchema.ChatMessage(
-              ModelSchema.Role.user,
+            ChatMessage(
+              Role.user,
               "## Project:\n${getProjectStructure(projectRoot)}\n\n## $path:\n```\n$fileContent\n```\n\nInstructions: $transformationMessage".toContentList()
             ),
           ),

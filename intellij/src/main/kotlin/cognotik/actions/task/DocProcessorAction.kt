@@ -1,5 +1,6 @@
 package cognotik.actions.task
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -19,7 +20,6 @@ import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docops.DocProcessor
@@ -27,8 +27,9 @@ import com.simiacryptus.cognotik.docops.DocProcessor.Companion.newProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -41,7 +42,7 @@ import java.awt.BorderLayout
 import java.awt.Dimension
 import java.awt.Point
 import java.io.File
-import java.util.Collections
+import java.util.*
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.TimeUnit
@@ -107,7 +108,7 @@ class DocProcessorAction : BaseAction() {
         ).newSession(
             localUser, session = Session.newUserID()
         )?.let { socketManager ->
-            SessionProxyServer.agents[socketManager.sessionId] = socketManager
+            SessionProxyServer.agents[socketManager.sessionId.withUser(localUser)] = socketManager
             ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
                 applicationName = title, inputCnt = 1, stickyInput = false, loadImages = false, showMenubar = false
             )
@@ -308,7 +309,7 @@ class DocProcessorAction : BaseAction() {
         val scheduledFutures = mutableListOf(scheduledPool.scheduleAtFixedRate({
             if (indicator.isCanceled && !cancelFlag.get()) {
                 cancelFlag.set(true)
-                val threadPoolManager = ApplicationServicesImpl.threadPoolManager
+                val threadPoolManager = ServiceMap[ServiceKey.THREAD_POOL_MANAGER]
                 sessions.toList().forEach {
                     try {
                         threadPoolManager.getPool(it, localUser).shutdown()
@@ -397,7 +398,7 @@ class DocProcessorAction : BaseAction() {
         private val selectionCountLabel = JLabel()
         private var currentPopup: Popup? = null
         private var currentHoveredItem: TaskItem? = null
-        private val popupShowTimer = Timer(400) { showPopupForCurrentItem() }.apply { isRepeats = false }
+//        private val popupShowTimer = Timer(400) { showPopupForCurrentItem() }.apply { isRepeats = false }
 
         init {
             title = "Select Documentation Tasks"
@@ -435,11 +436,11 @@ class DocProcessorAction : BaseAction() {
                         val item = checkBoxList.getItemAt(index)
                         if (item != null && item != currentHoveredItem) {
                             currentHoveredItem = item
-                            popupShowTimer.restart()
+//                            popupShowTimer.restart()
                         }
                     } else {
                         currentHoveredItem = null
-                        popupShowTimer.stop()
+//                        popupShowTimer.stop()
                         hidePopup()
                     }
                 }
@@ -447,7 +448,7 @@ class DocProcessorAction : BaseAction() {
             checkBoxList.addMouseListener(object : java.awt.event.MouseAdapter() {
                 override fun mouseExited(e: java.awt.event.MouseEvent) {
                     currentHoveredItem = null
-                    popupShowTimer.stop()
+//                    popupShowTimer.stop()
                     hidePopup()
                 }
 
@@ -542,7 +543,7 @@ class DocProcessorAction : BaseAction() {
 
         private fun showDetailsDialog(item: TaskItem) {
             hidePopup()
-            popupShowTimer.stop()
+//            popupShowTimer.stop()
             val detailsText = buildDetailsText(item)
             val textArea = JTextArea(detailsText).apply {
                 isEditable = false
@@ -574,7 +575,7 @@ class DocProcessorAction : BaseAction() {
 
         override fun dispose() {
             hidePopup()
-            popupShowTimer.stop()
+//            popupShowTimer.stop()
             super.dispose()
         }
 

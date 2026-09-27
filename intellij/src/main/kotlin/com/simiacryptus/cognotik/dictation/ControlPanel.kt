@@ -4,10 +4,11 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.ui.components.JBLabel
 import com.intellij.util.ui.JBUI
-import com.simiacryptus.cognotik.platform.model.AudioModels
+
 import com.simiacryptus.cognotik.audio.DictationManager
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.SpeechToTextWidget.Companion.toggleRecording
+import com.simiacryptus.cognotik.platform.model.AudioModels
 import java.awt.GridBagConstraints
 import java.awt.GridBagLayout
 import java.awt.event.MouseAdapter

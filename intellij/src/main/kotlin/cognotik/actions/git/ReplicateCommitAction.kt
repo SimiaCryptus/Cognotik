@@ -1,5 +1,6 @@
 package cognotik.actions.git
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -16,14 +17,16 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.text.util.isBinary
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
+import com.simiacryptus.cognotik.text.util.isBinary
 import com.simiacryptus.cognotik.ui.Retryable
-import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.SessionRenderer
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -31,7 +34,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.io.File
 import java.nio.file.Files
@@ -103,11 +105,11 @@ class ReplicateCommitAction : BaseAction() {
         }
         progress.text = "Setting up session..."
         SessionProxyServer.metadataStorage.setSessionName(
-          null,
+          localUser,
           session,
           "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
-        SessionProxyServer.chats[session] = patchApp
+        SessionProxyServer.chats[session.withUser(localUser)] = patchApp
         ApplicationServer.appInfoMap[session] = AppInfoData(
           applicationName = "Code Chat",
           inputCnt = 1,

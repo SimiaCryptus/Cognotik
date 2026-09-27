@@ -1,18 +1,20 @@
 ﻿package cognotik.actions.chat
 
+
 import cognotik.actions.BaseAction
 import com.intellij.ide.BrowserUtil.browse
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.LanguageUtils
-import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
@@ -26,14 +28,14 @@ class CodeChatAction : BaseAction() {
         val session = Session.newUserID()
         val language = LanguageUtils.getComputerLanguage(e)?.name ?: ""
         val filename = FileDocumentManager.getInstance().getFile(editor.document)?.name ?: return
-        SessionProxyServer.agents[session] = CodeChatSocketManager(
+        SessionProxyServer.agents[session.withUser(localUser)] = CodeChatSocketManager(
             session = session,
             language = language,
             codeSelection = editor.caretModel.primaryCaret.selectedText ?: editor.document.text,
             filename = filename,
             model = AppSettingsState.instance.smartChatClient,
             fastModel = AppSettingsState.instance.fastChatClient,
-            storage = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory
+            storage = ServiceMap[ServiceKey.DATA_STORAGE]
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
@@ -43,7 +45,7 @@ class CodeChatAction : BaseAction() {
             showMenubar = false
         )
         SessionProxyServer.metadataStorage.setSessionName(
-            null,
+            localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
