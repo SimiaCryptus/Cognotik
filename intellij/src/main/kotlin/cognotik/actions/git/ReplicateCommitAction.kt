@@ -17,7 +17,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
@@ -105,11 +105,11 @@ class ReplicateCommitAction : BaseAction() {
         }
         progress.text = "Setting up session..."
         SessionProxyServer.metadataStorage.setSessionName(
-          localUser,
+          CognotikConfig.localUser,
           session,
           "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
-        SessionProxyServer.chats[session.withUser(localUser)] = patchApp
+        SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = patchApp
         ApplicationServer.appInfoMap[session] = AppInfoData(
           applicationName = "Code Chat",
           inputCnt = 1,

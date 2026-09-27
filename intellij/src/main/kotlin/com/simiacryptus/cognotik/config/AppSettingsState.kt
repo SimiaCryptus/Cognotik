@@ -22,6 +22,7 @@ import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.*
@@ -278,12 +279,8 @@ data class AppSettingsState(
         val log = LoggerFactory.getLogger(AppSettingsState::class.java)
         var auxiliaryLog: File? = null
 
-        val localUser: User = CognotikConfig.localUser
-
         init {
             require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
-//            ResourceApps("apps/apps.json").init()
-            //ResourceApps("/apps/disabled_apps.json").init()
             CoreProviders.init()
             CoreTasks.init()
             try {
@@ -308,7 +305,7 @@ data class AppSettingsState(
         }
 
         val currentSession = Session.Companion.newUserID()
-      val workPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(currentSession, AppSettingsState.localUser)
+      val workPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(currentSession, CognotikConfig.localUser)
         val pluginHome: File by lazy {
             run {
                 var logPath: String? = null
@@ -336,10 +333,10 @@ fun ApiChatModel.instance(): ChatInterface? {
         temperature = AppSettingsState.instance.temperature,
         scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
             AppSettingsState.currentSession,
-            AppSettingsState.localUser
+            localUser
         ),
         session = AppSettingsState.currentSession,
-        user = AppSettingsState.localUser,
+        user = localUser,
     )
 }
 
@@ -359,7 +356,7 @@ fun ApiImageModel.instance(): ImageClientInterface? {
         workPool = AppSettingsState.workPool,
         scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
             AppSettingsState.currentSession,
-            AppSettingsState.localUser
+            localUser
         ),
     )
 }

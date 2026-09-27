@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ChatInterface.Companion.ENABLE_LOGS
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
@@ -146,7 +147,7 @@ class PluginStartupActivity : ProjectActivity {
               }
           }
         ServiceMap[ServiceKey.AUTHENTICATION] = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = AppSettingsState.localUser
+            override fun getUser(accessToken: String?) = CognotikConfig.localUser
             override fun putUser(accessToken: String, user: User) = user
         }
     }

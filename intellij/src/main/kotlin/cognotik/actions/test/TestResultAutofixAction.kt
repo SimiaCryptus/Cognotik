@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -133,11 +133,11 @@ class TestResultAutofixAction : BaseAction() {
   private fun openAutofixWithTestResult(e: AnActionEvent, testInfo: String, projectStructure: String) {
     val session = Session.newUserID()
     SessionProxyServer.metadataStorage.setSessionName(
-      localUser,
+      CognotikConfig.localUser,
       session,
       "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
     )
-    SessionProxyServer.chats[session.withUser(localUser)] =
+    SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] =
       TestResultAutofixApp(session, testInfo, e.project?.basePath, projectStructure)
     ApplicationServer.appInfoMap[session] = AppInfoData(
       applicationName = "Code Chat",

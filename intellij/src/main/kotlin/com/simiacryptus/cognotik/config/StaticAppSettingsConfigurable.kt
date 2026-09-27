@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.config
 
 
 import com.intellij.util.xmlb.XmlSerializerUtil
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.*
@@ -181,7 +181,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
 
       val userSettings =
           ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
-              localUser
+              CognotikConfig.localUser
           )
         val fullConfig = try {
             val encryptedSettings = AppSettingsState.instance.copy()
@@ -368,7 +368,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 )
                 log.debug("Decrypting ${importedUserSettings.apis.size} API configurations")
                 ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
-                    AppSettingsState.localUser, importedUserSettings
+                    CognotikConfig.localUser, importedUserSettings
                 )
                 log.info("Successfully imported configuration with ${importedUserSettings.apis.size} API configurations")
             } else {
@@ -406,7 +406,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             // Refresh API table with current user settings
             val tableModel = component.apis.model as DefaultTableModel
             tableModel.rowCount = 0
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(localUser)
+          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -425,7 +425,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(localUser)
+          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
             log.debug("Current user has ${userSettings.apis.size} API configurations")
 
             val fastModelName = component.fastModel.selectedItem as String?
@@ -534,7 +534,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                 }
             }
             ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
-                AppSettingsState.localUser,
+                CognotikConfig.localUser,
                 userSettings
             )
             log.info("Successfully read settings with ${userSettings.apis.size} API configurations")

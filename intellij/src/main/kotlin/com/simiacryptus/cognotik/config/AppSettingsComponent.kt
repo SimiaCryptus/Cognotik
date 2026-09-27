@@ -14,7 +14,7 @@ import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.APIProvider
@@ -384,7 +384,7 @@ class AppSettingsComponent : Disposable {
         }
         val apis =
             ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
-                localUser
+                CognotikConfig.localUser
             ).apis
         try {
 
@@ -622,7 +622,7 @@ class AppSettingsComponent : Disposable {
             log.debug("Populating API table")
             val model = apis.model as DefaultTableModel
             model.rowCount = 0
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(localUser)
+          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -646,7 +646,7 @@ class AppSettingsComponent : Disposable {
             text = value
             if (value != null) {
               val userSettings =
-                  ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(localUser)
+                  ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
                 val model = userSettings.apis
                     .filter { it.key?.decrypt != null }
                     .find { apiData ->

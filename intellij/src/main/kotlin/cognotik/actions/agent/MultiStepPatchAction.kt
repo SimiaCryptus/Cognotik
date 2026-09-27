@@ -11,8 +11,8 @@ import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.agents.ParsedResponse
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
@@ -65,11 +65,11 @@ class MultiStepPatchAction : BaseAction() {
                     DataStorage.userPaths[session] = selectedFile.toFile
                 }
               SessionProxyServer.metadataStorage.setSessionName(
-                localUser,
+                CognotikConfig.localUser,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-              SessionProxyServer.chats[session.withUser(localUser)] = AutoDevApp(event = e)
+              SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = AutoDevApp(event = e)
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
                     inputCnt = 1,
@@ -143,7 +143,7 @@ class MultiStepPatchAction : BaseAction() {
 
     class AutoDevAgent(
       val session: Session,
-      val user: User = localUser,
+      val user: User = CognotikConfig.localUser,
       val ui: SocketManager,
       val model: ChatInterface,
       val fastModel: ChatInterface,

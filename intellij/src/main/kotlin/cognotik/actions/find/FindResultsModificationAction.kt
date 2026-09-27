@@ -17,7 +17,7 @@ import com.intellij.usages.UsageView
 import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
@@ -64,12 +64,12 @@ class FindResultsModificationAction(
     try {
       val session = Session.newUserID()
       SessionProxyServer.metadataStorage.setSessionName(
-        localUser,
+        CognotikConfig.localUser,
         session,
         "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
       )
       val fileListMap = usages.groupBy { getFile(it) }
-      SessionProxyServer.chats[session.withUser(localUser)] = PatchApp(
+      SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = PatchApp(
         root = root.toFile(),
         modificationParams = modificationParams,
         project = event.project ?: return,

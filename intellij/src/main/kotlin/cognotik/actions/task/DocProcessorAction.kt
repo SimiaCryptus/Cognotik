@@ -21,12 +21,12 @@ import com.intellij.ui.dsl.builder.panel
 import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docops.DocProcessor
 import com.simiacryptus.cognotik.docops.DocProcessor.Companion.newProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.ChatModel
@@ -106,9 +106,9 @@ class DocProcessorAction : BaseAction() {
             model = model?.modelId,
             fastModel = fastModel?.modelId,
         ).newSession(
-            localUser, session = Session.newUserID()
+            CognotikConfig.localUser, session = Session.newUserID()
         )?.let { socketManager ->
-            SessionProxyServer.agents[socketManager.sessionId.withUser(localUser)] = socketManager
+            SessionProxyServer.agents[socketManager.sessionId.withUser(CognotikConfig.localUser)] = socketManager
             ApplicationServer.appInfoMap[socketManager.sessionId] = AppInfoData(
                 applicationName = title, inputCnt = 1, stickyInput = false, loadImages = false, showMenubar = false
             )
@@ -278,7 +278,7 @@ class DocProcessorAction : BaseAction() {
             imageModel = imageModel,
             audioModel = audioModel,
             autoFix = autoFix,
-            user = localUser,
+            user = CognotikConfig.localUser,
             templateVarOverrides = templateVarOverrides,
             showMenubar = false,
         )
@@ -312,8 +312,8 @@ class DocProcessorAction : BaseAction() {
                 val threadPoolManager = ServiceMap[ServiceKey.THREAD_POOL_MANAGER]
                 sessions.toList().forEach {
                     try {
-                        threadPoolManager.getPool(it, localUser).shutdown()
-                        threadPoolManager.getScheduledPool(it, localUser).shutdown()
+                        threadPoolManager.getPool(it, CognotikConfig.localUser).shutdown()
+                        threadPoolManager.getScheduledPool(it, CognotikConfig.localUser).shutdown()
                     } catch (e: Throwable) {
                         log.warn("Error closing session $it", e)
                     }
@@ -332,7 +332,7 @@ class DocProcessorAction : BaseAction() {
 
             docProcessor.runAll(
                 plan = plan,
-                pool = newProcessor(user = localUser),
+                pool = newProcessor(user = CognotikConfig.localUser),
                 cancelFlag = cancelFlag,
             ) { session ->
                 sessions += session

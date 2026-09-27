@@ -8,8 +8,8 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
@@ -65,11 +65,11 @@ open class ModifyFilesAction(
                 }.toSet()
             val session = Session.newUserID()
             SessionProxyServer.metadataStorage.setSessionName(
-                localUser,
+                CognotikConfig.localUser,
                 session,
                 "${getActionName()} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
             )
-            SessionProxyServer.agents[session.withUser(localUser)] = PatchChatManager(
+            SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = PatchChatManager(
                 session = session,
                 model = AppSettingsState.instance.smartChatClient,
                 fastModel = AppSettingsState.instance.fastChatClient,
@@ -134,7 +134,7 @@ open class ModifyFilesAction(
       systemPrompt = "",
       applicationClass = ApplicationServer::class.java,
       budget = 2.0,
-      owner = localUser,
+        owner = CognotikConfig.localUser,
     ) {
         override val systemPrompt: String
             get() = """

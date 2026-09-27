@@ -9,7 +9,7 @@ import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.Session
@@ -28,7 +28,7 @@ class CodeChatAction : BaseAction() {
         val session = Session.newUserID()
         val language = LanguageUtils.getComputerLanguage(e)?.name ?: ""
         val filename = FileDocumentManager.getInstance().getFile(editor.document)?.name ?: return
-        SessionProxyServer.agents[session.withUser(localUser)] = CodeChatSocketManager(
+        SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = CodeChatSocketManager(
             session = session,
             language = language,
             codeSelection = editor.caretModel.primaryCaret.selectedText ?: editor.document.text,
@@ -45,7 +45,7 @@ class CodeChatAction : BaseAction() {
             showMenubar = false
         )
         SessionProxyServer.metadataStorage.setSessionName(
-            localUser,
+            CognotikConfig.localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )

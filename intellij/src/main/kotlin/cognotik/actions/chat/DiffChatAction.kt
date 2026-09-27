@@ -12,7 +12,7 @@ import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.util.TextRange
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.ISessionTask
@@ -108,11 +108,11 @@ class DiffChatAction : BaseAction() {
         var selectionEnd = selectionEnd
 
       SessionProxyServer.metadataStorage.setSessionName(
-        localUser,
+        CognotikConfig.localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
-      SessionProxyServer.agents[session.withUser(localUser)] = object : CodeChatSocketManager(
+      SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = object : CodeChatSocketManager(
         session = session,
         language = language,
         codeSelection = rawText,

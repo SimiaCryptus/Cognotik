@@ -7,8 +7,8 @@ import com.intellij.openapi.project.Project
 import com.simiacryptus.cognotik.audio.AudioPacket
 import com.simiacryptus.cognotik.audio.TranscriptionProcessor
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.AudioModels
@@ -149,7 +149,7 @@ fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelId == m
 
 fun audioModels(): List<AudioModels> =
     ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
-        localUser
+        CognotikConfig.localUser
     ).apis.flatMap {
         it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.apiBase) ?: listOf()
     }

@@ -12,8 +12,8 @@ import com.intellij.ui.components.JBTextArea
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.Name
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
@@ -71,11 +71,11 @@ class DocumentedMassPatchAction : BaseAction() {
 
         val session = Session.newUserID()
         SessionProxyServer.metadataStorage.setSessionName(
-            localUser,
+            CognotikConfig.localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
-        SessionProxyServer.chats[session.withUser(localUser)] = DocumentedMassPatchServer(
+        SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = DocumentedMassPatchServer(
             config = config,
             autoApply = config.settings?.autoApply ?: false,
             processor = AppSettingsState.instance.processor

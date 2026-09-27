@@ -6,7 +6,7 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.UITools
@@ -40,18 +40,18 @@ class SmartChatAction : BaseAction() {
 
                 val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
-                    localUser,
+                    CognotikConfig.localUser,
                     session,
                     "Smart Chat @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.agents[session.withUser(localUser)] = SmartChatSocketManager(
+                SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = SmartChatSocketManager(
                     session = session,
                     smartModel = AppSettingsState.instance.smartChatClient,
                     fastModel = AppSettingsState.instance.fastChatClient,
                     systemPrompt = systemPrompt,
                     applicationClass = ApplicationServer::class.java,
                     budget = 2.0,
-                    owner = localUser
+                    owner = CognotikConfig.localUser
                 )
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Smart Chat",

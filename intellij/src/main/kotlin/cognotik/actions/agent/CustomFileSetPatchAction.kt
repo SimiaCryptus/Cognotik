@@ -12,8 +12,8 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.Name
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isLLMTextFile
@@ -979,12 +979,12 @@ class CustomFileSetPatchAction : BaseAction() {
                 try {
                     val session = Session.newUserID()
                     SessionProxyServer.metadataStorage.setSessionName(
-                        localUser,
+                        CognotikConfig.localUser,
                         session,
                         "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                     )
 
-                    SessionProxyServer.chats[session.withUser(localUser)] = CustomFileSetPatchServer(
+                    SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = CustomFileSetPatchServer(
                         config = Settings(userSettings, project),
                         autoApply = userSettings.autoApply,
                         outputMode = userSettings.outputMode,

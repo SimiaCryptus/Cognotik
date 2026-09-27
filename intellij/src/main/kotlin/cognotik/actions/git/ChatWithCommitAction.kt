@@ -10,7 +10,7 @@ import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.Session
@@ -64,7 +64,7 @@ class ChatWithCommitAction : AnAction() {
 
     private fun openChatWithDiff(e: AnActionEvent, diffInfo: String) {
         val session = Session.newUserID()
-        SessionProxyServer.agents[session.withUser(localUser)] = CodeChatSocketManager(
+        SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = CodeChatSocketManager(
             session = session,
             language = "diff",
             codeSelection = diffInfo,
@@ -81,7 +81,7 @@ class ChatWithCommitAction : AnAction() {
             showMenubar = false
         )
         SessionProxyServer.metadataStorage.setSessionName(
-            localUser,
+          CognotikConfig.localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )

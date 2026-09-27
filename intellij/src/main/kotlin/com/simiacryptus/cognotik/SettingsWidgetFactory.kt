@@ -12,8 +12,8 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.UsageTable
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -55,7 +55,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         val settings: UserSettings
             get() = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
-                localUser
+                CognotikConfig.localUser
             )
 
         private fun getModelTree(title: String): Tree = modelTrees.getOrPut(title) { createModelTree(title) }
@@ -358,9 +358,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         private fun kill(session: Session) {
-            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, localUser)
+            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, CognotikConfig.localUser)
                 .shutdownNow()
-            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, localUser)
+            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, CognotikConfig.localUser)
                 .shutdownNow()
         }
 
@@ -384,13 +384,13 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                     try {
                         val sessionName =
                             ServiceMap[ServiceKey.METADATA_DB].getSessionName(
-                                localUser,
+                                CognotikConfig.localUser,
                                 value
                             )
 
                         val threadFactory = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
                             value,
-                            localUser
+                            CognotikConfig.localUser
                         ).threadFactory
                         val activeThreads = threadFactory.threads.filter {
                             when (it.state) {

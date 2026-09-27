@@ -10,9 +10,9 @@ import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -49,7 +49,7 @@ open class UnifiedPlanAction(
                 ),
                 temperature = AppSettingsState.instance.temperature.coerceIn(0.0, 1.0),
                 workingDir = root.absolutePath,
-                user = localUser
+              user = CognotikConfig.localUser
             ),
         )
 
@@ -136,8 +136,8 @@ open class UnifiedPlanAction(
             path = "/unifiedPlan",
             showMenubar = false
         )
-      app.getSettingsFile(session, localUser).writeText(orchestrationConfig.toJson())
-        SessionProxyServer.chats[session.withUser(localUser)] = app
+      app.getSettingsFile(session, CognotikConfig.localUser).writeText(orchestrationConfig.toJson())
+        SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Cognotik",
             inputCnt = when (orchestrationConfig.cognitiveSettings?.type) {
@@ -148,7 +148,7 @@ open class UnifiedPlanAction(
             showMenubar = app.showMenubar
         )
         SessionProxyServer.metadataStorage.setSessionName(
-            localUser,
+          CognotikConfig.localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )

@@ -22,7 +22,7 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
@@ -105,7 +105,7 @@ class AnalyzeProblemAction : AnAction() {
 
     private fun openAnalysisSession(project: Project, problemInfo: String, gitRoot: VirtualFile?) {
         val session = Session.newUserID()
-      SessionProxyServer.chats[session.withUser(localUser)] = ProblemAnalysisApp(session, problemInfo, gitRoot)
+      SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = ProblemAnalysisApp(session, problemInfo, gitRoot)
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
             inputCnt = 0,
@@ -114,7 +114,7 @@ class AnalyzeProblemAction : AnAction() {
             showMenubar = false
         )
       SessionProxyServer.metadataStorage.setSessionName(
-        localUser,
+        CognotikConfig.localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )

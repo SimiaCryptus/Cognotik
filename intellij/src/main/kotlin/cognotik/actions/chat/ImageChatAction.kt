@@ -10,9 +10,9 @@ import com.intellij.openapi.vfs.VirtualFile
 import com.jetbrains.rd.generator.nova.GenerationSpec.Companion.nullIfEmpty
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docs.getDocumentReader
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
@@ -57,11 +57,11 @@ class ImageChatAction : BaseAction() {
                 progress.text = "Setting up chat session..."
                 val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
-                    localUser,
+                    CognotikConfig.localUser,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.agents[session.withUser(localUser)] = CodeChatManager(
+                SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = CodeChatManager(
                     session = session,
                     model = AppSettingsState.instance.imageChatClient,
                     fastModel = AppSettingsState.instance.fastChatClient,
@@ -116,7 +116,7 @@ class ImageChatAction : BaseAction() {
       systemPrompt = "",
       applicationClass = ApplicationServer::class.java,
       budget = 2.0,
-      owner = localUser,
+        owner = CognotikConfig.localUser,
     ) {
 
         override val systemPrompt: String

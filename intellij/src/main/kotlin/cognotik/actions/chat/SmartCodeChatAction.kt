@@ -8,8 +8,8 @@ import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
@@ -54,11 +54,11 @@ class SmartCodeChatAction : BaseAction() {
                 progress.text = "Setting up smart code chat session..."
                 val session = Session.newUserID()
               SessionProxyServer.metadataStorage.setSessionName(
-                localUser,
+                CognotikConfig.localUser,
                     session,
                     "Smart Code Chat @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-              SessionProxyServer.agents[session.withUser(localUser)] = SmartCodeChatManager(
+              SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = SmartCodeChatManager(
                     session = session,
                     model = AppSettingsState.instance.smartChatClient,
                     fastModel = AppSettingsState.instance.fastChatClient,
@@ -115,7 +115,7 @@ class SmartCodeChatAction : BaseAction() {
       budget = 2.0,
       maxHistoryTokens = 6000,
       targetSummaryTokens = 1500,
-      owner = localUser
+      owner = CognotikConfig.localUser
     ) {
 
         override val systemPrompt: String

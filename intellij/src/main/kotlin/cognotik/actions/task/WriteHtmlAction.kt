@@ -18,11 +18,11 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.file.DataStorage
@@ -114,13 +114,13 @@ class WriteHtmlAction : BaseAction() {
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
         }
 
-      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
-        SessionProxyServer.chats[session.withUser(localUser)] = app
+      app.getSettingsFile(session, CognotikConfig.localUser).writeText(orchestrationConfig.toJson())
+        SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "HTML Generation Task", inputCnt = 0, stickyInput = false, showMenubar = false
         )
         SessionProxyServer.metadataStorage.setSessionName(
-            localUser, session, "HTML Generation @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+            CognotikConfig.localUser, session, "HTML Generation @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
     }
 
@@ -285,12 +285,12 @@ class WriteHtmlAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedModel = modelCombo.selectedItem as? String
             val model = selectedModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(CognotikConfig.localUser)
             }
 
             val selectedImageModel = imageModelCombo.selectedItem as? String
             val imageModel = selectedImageModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(CognotikConfig.localUser)
             }
 
             return OrchestrationConfig(
@@ -307,13 +307,13 @@ class WriteHtmlAction : BaseAction() {
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                user = localUser
+                user = CognotikConfig.localUser
             )
         }
 
         private fun getVisibleModels() =
             ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
-                localUser
+                CognotikConfig.localUser
             ).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->
                   model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(model)
