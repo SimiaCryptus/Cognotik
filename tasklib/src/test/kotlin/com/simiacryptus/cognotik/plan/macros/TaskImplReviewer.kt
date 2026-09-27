@@ -4,13 +4,13 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.util.FileGenerator
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.docops.UpdateModes
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import java.io.File
 
 object TaskImplReviewer : FileGenerator() {
   @JvmStatic
   fun main(args: Array<String>) {
-    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.configurePlatform(CognotikConfig.localUser)
     run(
       root = File("."),
       folder = File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/tools"),

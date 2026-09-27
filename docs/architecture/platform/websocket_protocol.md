@@ -29,7 +29,7 @@ Authentication is handled via HTTP Cookies during the initial WebSocket upgrade 
 
 * **Cookie Name:** Defined by `AuthenticationInterface.AUTH_COOKIE`.
 * **Behavior:** The server extracts the cookie to resolve the `User` object. If no cookie is present or valid, the user
-  is treated as "anonymous" (or `defaultUser`).
+  is treated as "anonymous" (or `localUser`).
 
 ### Configuration (Server-Side)
 

@@ -112,7 +112,7 @@ Core AI model/provider abstractions:
 ### Platform Model (`platform/model`)
 
 - **Session**: Validated global/user session identifiers (`G-`/`U-` prefixed) with ID generation and parsing.
-- **User**: Domain user identified primarily by email, with a `NULL` sentinel and a `defaultUser`.
+- **User**: Domain user identified primarily by email, with a `NULL` sentinel and a `localUser`.
 
 ### Text Utilities (`txt` / `util`)
 

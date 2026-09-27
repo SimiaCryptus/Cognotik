@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface

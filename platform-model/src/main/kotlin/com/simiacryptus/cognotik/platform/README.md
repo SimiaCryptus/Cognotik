@@ -40,7 +40,7 @@ rejected PR against this package.
 | 2 | **One responsibility per interface.** `StorageInterface` is a *composition* of four ports, not a god-interface. | Consumers that only publish events must not be handed `deletePlugin` (§3.8). |
 | 3 | **Typed identifiers over raw `String`.** Use the `@JvmInline value class`es in `model/Ids.kt`. | Eliminates argument-swap bugs at zero runtime cost (§4.2). |
 | 4 | **Exact money.** `Credits` (integral micro-credits) — never `Double` — for any new API. | `Double` budget comparisons are unsound (§3.7). |
-| 5 | **Explicit absence.** `Principal` instead of `User?`; `Patch<T>` instead of "null means skip". | `null` / `User.NULL` / `defaultUser` had three different meanings (§4.1, §3.4). |
+| 5 | **Explicit absence.** `Principal` instead of `User?`; `Patch<T>` instead of "null means skip". | `null` / `User.NULL` / `localUser` had three different meanings (§4.1, §3.4). |
 | 6 | **Rich results over `Boolean`.** `ClaimResult`, not `true`/`false`. | Callers must be able to explain *why* something failed (§3.7). |
 | 7 | **Defaults are for source compatibility, not for production.** Any `= throw UnsupportedOperationException(...)` or N+1 fallback is a migration crutch; document it as such. | See [known hazards](#-known-hazards-self-recursive-defaults). |
 | 8 | **Fail secure.** Authorization returns `false` on error; exceptions are reserved for programmer/config errors. | §3.5 |
@@ -373,7 +373,7 @@ The single servlet-aware type, deliberately isolated so `platform.model` stays f
 `jakarta.servlet`. Return `null` for unauthenticated requests; `response` is nullable because some
 call sites cannot issue a challenge/redirect.
 
-### `ApplicationServicesConfig`
+### `CognotikConfig`
 
 Process-wide singleton. All fields are `@Volatile` so a late write is visible to other threads and the
 lock cannot be bypassed by a benign race (§3.9).
@@ -387,8 +387,8 @@ val root = ApplicationServicesConfig.requireDataStorageRoot()  // creates + vali
 * `lock()` is **not** idempotent — a second call throws `IllegalArgumentException`. Call it exactly
 once from bootstrap.
 * `isLocked`'s setter is deprecated; the property only ever transitions `false → true`.
-* ⚠ `defaultUser` currently has **no lock check** — it is writable after `lock()`. Treat that as a bug,
-not a feature.
+* ⚠ `localUser` currently has **no lock check** — it is writable after `lock()`. Treat that as a bug,
+  not a feature.
 
 ---
 
@@ -549,7 +549,7 @@ default on a minimal implementation.
 |---|---|---|
 | `SessionFileStore.getUserDir` / `getSystemDir` | `SessionContentStore.openRead/openWrite/list/exists/delete` | `File` leaks the local FS and grants directory-wide authority (§3.3) |
 | `SessionFileStore.userRoot(User?)` | `userRootFor(User)` | accepted `null` then threw on it |
-| `User.NULL` | `Principal.Anonymous` / `Principal.System` | overlapping semantics vs `null` and `defaultUser` (§3.2, §4.1) |
+| `User.NULL` | `Principal.Anonymous` / `Principal.System` | overlapping semantics vs `null` and `localUser` (§3.2, §4.1) |
 | `Session.NULL` | nullable `Session` | invalid empty id; storage must reject it (§3.11) |
 | `Class<*>` authorization keys | `ResourceRef` (`ResourceRef.of(Class<*>?)` bridges) | not serializable, no instance scope (§3.5) |
 | `User?` "who is acting" parameters | `Principal` (`Principal.of(User?)` bridges) | tri-state ambiguity (§4.1) |

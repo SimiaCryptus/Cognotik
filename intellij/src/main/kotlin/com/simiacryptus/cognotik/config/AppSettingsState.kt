@@ -25,7 +25,7 @@ import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser
+import com.simiacryptus.cognotik.platform.CognotikConfig.localUser
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
@@ -278,7 +278,7 @@ data class AppSettingsState(
         val log = LoggerFactory.getLogger(AppSettingsState::class.java)
         var auxiliaryLog: File? = null
 
-        val localUser: User = defaultUser
+        val localUser: User = CognotikConfig.localUser
 
         init {
             require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
@@ -286,7 +286,11 @@ data class AppSettingsState(
             //ResourceApps("/apps/disabled_apps.json").init()
             CoreProviders.init()
             CoreTasks.init()
-            ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            try {
+                ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            } catch (e: Exception) {
+                log.error("Error loading plugins", e)
+            }
             initDynamicEnums()
         }
 

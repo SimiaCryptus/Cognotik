@@ -2,7 +2,7 @@ package com.simiacryptus.cognotik.plan.tools.data
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
@@ -16,7 +16,7 @@ object FileAppendTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.configurePlatform(CognotikConfig.localUser)
   }
 
   @Tag("Integration")
@@ -34,7 +34,7 @@ object FileAppendTaskTest {
         append_content = "Implement fun subtract(a: Int, b: Int): Int",
       ),
       timeoutMinutes = 10,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

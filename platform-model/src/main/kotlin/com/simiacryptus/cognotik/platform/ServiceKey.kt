@@ -12,13 +12,14 @@ import kotlin.reflect.KClass
 class ServiceKey<T : Any>(
   val name: String,
   val type: KClass<T>,
+  val failFast: Boolean = false
 ) {
 
   @Volatile
   var factory: ((ServiceMap) -> T)? = null
     set(value) {
       when {
-        null == value -> throw IllegalArgumentException("Factory cannot be null")
+        null == value -> fail("Factory cannot be null")
         null != field -> log.info("Ignoring duplicate factory registration for service '$name': $value", RuntimeException("Stack trace"))
         else -> {
           log.info("Registering factory for service '$name': $value", RuntimeException("Stack trace"))
@@ -27,12 +28,20 @@ class ServiceKey<T : Any>(
       }
     }
 
+  private fun fail(msg: String) {
+    if (failFast) {
+      throw IllegalArgumentException(msg)
+    } else {
+      log.warn(msg, RuntimeException("Stack trace"))
+    }
+  }
+
   @Volatile
   var defaultFactory: ((ServiceMap) -> T)? = null
     set(value) {
       when {
-        null == value -> throw IllegalArgumentException("Factory cannot be null")
-        null != field -> throw IllegalArgumentException("Duplicate factory registration for service '$name': $value", RuntimeException("Stack trace"))
+        null == value -> fail("Factory cannot be null")
+        null != field -> fail("Duplicate factory registration for service '$name': $value")
         else -> {
           log.info("Registering default factory for service '$name': $value")
           field = value
@@ -61,6 +70,7 @@ class ServiceKey<T : Any>(
     val PLUGIN_MANAGER = ServiceKey("pluginManager", PluginManagerInterface::class)
     val AUTHORIZATION_MANAGER = ServiceKey("authorizationManager", AuthorizationInterface::class)
     val THREAD_POOL_MANAGER = ServiceKey("threadPoolManager", ThreadPoolManager::class)
+      .apply { defaultFactory = { ThreadPoolManager() } }
     val DATA_STORAGE = ServiceKey("dataStorage", StorageInterface::class)
     val METADATA_DB = ServiceKey("metadataDB", SessionMetadataInterface::class)
     val USAGE_DB = ServiceKey("usageDB", UsageInterface::class)

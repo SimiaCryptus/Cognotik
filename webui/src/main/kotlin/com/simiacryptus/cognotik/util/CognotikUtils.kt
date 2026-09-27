@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.platform.model.ApiData
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import org.slf4j.Logger
@@ -22,7 +22,7 @@ object CognotikUtils {
 
   @JvmStatic
   fun user(): User {
-    return ApplicationServicesConfig.defaultUser
+    return CognotikConfig.localUser
   }
 
   @JvmStatic

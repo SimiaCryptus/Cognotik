@@ -131,7 +131,7 @@ println(newCode)
 
 ## Configuration
 
-The core module can be configured through the `ApplicationServicesConfig` object:
+The core module can be configured through the `CognotikConfig` object:
 
 ```kotlin
 

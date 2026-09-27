@@ -16,10 +16,11 @@ import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ChatInterface.Companion.ENABLE_LOGS
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
@@ -37,16 +38,21 @@ class PluginStartupActivity : ProjectActivity {
 
     init {
         require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+        //ResourceApps("/apps/disabled_apps.json").init()
+        CoreProviders.init()
+        CoreTasks.init()
+        initDynamicEnums()
+        CognotikPlatform.init()
         try {
             ResourceApps("apps/apps.json").init()
         } catch (e: Exception) {
             log.error("Failed to load apps.json", e)
         }
-        //ResourceApps("/apps/disabled_apps.json").init()
-        CoreProviders.init()
-        CoreTasks.init()
-        ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
-        initDynamicEnums()
+        try {
+            ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        } catch (e: Exception) {
+            log.error("Error loading plugins", e)
+        }
     }
 
     override suspend fun execute(project: Project) {
@@ -106,7 +112,7 @@ class PluginStartupActivity : ProjectActivity {
 
     private fun init(project: Project) {
         if (isInitialized.getAndSet(true)) return // Prevent double initialization
-        dataStorageRoot = AppSettingsState.Companion.pluginHome
+        dataStorageRoot = AppSettingsState.pluginHome
         log.info("Initializing ApplicationServices configuration: $dataStorageRoot")
         if (!dataStorageRoot.exists()) {
             try {

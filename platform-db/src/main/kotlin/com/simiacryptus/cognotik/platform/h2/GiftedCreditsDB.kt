@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.h2
 
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
@@ -33,7 +33,7 @@ import java.util.UUID
  * Manages gifts and claims using a relational database via [DatabaseFacet] and Exposed DSL.
  */
 class GiftedCreditsDB(
-  root: File? = ApplicationServicesConfig.dataStorageRoot.resolve("giftsdb")
+  root: File? = CognotikConfig.dataStorageRoot.resolve("giftsdb")
 ) : GiftedCreditsInterface {
 
   /**

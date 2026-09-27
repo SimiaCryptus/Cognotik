@@ -193,7 +193,7 @@ The `AuthenticationManager` handles user identity:
 
 - Maps access tokens to `User` objects.
 - Manages the `sessionId` cookie.
-- Provides a `defaultUser` (e.g., `user@localhost`) for local development.
+- Provides a `localUser` (e.g., `user@localhost`) for local development.
 
 ### File-based Authorization
 

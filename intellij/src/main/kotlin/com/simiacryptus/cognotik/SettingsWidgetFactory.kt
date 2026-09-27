@@ -46,51 +46,36 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
     class SettingsWidget : StatusBarWidget, StatusBarWidget.MultipleTextValuesPresentation {
 
         private var statusBar: StatusBar? = null
-        private var smartModelTree: Tree? = null
-        private var fastModelTree: Tree? = null
-        private var imageChatModelTree: Tree? = null
-        private var audioModelTree: Tree? = null
+
+        /** Model trees are created lazily (only when the popup is displayed) and repopulated on each display. */
+        private val modelTrees = LinkedHashMap<String, Tree>()
         private var patchProcessorList: JBList<PatchProcessor>? = null
         private val sessionsList = JBList<Session>()
         private val sessionsListModel = DefaultListModel<Session>()
-        private fun getSmartModelTree(settings: UserSettings): Tree {
-            if (smartModelTree == null) {
-                smartModelTree = createModelTree(
-                    "Smart Model", AppSettingsState.instance.smartModel, settings, DefaultMutableTreeNode("Smart Model")
-                )
-            }
-            return smartModelTree!!
-        }
-        val settings: UserSettings get() = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
-            localUser
-        )
 
-        private fun getFastModelTree(settings: UserSettings): Tree {
-            if (fastModelTree == null) {
-                fastModelTree = createModelTree(
-                    "Fast Model", AppSettingsState.instance.fastModel, settings, DefaultMutableTreeNode("Fast Model")
-                )
-            }
-            return fastModelTree!!
+        val settings: UserSettings
+            get() = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+                localUser
+            )
+
+        private fun getModelTree(title: String): Tree = modelTrees.getOrPut(title) { createModelTree(title) }
+
+        private fun currentModel(title: String): ApiChatModel? = when (title) {
+            SMART_MODEL -> AppSettingsState.instance.smartModel
+            FAST_MODEL -> AppSettingsState.instance.fastModel
+            IMAGE_CHAT_MODEL -> AppSettingsState.instance.imageChatModel
+            AUDIO_MODEL -> AppSettingsState.instance.audioModel
+            else -> null
         }
 
-        private fun getImageChatModelTree(settings: UserSettings): Tree {
-            if (imageChatModelTree == null) {
-                imageChatModelTree = createModelTree(
-                    "Image Chat Model", AppSettingsState.instance.imageChatModel, settings, DefaultMutableTreeNode("Image Chat Model")
-                )
+        private fun setModel(title: String, model: ApiChatModel) {
+            when (title) {
+                SMART_MODEL -> AppSettingsState.instance.smartModel = model
+                FAST_MODEL -> AppSettingsState.instance.fastModel = model
+                IMAGE_CHAT_MODEL -> AppSettingsState.instance.imageChatModel = model
+                AUDIO_MODEL -> AppSettingsState.instance.audioModel = model
             }
-            return imageChatModelTree!!
         }
-        private fun getAudioModelTree(settings: UserSettings): Tree {
-            if (audioModelTree == null) {
-                audioModelTree = createModelTree(
-                    "Audio Model", AppSettingsState.instance.audioModel, settings, DefaultMutableTreeNode("Audio Model")
-                )
-            }
-            return audioModelTree!!
-        }
-
 
         private fun getPatchProcessorList(): JBList<PatchProcessor> {
             if (patchProcessorList == null) {
@@ -127,45 +112,36 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             return patchProcessorList!!
         }
 
-
-        private fun recreateModelTrees() {
-            smartModelTree = null
-            patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
-            fastModelTree = null
-            imageChatModelTree = null
-            audioModelTree = null
-        }
-
-        private fun createModelTree(
-            title: String, selectedModel: ApiChatModel?, settings: UserSettings, root: DefaultMutableTreeNode
-        ): Tree {
+        /**
+         * Loads the visible models for all configured providers.
+         * This may perform network calls, so it must not be invoked on the EDT.
+         */
+        private fun loadModelNames(settings: UserSettings): List<Pair<String?, List<String>>> {
             val pairs = settings.apis.flatMap { apiData ->
                 try {
-                    (apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}")) ?: listOf())
+                    (apiData.provider?.getChatModels(
+                        apiData.key!!,
+                        apiData.apiBase
+                            ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}")
+                    ) ?: listOf())
                         .filter { !it.deprecated }.map { model -> apiData.provider?.name!! to model }
                 } catch (e: Exception) {
                     log.warn("Failed to retrieve models for provider: ${apiData.provider?.name}", e)
                     listOf()
                 }
             }
-            val providers = pairs
+            return pairs
                 .filter { settings.isVisible(it) }
                 .sortedBy { "${it.second.provider?.name} - ${it.second.name}" }
-                .groupBy { it.second.provider }
+                .groupBy { it.second.provider?.name }
+                .map { (providerName, models) -> providerName to models.mapNotNull { it.second.name } }
+                .filter { it.second.isNotEmpty() }
+        }
 
-            for ((provider, models) in providers) {
-                val providerNode = DefaultMutableTreeNode(provider?.name)
-                for (model in models) {
-                    val modelNode = DefaultMutableTreeNode(model.second.name)
-                    providerNode.add(modelNode)
-                }
-
-                if (providerNode.childCount > 0) {
-                    root.add(providerNode)
-                }
-            }
-            val treeModel = DefaultTreeModel(root)
-            val tree = Tree(treeModel)
+        /** Creates an empty tree; content is filled in by [refreshModelTree] when the popup is displayed. */
+        private fun createModelTree(title: String): Tree {
+            val root = DefaultMutableTreeNode(title)
+            val tree = Tree(DefaultTreeModel(root))
 
             tree.accessibleContext.accessibleDescription = getMessage("tree.description", title)
 
@@ -186,38 +162,76 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tree.isRootVisible = false
             tree.showsRootHandles = true
             tree.addTreeSelectionListener {
+                // Ignore programmatic selection changes (e.g. restoring the current model after a refresh)
+                if (tree.getClientProperty(SUPPRESS_SELECTION_KEY) == true) return@addTreeSelectionListener
                 val selectedPath = tree.selectionPath
                 if (selectedPath != null && selectedPath.pathCount == 3) {
                     val modelName = selectedPath.lastPathComponent.toString()
-                    val apis = settings.apis
+                    val apis = this@SettingsWidget.settings.apis
                     val apiData = apis.find { apiData ->
                         apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                             ?.find { modelName == it.name } != null
                     }
                     val chatModel = apiData?.provider?.getChatModels(apiData.key!!, apiData.apiBase)
                         ?.find { it.name == modelName }
-                    when (title) {
-                        "Smart Model" -> AppSettingsState.instance.smartModel =
-                            ApiChatModel(chatModel, apiData)
-
-                        "Fast Model" -> AppSettingsState.instance.fastModel =
-                            ApiChatModel(chatModel, apiData)
-
-                        "Image Chat Model" -> AppSettingsState.instance.imageChatModel =
-                            ApiChatModel(chatModel, apiData)
-                        "Audio Model" -> AppSettingsState.instance.audioModel =
-                            ApiChatModel(chatModel, apiData)
-                    }
+                    setModel(title, ApiChatModel(chatModel, apiData))
                     statusBar?.updateWidget(ID())
                 }
             }
-
-            if (selectedModel?.model != null) {
-                SwingUtilities.invokeLater {
-                    setSelectedModel(tree, selectedModel.model!!.name ?: "")
-                }
-            }
             return tree
+        }
+
+        private inline fun withSelectionSuppressed(tree: JTree, block: () -> Unit) {
+            tree.putClientProperty(SUPPRESS_SELECTION_KEY, true)
+            try {
+                block()
+            } finally {
+                tree.putClientProperty(SUPPRESS_SELECTION_KEY, false)
+            }
+        }
+
+        /**
+         * (Re)populates the given model tree. Shows a loading placeholder immediately,
+         * fetches models in the background, then rebuilds the tree on the EDT.
+         * Must be called on the EDT.
+         */
+        private fun refreshModelTree(tree: Tree, title: String, settings: UserSettings) {
+            val treeModel = tree.model as DefaultTreeModel
+            val root = treeModel.root as DefaultMutableTreeNode
+            val generation = ((tree.getClientProperty(LOAD_GENERATION_KEY) as? Int) ?: 0) + 1
+            tree.putClientProperty(LOAD_GENERATION_KEY, generation)
+
+            withSelectionSuppressed(tree) {
+                root.removeAllChildren()
+                root.add(DefaultMutableTreeNode(LOADING_TEXT))
+                treeModel.reload()
+            }
+
+            Thread({
+                val providers = try {
+                    loadModelNames(settings)
+                } catch (e: Exception) {
+                    log.warn("Failed to load models for $title", e)
+                    emptyList()
+                }
+                SwingUtilities.invokeLater {
+                    // Discard results from an outdated refresh
+                    if (tree.getClientProperty(LOAD_GENERATION_KEY) != generation) return@invokeLater
+                    withSelectionSuppressed(tree) {
+                        root.removeAllChildren()
+                        if (providers.isEmpty()) {
+                            root.add(DefaultMutableTreeNode(NO_MODELS_TEXT))
+                        }
+                        for ((providerName, modelNames) in providers) {
+                            val providerNode = DefaultMutableTreeNode(providerName)
+                            modelNames.forEach { providerNode.add(DefaultMutableTreeNode(it)) }
+                            root.add(providerNode)
+                        }
+                        treeModel.reload()
+                        currentModel(title)?.model?.name?.let { setSelectedModel(tree, it) }
+                    }
+                }
+            }, "Cognotik-ModelTree-$title").apply { isDaemon = true }.start()
         }
 
         private val temperatureSlider by lazy {
@@ -345,9 +359,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         private fun kill(session: Session) {
             ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, localUser)
-            .shutdownNow()
+                .shutdownNow()
             ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, localUser)
-            .shutdownNow()
+                .shutdownNow()
         }
 
         fun updateSessionsList() {
@@ -374,10 +388,10 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                                 value
                             )
 
-                      val threadFactory = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
-                          value,
-                          localUser
-                      ).threadFactory
+                        val threadFactory = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
+                            value,
+                            localUser
+                        ).threadFactory
                         val activeThreads = threadFactory.threads.filter {
                             when (it.state) {
                                 Thread.State.RUNNABLE -> true
@@ -415,53 +429,18 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         init {
-//            require(TaskType.values().isNotEmpty())
-//            require(ToolProvider.values().isNotEmpty())
             AppSettingsState.onSettingsLoadedListeners.add {
-                Thread {
+                SwingUtilities.invokeLater {
                     statusBar?.updateWidget(ID())
-                    // Recreate model trees when settings are loaded
-                    recreateModelTrees()
-                    val settings = this@SettingsWidget.settings
-                    SwingUtilities.invokeLater {
-                        AppSettingsState.instance.smartModel?.model.let { model ->
-                            setSelectedModel(getSmartModelTree(settings), model?.name ?: "")
-                        }
-                        AppSettingsState.instance.fastModel?.model.let { model ->
-                            setSelectedModel(getFastModelTree(settings), model?.name ?: "")
-                        }
-                        AppSettingsState.instance.imageChatModel?.model.let { model ->
-                            setSelectedModel(getImageChatModelTree(settings), model?.name ?: "")
-                        }
-                        AppSettingsState.instance.audioModel?.model.let { model ->
-                            setSelectedModel(getAudioModelTree(settings), model?.name ?: "")
-                        }
+                    patchProcessorList?.setSelectedValue(AppSettingsState.instance.processor, true)
+                    // Only repopulate trees that are currently displayed; others are rebuilt on next display
+                    val visibleTrees = modelTrees.filterValues { it.isShowing }
+                    if (visibleTrees.isNotEmpty()) {
+                        val settings = this@SettingsWidget.settings
+                        visibleTrees.forEach { (title, tree) -> refreshModelTree(tree, title, settings) }
                     }
-                }.start()
+                }
             }
-            Thread {
-                val settings = this@SettingsWidget.settings
-                AppSettingsState.instance.smartModel?.model.let { model ->
-                    SwingUtilities.invokeLater {
-                        setSelectedModel(getSmartModelTree(settings), model?.name ?: "")
-                    }
-                }
-                AppSettingsState.instance.fastModel?.model.let { model ->
-                    SwingUtilities.invokeLater {
-                        setSelectedModel(getFastModelTree(settings), model?.name ?: "")
-                    }
-                }
-                AppSettingsState.instance.imageChatModel?.model.let { model ->
-                    SwingUtilities.invokeLater {
-                        setSelectedModel(getImageChatModelTree(settings), model?.name ?: "")
-                    }
-                }
-                AppSettingsState.instance.audioModel?.model.let { model ->
-                    SwingUtilities.invokeLater {
-                        setSelectedModel(getAudioModelTree(settings), model?.name ?: "")
-                    }
-                }
-            }.start()
         }
 
         override fun ID(): String {
@@ -498,9 +477,17 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                         val path = TreePath(modelNode.path)
                         tree.selectionPath = path
                         tree.scrollPathToVisible(path)
-                        break
+                        return
                     }
                 }
+            }
+        }
+
+        private fun createModelPanel(title: String, settings: UserSettings): JPanel {
+            val tree = getModelTree(title)
+            refreshModelTree(tree, title, settings)
+            return JPanel(BorderLayout()).apply {
+                add(JScrollPane(tree), BorderLayout.CENTER)
             }
         }
 
@@ -513,19 +500,15 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             val tabbedPane = JTabbedPane()
             tabbedPane.accessibleContext.accessibleDescription = getMessage("tabs.description")
 
-            val smartModelPanel = JPanel(BorderLayout())
+            // Model trees are built (and repopulated) only now, when the panel is actually displayed
             val settings = this@SettingsWidget.settings
-            smartModelPanel.add(JScrollPane(getSmartModelTree(settings)), BorderLayout.CENTER)
+            val smartModelPanel = createModelPanel(SMART_MODEL, settings)
+            val fastModelPanel = createModelPanel(FAST_MODEL, settings)
+            val imageChatModelPanel = createModelPanel(IMAGE_CHAT_MODEL, settings)
+            val audioModelPanel = createModelPanel(AUDIO_MODEL, settings)
 
-            val fastModelPanel = JPanel(BorderLayout())
-            fastModelPanel.add(JScrollPane(getFastModelTree(settings)), BorderLayout.CENTER)
-            val imageChatModelPanel = JPanel(BorderLayout())
-            imageChatModelPanel.add(JScrollPane(getImageChatModelTree(settings)), BorderLayout.CENTER)
-            val audioModelPanel = JPanel(BorderLayout())
-            audioModelPanel.add(JScrollPane(getAudioModelTree(settings)), BorderLayout.CENTER)
             val patchProcessorPanel = JPanel(BorderLayout())
             patchProcessorPanel.add(JScrollPane(getPatchProcessorList()), BorderLayout.CENTER)
-
 
             val usagePanel = JPanel(BorderLayout())
             usagePanel.add(
@@ -577,6 +560,15 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
     """.trimIndent().trim()
 
         companion object {
+            private const val SMART_MODEL = "Smart Model"
+            private const val FAST_MODEL = "Fast Model"
+            private const val IMAGE_CHAT_MODEL = "Image Chat Model"
+            private const val AUDIO_MODEL = "Audio Model"
+            private const val LOADING_TEXT = "Loading models..."
+            private const val NO_MODELS_TEXT = "No models available"
+            private const val SUPPRESS_SELECTION_KEY = "cognotik.suppressSelection"
+            private const val LOAD_GENERATION_KEY = "cognotik.loadGeneration"
+
             private val messages = ResourceBundle.getBundle("messages.SettingsWidget")
             private fun getMessage(key: String, vararg args: Any): String =
                 String.format(messages.getString(key), *args)

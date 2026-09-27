@@ -11,7 +11,7 @@ file system and classpath resources.
 A simple implementation of `AuthenticationInterface` that manages user sessions in memory.
 
 - Maps access tokens to `User` objects.
-- Provides a `defaultUser` (typically `user@localhost`) when no access token is provided or found.
+- Provides a `localUser` (typically `user@localhost`) when no access token is provided or found.
 - Supports basic login (`putUser`) and `logout` operations.
 
 ### [AuthorizationManager](AuthorizationManager.kt)

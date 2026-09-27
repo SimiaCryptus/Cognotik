@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask
 import com.simiacryptus.cognotik.plan.tools.images.SegmentedImageGenerationTask.SegmentedImageGenerationConfig
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.Assertions
@@ -19,7 +19,7 @@ class SegmentedImageGenerationTaskTest {
     @JvmStatic
     @BeforeAll
     fun setup() {
-      UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+      UnifiedHarness.configurePlatform(CognotikConfig.localUser)
     }
   }
 
@@ -43,7 +43,7 @@ class SegmentedImageGenerationTaskTest {
       temperature = 0.7,
       timeoutMinutes = 30,
       typeConfig = TaskTypeConfig(SegmentedImageGenerationTask.SegmentedImageGeneration.name),
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

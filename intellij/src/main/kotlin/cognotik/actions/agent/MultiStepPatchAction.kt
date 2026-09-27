@@ -142,13 +142,13 @@ class MultiStepPatchAction : BaseAction() {
     }
 
     class AutoDevAgent(
-        val session: Session,
-        val user: User = localUser,
-        val ui: SocketManager,
-        val model: ChatInterface,
-        val fastModel: ChatInterface,
-        val event: AnActionEvent,
-        val processor: PatchProcessor,
+      val session: Session,
+      val user: User = localUser,
+      val ui: SocketManager,
+      val model: ChatInterface,
+      val fastModel: ChatInterface,
+      val event: AnActionEvent,
+      val processor: PatchProcessor,
     ) {
         val actors = mapOf(
             ActorTypes.DesignActor to ParsedAgent(

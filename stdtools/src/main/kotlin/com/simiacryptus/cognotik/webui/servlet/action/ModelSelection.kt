@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.servlet.action
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.fileserver.action.FsActionContext
 import com.simiacryptus.cognotik.platform.CognotikPlatform
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
@@ -47,7 +47,7 @@ object ModelSelection {
   private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
   @Volatile
-  private var userFn: (FsActionContext?) -> User = { ApplicationServicesConfig.defaultUser }
+  private var userFn: (FsActionContext?) -> User = { CognotikConfig.localUser }
 
 
 
@@ -76,7 +76,7 @@ object ModelSelection {
     userFn(ctx)
   } catch (e: Exception) {
     System.err.println("warning: could not resolve the request user: ${e.message}")
-    ApplicationServicesConfig.defaultUser
+    CognotikConfig.localUser
   }
 
   /* ---------------------------------------------------------------- reading */

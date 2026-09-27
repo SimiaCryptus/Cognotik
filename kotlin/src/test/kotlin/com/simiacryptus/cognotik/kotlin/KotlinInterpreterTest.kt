@@ -3,7 +3,7 @@
 package com.simiacryptus.cognotik.kotlin
 
 import com.simiacryptus.cognotik.exceptions.FailedToImplementException
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -15,7 +15,7 @@ class KotlinInterpreterTest : InterpreterTestBase() {
     @Test
     fun `test run with kotlin println`() {
         val interpreter = newInterpreter(mapOf())
-        val result = interpreter.run("""println("Hello World")""", ApplicationServicesConfig.defaultUser)
+        val result = interpreter.run("""println("Hello World")""", CognotikConfig.localUser)
         Assertions.assertEquals(null, result)
     }
 
@@ -39,7 +39,7 @@ class KotlinInterpreterTest : InterpreterTestBase() {
         val result = interpreter.validate(code)
         Assertions.assertInstanceOf(FailedToImplementException::class.java, result)
         try {
-            interpreter.run(code, ApplicationServicesConfig.defaultUser)
+            interpreter.run(code, CognotikConfig.localUser)
             Assertions.fail<Any>("Expected exception")
         } catch (e: Exception) {
             Assertions.assertTrue(e is FailedToImplementException)

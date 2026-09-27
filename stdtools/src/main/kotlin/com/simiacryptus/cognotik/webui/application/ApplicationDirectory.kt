@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.webui.application
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
 import com.simiacryptus.cognotik.platform.CognotikPlatform
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.OWNER_ID
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
@@ -140,7 +140,7 @@ abstract class ApplicationDirectory(
       init(args.contains("--server"))
       setupPlatform()
       installFsApiActions()
-      ApplicationServicesConfig.isLocked = true
+      CognotikConfig.isLocked = true
       log.info("Binding to '$bindAddress':$port; advertising '$localName':$port")
       val server = start(port, bindAddress, *(webAppContexts()))
       log.info("Server started successfully on port $port")

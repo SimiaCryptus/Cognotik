@@ -9,7 +9,7 @@ import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
 import com.simiacryptus.cognotik.kotlin.KotlinCodeRuntime
 import com.simiacryptus.cognotik.platform.CognotikPlatform
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -91,7 +91,7 @@ class CodeRuntimes(
           workingDir = defs["workingDir"]?.toString()?.let { File(it) } ?: File("."),
           env = defs["env"]?.let { it as Map<String, String> },
           lang = "bash",
-          commandResolver = { listOf("bash").map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! } }
+          commandResolver = { listOf("bash").map { it.resolveTool(CognotikConfig.dataStorageRoot.toPath())!! } }
         )
       }
       registerConstructor(PowerShellRuntime) { defs ->
@@ -105,7 +105,7 @@ class CodeRuntimes(
               listOf("powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-Command", "-")
             } else {
               listOf("pwsh", "-NoProfile", "-Command", "-")
-            }.map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
+            }.map { it.resolveTool(CognotikConfig.dataStorageRoot.toPath())!! }
           }
         )
       }
@@ -119,7 +119,7 @@ class CodeRuntimes(
             listOf(
               "cmd",
               "/c"
-            ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
+            ).map { it.resolveTool(CognotikConfig.dataStorageRoot.toPath())!! }
           }
         )
       }
@@ -135,7 +135,7 @@ class CodeRuntimes(
               else -> "python3"
             }
             listOf(
-              string.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              string.resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${string}' not found relative to root '${
                     CognotikPlatform
@@ -154,7 +154,7 @@ class CodeRuntimes(
           lang = "javascript",
           commandResolver = {
             listOf(
-              "node".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              "node".resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${"node"}' not found relative to root '${
                     CognotikPlatform.rootDir
@@ -172,7 +172,7 @@ class CodeRuntimes(
           lang = "ruby",
           commandResolver = {
             listOf(
-              "ruby".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              "ruby".resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${"ruby"}' not found relative to root '${
                     CognotikPlatform.rootDir
@@ -190,7 +190,7 @@ class CodeRuntimes(
           lang = "perl",
           commandResolver = {
             listOf(
-              "perl".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              "perl".resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${"perl"}' not found relative to root '${
                     CognotikPlatform.rootDir
@@ -208,7 +208,7 @@ class CodeRuntimes(
           lang = "r",
           commandResolver = {
             listOf(
-              "Rscript".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              "Rscript".resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${"Rscript"}' not found relative to root '${
                     CognotikPlatform.rootDir
@@ -226,7 +226,7 @@ class CodeRuntimes(
           lang = "php",
           commandResolver = {
             listOf(
-              "php".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              "php".resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${"php"}' not found relative to root '${
                     CognotikPlatform.rootDir
@@ -244,7 +244,7 @@ class CodeRuntimes(
           lang = "lua",
           commandResolver = {
             listOf(
-              "lua".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              "lua".resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${"lua"}' not found relative to root '${
                     CognotikPlatform.rootDir
@@ -264,7 +264,7 @@ class CodeRuntimes(
             listOf(
               "go",
               "run"
-            ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
+            ).map { it.resolveTool(CognotikConfig.dataStorageRoot.toPath())!! }
           }
         )
       }
@@ -277,7 +277,7 @@ class CodeRuntimes(
           commandResolver = {
             listOf(
               "rust-script"
-            ).map { it.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())!! }
+            ).map { it.resolveTool(CognotikConfig.dataStorageRoot.toPath())!! }
           }
         )
       }
@@ -289,7 +289,7 @@ class CodeRuntimes(
           lang = "scala",
           commandResolver = {
             listOf(
-              "scala".resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
+              "scala".resolveTool(CognotikConfig.dataStorageRoot.toPath())
                 ?: throw IllegalArgumentException(
                   "Executable '${"scala"}' not found relative to root '${
                     CognotikPlatform.rootDir
