@@ -16,6 +16,7 @@ import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
@@ -358,10 +359,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         private fun kill(session: Session) {
-            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(session, CognotikConfig.localUser)
-                .shutdownNow()
-            ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(session, CognotikConfig.localUser)
-                .shutdownNow()
+            ThreadPoolManager.getPool(session, CognotikConfig.localUser).shutdownNow()
+            ThreadPoolManager.getScheduledPool(session, CognotikConfig.localUser).shutdownNow()
         }
 
         fun updateSessionsList() {
@@ -388,7 +387,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                                 value
                             )
 
-                        val threadFactory = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
+                        val threadFactory = ThreadPoolManager.getPool(
                             value,
                             CognotikConfig.localUser
                         ).threadFactory

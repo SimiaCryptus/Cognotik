@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSessio
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
 import org.slf4j.event.Level
@@ -22,37 +23,37 @@ import java.awt.event.MouseEvent
 import java.io.IOException
 
 class DictationWidgetFactory : StatusBarWidgetFactory {
-    override fun getId(): String = SpeechToTextWidget.ID
-    override fun getDisplayName(): String = "AI Speech-to-Text"
-    override fun isAvailable(project: Project) = true
-    override fun createWidget(project: Project) = SpeechToTextWidget()
-    override fun createWidget(project: Project, scope: CoroutineScope) = createWidget(project)
-    override fun canBeEnabledOn(statusBar: StatusBar) = true
+  override fun getId(): String = SpeechToTextWidget.ID
+  override fun getDisplayName(): String = "AI Speech-to-Text"
+  override fun isAvailable(project: Project) = true
+  override fun createWidget(project: Project) = SpeechToTextWidget()
+  override fun createWidget(project: Project, scope: CoroutineScope) = createWidget(project)
+  override fun canBeEnabledOn(statusBar: StatusBar) = true
 
-    class SpeechToTextWidget : StatusBarWidget,
-        StatusBarWidget.IconPresentation {
-        companion object {
-            var statusBar: StatusBar? = null
-            val ID = "AICodingAssistant.SpeechToTextWidget"
-            fun toggleRecording() {
-                if (DictationState.isRecording) {
-                    DictationState.setRecordingState(false)
-                    dictationManager.stopRecording()
-                } else {
-                    DictationState.setRecordingState(true)
-                    DictationState.resetState()
-                    dictationManager.startRecording()
-                }
-                statusBar?.updateWidget(ID)
-            }
+  class SpeechToTextWidget : StatusBarWidget,
+    StatusBarWidget.IconPresentation {
+    companion object {
+      var statusBar: StatusBar? = null
+      val ID = "AICodingAssistant.SpeechToTextWidget"
+      fun toggleRecording() {
+        if (DictationState.isRecording) {
+          DictationState.setRecordingState(false)
+          dictationManager.stopRecording()
+        } else {
+          DictationState.setRecordingState(true)
+          DictationState.resetState()
+          dictationManager.startRecording()
         }
+        statusBar?.updateWidget(ID)
+      }
+    }
 
-        override fun install(statusBar: StatusBar) {
-            dictationManager.onTranscriptionUpdate = DictationState.onTranscriptionUpdate
-            dictationManager.handlePacket = DictationState.onPacket
-            Companion.statusBar = statusBar
-            val project = statusBar.project ?: return
-            DictationState.project = project
+    override fun install(statusBar: StatusBar) {
+      dictationManager.onTranscriptionUpdate = DictationState.onTranscriptionUpdate
+      dictationManager.handlePacket = DictationState.onPacket
+      Companion.statusBar = statusBar
+      val project = statusBar.project ?: return
+      DictationState.project = project
 //            val connection = project.messageBus.connect()
 //            connection.subscribe(FileEditorManagerListener.FILE_EDITOR_MANAGER, object : FileEditorManagerListener {
 //                override fun selectionChanged(event: FileEditorManagerEvent) {
@@ -95,57 +96,58 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
 //                    }
 //                }
 //            })
-        }
-
-        override fun ID(): String = ID
-        override fun getPresentation() = this
-        override fun getIcon() = when (dictationManager.discriminator.currentState) {
-            AudioState.QUIET -> when {
-                DictationState.isRecording -> MyIcons.micActive
-                else -> MyIcons.micInactive
-            }
-
-            AudioState.TALKING -> when {
-                DictationState.isRecording -> MyIcons.micListening
-                else -> MyIcons.micActive
-            }
-        }
-
-        override fun getTooltipText(): String =
-            if (DictationState.isRecording) "Click to stop recording" else "Click to start recording"
-
-        override fun getClickConsumer(): Consumer<MouseEvent> = Consumer {
-            ApplicationManager.getApplication().invokeLater { toggleRecording() }
-        }
-
     }
 
-    companion object {
-        val dictationManager = object : DictationManager() {
-            override fun transcriptionClient(): TranscriptionClient {
-                val model = AppSettingsState.instance.transcriptionModel.let {
-                    findAudioModel(it)
-                } ?: throw IOException("Transcription model not configured")
-                val apiData =
-                    ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser).apis.find { it.provider == model.provider }
-                return TranscriptionClient(
-                    key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
-                    apiBase = apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"),
-                    logLevel = Level.DEBUG,
-                    logStreams = mutableListOf(),
-                    workPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getPool(
-                        currentSession,
-                        CognotikConfig.localUser
-                    ),
-                    scheduledPool = ServiceMap[ServiceKey.THREAD_POOL_MANAGER].getScheduledPool(
-                        currentSession,
-                        CognotikConfig.localUser
-                    ),
-                    provider = model.provider
-                )
-            }
+    override fun ID(): String = ID
+    override fun getPresentation() = this
+    override fun getIcon() = when (dictationManager.discriminator.currentState) {
+      AudioState.QUIET -> when {
+        DictationState.isRecording -> MyIcons.micActive
+        else -> MyIcons.micInactive
+      }
 
-        }
+      AudioState.TALKING -> when {
+        DictationState.isRecording -> MyIcons.micListening
+        else -> MyIcons.micActive
+      }
     }
+
+    override fun getTooltipText(): String =
+      if (DictationState.isRecording) "Click to stop recording" else "Click to start recording"
+
+    override fun getClickConsumer(): Consumer<MouseEvent> = Consumer {
+      ApplicationManager.getApplication().invokeLater { toggleRecording() }
+    }
+
+  }
+
+  companion object {
+    val dictationManager = object : DictationManager() {
+      override fun transcriptionClient(): TranscriptionClient {
+        val model = AppSettingsState.instance.transcriptionModel.let {
+          findAudioModel(it)
+        } ?: throw IOException("Transcription model not configured")
+        val apiData =
+          ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser).apis.find { it.provider == model.provider }
+        return TranscriptionClient(
+          key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
+          apiBase = apiData.apiBase
+            ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"),
+          logLevel = Level.DEBUG,
+          logStreams = mutableListOf(),
+          workPool = ThreadPoolManager.getPool(
+            currentSession,
+            CognotikConfig.localUser
+          ),
+          scheduledPool = ThreadPoolManager.getScheduledPool(
+            currentSession,
+            CognotikConfig.localUser
+          ),
+          provider = model.provider
+        )
+      }
+
+    }
+  }
 }
 
