@@ -48,15 +48,10 @@ abstract class ChatServer(
             val session = Session(request.parameterMap["sessionId"]?.first()!!)
             trafficLog.debug("WebSocket connection request for session: {}", session)
             val sessionManager = sessions.computeIfAbsent(session) { s ->
-              val user =
-                ServiceRouter.getUser(
-                  request.getCookie(
-                    AuthenticationInterface.AUTH_COOKIE
-                  )
-                )
-              if (user == null) {
-                throw RuntimeException("User must be authenticated to connect to WebSocket for session: $s")
-              }
+              val accessToken = request.getCookie(AuthenticationInterface.AUTH_COOKIE)?.ifBlank { null }
+                ?: throw IllegalArgumentException("Missing access token in cookie for session: $s")
+              val user = ServiceRouter.getUser(accessToken)
+                ?: throw RuntimeException("User must be authenticated to connect to WebSocket for session: $s")
               trafficLog.debug(
                 "Creating new session manager for session: {}, user: {}",
                 s,
