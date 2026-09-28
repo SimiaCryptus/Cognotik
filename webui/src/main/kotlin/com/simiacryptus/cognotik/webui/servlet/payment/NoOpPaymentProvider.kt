@@ -1,6 +1,7 @@
 package com.simiacryptus.cognotik.webui.servlet.payment
 
-import com.simiacryptus.cognotik.platform.UsageInterface
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -15,7 +16,7 @@ import java.time.Instant
  * enforced by policy rather than by actual monetary transactions.
  */
 class NoOpPaymentProvider(
-    private val usageDB: UsageInterface,
+    private val usageDB: UsageInterface = ServiceRouter,
     val authorizedUsers: List<String>? = null
 ) : PaymentProvider {
 

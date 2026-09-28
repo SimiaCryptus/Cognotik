@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
@@ -14,7 +14,7 @@ object LanguageServerTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.configurePlatform(CognotikConfig.localUser)
   }
 
   @org.junit.jupiter.api.Tag("Integration")
@@ -34,7 +34,7 @@ object LanguageServerTaskTest {
         task_description = "Get hover information for the println function call",
       ),
       timeoutMinutes = 10,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -70,7 +70,7 @@ object LanguageServerTaskTest {
         task_description = "Check for syntax errors in Error.kt",
       ),
       timeoutMinutes = 10,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

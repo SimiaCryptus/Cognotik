@@ -1,5 +1,6 @@
 package cognotik.actions.plan
 
+
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
@@ -8,20 +9,20 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.dsl.builder.Align
 import com.intellij.ui.dsl.builder.panel
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.platform.model.AIModel
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeType
 import com.simiacryptus.cognotik.plan.instance
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
-import com.simiacryptus.cognotik.plan.toApiChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.AIModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import org.slf4j.LoggerFactory
@@ -332,7 +333,9 @@ open class PlanConfigDialog(
     }
 
     private fun getVisibleModels(): List<ChatModel> =
-        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
+        ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+          CognotikConfig.localUser
+        ).apis.flatMap { apiData ->
             apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                 model.provider == apiData.provider && model.modelId.isNotBlank() && isVisible(model)
             }?.filter { !it.deprecated } ?: listOf()
@@ -438,14 +441,14 @@ open class PlanConfigDialog(
             // Update model combo boxes
             config.smartModel?.instance(config.user)?.model?.modelId?.let { modelName ->
                 visibleModelsCache.find { it.modelId == modelName }?.let { model ->
-                    settings.smartModel = model.toApiChatModel(localUser).model?.modelId
+                    settings.smartModel = model.toApiChatModel(CognotikConfig.localUser).model?.modelId
                     globalModelCombo.selectedItem = modelName
                 }
             }
 
             config.fastModel?.instance(config.user)?.model?.modelId?.let { modelName ->
                 visibleModelsCache.find { it.modelId == modelName }?.let { model ->
-                    settings.fastModel = model.toApiChatModel(localUser).model?.modelId
+                    settings.fastModel = model.toApiChatModel(CognotikConfig.localUser).model?.modelId
                     parsingModelCombo.selectedItem = modelName
                 }
             }
@@ -605,17 +608,17 @@ open class PlanConfigDialog(
         val selectedGlobalModel = globalModelCombo.selectedItem as? String
         if (selectedGlobalModel != null) {
             val model = visibleModelsCache.find { it.modelId == selectedGlobalModel }
-            settings.smartModel = model?.toApiChatModel(localUser)?.model?.modelId
+            settings.smartModel = model?.toApiChatModel(CognotikConfig.localUser)?.model?.modelId
         }
         val selectedParsingModel = parsingModelCombo.selectedItem as? String
         if (selectedParsingModel != null) {
             val model = visibleModelsCache.find { it.modelId == selectedParsingModel }
-            settings.fastModel = model?.toApiChatModel(localUser)?.model?.modelId
+            settings.fastModel = model?.toApiChatModel(CognotikConfig.localUser)?.model?.modelId
         }
         val selectedImageChatModel = imageChatModelCombo.selectedItem as? String
         if (selectedImageChatModel != null) {
             val model = visibleModelsCache.find { it.modelId == selectedImageChatModel }
-            settings.imageModel = model?.toApiChatModel(localUser)?.model?.modelId
+            settings.imageModel = model?.toApiChatModel(CognotikConfig.localUser)?.model?.modelId
         }
         val selectedCognitiveMode = cognitiveModeCombo.selectedItem as String
         val modeType = CognitiveModeType.valueOf(selectedCognitiveMode)
@@ -645,7 +648,9 @@ open class PlanConfigDialog(
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
         fun isVisible(chatModel: AIModel) =
-            ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis
+            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+              CognotikConfig.localUser
+            ).apis
               .filter { it.key?.decrypt != null }
                 .any { it.provider == chatModel.provider }
     }

@@ -18,14 +18,13 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.io.FileOutputStream
@@ -1135,7 +1134,7 @@ class CrawlerAgentTask(
     log.info("Queuing page for processing: url='$pageUrl', title='${page.title}', depth=${page.depth}, relevance=${page.relevance_score}")
 
     val subTask = try {
-      task.linkedTask("Processing: ${page.title ?: pageUrl}")
+      task.linkedTask("Processing: ${page.title ?: pageUrl}",)
     } catch (e: Exception) {
       log.error("Failed to create subtask for URL: $pageUrl", e)
       errorCount.incrementAndGet()

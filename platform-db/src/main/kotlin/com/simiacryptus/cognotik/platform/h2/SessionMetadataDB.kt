@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.h2
 
-import com.simiacryptus.cognotik.platform.MetadataStorageInterface
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
@@ -15,7 +15,7 @@ import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
 
-class MetadataStorageDB : MetadataStorageInterface {
+class SessionMetadataDB : SessionMetadataInterface {
 
   object MetadataTable : Table("metadata") {
     val sessionId: Column<String> = varchar("session_id", 255)
@@ -26,14 +26,14 @@ class MetadataStorageDB : MetadataStorageInterface {
     override val primaryKey = PrimaryKey(sessionId, userEmail, key)
   }
 
-  override fun getSessionName(user: User?, session: Session): String {
-    log.debug("Fetching session name for session: {}, user: {}", session, user?.email)
+  override fun getSessionName(user: User, session: Session): String {
+    log.debug("Fetching session name for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "name")
         }
         .limit(1)
@@ -42,20 +42,20 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  override fun setSessionName(user: User?, session: Session, name: String) {
-    log.debug("Setting session name for session: {}, user: {} to '{}'", session, user?.email, name)
-    upsertMetadata(session.sessionId, user?.email ?: "", "name", name)
+  override fun setSessionName(user: User, session: Session, name: String) {
+    log.info("Setting session name for session: {}, user: {} to '{}'", session, user.email, name)
+    upsertMetadata(session.sessionId, user.email, "name", name)
     log.debug("Session name set successfully for session: {}", session)
   }
 
-  override fun getMessageIds(user: User?, session: Session): List<String> {
-    log.debug("Fetching message IDs for session: {}, user: {}", session, user?.email)
+  override fun getMessageIds(user: User, session: Session): List<String> {
+    log.debug("Fetching message IDs for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "message_ids")
         }
         .limit(1)
@@ -68,34 +68,34 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  override fun setMessageIds(user: User?, session: Session, ids: List<String>) {
-    log.debug("Setting {} message IDs for session: {}, user: {}", ids.size, session, user?.email)
-    upsertMetadata(session.sessionId, user?.email ?: "", "message_ids", ids.joinToString(","))
+  override fun setMessageIds(user: User, session: Session, ids: List<String>) {
+    log.debug("Setting {} message IDs for session: {}, user: {}", ids.size, session, user.email)
+    upsertMetadata(session.sessionId, user.email, "message_ids", ids.joinToString(","))
   }
 
   override fun setSessionTimestamp(
-    user: User?,
+    user: User,
     session: Session,
     time: Instant
   ) {
-    log.debug("Setting session timestamp for session: {}, user: {} to {}", session, user?.email, time)
+    log.debug("Setting session timestamp for session: {}, user: {} to {}", session, user.email, time)
     upsertMetadata(
       session.sessionId,
-      user?.email ?: "",
+      user.email,
       "session_time",
       time.toEpochMilli().toString(),
       time
     )
   }
 
-  override fun getSessionTimestamp(user: User?, session: Session): Instant? {
-    log.debug("Fetching session time for session: {}, user: {}", session, user?.email)
+  override fun getSessionTimestamp(user: User, session: Session): Instant? {
+    log.debug("Fetching session time for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "session_time")
         }
         .limit(1)
@@ -107,7 +107,7 @@ class MetadataStorageDB : MetadataStorageInterface {
           } catch (e: NumberFormatException) {
             log.warn(
               "Invalid session time value '{}' for session: {}, user: {}; falling back to row timestamp",
-              time, session, user?.email, e
+              time, session, user.email, e
             )
             Date.from(row[MetadataTable.timestamp]).toInstant()
           }
@@ -117,15 +117,15 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
   @Deprecated("Use getSessionTimestamp", ReplaceWith("getSessionTimestamp(user, session)"))
-  fun getSessionTime(user: User?, session: Session): Instant? = getSessionTimestamp(user, session)
-  override fun getSessionPath(user: User?, session: Session): String? {
-    log.debug("Fetching session path for session: {}, user: {}", session, user?.email)
+  fun getSessionTime(user: User, session: Session): Instant? = getSessionTimestamp(user, session)
+  override fun getSessionPath(user: User, session: Session): String? {
+    log.debug("Fetching session path for session: {}, user: {}", session, user.email)
     return tx {
       MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: "")) and
+              (MetadataTable.userEmail eq user.email) and
               (MetadataTable.key eq "path")
         }
         .limit(1)
@@ -134,35 +134,23 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  override fun setSessionPath(user: User?, session: Session, path: String?) {
-    log.debug("Setting session path for session: {}, user: {} to {}", session, user?.email, path)
-    upsertMetadata(session.sessionId, user?.email ?: "", "path", path)
+  override fun setSessionPath(user: User, session: Session, path: String?) {
+    log.info("Setting session path for session: {}, user: {} to {}", session, user.email, path)
+    upsertMetadata(session.sessionId, user.email, "path", path)
   }
 
-  override fun exists(user: User?, session: Session): Boolean = tx {
+  override fun exists(user: User, session: Session): Boolean = tx {
     MetadataTable
       .selectAll()
       .where {
         (MetadataTable.sessionId eq session.sessionId) and
-            ((MetadataTable.userEmail eq (user?.email ?: "")) or (MetadataTable.userEmail eq ""))
+            ((MetadataTable.userEmail eq user.email) or (MetadataTable.userEmail eq ""))
       }
       .limit(1)
       .any()
   }
 
-
-  fun setSessionTime(user: User?, session: Session, time: Instant) {
-    log.debug("Setting session time for session: {}, user: {} to {}", session, user?.email, time)
-    upsertMetadata(
-      session.sessionId,
-      user?.email ?: "",
-      "session_time",
-      time.toEpochMilli().toString(),
-      time
-    )
-  }
-
-  override fun listSessionsByPath(path: String): List<String> {
+  override fun listSessionsByPath(user: User, path: String): List<String> {
     log.debug("Listing sessions for path: {}", path)
     return tx {
       MetadataTable
@@ -187,13 +175,13 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
   @Deprecated("Use listSessionsByPath", ReplaceWith("listSessionsByPath(path)"))
-  fun listSessions(path: String): List<String> = listSessionsByPath(path)
+  fun listSessions(user: User, path: String): List<String> = listSessionsByPath(user=user,path = path)
 
   @Deprecated("Use listSessionsForUser", ReplaceWith("listSessionsForUser(user)"))
   fun listSessions(user: User): List<String> = listSessionsForUser(user)
 
 
-  override fun getSessionOwner(session: Session): String? {
+  override fun getSessionOwner(user: User, session: Session): String? {
     log.debug("Fetching session owner for session: {}", session)
     return tx {
       MetadataTable
@@ -209,12 +197,12 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  override fun setSessionOwner(session: Session, ownerId: String?) {
-    log.debug("Setting session owner for session: {} to {}", session, ownerId)
+  override fun setSessionOwner(session: Session, user: User, ownerId: String?) {
+    log.info("setSessionOwner for session: {} to {}", session, ownerId)
     upsertMetadata(session.sessionId, "", "owner_id", ownerId)
   }
 
-  override fun getSessionWorker(session: Session): String? {
+  override fun getSessionWorker(user: User, session: Session): String? {
     log.debug("Fetching session worker for session: {}", session)
     return tx {
       MetadataTable
@@ -230,27 +218,27 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  override fun setSessionWorker(session: Session, workerId: String?) {
-    log.debug("Setting session worker for session: {} to {}", session, workerId)
+  override fun setSessionWorker(session: Session, user: User, workerId: String?) {
+    log.info("setSessionWorker for session: ${session} to ${workerId}", RuntimeException("Stack Trace"))
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)
   }
 
-  override fun deleteSession(user: User?, session: Session) {
-    log.info("Deleting session: {}, user: {}", session, user?.email)
+  override fun deleteSession(user: User, session: Session) {
+    log.info("Deleting session: {}, user: {}", session, user.email)
     try {
       val deleted = tx {
         MetadataTable.deleteWhere {
           (MetadataTable.sessionId eq session.sessionId) and
-              (MetadataTable.userEmail eq (user?.email ?: ""))
+              (MetadataTable.userEmail eq user.email)
         }
       }
       log.info(
         "Deleted {} metadata row(s) for session: {} user: {}",
-        deleted, session, user?.email ?: "anonymous"
+        deleted, session, user.email
       )
     } catch (e: Exception) {
-      log.error("Failed to delete session: {} for user: {}", session, user?.email ?: "anonymous", e)
+      log.error("Failed to delete session: {} for user: {}", session, user.email, e)
       throw e
     }
   }
@@ -274,9 +262,9 @@ class MetadataStorageDB : MetadataStorageInterface {
    * clears a field rather than being indistinguishable from "unchanged"
    * (REVIEW.md §3.4).
    */
-  override fun updateSessionMetadata(user: User?, session: Session, patch: SessionMetadataPatch) {
-    log.debug("Patching session metadata for session: {}, user: {}", session, user?.email)
-    val userEmail = user?.email ?: ""
+  override fun updateSessionMetadata(user: User, session: Session, patch: SessionMetadataPatch) {
+    log.info("Patching session metadata for session: {}, user: {}", session, user.email)
+    val userEmail = user.email
     val now = Instant.now()
     tx {
       patch.name.ifSet { upsertMetadata(session.sessionId, userEmail, "name", it, now) }
@@ -293,10 +281,10 @@ class MetadataStorageDB : MetadataStorageInterface {
   }
 
 
-  override fun getSessionMetadata(user: User?, session: Session): SessionMetadata {
-    log.debug("Fetching unified session metadata for session: {}, user: {}", session, user?.email)
+  override fun getSessionMetadata(user: User, session: Session): SessionMetadata {
+    log.debug("Fetching unified session metadata for session: {}, user: {}", session, user.email)
     return tx {
-      val userEmail = user?.email ?: ""
+      val userEmail = user.email
       val rows: List<ResultRow> = MetadataTable
         .selectAll()
         .where {
@@ -326,7 +314,7 @@ class MetadataStorageDB : MetadataStorageInterface {
           } catch (e: Exception) {
             log.warn(
               "Invalid session_time value '{}' for session: {}, user: {}; falling back to row timestamp",
-              v, session, user?.email, e
+              v, session, user.email, e
             )
             Date.from(row[MetadataTable.timestamp])
           }
@@ -348,31 +336,9 @@ class MetadataStorageDB : MetadataStorageInterface {
     }
   }
 
-  fun setSessionMetadata(user: User?, session: Session, metadata: SessionMetadata) {
-    log.debug("Setting unified session metadata for session: {}, user: {}", session, user?.email)
-    val userEmail = user?.email ?: ""
-    val now = Instant.now()
-    metadata.name?.let { upsertMetadata(session.sessionId, userEmail, "name", it, now) }
-    if (metadata.messageIds.isNotEmpty()) {
-      upsertMetadata(session.sessionId, userEmail, "message_ids", metadata.messageIds.joinToString(","), now)
-    }
-    metadata.sessionTime?.let {
-      upsertMetadata(session.sessionId, userEmail, "session_time", it.time.toString(), it.toInstant())
-    }
-    metadata.ownerId?.let { upsertMetadata(session.sessionId, "", "owner_id", it, now) }
-    metadata.workerId?.let { upsertMetadata(session.sessionId, "", KEY_WORKER_ID, it, now) }
-    metadata.path?.let { upsertMetadata(session.sessionId, userEmail, "path", it, now) }
-    log.debug("Unified session metadata set successfully for session: {}", session)
-  }
-
   override fun listSessionMetadata(user: User): List<SessionMetadata> {
     log.debug("Bulk listing session metadata for user: {}", user.email)
     return tx {
-      // First find all session IDs that have at least one row authored by
-      // this user. Then pull every metadata row for those sessions
-      // (including user-agnostic rows such as owner_id) in a single
-      // query. This keeps the result-set bounded to the user's sessions
-      // and avoids pulling every owner_id row in the database.
       val userSessionIds = sessionIdsForUser(user.email)
       if (userSessionIds.isEmpty()) return@tx emptyList()
       val rows = MetadataTable
@@ -412,7 +378,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }.also { log.debug("Loaded {} session entries for user: {}", it.size, user.email) }
   }
 
-  override fun listSessionEntries(path: String): List<SessionListEntry> {
+  override fun listSessionEntries(user: User, path: String): List<SessionListEntry> {
     log.debug("Listing session entries (projection) for path: {}", path)
     return tx {
       val sessionIds = MetadataTable
@@ -438,7 +404,7 @@ class MetadataStorageDB : MetadataStorageInterface {
     }.also { log.debug("Loaded {} session entries for path: {}", it.size, path) }
   }
 
-  override fun listSessionMetadata(path: String): List<SessionMetadata> {
+  override fun listSessionMetadata(user: User, path: String): List<SessionMetadata> {
     log.debug("Bulk listing session metadata for path: {}", path)
     return tx {
       val sessionIds = MetadataTable
@@ -461,11 +427,11 @@ class MetadataStorageDB : MetadataStorageInterface {
    * no recorded metadata are intentionally omitted from the result.
    */
   override fun getSessionMetadataMap(
-    user: User?,
+    user: User,
     sessionIds: Collection<String>
   ): Map<String, SessionMetadata> {
     if (sessionIds.isEmpty()) return emptyMap()
-    val userEmail = user?.email ?: ""
+    val userEmail = user.email
     val sessionIdSet = sessionIds.toSet()
     log.debug("Bulk fetching session metadata map for {} session(s), user: {}", sessionIdSet.size, userEmail)
     return tx {
@@ -478,13 +444,6 @@ class MetadataStorageDB : MetadataStorageInterface {
         .toList()
       buildSessionMetadataMap(rows)
     }
-  }
-
-  fun getSessionMetadataBulk(user: User?, sessionIds: Collection<String>): List<SessionMetadata> {
-    if (sessionIds.isEmpty()) return emptyList()
-    val byId = getSessionMetadataMap(user, sessionIds)
-    // Preserve caller-provided ordering and fill blanks for unknown sessions.
-    return sessionIds.map { id -> byId[id] ?: SessionMetadata(id = Session(id)) }
   }
 
   /**
@@ -694,7 +653,7 @@ class MetadataStorageDB : MetadataStorageInterface {
   private fun <T> tx(block: () -> T): T = transaction(ExposedDatabase.get(facet)) { block() }
 
   companion object {
-    private val log = LoggerFactory.getLogger(MetadataStorageDB::class.java)
+    private val log = LoggerFactory.getLogger(SessionMetadataDB::class.java)
 
     /** Metadata key holding the worker/agent currently assigned to a session. */
     internal const val KEY_WORKER_ID = "worker_id"

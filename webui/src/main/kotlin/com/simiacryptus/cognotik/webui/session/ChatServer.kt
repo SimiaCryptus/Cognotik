@@ -1,10 +1,10 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authenticationManager
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import org.eclipse.jetty.servlet.DefaultServlet
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -48,11 +48,10 @@ abstract class ChatServer(
             val session = Session(request.parameterMap["sessionId"]?.first()!!)
             trafficLog.debug("WebSocket connection request for session: {}", session)
             val sessionManager = sessions.computeIfAbsent(session) { s ->
-              val user =
-                authenticationManager.getUser(request.getCookie(AuthenticationInterface.AUTH_COOKIE))
-              if (user == null) {
-                throw RuntimeException("User must be authenticated to connect to WebSocket for session: $s")
-              }
+              val accessToken = request.getCookie(AuthenticationInterface.AUTH_COOKIE)?.ifBlank { null }
+                ?: throw IllegalArgumentException("Missing access token in cookie for session: $s")
+              val user = ServiceRouter.getUser(accessToken)
+                ?: throw RuntimeException("User must be authenticated to connect to WebSocket for session: $s")
               trafficLog.debug(
                 "Creating new session manager for session: {}, user: {}",
                 s,

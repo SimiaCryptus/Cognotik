@@ -1,10 +1,11 @@
 ﻿package com.simiacryptus.cognotik.config
 
+
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
 import java.awt.Component
@@ -28,7 +29,7 @@ class UsageTable(
 
     val rowData by lazy {
       val usageData = usage.getUserUsageSummary(
-          AppSettingsState.localUser,
+        CognotikConfig.localUser,
           from = Date().toInstant().minusSeconds(TimeUnit.DAYS.toSeconds(30)).atZone(java.time.ZoneId.systemDefault()).toLocalDate(),
           to = Date().toInstant().atZone(java.time.ZoneId.systemDefault()).toLocalDate()
       ).map { entry ->

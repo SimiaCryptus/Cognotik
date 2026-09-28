@@ -1,8 +1,10 @@
 package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.autofix.AutoFixTask
+import com.simiacryptus.cognotik.cli.CliSupport.Models
 import com.simiacryptus.cognotik.cli.CliSupport.email
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import java.awt.Desktop
@@ -39,8 +41,8 @@ object AutoFixCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
-    CliSupport.installFileServices()
-    val user = CliSupport.defaultUser()
+    DatabaseFacet.root = File(".").absolutePath
+    val user = CliSupport.defaultUser
     CliSupport.bootstrapPlatform(user)
     val opts = try {
       parse(args)
@@ -80,8 +82,8 @@ object AutoFixCli {
    * server's `autofix` FS action) can drive it in-process.
    */
   fun run(args: Array<String>): Int {
-    CliSupport.installFileServices()
-    CliSupport.bootstrapPlatform(CliSupport.defaultUser())
+    DatabaseFacet.root = File(".").absolutePath
+    CliSupport.bootstrapPlatform(CliSupport.defaultUser)
     val opts = parse(args)
     if (opts.help) {
       printUsage(System.out)
@@ -97,7 +99,7 @@ object AutoFixCli {
     if (!commandDir.isDirectory) {
       throw IllegalArgumentException("working directory does not exist: ${commandDir.absolutePath}")
     }
-    val user = CliSupport.defaultUser()
+    val user = CliSupport.defaultUser
     if (opts.commands.isEmpty()) {
       throw IllegalArgumentException("no command given; pass it after '--' or with --cmd \"<command>\"")
     }
@@ -113,7 +115,7 @@ object AutoFixCli {
       opts.autoFix = true
     }
     val models = CliSupport.resolveModels(
-      user = user,
+      user = user ?: throw IllegalStateException("no user configured"),
       smartModel = opts.smartModel,
       fastModel = opts.fastModel,
       imageModel = opts.imageModel,

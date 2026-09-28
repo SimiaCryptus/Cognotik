@@ -7,7 +7,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.FileModificationTaskExecutionConfigData
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.now
@@ -21,7 +21,7 @@ object ModeProductPageGenerator {
 
   @JvmStatic
   fun main(args: Array<String>) {
-    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.configurePlatform(CognotikConfig.localUser)
     val files =
       File("webui/src/main/kotlin/com/simiacryptus/cognotik/plan/cognitive").listFilesRecursively()
     val filter = files.filter { it.isFile && it.extension in setOf("kt") }
@@ -53,7 +53,7 @@ object ModeProductPageGenerator {
           workspace = root.absoluteFile,
           fastModel = GeminiModels.GeminiFlash_30_Preview,
           smartModel = GeminiModels.GeminiFlash_30_Preview,
-          user = ApplicationServicesConfig.defaultUser,
+          user = CognotikConfig.localUser,
           imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
           audioModel = GeminiModels.GeminiFlash_30_Preview,
         ) {

@@ -1,5 +1,6 @@
 package cognotik.actions.chat
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.ActionUpdateThread
@@ -7,14 +8,15 @@ import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.PlatformDataKeys
 import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.apps.SessionProxyServer
-import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.docs.getDocumentReader
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.text.util.isBinary
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
+import com.simiacryptus.cognotik.text.util.isBinary
 import com.simiacryptus.cognotik.ui.SessionRenderer
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -23,7 +25,6 @@ import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatSocketManager
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -52,11 +53,11 @@ class MultiCodeChatAction : BaseAction() {
                 progress.text = "Setting up chat session..."
                 val session = Session.newUserID()
                 SessionProxyServer.metadataStorage.setSessionName(
-                    null,
+                    CognotikConfig.localUser,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.agents[session] = CodeChatManager(
+                SessionProxyServer.agents[session.withUser(CognotikConfig.localUser)] = CodeChatManager(
                     session = session,
                     model = AppSettingsState.instance.smartChatClient,
                     fastModel = AppSettingsState.instance.fastChatClient,
@@ -111,7 +112,7 @@ class MultiCodeChatAction : BaseAction() {
       systemPrompt = "",
       applicationClass = ApplicationServer::class.java,
       budget = 2.0,
-      owner = localUser,
+        owner = CognotikConfig.localUser,
     ) {
 
         override val systemPrompt: String

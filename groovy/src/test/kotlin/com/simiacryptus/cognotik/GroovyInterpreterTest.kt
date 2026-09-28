@@ -3,7 +3,7 @@
 package com.simiacryptus.cognotik
 
 import com.simiacryptus.cognotik.groovy.GroovyCodeRuntime
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import org.intellij.lang.annotations.Language
 import org.junit.jupiter.api.Assertions
 import org.junit.jupiter.api.Test
@@ -39,7 +39,7 @@ class GroovyInterpreterTest : InterpreterTestBase() {
         val result = interpreter.validate(code)
         Assertions.assertInstanceOf(org.codehaus.groovy.control.MultipleCompilationErrorsException::class.java, result)
         try {
-            interpreter.run(code, ApplicationServicesConfig.defaultUser)
+            interpreter.run(code, CognotikConfig.localUser)
             Assertions.fail<Any>("Expected exception")
         } catch (e: Exception) {
             Assertions.assertTrue(e is org.codehaus.groovy.control.MultipleCompilationErrorsException)

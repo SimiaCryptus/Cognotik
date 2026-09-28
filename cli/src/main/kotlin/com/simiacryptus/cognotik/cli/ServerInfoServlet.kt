@@ -17,13 +17,13 @@ package com.simiacryptus.cognotik.cli
   class ServerInfoServlet : HttpServlet() {
 
     override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-      val info = FileServerCli.serverInfo
+      val info = FileServer.serverInfo
       val context = request.contextPath ?: ""
       val smart = runCatching { ModelSelection.smart }.getOrNull()
       val fast = runCatching { ModelSelection.fast }.getOrNull()
       val available = runCatching { ModelSelection.modelIds().size }.getOrNull()
-        ?: FileServerCli.available.size
-      val user = runCatching { FileServerCli.user.email }.getOrNull()
+        ?: FileServer.available.size
+      val user = runCatching { CliSupport.defaultUser?.email }.getOrNull()
 
       val json = buildString {
         append('{')

@@ -1,5 +1,6 @@
 package cognotik.actions.problems
 
+
 import cognotik.actions.agent.toFile
 import cognotik.actions.test.TestResultAutofixAction.Companion.findGitRoot
 import cognotik.actions.test.TestResultAutofixAction.Companion.getProjectStructure
@@ -21,12 +22,14 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Retryable
-import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.SessionRenderer
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.prefilterFilename
@@ -34,7 +37,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import java.nio.file.Path
 import java.text.SimpleDateFormat
@@ -103,7 +105,7 @@ class AnalyzeProblemAction : AnAction() {
 
     private fun openAnalysisSession(project: Project, problemInfo: String, gitRoot: VirtualFile?) {
         val session = Session.newUserID()
-        SessionProxyServer.chats[session] = ProblemAnalysisApp(session, problemInfo, gitRoot)
+      SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = ProblemAnalysisApp(session, problemInfo, gitRoot)
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
             inputCnt = 0,
@@ -111,8 +113,8 @@ class AnalyzeProblemAction : AnAction() {
             loadImages = false,
             showMenubar = false
         )
-        SessionProxyServer.metadataStorage.setSessionName(
-            null,
+      SessionProxyServer.metadataStorage.setSessionName(
+        CognotikConfig.localUser,
             session,
             "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
@@ -161,7 +163,7 @@ class AnalyzeProblemAction : AnAction() {
         }
 
         private fun analyzeProblem(
-            task: ISessionTask, socketManager: SocketManager
+          task: ISessionTask, socketManager: SocketManager
         ) {
             try {
               Retryable(task) {

@@ -30,7 +30,7 @@ object ModelSelection {
   private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
   @Volatile
-  private var userFn: () -> User = { CliSupport.defaultUser() }
+  private var userFn: () -> User = { CliSupport.defaultUser ?: throw RuntimeException("no default user") }
 
   /** Enumerating provider models costs a network round trip, so it is cached. */
   @Volatile
@@ -74,7 +74,7 @@ object ModelSelection {
     if (!refresh) {
       if (cache.isNotEmpty()) return cache
       /* Reuse whatever the server already resolved at start-up. */
-      FileServerCli.available.takeIf { it.isNotEmpty() }?.let {
+      FileServer.available.takeIf { it.isNotEmpty() }?.let {
         cache = it
         return it
       }
@@ -87,7 +87,7 @@ object ModelSelection {
     }
     if (fresh.isNotEmpty()) {
       cache = fresh
-      FileServerCli.available = fresh
+      FileServer.available = fresh
     }
     return if (fresh.isNotEmpty()) fresh else cache
   }

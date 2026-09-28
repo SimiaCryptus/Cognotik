@@ -1,5 +1,6 @@
 package cognotik.actions.generate
 
+
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
@@ -8,12 +9,10 @@ import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.LocalFileSystem
-import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
-import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatMessage
-import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
-import com.simiacryptus.cognotik.platform.model.ModelSchema.Role
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.model.ModelSchema.*
 import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.util.getModuleRootForFile
 import com.simiacryptus.cognotik.util.getSelectedFiles
@@ -168,24 +167,24 @@ class GenerateRelatedFileAction : cognotik.actions.FileContextAction<GenerateRel
                 ChatMessage(
                   Role.system,
                   """
-                    You will combine natural language instructions with a user provided code example to create a new file.
-                    Provide a new filename and the code to be written to the file.
-                    Paths should be relative to the project root and should not exist.
-                    Output the file path using the a line with the format "File: <path>".
-                    Output the file code directly after the header line with no additional decoration.
-                    """.trimIndent().toContentList(),
+                You will combine natural language instructions with a user provided code example to create a new file.
+                Provide a new filename and the code to be written to the file.
+                Paths should be relative to the project root and should not exist.
+                Output the file path using the a line with the format "File: <path>".
+                Output the file code directly after the header line with no additional decoration.
+                """.trimIndent().toContentList(),
                 ),
                 ChatMessage(
                   Role.user,
                   ("""
-                                      Create a new file based on the following directive: """.trimIndent() + directive + """
-        
-                                      The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
-        
-                                      ```
-                                      """.trimIndent() + baseFile.code + """
-                                      ```
-                                      """.trimIndent()).toContentList(),
+                                  Create a new file based on the following directive: """.trimIndent() + directive + """
+    
+                                  The file should be based on `""".trimIndent() + baseFile.path + """` which contains the following code:
+    
+                                  ```
+                                  """.trimIndent() + baseFile.code + """
+                                  ```
+                                  """.trimIndent()).toContentList(),
                 )
               ),
               temperature = AppSettingsState.instance.temperature,

@@ -12,7 +12,7 @@ import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.ScheduledThreadPoolExecutor
 
-class ThreadPoolManager {
+open class ThreadPoolManager {
 
   private data class SessionKey(val session: Session, val user: User?)
 
@@ -121,7 +121,7 @@ class ThreadPoolManager {
       threadFactory = this@ThreadPoolManager.threadFactory(session, user)
     })
 
-  companion object {
+  companion object : ThreadPoolManager() {
     private val log = LoggerFactory.getLogger(ThreadPoolManager::class.java)
   }
 }

@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.AuthenticationInterface.TokenMetadata
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.TokenMetadata
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -15,7 +15,7 @@ import java.time.Duration
 import java.time.Instant
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
-import java.util.Base64
+import java.util.*
 
 /**
  * UI + JSON API for management of the access tokens held by [AuthenticationInterface].
@@ -33,9 +33,8 @@ import java.util.Base64
  */
 class ApiKeyServlet : HttpServlet() {
 
-  private val services by lazy { fileApplicationServices() }
-  private val authenticationManager: AuthenticationInterface by lazy { services.authenticationManager }
-  private val userProvider by lazy { UserProviderImpl() }
+  private val authenticationManager: AuthenticationInterface by lazy { ServiceRouter as AuthenticationInterface }
+  private val userProvider by lazy { ServiceRouter as UserProvider }
   private val mapper = ObjectMapper()
   private val random = SecureRandom()
 
@@ -175,7 +174,7 @@ class ApiKeyServlet : HttpServlet() {
   }
 
   private fun authenticate(request: HttpServletRequest, response: HttpServletResponse): User? {
-    val user = userProvider.authenticate(request, response)
+    val user = userProvider.authenticate(request)
     if (user == null) {
       if (!response.isCommitted) {
         response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required")

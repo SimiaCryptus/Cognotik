@@ -10,7 +10,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collections;
 
-import static com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser;
+import static com.simiacryptus.cognotik.platform.CognotikConfig.localUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.configureEnvironmentalKeys;
 
 public record DocumentationUpdater(
@@ -25,7 +25,7 @@ public record DocumentationUpdater(
     public static void main(String[] args) {
         PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
-        UnifiedHarness.configurePlatform(defaultUser);
+        UnifiedHarness.configurePlatform(localUser);
         new DocumentationUpdater(
                 getArg(args, 0, DEFAULT_OVERWRITE_MODE),
                 getArg(args, 1, DEFAULT_ROOT),
@@ -55,7 +55,7 @@ public record DocumentationUpdater(
                 false,
                 new File(rootDir, ".doc-processor-cache/url-cache"),
                 true,
-                defaultUser,
+                localUser,
                 null,
                 Collections.emptyMap(),
                 false

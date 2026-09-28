@@ -10,7 +10,7 @@ import java.io.File;
 import java.util.Arrays;
 import java.util.Objects;
 
-import static com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser;
+import static com.simiacryptus.cognotik.platform.CognotikConfig.localUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.configureEnvironmentalKeys;
 import static com.simiacryptus.cognotik.util.CognotikUtils.relativize;
 
@@ -32,7 +32,7 @@ public record CodeReviewer(
     public static void main(String[] args) {
         PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
-        UnifiedHarness.configurePlatform(defaultUser);
+        UnifiedHarness.configurePlatform(localUser);
         new CodeReviewer(
                 getArg(args, 3, DEFAULT_DOCS),
                 getArg(args, 5, DEFAULT_OVERWRITE_MODE),
@@ -61,7 +61,7 @@ public record CodeReviewer(
                 (source) -> source,
                 UpdateModes.valueOf(overwriteMode),
                 threads,
-                defaultUser
+                localUser
         );
     }
 }

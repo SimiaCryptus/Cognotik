@@ -84,7 +84,7 @@ val user = User(
 
 ### 3. Application Services
 
-`ApplicationServicesImpl` is the central registry for all platform services:
+`CognotikPlatform` is the central registry for all platform services:
 
 ```kotlin
 // Access services
@@ -159,7 +159,7 @@ data/
 
 ### Metadata Storage
 
-The `MetadataStorageInterface` manages high-level session information separately from raw content:
+The `SessionMetadataInterface` manages high-level session information separately from raw content:
 
 - **Session Naming**: Human-readable titles for sessions.
 - **Message Sequences**: Maintaining the order and presence of message IDs.
@@ -193,7 +193,7 @@ The `AuthenticationManager` handles user identity:
 
 - Maps access tokens to `User` objects.
 - Manages the `sessionId` cookie.
-- Provides a `defaultUser` (e.g., `user@localhost`) for local development.
+- Provides a `localUser` (e.g., `user@localhost`) for local development.
 
 ### File-based Authorization
 
@@ -283,7 +283,7 @@ val decrypted = awsPlatform.decrypt(encryptedData)
 ApplicationServices.dataStorageRoot = File("/custom/data/path")
 
 // Lock configuration to prevent changes
-ApplicationServicesConfig.isLocked = true
+CognotikConfig.isLocked = true
 ```
 
 ### Custom Service Implementation

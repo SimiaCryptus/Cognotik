@@ -712,7 +712,7 @@ abstract class PatchApp(
       .map { (msg, errors) ->
         log.info("Processing error group: $msg with ${errors.size} instances")
         task.pool.submit {
-          val subSession = task.linkedTask("Fix: ${msg?.take(50) ?: "Error"}...")
+          val subSession = task.linkedTask("Fix: ${msg?.take(50) ?: "Error"}...",)
           val statusBuffer = subSession.add("Status: Initializing...")!!
           errors.forEach { error ->
             log.info("Processing individual error: ${error.message}")

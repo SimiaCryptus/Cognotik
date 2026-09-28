@@ -4,10 +4,10 @@ import com.google.gson.Gson
 import com.google.gson.GsonBuilder
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.UsageInterface
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -22,7 +22,8 @@ class UsageServlet : HttpServlet() {
     public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
         response.status = HttpServletResponse.SC_OK
         val useJson = isJsonRequested(request)
-        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
+      val usageManager =
+        ServiceRouter as UsageInterface
 
         if (request.parameterMap.containsKey("sessionId")) {
             handleSessionUsage(request, response, useJson, usageManager)
@@ -44,7 +45,9 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val session = Session(request.getParameter("sessionId"))
-        val usage = usageManager.getSessionUsageSummary(session)
+        val user = ServiceRouter.authenticate(request)
+            ?: throw RuntimeException("Authentication failed")
+        val usage = usageManager.getSessionUsageSummary(user=user, session = session)
         serve(
             resp = response,
             usage = usage,
@@ -60,7 +63,8 @@ class UsageServlet : HttpServlet() {
         usageManager: UsageInterface
     ) {
         val userinfo =
-          UserProviderImpl().authenticate(request, response) ?: throw RuntimeException("Authentication failed")
+          ServiceRouter.authenticate(request)
+            ?: throw RuntimeException("Authentication failed")
         val (from, to) = parseDateRange(request)
 
         val usage = usageManager.getUserUsageSummary(userinfo, from, to)

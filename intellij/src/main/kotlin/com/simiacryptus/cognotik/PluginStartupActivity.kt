@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik
 
+
 import ch.qos.logback.classic.Level
 import com.intellij.openapi.diagnostic.LogLevel
 import com.intellij.openapi.diagnostic.Logger
@@ -7,30 +8,30 @@ import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.getExternalConfigurationDir
 import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.apps.ResourceApps
-import com.simiacryptus.cognotik.platform.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.config.instance
-import com.simiacryptus.cognotik.text.validate.FileValidators
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.ChatInterface.Companion.ENABLE_LOGS
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.isLocked
+import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.text.validate.FileValidators
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import org.slf4j.LoggerFactory
-import software.amazon.awssdk.regions.Region
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
 
@@ -38,16 +39,21 @@ class PluginStartupActivity : ProjectActivity {
 
     init {
         require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+        //ResourceApps("/apps/disabled_apps.json").init()
+        CoreProviders.init()
+        CoreTasks.init()
+        initDynamicEnums()
+        CognotikPlatform.init()
         try {
             ResourceApps("apps/apps.json").init()
         } catch (e: Exception) {
             log.error("Failed to load apps.json", e)
         }
-        //ResourceApps("/apps/disabled_apps.json").init()
-        CoreProviders.init()
-        CoreTasks.init()
-        ApplicationServicesImpl.pluginManager.getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
-        initDynamicEnums()
+        try {
+            ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        } catch (e: Exception) {
+            log.error("Error loading plugins", e)
+        }
     }
 
     override suspend fun execute(project: Project) {
@@ -107,7 +113,7 @@ class PluginStartupActivity : ProjectActivity {
 
     private fun init(project: Project) {
         if (isInitialized.getAndSet(true)) return // Prevent double initialization
-        dataStorageRoot = AppSettingsState.Companion.pluginHome
+        dataStorageRoot = AppSettingsState.pluginHome
         log.info("Initializing ApplicationServices configuration: $dataStorageRoot")
         if (!dataStorageRoot.exists()) {
             try {
@@ -131,20 +137,19 @@ class PluginStartupActivity : ProjectActivity {
         }
         OrchestrationConfig.instanceFn =
             { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
-        ApplicationServicesImpl.authorizationManager = object : AuthorizationInterface {
-            override fun isAuthorized(
-                resource: ResourceRef?,
-                principal: Principal,
-                operationType: OperationType
-            ): Boolean {
-                return true
-            }
-        }
-        ApplicationServicesImpl.authenticationManager = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = AppSettingsState.localUser
+        ServiceMap[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationInterface {
+              override fun isAuthorized(
+                  resource: ResourceRef?,
+                  principal: Principal,
+                  operationType: OperationType
+              ): Boolean {
+                  return true
+              }
+          }
+        ServiceMap[ServiceKey.AUTHENTICATION] = object : AuthenticationInterface {
+            override fun getUser(accessToken: String?) = CognotikConfig.localUser
             override fun putUser(accessToken: String, user: User) = user
         }
-        isLocked = true
     }
 
     companion object {

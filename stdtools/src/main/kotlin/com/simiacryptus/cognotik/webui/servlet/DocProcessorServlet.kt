@@ -7,11 +7,14 @@ import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import jakarta.servlet.http.HttpServlet
@@ -61,8 +64,12 @@ import java.util.concurrent.atomic.AtomicBoolean
  * docops.status.json file; the actual processing continues in the background.
  */
 open class DocProcessorServlet() : HttpServlet() {
-  private val dataStorage by lazy { ApplicationServicesImpl.fileApplicationServices().dataStorageFactory }
-  private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
+  private val dataStorage by lazy {
+    ServiceRouter as StorageInterface
+  }
+  private val metadataDB by lazy {
+    ServiceRouter as SessionMetadataInterface
+  }
 
   /*
    * ------------------------------------------------------------------
@@ -173,17 +180,27 @@ open class DocProcessorServlet() : HttpServlet() {
    */
 
   override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-    doPost(req, resp)
+    log.info("DocOps GET request: ${req.queryString}")
+    handle(req, resp)
   }
 
   override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    log.info("DocOps POST request: ${request.queryString}")
+    handle(request, response)
+  }
+
+  fun handle(request: HttpServletRequest, response: HttpServletResponse) {
     try {
       val docPath = request.getParameter("doc")
       if (docPath.isNullOrBlank()) {
         writeError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameter: doc")
         return
       }
-      val user = resolveUser(request, response) ?: return
+      val user = ServiceRouter.authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
+      require(null != user.tokenMetadata().firstOrNull()?.token) {
+        "Missing authentication cookie for ${user.toJson()}"
+      }
       val root = resolveRoot(request, response, user) ?: return
       val docFile = root.resolve(docPath)
       if (!docFile.canonicalPath.startsWith(root.canonicalPath)) {
@@ -312,9 +329,6 @@ open class DocProcessorServlet() : HttpServlet() {
     )
   }
 
-  protected open fun resolveUser(request: HttpServletRequest, response: HttpServletResponse): User? =
-    UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
-
   /** Session the request belongs to, if any (used as the parent of new sessions). */
   protected open fun resolveSession(request: HttpServletRequest): Session? =
     request.getParameter("sessionId")?.takeIf { it.isNotBlank() }?.let { Session(it) }
@@ -338,7 +352,7 @@ open class DocProcessorServlet() : HttpServlet() {
     }
     val session = Session(sessionId)
     val sessionDir = dataStorage.getUserDir(user, session)
-    val sessionOwner = metadataDB.getSessionOwner(session)
+    val sessionOwner = metadataDB.getSessionOwner(user=user, session = session)
     when {
       null == sessionOwner -> {
         log.info("Session '$session' not found in metadataDB")
@@ -513,7 +527,7 @@ open class DocProcessorServlet() : HttpServlet() {
       models.values.find { it.modelId == modelId }?.let { return it }
       models[modelId]?.let { return it }
       models.entries.firstOrNull { it.key.equals(modelId, ignoreCase = true) }?.let { return it.value }
-      log.warn("Model ID '{}' not found in registered models; creating unregistered model reference", modelId)
+      log.warn("Model ID '{}' not found in registered models {}; creating unregistered model reference", modelId, models.keys)
       return ChatModel(
         modelId = modelId,
         inputModalities = setOf(ChatMessageModality.TEXT),

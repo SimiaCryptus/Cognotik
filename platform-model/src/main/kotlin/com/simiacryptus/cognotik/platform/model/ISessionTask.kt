@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.platform.model
 
 import com.simiacryptus.cognotik.platform.Description
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
@@ -15,6 +15,9 @@ interface ISessionTask {
   val pool: ImmediateExecutorService
   val dataStorage: StorageInterface
   val sessionId: Session
+
+  val user: User
+
   fun append(
     htmlToAppend: String,
     showSpinner: Boolean = true

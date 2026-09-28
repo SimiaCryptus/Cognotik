@@ -2,13 +2,15 @@ package com.simiacryptus.cognotik.platform.h2
 
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.AIModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.util.toJson
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
@@ -92,7 +94,9 @@ class UsageDB : UsageInterface {
   }
 
   private val database: Database get() = ExposedDatabase.get(facet)
-  val userSettingsManager by lazy { ApplicationServicesImpl.fileApplicationServices().userSettingsManager }
+  val userSettingsManager by lazy {
+    ServiceRouter as UserSettingsInterface
+  }
 
   /**
    * On-heap cache of per-session usage summaries (subtree-aware).
@@ -246,7 +250,7 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage> {
+  override fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage> {
     log.debug("Getting session usage summary for session: {}", session)
     // Fast path: serve from on-heap cache when fresh.
     sessionUsageCache[session.sessionId]?.let { entry ->
@@ -332,6 +336,7 @@ class UsageDB : UsageInterface {
   }
 
   override fun getSessionUsageSummaryBulk(
+    user: User,
     sessions: Collection<Session>
   ): Map<Session, Map<String, ModelSchema.Usage>> {
     if (sessions.isEmpty()) return emptyMap()
@@ -458,8 +463,8 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun setParentSession(child: Session, parent: Session) {
-    log.debug("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
+  override fun setParentSession(user: User, child: Session, parent: Session) {
+    log.info("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
     transaction(database) {
       // insertIgnore translates to ON CONFLICT DO NOTHING / MERGE depending on dialect.
       SessionParentsTable.insertIgnore {
@@ -473,7 +478,7 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getParentSession(child: Session): Session? {
+  override fun getParentSession(user: User, child: Session): Session? {
     log.debug("Getting parent session for child: {}", child.sessionId)
     return transaction(database) {
       val row = SessionParentsTable
@@ -625,7 +630,7 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getSessionUsageRows(session: Session): List<UsageInterface.UsageRow> {
+  override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> {
     log.debug("Getting session usage rows for session: {}", session)
     return transaction(database) {
       val allSessionIds = collectSessionIds(session.sessionId)
@@ -815,6 +820,9 @@ class UsageDB : UsageInterface {
   }
 
   companion object {
+    init {
+      CognotikPlatform.init()
+    }
     private val log = LoggerFactory.getLogger(UsageDB::class.java)
 
     var cost_scaling_factor: Double = 1.0

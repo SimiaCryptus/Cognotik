@@ -13,7 +13,7 @@ import java.io.File;
 import java.util.List;
 import java.util.Objects;
 
-import static com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser;
+import static com.simiacryptus.cognotik.platform.CognotikConfig.localUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")
@@ -30,7 +30,7 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles, ChatM
 
         PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
-        UnifiedHarness.configurePlatform(defaultUser);
+        UnifiedHarness.configurePlatform(localUser);
         ChatModel chatModel = null;
         if(chatModel == null) throw new IllegalStateException("ChatModel not configured");
         new CodeFixer(taskDescription, relatedFiles, chatModel).run();
@@ -58,7 +58,7 @@ public record CodeFixer(String taskDescription, List<String> relatedFiles, ChatM
                 chatModel,
                 new File("."),
                 0.0,
-                defaultUser
+                localUser
         ) {
             @NotNull
             @Override

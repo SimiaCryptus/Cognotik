@@ -1,8 +1,6 @@
 package com.simiacryptus.cognotik.fileserver
 
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
-import com.simiacryptus.cognotik.platform.UserProvider
 
 import com.simiacryptus.cognotik.fileserver.handler.FileDeleteHandler
 import com.simiacryptus.cognotik.fileserver.handler.FileAccessControl
@@ -18,6 +16,8 @@ import com.simiacryptus.cognotik.fileserver.render.git.GitHtml
 import com.simiacryptus.cognotik.fileserver.render.git.GitScripts
 import com.simiacryptus.cognotik.fileserver.render.git.GitStyles
 import com.simiacryptus.cognotik.fileserver.util.MimeTypeResolver
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -765,13 +765,6 @@ abstract class FileServlet : HttpServlet() {
     /** Request attribute holding the resolved [User] (absent == anonymous). */
     const val USER_ATTRIBUTE = "com.simiacryptus.cognotik.webui.user"
     private const val USER_RESOLVED_ATTRIBUTE = "com.simiacryptus.cognotik.webui.user.resolved"
-    var userResolver: UserProvider =
-      object : UserProvider {
-        override fun authenticate(
-          request: HttpServletRequest,
-          response: AbstractHttpServletResponse?
-        ) = null
-      }
     var isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
       return when {
         user == null -> false
@@ -783,7 +776,7 @@ abstract class FileServlet : HttpServlet() {
       (request.getAttribute(USER_ATTRIBUTE) as? User)?.let { return it }
       if (request.getAttribute(USER_RESOLVED_ATTRIBUTE) == true) return null
       val user = try {
-        userResolver.authenticate(request, response)
+        ServiceRouter.authenticate(request)
       } catch (e: Exception) {
         log.warn("Failed to resolve user for ${request.requestURI}", e)
         null

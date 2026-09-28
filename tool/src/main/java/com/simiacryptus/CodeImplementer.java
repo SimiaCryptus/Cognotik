@@ -20,7 +20,7 @@ import java.util.HashMap;
 import java.util.Map;
 import java.util.Objects;
 
-import static com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.defaultUser;
+import static com.simiacryptus.cognotik.platform.CognotikConfig.localUser;
 import static com.simiacryptus.cognotik.util.CognotikUtils.*;
 
 @SuppressWarnings("unused")
@@ -41,7 +41,7 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
         boolean headless = Boolean.parseBoolean(getArg(args, 4, String.valueOf(DEFAULT_HEADLESS)));
         PlanHarness.initDynamicEnums();
         configureEnvironmentalKeys();
-        UnifiedHarness.configurePlatform(defaultUser);
+        UnifiedHarness.configurePlatform(localUser);
         new CodeImplementer(prompt, port, headless, timeout, workspaceRoot).run();
     }
 
@@ -71,7 +71,7 @@ public record CodeImplementer(String prompt, int port, boolean headless, int tim
                     chatModel,
                     chatModel,
                     new File(this.workspaceRoot()),
-                    defaultUser
+                    localUser
             ) {
                 @NotNull
                 @Override

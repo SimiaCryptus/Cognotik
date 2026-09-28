@@ -1,30 +1,27 @@
 package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authenticationManager
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authorizationManager
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig.dataStorageRoot
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.OperationType
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.StorageInterface
-import com.simiacryptus.cognotik.platform.model.Principal
-import com.simiacryptus.cognotik.platform.model.ResourceRef
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.fileserver.FileServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
-import com.simiacryptus.cognotik.platform.AbstractHttpServletResponse
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.UserProvider
-import com.simiacryptus.cognotik.webui.session.ChatServer
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.webui.servlet.*
+import com.simiacryptus.cognotik.webui.session.ChatServer
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import jakarta.servlet.MultipartConfigElement
+import jakarta.servlet.ServletResponse
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.servlet.FilterHolder
@@ -43,14 +40,6 @@ abstract class ApplicationServer(
   open val root: File = dataStorageRoot,
   showMenubar: Boolean = true,
 ) : ChatServer(resourceBase, showMenubar) {
-  init {
-    FileServlet.userResolver = UserProviderImpl()
-    FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
-      val sessionOwner = request.session()?.let { metadataDB.getSessionOwner(it) }
-      return sessionOwner == null || sessionOwner == user?.id
-    }
-  }
-  private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
 
 
   private val logger: Logger = LoggerFactory.getLogger(this::class.java)
@@ -66,7 +55,7 @@ abstract class ApplicationServer(
   }.toMap()
 
   final override val dataStorage: StorageInterface by lazy {
-    ApplicationServicesImpl.fileApplicationServices().dataStorageFactory
+    ServiceRouter as StorageInterface
   }
   protected open val appInfoServlet by lazy {
     ServletHolder("appInfo", AppInfoServlet { session, user ->
@@ -113,8 +102,8 @@ abstract class ApplicationServer(
   protected open val webUiServlet by lazy { ServletHolder("ui", WebUiServlet()) }
 
   override fun newSession(user: User, session: Session): SocketManager? {
-    (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
-      ?: SessionProxyServer.agents[session])?.apply { return this; }
+    (SessionProxyServer.chats[session.withUser(user)]?.takeIf { it != this }?.newSession(user, session)
+      ?: SessionProxyServer.agents[session.withUser(user)])?.apply { return this; }
     logger.info(
       "Creating new session: {} for user: {} in application: {}",
       session,
@@ -254,6 +243,18 @@ abstract class ApplicationServer(
   }
 
   companion object {
+    init {
+      CognotikPlatform.init()
+      ServiceKey.USER_RESOLVER.factory = { UserProviderImpl() }
+      FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
+        val sessionOwner = request.session()?.let {
+          ServiceRouter.getSessionOwner(
+            user = user!!,
+            session = it
+          ) }
+        return sessionOwner == null || sessionOwner == user?.id
+      }
+    }
 
     @Suppress("unused")
     @JvmStatic
@@ -272,55 +273,56 @@ abstract class ApplicationServer(
 
 private val log: Logger = LoggerFactory.getLogger(ApplicationServer::class.java)
 
-fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder = FilterHolder { request, response, chain ->
-  val requestPath = (request as HttpServletRequest).requestURI
-  val servletPath = request.servletPath
-  log.debug("Processing request: {}", requestPath)
-  val user = UserProviderImpl().authenticate(request, response as HttpServletResponse)
-  /*
-   * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
-   * redirecting its module/CSS requests to the login page would break the page load, while
-   * every byte of data it shows still goes through the authenticated FS API.
-   */
-  val anonymousOk = servletPath == "/fileIndex" || servletPath == "/ui" || servletPath.startsWith("/ui/")
-  val email = if (user == null && !anonymousOk) {
-    log.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
-    response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-    val originalRequest = request.requestURL.toString()
-    val queryString = request.queryString
-    val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-    val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-    response.setHeader("Location", "/login/?target=$encodedTarget")
-    return@FilterHolder
-  } else {
-    val email = user?.email ?: "anonymous"
-    log.debug("Authenticated user: {} for request: {}", email, requestPath)
-    email
-  }
-  val canRead = authorizationManager.isAuthorized(
-    ResourceRef.of(applicationClass = applicationClass),
-    Principal.of(user = user),
-    operationType = OperationType.Read
-  )
-  log.debug(
-    "Authorization check result: {} for user: {} on path: {}",
-    canRead,
-    email,
-    requestPath
-  )
-  if (canRead) {
-    log.debug("Access granted for request: {}", requestPath)
-    chain?.doFilter(request, response)
-  } else {
-    log.warn(
-      "Access denied for user: {} on path: {}",
-      user?.email,
+fun authFilter(applicationClass: Class<ApplicationServer>): FilterHolder =
+  FilterHolder { request, response: ServletResponse?, chain ->
+    val requestPath = (request as HttpServletRequest).requestURI
+    val servletPath = request.servletPath
+    log.debug("Processing request: {}", requestPath)
+    val user = ServiceRouter.authenticate(request)
+    /*
+     * /fileIndex issues its own (session-aware) redirects, and /ui is the static SPA shell:
+     * redirecting its module/CSS requests to the login page would break the page load, while
+     * every byte of data it shows still goes through the authenticated FS API.
+     */
+    val anonymousOk = servletPath == "/fileIndex" || servletPath == "/ui" || servletPath.startsWith("/ui/")
+    val email = if (user == null && !anonymousOk) {
+      log.warn("Authentication failed for request: {} ({})- redirecting to login", servletPath, requestPath)
+      (response as HttpServletResponse).status = HttpServletResponse.SC_TEMPORARY_REDIRECT
+      val originalRequest = request.requestURL.toString()
+      val queryString = request.queryString
+      val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
+      val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
+      response.setHeader("Location", "/login/?target=$encodedTarget")
+      return@FilterHolder
+    } else {
+      val email = user?.email ?: "anonymous"
+      log.debug("Authenticated user: {} for request: {}", email, requestPath)
+      email
+    }
+    val canRead = ServiceRouter.isAuthorized(
+      ResourceRef.of(applicationClass = applicationClass),
+      Principal.of(user = user),
+      operationType = OperationType.Read
+    )
+    log.debug(
+      "Authorization check result: {} for user: {} on path: {}",
+      canRead,
+      email,
       requestPath
     )
-    response.writer?.write("Access Denied")
-    (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
+    if (canRead) {
+      log.debug("Access granted for request: {}", requestPath)
+      chain?.doFilter(request, response)
+    } else {
+      log.warn(
+        "Access denied for user: {} on path: {}",
+        user?.email,
+        requestPath
+      )
+      response?.writer?.write("Access Denied")
+      (response as HttpServletResponse?)?.status = HttpServletResponse.SC_FORBIDDEN
+    }
   }
-}
 
 fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COOKIE) =
   cookies?.find { it.name == name }?.value.also { cookie ->
@@ -333,79 +335,9 @@ fun HttpServletRequest.getCookie(name: String = AuthenticationInterface.AUTH_COO
 
 class UserProviderImpl : UserProvider {
   override fun authenticate(
-    request: HttpServletRequest,
-    response: AbstractHttpServletResponse?
-  ): User? {
-
-    val authCookie = request.getCookie()
-    val claimedUser = authCookie?.let {
-      ApplicationServicesImpl.fileApplicationServices().authenticationManager.getUser(it)
-    } ?: request.getCookie("USER")?.let { username ->
-      val email = request.getCookie("EMAIL") ?: ""
-      User(
-        name = username,
-        email = email,
-      )
-    }
-    if (null != claimedUser) {
-      val userSettings =
-        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(claimedUser)
-      val token = authCookie ?: ""
-      val passwordHash = userSettings.passwordHash
-      val internalToken = userSettings.internalToken
-      val verified = try {
-        (if (internalToken != null) {
-          claimedUser.isMatch(LoginServlet.verifySessionToken(token, internalToken))
-        } else null) ?: (if (passwordHash != null) {
-          claimedUser.isMatch(LoginServlet.verifySessionToken(token, passwordHash))
-        } else null) ?: apply {
-          log.warn("No password hash found for user: {}, cannot verify session token", claimedUser.email)
-          null
-        }
-      } catch (e: Exception) {
-        log.warn("Session token verification failed for user: {} - {}", claimedUser.email, e.message)
-        null
-      }
-      if (verified != null) {
-        if (authenticationManager.listTokens(claimedUser).firstOrNull()?.token.isNullOrBlank()) {
-          authenticationManager.putUser(token, claimedUser)
-          log.warn("Session token stored for user: {}", claimedUser.email)
-        } else {
-          log.warn("Session token valid for user: {}", claimedUser.email)
-        }
-        return claimedUser
-      } else {
-        log.warn("No valid session token found for user: {}", claimedUser.email)
-      }
-    }
-    try {
-      val user = authenticationManager.getUser(authCookie)
-      return user
-    } catch (e: RuntimeException) {
-      log.debug(e.message)
-      if (null != response) {
-        response.status = HttpServletResponse.SC_TEMPORARY_REDIRECT
-        val originalRequest = request.requestURL.toString()
-        val queryString = request.queryString
-        val targetUrl = if (queryString != null) "$originalRequest?$queryString" else originalRequest
-        val encodedTarget = URLEncoder.encode(targetUrl, "UTF-8")
-        response.setHeader("Location", "/login/?target=$encodedTarget")
-      }
-      return null
-    }
-  }
-
-  private fun User.isMatch(
-    result: LoginServlet.Companion.SessionVerificationResult
-  ): LoginServlet.Companion.SessionEnvelope? = when (result) {
-    is LoginServlet.Companion.SessionVerificationResult.Success -> result.envelope
-    is LoginServlet.Companion.SessionVerificationResult.Failure -> {
-      log.warn(
-        "Session token verification failed for user: {} - {} ({})",
-        email, result.error, result.reason
-      )
-      null
-    }
+    request: HttpServletRequest
+  ) = request.getCookie()?.let {
+    ServiceRouter.getUser(it)
   }
 }
 

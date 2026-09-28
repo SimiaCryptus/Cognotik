@@ -1,4 +1,4 @@
-package com.simiacryptus.cognotik.platform
+package com.simiacryptus.cognotik.platform.service
 
 import com.google.common.util.concurrent.AtomicDouble
 import com.simiacryptus.cognotik.platform.model.AIModel
@@ -6,10 +6,10 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import java.time.LocalDate
 import java.time.Instant
-import java.util.concurrent.atomic.AtomicLong
+import java.time.LocalDate
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicLong
 
 /**
  * Interface for managing and tracking AI model usage across users and sessions.
@@ -18,7 +18,6 @@ import java.util.concurrent.ConcurrentHashMap
  * for AI models, including token counts and associated costs. Implementations of this
  * interface handle the persistence and retrieval of usage data.
  */
-
 interface UsageInterface {
   /**
    * Retrieves a summary of AI model usage for a specific user within a required date range.
@@ -29,7 +28,7 @@ interface UsageInterface {
    * @param user The user whose usage summary is to be retrieved
    * @param from Inclusive start date (UTC day)
    * @param to   Exclusive end date (UTC day)
-   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.platform.model.ModelSchema.Usage] objects
+   * @return A map where keys are model names and values are [ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model the user has used
    */
 
@@ -41,10 +40,10 @@ interface UsageInterface {
    * Session-scoped queries are not bounded by date.
    *
    * @param session The session whose usage summary is to be retrieved
-   * @return A map where keys are model names and values are [com.simiacryptus.cognotik.platform.model.ModelSchema.Usage] objects
+   * @return A map where keys are model names and values are [ModelSchema.Usage] objects
    *         containing aggregated token counts and costs for each model used in the session
    */
-  fun getSessionUsageSummary(session: Session): Map<String, ModelSchema.Usage>
+  fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage>
 
   /**
    * Bulk variant of [getSessionUsageSummary] that fetches usage summaries for
@@ -63,19 +62,12 @@ interface UsageInterface {
    * @param sessionIds The set of session IDs to summarize
    * @return A map from session ID to its per-model usage summary
    */
-  fun getSessionUsageSummaryBulk(sessionIds: Collection<Session>): Map<Session, Map<String, ModelSchema.Usage>> {
-    return sessionIds.associateWith { getSessionUsageSummary(it) }
+  fun getSessionUsageSummaryBulk(
+    user: User,
+    sessionIds: Collection<Session>
+  ): Map<Session, Map<String, ModelSchema.Usage>> {
+    return sessionIds.associateWith { getSessionUsageSummary(user = user, session = it) }
   }
-
-  /**
-   * Aggregated single-row summary across all models for a session, suitable for
-   * compact display in listing UIs.
-   */
-  data class SessionUsageTotals(
-    val totalTokens: Long,
-    val totalCost: Double,
-    val modelCount: Int,
-  )
 
   /**
    * Records and increments usage statistics for a specific AI model invocation.
@@ -102,8 +94,8 @@ interface UsageInterface {
    * Use with caution, typically only for testing or system reset scenarios.
    */
   fun clear()
-  fun setParentSession(child: Session, parent: Session)
-  fun getParentSession(child: Session): Session?
+  fun setParentSession(user: User, child: Session, parent: Session)
+  fun getParentSession(user: User, child: Session): Session?
 
   /**
    * Returns the available budget (in cost units, e.g. USD) for a user.
@@ -178,7 +170,7 @@ interface UsageInterface {
    * @param session The session whose usage rows are to be retrieved
    * @return A list of [UsageRow] entries ordered by ascending datetime
    */
-  fun getSessionUsageRows(session: Session): List<UsageRow>
+  fun getSessionUsageRows(session: Session, user: User): List<UsageRow>
 
   /**
    * Represents a single usage row recorded for a session.
@@ -251,7 +243,7 @@ interface UsageInterface {
       tokens.counts.forEach { (type, count) ->
         tokenCounts.computeIfAbsent(type) { AtomicLong() }.addAndGet(count)
       }
-      if(tokens.counts.isEmpty() && tokens.total_tokens > 0) {
+      if (tokens.counts.isEmpty() && tokens.total_tokens > 0) {
         tokenCounts.computeIfAbsent(TokenTypes.Prompt) { AtomicLong() }.addAndGet(tokens.total_tokens)
       }
       this.cost.addAndGet(cost ?: 0.0)

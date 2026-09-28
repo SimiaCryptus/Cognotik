@@ -1,10 +1,11 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.threadPoolManager
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
 import com.simiacryptus.cognotik.util.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -20,7 +21,7 @@ import java.util.function.Consumer
 
 abstract class SocketManager(
   val sessionId: Session,
-  val dataStorage: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  val dataStorage: StorageInterface = ServiceRouter as StorageInterface,
   val owner: User,
   private val applicationClass: Class<*>,
 ) {
@@ -92,8 +93,11 @@ abstract class SocketManager(
   private val sendQueues: MutableMap<ChatSocket, Deque<String>> = ConcurrentHashMap()
   private val queueProcessing: MutableSet<ChatSocket> = ConcurrentHashMap.newKeySet()
   private val messageVersions = ConcurrentHashMap<String, AtomicInteger>()
-  val pool get() = threadPoolManager.getPool(sessionId, owner)
-  val scheduledThreadPoolExecutor get() = threadPoolManager.getScheduledPool(sessionId, owner)
+  val pool get() = ThreadPoolManager.getPool(sessionId, owner)
+  val scheduledThreadPoolExecutor get() = ThreadPoolManager.getScheduledPool(
+    sessionId,
+    owner
+  )
 
   fun removeSocket(socket: ChatSocket) {
     log.debug("Removing socket: {} (id: {})", socket, System.identityHashCode(socket))
@@ -128,7 +132,7 @@ abstract class SocketManager(
       session.remoteAddress
     )
 
-    if (!ApplicationServicesImpl.authorizationManager.isAuthorized(
+    if (!ServiceRouter.isAuthorized(
         ResourceRef.of(applicationClass = applicationClass),
         Principal.of(user = user),
         operationType = OperationType.Read
@@ -477,11 +481,12 @@ abstract class SocketManager(
     }
   }
 
-  open fun canWrite(user: User?) = ApplicationServicesImpl.authorizationManager.isAuthorized(
-    ResourceRef.of(applicationClass = applicationClass),
-    Principal.of(user = user),
-    operationType = OperationType.Write
-  )
+  open fun canWrite(user: User?) =
+    ServiceRouter.isAuthorized(
+      ResourceRef.of(applicationClass = applicationClass),
+      Principal.of(user = user),
+      operationType = OperationType.Write
+    )
 
   val linkTriggers = mutableMapOf<String, Consumer<Unit>>()
   private val txtTriggers = mutableMapOf<String, Consumer<String>>()
@@ -613,7 +618,7 @@ abstract class SocketManager(
     fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {
       log.debug("Getting user from session: {}", session)
       trafficLog.trace("Getting user from session: {}", session.remoteAddress)
-      return ApplicationServicesImpl.authenticationManager.getUser(
+      return ServiceRouter.getUser(
         session.upgradeRequest?.cookies
           ?.find { it.name == AuthenticationInterface.AUTH_COOKIE }
           ?.value) ?: throw RuntimeException("User must be authenticated to connect to WebSocket")
@@ -624,7 +629,7 @@ abstract class SocketManager(
 
 class ReadonlySocketManager(
   newSession: Session,
-  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = ServiceRouter as StorageInterface,
   owner: User,
   clazz: Class<*>
 ) : SocketManager(
@@ -646,7 +651,7 @@ class ReadonlySocketManager(
 class ServerlessSocketManager(
   session: Session,
   val messageEvents: OutputStream? = null,
-  storageInterface: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  storageInterface: StorageInterface = ServiceRouter as StorageInterface,
   owner: User,
   clazz: Class<*>
 ) : SocketManager(

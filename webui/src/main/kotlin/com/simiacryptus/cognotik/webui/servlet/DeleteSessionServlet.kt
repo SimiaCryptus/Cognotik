@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.authorizationManager
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -52,17 +53,27 @@ class DeleteSessionServlet(
       response.writer.write("Session ID is required")
     } else {
       val session = Session(request.getParameter("sessionId"))
-      val user = UserProviderImpl().authenticate(request, response)
+      val user = ServiceRouter.authenticate(request)
       if (user == null) {
         throw RuntimeException("User must be authenticated to delete sessions")
       }
-      require(authorizationManager.isAuthorized(ResourceRef.of(javaClass), Principal.of(user), OperationType.Delete))
+      require(
+        ServiceRouter.isAuthorized(
+          ResourceRef.of(javaClass),
+          Principal.of(user),
+          OperationType.Delete
+        ))
       { "User $user is not authorized to delete sessions" }
       if (session.isGlobal()) {
-        require(authorizationManager.isAuthorized(ResourceRef.of(javaClass), Principal.of(user), OperationType.Public))
+        require(
+          ServiceRouter.isAuthorized(
+            ResourceRef.of(javaClass),
+            Principal.of(user),
+            OperationType.Public
+          ))
         { "User $user is not authorized to delete global sessions" }
       }
-      server.dataStorage.deleteSession(user, session)
+      server.dataStorage.deleteSessionData(user, session)
       response.sendRedirect("/")
     }
   }

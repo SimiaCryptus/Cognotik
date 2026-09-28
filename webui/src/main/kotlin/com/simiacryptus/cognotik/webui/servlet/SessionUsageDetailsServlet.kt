@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
-import com.simiacryptus.cognotik.platform.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -29,11 +30,15 @@ import java.util.*
  *   - sortDir   (optional): "asc" or "desc" (default "desc")
  */
 class SessionUsageDetailsServlet : HttpServlet() {
-    private val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
-    private val usageDB by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
+    private val metadataDB by lazy {
+      ServiceRouter as SessionMetadataInterface
+    }
+    private val usageDB by lazy {
+      ServiceRouter as UsageInterface
+    }
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp)
+        val user = ServiceRouter.authenticate(req)
           ?: throw RuntimeException("User must be authenticated to view session usage details")
 
         val sessionId = req.getParameter("session")?.trim().orEmpty()
@@ -54,7 +59,7 @@ class SessionUsageDetailsServlet : HttpServlet() {
         }
 
         val rows = try {
-            usageDB.getSessionUsageRows(session)
+            usageDB.getSessionUsageRows(user=user, session=session)
         } catch (e: Exception) {
             log.error("Failed to load usage rows for session {}", sessionId, e)
             emptyList()

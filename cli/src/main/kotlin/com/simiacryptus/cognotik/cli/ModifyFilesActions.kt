@@ -60,7 +60,7 @@ object ModifyFilesActions {
   private fun apply(cfg: Config) = ModifyFilesFsAction.install(
     ModifyFilesFsAction.Config(
       root = { cfg.root.canonicalFile },
-      user = { FileServerCli.user },
+      user = { CliSupport.defaultUser ?: throw RuntimeException("no default user") },
       chatUri = cfg.chatUri,
       readOnly = cfg.readOnly,
       showLineNumbers = cfg.showLineNumbers,

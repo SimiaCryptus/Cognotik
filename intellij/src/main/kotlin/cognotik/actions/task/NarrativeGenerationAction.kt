@@ -1,5 +1,6 @@
 package cognotik.actions.task
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import cognotik.actions.plan.PlanConfigDialog
@@ -17,18 +18,17 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.toApiChatModel
+import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.writing.NarrativeGenerationTask
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.StorageInterface
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -120,13 +120,15 @@ class NarrativeGenerationAction : BaseAction() {
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
         }
 
-      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
-        SessionProxyServer.chats[session] = app
+      app.getSettingsFile(session, CognotikConfig.localUser).writeText(orchestrationConfig.toJson())
+        SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Narrative Generation Task", inputCnt = 0, stickyInput = false, showMenubar = false
         )
         SessionProxyServer.metadataStorage.setSessionName(
-            null, session, "Narrative Generation @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+            CognotikConfig.localUser,
+            session,
+            "Narrative Generation @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
     }
 
@@ -404,12 +406,12 @@ class NarrativeGenerationAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedModel = modelCombo.selectedItem as? String
             val model = selectedModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(CognotikConfig.localUser)
             }
 
             val selectedImageModel = imageModelCombo.selectedItem as? String
             val imageModel = selectedImageModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(CognotikConfig.localUser)
             }
 
             return OrchestrationConfig(
@@ -426,12 +428,14 @@ class NarrativeGenerationAction : BaseAction() {
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                user = localUser
+                user = CognotikConfig.localUser
             )
         }
 
         private fun getVisibleModels() =
-          ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
+            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+                CognotikConfig.localUser
+            ).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                     model.provider == apiData.provider &&
                             model.modelId?.isNotBlank() == true &&

@@ -3,13 +3,12 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.util.SecureString
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.webui.servlet.ChatApiProxyServlet.ProxyMetrics.Companion.STATIC_KEYS
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -22,7 +21,6 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
-import kotlin.collections.iterator
 
 /**
  * Server-side servlet that handles proxied chat requests from ProxyProvider clients.
@@ -49,8 +47,7 @@ class ChatApiProxyServlet(
   private val mapper = ObjectMapper().registerKotlinModule()
   private val workPool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
   private val scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2))
-  private val fileApplicationServices = ApplicationServicesImpl.fileApplicationServices()
-  private val usageManager = fileApplicationServices.usageDB
+  private val usageManager = ServiceRouter as UsageInterface
 
   /**
    * Holds the state of an asynchronous chat request.
@@ -293,7 +290,7 @@ class ChatApiProxyServlet(
     } catch (e: Exception) {
       throw InvalidRequestException("Invalid chat request format: ${e.message}", e)
     }
-    val user = UserProviderImpl().authenticate(request, response)
+    val user = ServiceRouter.authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy chat request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, requiredBudget = 0.0)
@@ -631,7 +628,7 @@ class ChatApiProxyServlet(
     MDC.put("provider", providerLabel)
     val sessionId = request.getParameter("session")?.let { Session(it) } ?: Session.newUserID()
     val providers = resolveProviders(providerNames)
-    val user = UserProviderImpl().authenticate(request, response)
+    val user = ServiceRouter.authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy models request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, false, null)
@@ -709,7 +706,7 @@ class ChatApiProxyServlet(
     MDC.put("provider", providerName)
     MDC.put("jobToken", token)
 
-    val user = UserProviderImpl().authenticate(request, response)
+    val user = ServiceRouter.authenticate(request)
       ?: throw AuthenticationException("Authentication failed for proxy chat result request")
     MDC.put("user", user.email)
 
@@ -793,7 +790,7 @@ class ChatApiProxyServlet(
       throw InsufficientBudgetException("No available budget for user ${user.email}")
     }
     val baseSettings = try {
-      fileApplicationServices.userSettingsManager.getUserSettings(user)
+      ServiceRouter.getUserSettings(user)
     } catch (e: Exception) {
       log.error("Failed to load user settings for user '{}'", user.email, e)
       throw RuntimeException("Failed to load user settings: ${e.message}", e)
@@ -879,6 +876,7 @@ class ChatApiProxyServlet(
    * providers work without a code change.
    */
   private fun envKeyFor(provider: APIProvider): String? {
+    STATIC_KEYS[provider]?.decrypt?.apply { return this }
     val candidates = LinkedHashSet<String>()
     when (provider.name.lowercase()) {
       "anthropic" -> candidates.add("ANTHROPIC_API_KEY")
@@ -890,14 +888,17 @@ class ChatApiProxyServlet(
       "deepseek" -> candidates.add("DEEPSEEK_API_KEY")
     }
     candidates.add(provider.name.uppercase().replace(Regex("[^A-Z0-9]"), "_") + "_API_KEY")
-    return candidates.firstNotNullOfOrNull { name ->
+    val key = candidates.firstNotNullOfOrNull { name ->
       try {
-        System.getenv(name)?.trim()?.takeIf { it.isNotEmpty() }
+        val rawval = System.getenv(name)
+        val takeIf = rawval?.trim()?.takeIf { it.isNotEmpty() }
+        takeIf
       } catch (e: SecurityException) {
         log.warn("Not permitted to read environment variable '{}': {}", name, e.message)
         null
       }
     }
+    return key
   }
 
   /**
@@ -1023,6 +1024,8 @@ class ChatApiProxyServlet(
     }
 
     companion object {
+      val STATIC_KEYS : MutableMap<APIProvider, SecureString> = mutableMapOf()
+
       /**
        * Standard tag keys used throughout the proxy. Centralizing these avoids
        * tag-name drift between call sites and makes dashboards/alerts portable

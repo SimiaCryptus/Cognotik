@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.platform.file
 
 import com.google.gson.GsonBuilder
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.UserSettings
-import com.simiacryptus.cognotik.platform.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.toJson
 import org.slf4j.LoggerFactory.getLogger
@@ -13,7 +13,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
 
   init {
     require(root.exists() || root.mkdirs()) { "Failed to create root directory: $root" }
-    log.info("Initializing UserSettingsManager with root directory: ${root}")
+    log.info("Initializing UserSettingsManager with root directory: ${root}", RuntimeException())
   }
 
   private val userSettings = HashMap<User, UserSettings>()
@@ -33,7 +33,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
           log.error("Failed to load user settings for user: {} from file: {}.", user, file, e)
         }
       }
-      log.info("User settings file not found for user: {}. Creating new settings at: {}", user, file)
+      log.info("User settings file not found for user: ${user.toJson()}. Creating new settings at: ${file}", RuntimeException())
       return@getOrPut UserSettings()
     }
   }

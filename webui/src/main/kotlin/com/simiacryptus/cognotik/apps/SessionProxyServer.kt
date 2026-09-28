@@ -1,9 +1,12 @@
 package com.simiacryptus.cognotik.apps
 
 import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
+import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.model.UserSession
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.session.ChatServer
@@ -28,7 +31,7 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
   override fun appInfo(session: Session, user: User): Map<String, Any> {
     val appInfoData = appInfoMap[session]
     if (appInfoData != null) return appInfoData.toMap()
-    val infoData = chats[session]?.let { chatServer ->
+    val infoData = chats[UserSession(session, user)]?.let { chatServer ->
       AppInfoData(
         applicationName = chatServer.applicationName,
         inputCnt = chatServer.inputCnt,
@@ -90,9 +93,9 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
   }
 
   override fun newSession(user: User, session: Session): SocketManager? {
-    var manager = agents[session]
+    var manager = agents[UserSession(session, user)]
     if (manager != null) return manager
-    manager = chats[session]?.newSession(user, session)
+    manager = chats[UserSession(session, user)]?.newSession(user, session)
     if (manager != null) return manager
     return ChatSocketManager(
       session = session,
@@ -108,43 +111,40 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
   companion object {
     private val log = LoggerFactory.getLogger(SessionProxyServer::class.java)
 
-    fun setParentSession(child: Session, parent: Session) {
-      ApplicationServicesImpl.fileApplicationServices().usageDB.setParentSession(child, parent)
+    val metadataStorage by lazy {
+      ServiceRouter as SessionMetadataInterface
     }
 
-    var OWNER_ID = "localhost:12345"
-    val metadataStorage by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
-
-    private fun registerSessionOwner(session: Session) {
+    private fun registerSessionOwner(user: User, session: Session) {
       try {
-        metadataStorage.setSessionWorker(session, OWNER_ID)
+        metadataStorage.setSessionWorker(user=user, session=session, ownerId = LOCAL_WORKER_ID)
       } catch (e: Exception) {
         log.info("Failed to register session owner for session: $session", e)
       }
     }
 
-    val agents: MutableMap<Session, SocketManager> = object : ConcurrentHashMap<Session, SocketManager>() {
-      override fun put(key: Session, value: SocketManager): SocketManager? {
-        registerSessionOwner(key)
+    val agents: MutableMap<UserSession, SocketManager> = object : ConcurrentHashMap<UserSession, SocketManager>() {
+      override fun put(key: UserSession, value: SocketManager): SocketManager? {
+        registerSessionOwner(user=key.user, session=key.session)
         return super.put(key, value)
       }
 
-      override fun putIfAbsent(key: Session, value: SocketManager): SocketManager? {
+      override fun putIfAbsent(key: UserSession, value: SocketManager): SocketManager? {
         val result = super.putIfAbsent(key, value)
-        if (result == null) registerSessionOwner(key)
+        if (result == null) registerSessionOwner(user=key.user, session=key.session)
         return result
       }
     }
 
-    val chats: MutableMap<Session, ChatServer> = object : ConcurrentHashMap<Session, ChatServer>() {
-      override fun put(key: Session, value: ChatServer): ChatServer? {
-        registerSessionOwner(key)
+    val chats: MutableMap<UserSession, ChatServer> = object : ConcurrentHashMap<UserSession, ChatServer>() {
+      override fun put(key: UserSession, value: ChatServer): ChatServer? {
+        registerSessionOwner(user=key.user, session=key.session)
         return super.put(key, value)
       }
 
-      override fun putIfAbsent(key: Session, value: ChatServer): ChatServer? {
+      override fun putIfAbsent(key: UserSession, value: ChatServer): ChatServer? {
         val result = super.putIfAbsent(key, value)
-        if (result == null) registerSessionOwner(key)
+        if (result == null) registerSessionOwner(user=key.user, session=key.session)
         return result
       }
     }

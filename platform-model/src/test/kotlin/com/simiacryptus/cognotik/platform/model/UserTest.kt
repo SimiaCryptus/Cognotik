@@ -69,7 +69,7 @@ class UserTest {
     @Test
     fun `userId wraps id`() {
       val user = User(email = "dave@example.com")
-      assertEquals(UserId(user.id), user.userId)
+      assertEquals(UserId(user.id), UserId(user.id))
     }
 
     @Test

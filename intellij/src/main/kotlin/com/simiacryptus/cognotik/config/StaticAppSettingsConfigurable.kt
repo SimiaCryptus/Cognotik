@@ -1,21 +1,18 @@
 package com.simiacryptus.cognotik.config
 
+
 import com.intellij.util.xmlb.XmlSerializerUtil
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
-import com.simiacryptus.cognotik.platform.model.EmbeddingModel
-import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.ApplicationServices
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
 import java.awt.*
 import java.io.File
 import java.io.FileReader
@@ -183,9 +180,9 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         dialog.layout = BorderLayout()
 
       val userSettings =
-          ApplicationServicesImpl.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.getUserSettings(
-          localUser
-        )
+          ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+              CognotikConfig.localUser
+          )
         val fullConfig = try {
             val encryptedSettings = AppSettingsState.instance.copy()
             // Export UserSettings with encrypted keys
@@ -370,8 +367,8 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     userSettingsJson, UserSettings::class.java
                 )
                 log.debug("Decrypting ${importedUserSettings.apis.size} API configurations")
-                ApplicationServicesImpl.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
-                  AppSettingsState.localUser, importedUserSettings
+                ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
+                    CognotikConfig.localUser, importedUserSettings
                 )
                 log.info("Successfully imported configuration with ${importedUserSettings.apis.size} API configurations")
             } else {
@@ -409,9 +406,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             // Refresh API table with current user settings
             val tableModel = component.apis.model as DefaultTableModel
             tableModel.rowCount = 0
-          val userSettings = ApplicationServicesImpl.fileApplicationServices(
-            AppSettingsState.pluginHome
-          ).userSettingsManager.getUserSettings(localUser)
+          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -430,9 +425,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-          val userSettings = ApplicationServicesImpl.fileApplicationServices(
-            AppSettingsState.pluginHome
-          ).userSettingsManager.getUserSettings(localUser)
+          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
             log.debug("Current user has ${userSettings.apis.size} API configurations")
 
             val fastModelName = component.fastModel.selectedItem as String?
@@ -540,8 +533,8 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     log.error("Failed to read API configuration from row $row", e)
                 }
             }
-            ApplicationServicesImpl.fileApplicationServices(AppSettingsState.pluginHome).userSettingsManager.updateUserSettings(
-              AppSettingsState.localUser,
+            ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
+                CognotikConfig.localUser,
                 userSettings
             )
             log.info("Successfully read settings with ${userSettings.apis.size} API configurations")

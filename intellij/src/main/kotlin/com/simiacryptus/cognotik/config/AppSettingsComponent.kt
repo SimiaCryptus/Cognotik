@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.config
 
+
 import cognotik.actions.plan.PlanConfigDialog.Companion.isVisible
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -13,12 +14,13 @@ import com.intellij.ui.SimpleListCellRenderer
 import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.text.patch.PatchProcessors
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.platform.model.ImageModel
-import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
+import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.util.BrowseUtil
 import org.slf4j.LoggerFactory
 import java.awt.*
@@ -363,7 +365,8 @@ class AppSettingsComponent : Disposable {
     }
 
     @Name("Editor Actions")
-    var usage = UsageTable(fileApplicationServices(AppSettingsState.Companion.pluginHome).usageDB)
+    var usage =
+        UsageTable(ServiceMap[ServiceKey.USAGE_DB])
 
     init {
         log.debug("Initializing AppSettingsComponent")
@@ -380,9 +383,9 @@ class AppSettingsComponent : Disposable {
             log.error("Error populating API table: ${e.message}", e)
         }
         val apis =
-          fileApplicationServices(AppSettingsState.Companion.pluginHome).userSettingsManager.getUserSettings(
-            localUser
-          ).apis
+            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+                CognotikConfig.localUser
+            ).apis
         try {
 
             // Get all available models from APIs with valid keys
@@ -619,9 +622,7 @@ class AppSettingsComponent : Disposable {
             log.debug("Populating API table")
             val model = apis.model as DefaultTableModel
             model.rowCount = 0
-          val userSettings = fileApplicationServices(
-            AppSettingsState.Companion.pluginHome
-          ).userSettingsManager.getUserSettings(localUser)
+          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -644,9 +645,8 @@ class AppSettingsComponent : Disposable {
         ) {
             text = value
             if (value != null) {
-                val fileApplicationServices = fileApplicationServices(AppSettingsState.Companion.pluginHome)
               val userSettings =
-                fileApplicationServices.userSettingsManager.getUserSettings(localUser)
+                  ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
                 val model = userSettings.apis
                     .filter { it.key?.decrypt != null }
                     .find { apiData ->

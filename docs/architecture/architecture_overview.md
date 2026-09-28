@@ -207,7 +207,7 @@ authorization, and resource isolation.
 
 * **`Session`** — Uniquely identifies an interaction, either global (`G-...`) or user-specific (`U-...`).
 * **`User`** — Represents an authenticated user with credentials.
-* **`StorageInterface` / `MetadataStorageInterface`** — Persist session content, messages, and metadata
+* **`StorageInterface` / `SessionMetadataInterface`** — Persist session content, messages, and metadata
   (file-based `DataStorage`, in-memory `HSQLMetadataStorage`).
 * **`AuthenticationManager` / `AuthorizationManager`** — Handle identity and permission checks
   (`Read`, `Write`, `Delete`, `Share`, `Admin`, etc.).
@@ -215,7 +215,7 @@ authorization, and resource isolation.
 * **User Settings** — Manages API credentials and local tool paths with secure key masking.
 * **Cloud Integration** — Optional AWS S3 sharing and KMS encryption.
 
-`ApplicationServicesImpl` acts as the central registry for all these services.
+`CognotikPlatform` acts as the central registry for all these services.
 
 **See:** [Platform Documentation](../platform/platform.md),
 [User Settings](../platform/user_settings.md).

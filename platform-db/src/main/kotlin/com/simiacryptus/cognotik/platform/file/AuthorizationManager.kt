@@ -1,6 +1,6 @@
 package com.simiacryptus.cognotik.platform.file
 
-import com.simiacryptus.cognotik.platform.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
@@ -24,6 +24,9 @@ import java.util.*
  * Fail-secure: any error results in a denial, never an exception.
  */
 open class AuthorizationManager : AuthorizationInterface {
+  init {
+    log.info("AuthorizationManager initialized", RuntimeException("Stack Trace"))
+  }
 
   override fun isAuthorized(
     resource: ResourceRef?,

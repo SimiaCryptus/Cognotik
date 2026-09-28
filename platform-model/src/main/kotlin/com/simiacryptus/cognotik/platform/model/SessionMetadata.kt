@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform.model
 
+import org.slf4j.LoggerFactory
 import java.util.Date
 
 /**
@@ -28,7 +29,7 @@ data class SessionMetadata(
   val messageIds: List<String> = emptyList(),
   override val sessionTime: Date? = null,
   override val ownerId: String? = null,
-  override val workerId: String? = null,
+  override val workerId: String? = LOCAL_WORKER_ID,
   override val path: String? = null,
 ) : SessionSummary {
 
@@ -41,4 +42,16 @@ data class SessionMetadata(
     workerId = workerId,
     path = path,
   )
+
+  companion object {
+    val log = LoggerFactory.getLogger(SessionMetadata::class.java)
+  }
 }
+
+var LOCAL_WORKER_ID : String? = null
+  set(value) {
+    if(field != value) {
+      SessionMetadata.log.info("Setting session worker id to $value (was $field)", RuntimeException("Stack trace"))
+      field = value
+    }
+  }

@@ -19,9 +19,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.autofix.CmdPatchApp
 import com.simiacryptus.cognotik.autofix.PatchApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
-import com.simiacryptus.cognotik.models.ToolProvider
-import com.simiacryptus.cognotik.platform.ApplicationServices
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -124,7 +122,7 @@ class CommandAutofixAction : BaseAction() {
                     processor = AppSettingsState.instance.processor
                 )
                 val session = Session.newUserID()
-                SessionProxyServer.chats[session] = patchApp
+                SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = patchApp
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Code Chat",
                     inputCnt = 1,
@@ -134,7 +132,7 @@ class CommandAutofixAction : BaseAction() {
                 )
                 val dateFormat = SimpleDateFormat("HH:mm:ss")
                 val sessionName = "${javaClass.simpleName} @ ${dateFormat.format(System.currentTimeMillis())}"
-                SessionProxyServer.metadataStorage.setSessionName(null, session, sessionName)
+                SessionProxyServer.metadataStorage.setSessionName(CognotikConfig.localUser, session, sessionName)
                 Thread {
                     Thread.sleep(500)
                     try {

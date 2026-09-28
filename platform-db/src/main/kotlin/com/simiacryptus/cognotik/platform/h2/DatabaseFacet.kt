@@ -311,7 +311,7 @@ class DatabaseFacet(
     }
     synchronized(schemasInitialized) {
       if (schemasInitialized.contains(schemaKey)) return
-      log.info("Creating $name database schema (via Exposed) if not exists for {}", schemaKey)
+      log.debug("Creating $name database schema (via Exposed) if not exists for {}", schemaKey)
       exposedTransaction(db) {
         val ddls = schema.invoke(dbProvider)
         if (ddls.isNotEmpty()) {
@@ -320,7 +320,7 @@ class DatabaseFacet(
           val rawConn =
             this.connection.connection as Connection
           rawConn.createStatement().use { stmt ->
-            log.info("Executing {} $name schema DDL statements for {}", ddls.size, url)
+            log.debug("Executing {} $name schema DDL statements for {}", ddls.size, url)
             var failures = 0
             for (ddl in ddls) {
               val ddlSummary = ddl.trim().replace("\n", " ").take(200)
@@ -347,7 +347,7 @@ class DatabaseFacet(
         }
         if (tables.isNotEmpty()) {
           try {
-            log.info("Creating {} Exposed table(s) for $name on {}", tables.size, url)
+            log.debug("Creating {} Exposed table(s) for $name on {}", tables.size, url)
             SchemaUtils.create(tables = tables.toTypedArray())
           } catch (e: Exception) {
             log.info("Failed to create Exposed tables for $name on $url", e)
@@ -356,7 +356,7 @@ class DatabaseFacet(
         }
       }
       schemasInitialized.add(schemaKey)
-      log.info("Completed $name database schema initialization for {}", schemaKey)
+      log.debug("Completed $name database schema initialization for {}", schemaKey)
     }
   }
 
@@ -382,7 +382,7 @@ class DatabaseFacet(
         return DriverManager.getConnection(currentUrl, username, password)
       } catch (e: Exception) {
         lastError = e
-        log.info("JDBC $name connection attempt $attempt/5 to $currentUrl failed: ${e.message}", e)
+        log.debug("JDBC $name connection attempt $attempt/5 to $currentUrl failed: ${e.message}", e)
         // A file-backed embedded database that cannot be opened is not
         // fatal: degrade to an in-memory database that is retained for
         // the lifetime of the application and retry against it.

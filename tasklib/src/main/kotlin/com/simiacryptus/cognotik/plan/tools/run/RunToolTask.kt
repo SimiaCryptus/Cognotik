@@ -1,19 +1,19 @@
 package com.simiacryptus.cognotik.plan.tools.run
 
-import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
 import com.simiacryptus.cognotik.plan.tools.AbstractTask
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.Description
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.resolveTool
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.Semaphore
@@ -87,11 +87,15 @@ class RunToolTask(
         val args = executionConfig?.args ?: emptyList()
         val workingDir = executionConfig?.workingDir?.let { File(it) }
           ?: File(orchestrationConfig.absoluteWorkingDir ?: ".")
-        val executionConfig = this.executionConfig ?: throw IllegalStateException("Execution config is null")
-        val executable = tool.resolveTool(ApplicationServicesConfig.dataStorageRoot.toPath())
-          ?: throw IllegalArgumentException("Executable '$tool' not found relative to root '${ApplicationServicesImpl.fileApplicationServices().rootDir}' or on system PATH")
-        val command = listOf(executable?.absolutePath
-          ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
+        val executable = tool.resolveTool(CognotikConfig.dataStorageRoot.toPath())
+          ?: throw IllegalArgumentException(
+            "Executable '$tool' not found relative to root '${
+              CognotikPlatform.rootDir
+            }' or on system PATH"
+          )
+        val command = listOf(
+          executable?.absolutePath
+            ?: throw IllegalArgumentException("Executable for tool '$tool' not found")
         ) + args
         val commandStr = command.joinToString(" ")
         tabs["Command"] = "```bash\n$commandStr\n```".renderMarkdown()

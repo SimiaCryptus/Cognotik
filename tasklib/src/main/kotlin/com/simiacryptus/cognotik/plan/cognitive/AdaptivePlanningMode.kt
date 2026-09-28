@@ -18,7 +18,6 @@ import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -121,7 +120,7 @@ open class AdaptivePlanningMode(
             ?: throw IllegalStateException("ThinkingStatus is null at iteration $iteration")
           writeToTranscript("## Iteration $iteration\n\n")
 
-          val task = task.linkedTask("Iteration $iteration")
+          val task = task.linkedTask("Iteration $iteration",)
           val iterationTabbedDisplay = TabbedDisplay(task, additionalClasses = "iteration")
 
           iterationTabbedDisplay.newTask("Inputs").apply {

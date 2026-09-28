@@ -1,4 +1,5 @@
 # Locally configured, manually maintained credentials for the live provider tests.
 # Never commit this file.
 test-api-keys.json
+test-api-keys.json.*
 !test-api-keys.json.example

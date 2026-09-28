@@ -13,12 +13,13 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.platform.model.ISessionTask
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import java.io.File
 import java.util.Locale.getDefault
 import kotlin.io.path.Path
@@ -43,7 +44,7 @@ class OrchestrationConfig(
   var cognitiveSettings: CognitiveModeConfig? = null,
   var autoFix: Boolean = false,
   val workingDir: String? = ".",
-  var user: User = ApplicationServicesConfig.defaultUser
+  var user: User = CognotikConfig.localUser
 ) {
 
   @get:JsonIgnore
@@ -60,7 +61,7 @@ class OrchestrationConfig(
       }
 
   @get:JsonIgnore
-  val defaultFast get() = (fastModel?.instance(user) ?: smartModel?.instance(user)
+  val defaultFast get() = ((fastModel ?: smartModel)?.instance(user)
     ?: throw IllegalStateException("Parsing model not set")).instance(user)
 
   @get:JsonIgnore
@@ -213,7 +214,7 @@ class OrchestrationConfig(
 }
 
 fun String.instance(user: User): ApiChatModel? {
-  val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
+  val userSettings = ServiceRouter.getUserSettings(user)
   val chatModel = userSettings.apis
     .filter { it.provider != null && it.key != null }
     .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl ?: it.provider?.base!!) }

@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.writing
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.writing.InteractiveStoryTask.InteractiveStoryTaskExecutionConfigData
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
@@ -16,7 +16,7 @@ object InteractiveStoryTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.configurePlatform(CognotikConfig.localUser)
   }
 
   @org.junit.jupiter.api.Tag("Integration")
@@ -42,7 +42,7 @@ object InteractiveStoryTaskTest {
         point_of_view = "second_person"
       ),
       timeoutMinutes = 15,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

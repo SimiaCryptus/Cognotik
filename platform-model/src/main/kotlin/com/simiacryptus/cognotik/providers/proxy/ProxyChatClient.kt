@@ -1,10 +1,9 @@
 package com.simiacryptus.cognotik.providers.proxy
 
 import com.fasterxml.jackson.databind.ObjectMapper
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.SecureString
-import com.simiacryptus.cognotik.util.jsonCast
 import org.slf4j.LoggerFactory
 import java.io.BufferedOutputStream
 import java.io.IOException
@@ -40,19 +39,6 @@ class ProxyChatClient(
   private val providerPath: String =
     upstreamProviderNames.joinToString(",") { URLEncoder.encode(it, StandardCharsets.UTF_8) }
 
-  /**
-   * Optional user identity carried by the upstream key. A plain API key (no
-   * embedded user document) is legitimate: the proxy can authenticate with
-   * the X-API-Key header alone, so this degrades to `null` rather than failing.
-   */
-  val user: User? = try {
-    key.decrypt?.jsonCast<User>()
-  } catch (e: Exception) {
-    LoggerFactory.getLogger(ProxyChatClient::class.java)
-      .info("Upstream key for '${upstreamProviderNames.joinToString(",")}' carries no user document (${e.message}); using X-API-Key authentication only")
-    null
-  }
-
   /** Never throws: cookie resolution is best-effort local state. */
   private fun authCookies(): Map<String, String?> = mapOf(
     AuthenticationInterface.AUTH_COOKIE to key.decrypt
@@ -65,7 +51,7 @@ class ProxyChatClient(
     if (upstreamProviderNames.isEmpty() || upstreamProviderNames.any { it.isBlank() }) {
       throw IllegalArgumentException("At least one non-blank upstream provider name is required")
     }
-    log.info("ProxyChatClient initialized for upstream='$upstreamProviderName' base='$proxyBase' user=${user?.email ?: "<anonymous>"}")
+    log.info("ProxyChatClient initialized for upstream='$upstreamProviderName' base='$proxyBase'")
   }
 
   /**

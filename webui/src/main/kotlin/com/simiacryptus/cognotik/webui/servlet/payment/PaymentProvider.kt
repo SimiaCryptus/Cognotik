@@ -10,7 +10,7 @@ import jakarta.servlet.http.HttpServletResponse
  * Implementations are responsible for:
  *  - Initiating a checkout session (may redirect the user to an external page).
  *  - Handling the return / webhook callback that confirms payment.
- *  - Crediting the user's budget via [com.simiacryptus.cognotik.platform.UsageInterface].
+ *  - Crediting the user's budget via [com.simiacryptus.cognotik.platform.service.UsageInterface].
  *
  * The servlet calls [initiateCheckout] when the user submits the review form.
  * For providers that use an external redirect (e.g. Stripe Checkout) the

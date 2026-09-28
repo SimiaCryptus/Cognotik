@@ -1,11 +1,12 @@
 package com.simiacryptus.cognotik.webui.session
 
 import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -41,14 +42,15 @@ class BasicChatApp(
   override fun <T : Any> initSettings(session: Session, user: User): T = Settings() as T
 
   override fun newSession(user: User, session: Session): SocketManager {
-    (SessionProxyServer.chats[session]?.takeIf { it != this }?.newSession(user, session)
-      ?: SessionProxyServer.agents[session])?.apply {
+    (SessionProxyServer.chats[session.withUser(user)]?.takeIf { it != this }?.newSession(user, session)
+      ?: SessionProxyServer.agents[session.withUser(user)])?.apply {
       return this;
     }
     val settings = getSettings(session, user, Settings::class.java) ?: Settings(   )
 
     fun instance(model: String): ChatInterface? {
-      val userSettings = fileApplicationServices().userSettingsManager.getUserSettings(user)
+      val userSettings =
+        ServiceRouter.getUserSettings(user)
       val chatModel = userSettings.apis
         .filter { it.provider != null && it.key != null && it.baseUrl != null }
         .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) ?: emptyList() }
@@ -57,7 +59,8 @@ class BasicChatApp(
         val api = userSettings.apis.find {
           it.provider?.name == chatModel.provider?.name
         } ?: return null
-        val threadPoolManager = ApplicationServicesImpl.threadPoolManager
+        val threadPoolManager =
+          ServiceRouter as ThreadPoolManager
         chatModel.instance(
           key = api.key!!,
           base = api.apiBase,

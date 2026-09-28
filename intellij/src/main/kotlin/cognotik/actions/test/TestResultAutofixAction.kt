@@ -1,5 +1,6 @@
 package cognotik.actions.test
 
+
 import cognotik.actions.BaseAction
 import com.intellij.execution.testframework.AbstractTestProxy
 import com.intellij.execution.testframework.sm.runner.SMTestProxy
@@ -10,12 +11,14 @@ import com.simiacryptus.cognotik.agents.ChatAgent
 import com.simiacryptus.cognotik.agents.ParsedAgent
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
 import com.simiacryptus.cognotik.ui.Retryable
-import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.ui.SessionRenderer
+import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.FileSelectionUtils.isGitignore
@@ -24,7 +27,6 @@ import com.simiacryptus.cognotik.util.FileSelectionUtils.resolveToRelativePath
 import com.simiacryptus.cognotik.util.MarkdownUtil.renderMarkdown
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
@@ -131,11 +133,11 @@ class TestResultAutofixAction : BaseAction() {
   private fun openAutofixWithTestResult(e: AnActionEvent, testInfo: String, projectStructure: String) {
     val session = Session.newUserID()
     SessionProxyServer.metadataStorage.setSessionName(
-      null,
+      CognotikConfig.localUser,
       session,
       "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
     )
-    SessionProxyServer.chats[session] =
+    SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] =
       TestResultAutofixApp(session, testInfo, e.project?.basePath, projectStructure)
     ApplicationServer.appInfoMap[session] = AppInfoData(
       applicationName = "Code Chat",

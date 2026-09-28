@@ -3,29 +3,27 @@ package com.simiacryptus.cognotik.util
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.apps.SingleTaskApp
-import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.text.patch.PatchProcessor
-import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.text.patch.PatchProcessor
+import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.session.ServerlessSocketManager
-import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.webui.session.SocketManager
 import org.eclipse.jetty.server.Server
 import org.slf4j.LoggerFactory.getLogger
@@ -132,8 +130,9 @@ open class UnifiedHarness(
     ) {
       override fun onComplete(mode: CognitiveMode<*>, task: ISessionTask) {
         task.resolveSystemFile("results.md")?.writeText(mode.contextData().joinToString("\n\n"))
-        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
-        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
+        val usageManager =
+          ServiceRouter as UsageInterface
+        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         super.onComplete(mode, task)
       }
 
@@ -183,7 +182,7 @@ open class UnifiedHarness(
     }
 
     if (!serverless) {
-      SessionProxyServer.chats[session] = planApp
+      SessionProxyServer.chats[session.withUser(user)] = planApp
       ApplicationServer.appInfoMap[session] = AppInfoData(
         applicationName = name,
         inputCnt = 0,
@@ -196,7 +195,7 @@ open class UnifiedHarness(
       planApp.initSettings<Any>(session, user)
       val socketManager = planApp.newSession(user, session)
       if (!serverless) {
-        SessionProxyServer.agents[session] = socketManager
+        SessionProxyServer.agents[session.withUser(user)] = socketManager
         val url = "http://localhost:$port/#$session"
         log.info("Plan available at $url")
 
@@ -247,8 +246,9 @@ open class UnifiedHarness(
       override fun onTaskComplete(result: String, task: ISessionTask) {
         log.info("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
-        val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
-        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(session).toJson())
+        val usageManager =
+          ServiceRouter as UsageInterface
+        task.resolveSystemFile("usage.json")?.writeText(usageManager.getSessionUsageSummary(user=user, session = session).toJson())
         completionLatch.countDown()
         onComplete(result, task)
       }
@@ -270,7 +270,7 @@ open class UnifiedHarness(
             owner = user,
             clazz = this.javaClass
           )
-          SessionProxyServer.agents[session] = socketManager
+          SessionProxyServer.agents[session.withUser(user)] = socketManager
           startSession(
             session,
             user,
@@ -284,8 +284,14 @@ open class UnifiedHarness(
     }
 
     if (!serverless) {
-      parentSession?.apply { SessionProxyServer.setParentSession(child = session, parent = this) }
-      SessionProxyServer.chats[session] = singleTaskApp
+      parentSession?.apply {
+        ServiceRouter.setParentSession(
+          user = user,
+          child = session,
+          parent = this
+        )
+      }
+      SessionProxyServer.chats[session.withUser(user)] = singleTaskApp
       ApplicationServer.appInfoMap[session] = AppInfoData(
         applicationName = name,
         inputCnt = 0,
@@ -298,7 +304,7 @@ open class UnifiedHarness(
     val socketManager = singleTaskApp.newSession(user, session)
 
     if (!serverless) {
-      SessionProxyServer.agents[session] = socketManager
+      SessionProxyServer.agents[session.withUser(user)] = socketManager
       val url = "http://localhost:$port/#$session"
       log.info("Task available at $url")
 
@@ -402,25 +408,40 @@ open class UnifiedHarness(
 
     @JvmStatic
     fun configurePlatform(user: User) {
+      log.info("Configuring platform for user: {}", user, RuntimeException("Stack Trace"))
       PlanHarness.initDynamicEnums()
-      ApplicationServicesImpl.authenticationManager = object : AuthenticationInterface {
-        override fun getUser(accessToken: String?) = user
-        fun getAccessToken(user: User) = "test-token"
-        override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-        fun logout(accessToken: String, user: User) {}
+      CognotikPlatform.init()
+      ServiceKey.AUTHENTICATION.factory = {
+        object : AuthenticationInterface {
+          init {
+            log.info("AuthenticationManager initialized", RuntimeException("Stack Trace"))
+          }
+
+          override fun getUser(accessToken: String?) = user
+          fun getAccessToken(user: User) = "test-token"
+          override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+          fun logout(accessToken: String, user: User) {}
+        }
       }
-      ApplicationServicesImpl.authorizationManager = object : AuthorizationManager() {
-        override fun isAuthorized(
-          applicationClass: Class<*>?,
-          user: User?,
-          operationType: OperationType
-        ): Boolean = true
+      ServiceKey.AUTHORIZATION_MANAGER.factory = {
+        object : AuthorizationManager() {
+          init {
+            log.info("AuthorizationManager initialized with permissive local auth for desktop mode")
+          }
+
+          override fun isAuthorized(
+            applicationClass: Class<*>?,
+            user: User?,
+            operationType: OperationType
+          ): Boolean = true
+        }
       }
     }
   }
 }
 
 fun ApiChatModel.findApi(user: User): ApiData? {
-  val userSettings = ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user)
+  val userSettings =
+    ServiceRouter.getUserSettings(user)
   return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
 }

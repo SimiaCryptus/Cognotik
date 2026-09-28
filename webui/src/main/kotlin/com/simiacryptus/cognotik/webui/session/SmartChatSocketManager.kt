@@ -5,11 +5,11 @@ import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.util.renderMarkdown
 import com.simiacryptus.cognotik.util.toContentList
 import org.slf4j.LoggerFactory
@@ -30,7 +30,7 @@ open class SmartChatSocketManager(
   override val systemPrompt: String,
   temperature: Double = 0.3,
   applicationClass: Class<out ChatServer>,
-  storage: StorageInterface = ApplicationServicesImpl.fileApplicationServices().dataStorageFactory,
+  storage: StorageInterface = ServiceRouter as StorageInterface,
   override val fastTopicParsing: Boolean = true,
   retriable: Boolean = true,
   budget: Double,

@@ -4,7 +4,7 @@ import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.ExperimentalStuff
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.PlanHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
@@ -17,7 +17,7 @@ object PersonaChatModeTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.configurePlatform(CognotikConfig.localUser)
   }
 
   //@org.junit.jupiter.api.Test
@@ -25,7 +25,7 @@ object PersonaChatModeTest {
     object : PlanHarness(
       prompt = "Create a simple python script that prints 'Hello from PersonaChatMode'",
       cognitiveSettings = ExperimentalStuff.PersonaChat.newSettings(),
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

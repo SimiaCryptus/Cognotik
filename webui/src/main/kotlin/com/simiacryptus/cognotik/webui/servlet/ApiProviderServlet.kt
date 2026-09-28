@@ -3,11 +3,12 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -44,7 +45,8 @@ class ApiProviderServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     try {
       val user =
-        UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+        ServiceRouter.authenticate(request)
+          ?: throw IllegalStateException("Authentication failed")
       val userSettings = user.userSettings()
       val providers = userSettings.providerInfos()
       val availableProviders = userSettings.getAvailableProviders()
@@ -333,8 +335,8 @@ class ApiProviderServlet : HttpServlet() {
       }
       return providers
     }
-    fun User.userSettings(): UserSettings = ApplicationServicesImpl.fileApplicationServices()
-      .userSettingsManager.getUserSettings(this)
+    fun User.userSettings(): UserSettings =
+      ServiceRouter.getUserSettings(this)
     fun UserSettings.getAvailableProviders(): List<AvailableProviderInfo> =
       APIProvider.values().map { provider ->
         val isConfigured = apis.any {

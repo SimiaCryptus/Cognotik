@@ -1,11 +1,12 @@
 package com.simiacryptus.cognotik.platform.h2
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
-import com.simiacryptus.cognotik.platform.GiftedCreditsInterface
+import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UsageInterface
 import org.jetbrains.exposed.v1.core.Table
 import org.jetbrains.exposed.v1.core.ResultRow
 import org.jetbrains.exposed.v1.core.SortOrder
@@ -32,7 +33,7 @@ import java.util.UUID
  * Manages gifts and claims using a relational database via [DatabaseFacet] and Exposed DSL.
  */
 class GiftedCreditsDB(
-  root: File? = ApplicationServicesConfig.dataStorageRoot.resolve("giftsdb")
+  root: File? = CognotikConfig.dataStorageRoot.resolve("giftsdb")
 ) : GiftedCreditsInterface {
 
   /**
@@ -132,7 +133,8 @@ class GiftedCreditsDB(
     }
 
     // Check creator has sufficient credit balance
-    val usageManager = ApplicationServicesImpl.fileApplicationServices().usageDB
+    val usageManager =
+      ServiceRouter as UsageInterface
     val creatorBalance = try {
       usageManager.getUserBalance(creator)
     } catch (e: Exception) {
@@ -264,7 +266,7 @@ class GiftedCreditsDB(
         if (creator != null) {
           try {
             val creatorBalance =
-              ApplicationServicesImpl.fileApplicationServices().usageDB.getUserBalance(creator)
+              ServiceRouter.getUserBalance(creator)
             log.debug(
               "Creator '{}' balance check at claim time: balance={}, amountGranted={}",
               creator.id, creatorBalance, gift.amountGranted

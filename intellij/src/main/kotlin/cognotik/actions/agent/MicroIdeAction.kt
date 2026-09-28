@@ -1,22 +1,21 @@
 package cognotik.actions.agent
 
+
 import cognotik.actions.BaseAction
 import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.application.ApplicationManager
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.fileserver.handler.FsApiHandler
-import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
-import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
-import com.simiacryptus.cognotik.webui.servlet.action.ExtractUtilsFsAction
 import com.simiacryptus.cognotik.webui.servlet.action.ModelSelection
 import com.simiacryptus.cognotik.webui.servlet.action.ModelSelectionActions
 import com.simiacryptus.cognotik.webui.servlet.action.ModifyFilesFsAction
@@ -29,7 +28,7 @@ import java.text.SimpleDateFormat
 class MicroIdeAction : BaseAction() {
     init {
         @Suppress("SENSELESS_COMPARISON") require(FsApiHandler.javaClass != null) { "FsApiHandler class not found" }
-        ModelSelection.install { localUser }
+        ModelSelection.install { CognotikConfig.localUser }
         ModelSelectionActions.install()
         val localName = AppSettingsState.instance.listeningEndpoint
         val port = AppSettingsState.instance.listeningPort
@@ -71,11 +70,11 @@ class MicroIdeAction : BaseAction() {
 //                    )
                 }
                 SessionProxyServer.metadataStorage.setSessionName(
-                    null,
+                    CognotikConfig.localUser,
                     session,
                     "${javaClass.simpleName} @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
                 )
-                SessionProxyServer.chats[session] = MicroIdeApp(event = e)
+                SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = MicroIdeApp(event = e)
                 ApplicationServer.appInfoMap[session] = AppInfoData(
                     applicationName = "Cognotik μIDE",
                     inputCnt = 0,

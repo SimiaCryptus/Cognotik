@@ -131,13 +131,13 @@ println(newCode)
 
 ## Configuration
 
-The core module can be configured through the `ApplicationServicesConfig` object:
+The core module can be configured through the `CognotikConfig` object:
 
 ```kotlin
 
-ApplicationServicesConfig.dataStorageRoot = File("/path/to/data")
+CognotikConfig.dataStorageRoot = File("/path/to/data")
 
-ApplicationServicesConfig.isLocked = true
+CognotikConfig.isLocked = true
 ```
 
 ## Extension Points

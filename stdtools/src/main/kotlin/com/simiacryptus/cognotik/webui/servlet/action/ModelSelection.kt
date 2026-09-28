@@ -2,9 +2,11 @@ package com.simiacryptus.cognotik.webui.servlet.action
 
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.fileserver.action.FsActionContext
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
 import java.util.concurrent.ConcurrentHashMap
@@ -16,7 +18,7 @@ import java.util.concurrent.CopyOnWriteArrayList
  *
   * The selection is **per-user persistent state and nothing else**: it is read from and
   * written to `UserSettings.smartModel` / `UserSettings.fastModel` through
-  * [ApplicationServicesImpl.fileApplicationServices]'s `userSettingsManager`, so
+  * [CognotikPlatform.fileApplicationServices]'s `userSettingsManager`, so
  *
  *  * two users of the same app server no longer overwrite each other's choice,
  *  * the choice outlives a restart, and
@@ -45,14 +47,15 @@ object ModelSelection {
   private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
   @Volatile
-  private var userFn: (FsActionContext?) -> User = { ApplicationServicesConfig.defaultUser }
+  private var userFn: (FsActionContext?) -> User = { CognotikConfig.localUser }
 
 
 
   /** Enumerating provider models costs a network round trip, so it is cached per user. */
   private val cache = ConcurrentHashMap<String, Map<String, ChatModel>>()
 
-  private fun settingsManager() = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
+  private fun settingsManager() =
+    ServiceRouter as UserSettingsInterface
 
   /**
     * Publishes the request-scoped user resolver. Hosts (CLI, embedding servers) call
@@ -73,7 +76,7 @@ object ModelSelection {
     userFn(ctx)
   } catch (e: Exception) {
     System.err.println("warning: could not resolve the request user: ${e.message}")
-    ApplicationServicesConfig.defaultUser
+    CognotikConfig.localUser
   }
 
   /* ---------------------------------------------------------------- reading */

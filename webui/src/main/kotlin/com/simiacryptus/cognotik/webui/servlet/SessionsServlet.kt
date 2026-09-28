@@ -2,11 +2,14 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
+import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -15,10 +18,15 @@ import java.text.SimpleDateFormat
 import java.util.*
 
 class SessionsServlet : HttpServlet() {
-    val metadataDB by lazy { ApplicationServicesImpl.fileApplicationServices().metadataDB }
-    val usageDB by lazy { ApplicationServicesImpl.fileApplicationServices().usageDB }
+    val metadataDB by lazy {
+      ServiceRouter as SessionMetadataInterface
+    }
+    val usageDB by lazy {
+      ServiceRouter as UsageInterface
+    }
     override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        val user = ServiceRouter.authenticate(req)
+          ?: throw RuntimeException("User must be authenticated")
         val action = req.getParameter("action")?.lowercase()
         when (action) {
             "delete" -> handleDelete(req, resp, user)
@@ -31,7 +39,8 @@ class SessionsServlet : HttpServlet() {
     }
 
     override fun doDelete(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp) ?: throw RuntimeException("User must be authenticated")
+        val user = ServiceRouter.authenticate(req)
+          ?: throw RuntimeException("User must be authenticated")
         handleDelete(req, resp, user)
     }
 
@@ -53,7 +62,7 @@ class SessionsServlet : HttpServlet() {
         }
         // Authorize: only the owner (or a user with a metadata entry for the session) can delete.
         val ownerId = try {
-            metadataDB.getSessionOwner(session)
+            metadataDB.getSessionOwner(user=user, session = session)
         } catch (e: Exception) {
             log.warn("Failed to fetch owner for session $sessionId", e)
             null
@@ -73,7 +82,7 @@ class SessionsServlet : HttpServlet() {
             return
         }
         try {
-            ApplicationServicesImpl.fileApplicationServices().dataStorageFactory.deleteSession(user, session)
+          ServiceRouter.deleteSession(user, session)
             log.info("User ${user.email} deleted session $sessionId")
             resp.status = HttpServletResponse.SC_OK
             resp.contentType = "application/json"
@@ -103,8 +112,8 @@ class SessionsServlet : HttpServlet() {
 
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = UserProviderImpl().authenticate(req, resp)
-            ?: throw RuntimeException("User must be authenticated to list sessions")
+        val user = ServiceRouter.authenticate(req)
+          ?: throw RuntimeException("User must be authenticated to list sessions")
         val sessions = try {
             metadataDB.listSessionsForUser(user).map { Session(it) }
         } catch (e: Exception) {
@@ -112,7 +121,7 @@ class SessionsServlet : HttpServlet() {
             emptyList()
         }
         val sessionParents = sessions.mapNotNull { session ->
-            usageDB.getParentSession(session)?.sessionId?.let { parent -> session to Session(parent) }
+            usageDB.getParentSession(user=user, child = session)?.sessionId?.let { parent -> session to Session(parent) }
         }.toMap()
         val allMetadata = sessions.mapNotNull { sessionId ->
             try {
@@ -149,7 +158,7 @@ class SessionsServlet : HttpServlet() {
         // Compute usage summaries for visible sessions (includes children via getSessionUsageSummary)
         val sessionUsages: Map<SessionMetadata, Map<String, ModelSchema.Usage>> = visibleMetadata.associateWith {
             try {
-                usageDB.getSessionUsageSummary(it.id)
+                usageDB.getSessionUsageSummary(user=user, session = it.id)
             } catch (e: Exception) {
                 log.warn("Failed to load usage for session ${it.id}", e)
                 emptyMap()
@@ -167,7 +176,7 @@ class SessionsServlet : HttpServlet() {
             emptyMap()
         } else {
             try {
-                usageDB.getSessionUsageSummaryBulk(childSessionIds)
+                usageDB.getSessionUsageSummaryBulk(user=user, sessionIds=childSessionIds)
             } catch (e: Exception) {
                 log.warn("Failed to bulk-load child session usage summaries", e)
                 emptyMap()

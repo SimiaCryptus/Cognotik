@@ -8,7 +8,7 @@ import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.crawl.processing.DefaultSummarizerStrategy
 import com.simiacryptus.cognotik.crawl.processing.ProcessingStrategyType
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Timeout
 import java.util.concurrent.TimeUnit
@@ -19,7 +19,7 @@ object CrawlerAgentTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.configurePlatform(CognotikConfig.localUser)
   }
 
   @org.junit.jupiter.api.Tag("Integration")
@@ -39,7 +39,7 @@ object CrawlerAgentTaskTest {
         task_description = "Research and summarize Kotlin language features"
       ),
       timeoutMinutes = 10,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -64,7 +64,7 @@ object CrawlerAgentTaskTest {
         task_description = "Check Kotlin homepage for version info"
       ),
       timeoutMinutes = 10,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

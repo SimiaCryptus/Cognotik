@@ -1,12 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl
-import com.simiacryptus.cognotik.platform.ApiData
-import com.simiacryptus.cognotik.platform.UserSettings
+import com.simiacryptus.cognotik.platform.model.ApiData
+import com.simiacryptus.cognotik.platform.model.UserSettings
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.service.UserProvider
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.encrypt
 import com.simiacryptus.cognotik.util.jsonCast
-import com.simiacryptus.cognotik.webui.application.UserProviderImpl
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -17,10 +18,11 @@ class UserSettingsServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.status = HttpServletResponse.SC_OK
     val user =
-      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
+      ServiceRouter.authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
     try {
       val settings =
-        ApplicationServicesImpl.fileApplicationServices().userSettingsManager.getUserSettings(user)
+        ServiceRouter.getUserSettings(user)
       val visibleSettings = UserSettings(
         apis = settings.apis.map { apiData ->
           ApiData(
@@ -87,9 +89,12 @@ class UserSettingsServlet : HttpServlet() {
 
   public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
     val user =
-      UserProviderImpl().authenticate(request, response) ?: throw IllegalStateException("Authentication failed")
-    val settings = JsonUtil.fromJson<UserSettings>(request.getParameter("settings"), UserSettings::class.java)
-    val userSettingsManager = ApplicationServicesImpl.fileApplicationServices().userSettingsManager
+      ServiceRouter.authenticate(request)
+        ?: throw IllegalStateException("Authentication failed")
+    val data = request.getParameter("settings") ?: request.reader.use { it.readText() }.ifBlank { null }
+    val settings = data?.let { JsonUtil.fromJson<UserSettings>(it, UserSettings::class.java) } ?: UserSettings()
+    val userSettingsManager =
+      ServiceRouter as UserSettingsInterface
     val prevSettings =
       userSettingsManager.getUserSettings(user)
     val reconstructedApis = settings.apis.mapIndexed { index, apiData ->
@@ -120,3 +125,4 @@ class UserSettingsServlet : HttpServlet() {
 
   companion object
 }
+

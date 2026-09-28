@@ -3,7 +3,7 @@ package com.simiacryptus.cognotik.plan.tools.session
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.session.SeleniumSessionTask.SeleniumSessionTaskExecutionConfigData
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.util.TaskHarness
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import org.junit.jupiter.api.BeforeAll
@@ -18,7 +18,7 @@ object SeleniumSessionTaskTest {
   @JvmStatic
   @BeforeAll
   fun setup() {
-    UnifiedHarness.Companion.configurePlatform(ApplicationServicesConfig.defaultUser)
+    UnifiedHarness.Companion.configurePlatform(CognotikConfig.localUser)
   }
 
   @Tag("Integration")
@@ -40,7 +40,7 @@ object SeleniumSessionTaskTest {
         createTranscript = true
       ),
       timeoutMinutes = 10,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -67,7 +67,7 @@ object SeleniumSessionTaskTest {
         task_description = "Open Wikipedia session",
       ),
       timeoutMinutes = 5,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,
@@ -87,7 +87,7 @@ object SeleniumSessionTaskTest {
         task_description = "Get title from existing session",
       ),
       timeoutMinutes = 5,
-      user = ApplicationServicesConfig.defaultUser,
+      user = CognotikConfig.localUser,
       smartModel = GeminiModels.GeminiFlash_30_Preview,
       fastModel = GeminiModels.GeminiFlash_30_Preview,
       imageModel = GeminiModels.GeminiFlash_31_Image_Preview,

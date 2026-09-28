@@ -9,7 +9,7 @@ import com.simiacryptus.cognotik.fileserver.action.ActionUi
 import com.simiacryptus.cognotik.fileserver.action.FsAction
 import com.simiacryptus.cognotik.fileserver.action.FsActionContext
 import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.ApplicationServicesConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
@@ -129,7 +129,7 @@ object ModifyFilesFsAction {
   fun install(cfg: Config) {
     config = cfg
     /* Share the request-scoped user with the picker; the pair itself lives in settings. */
-    ModelSelection.install(user = { ctx -> ctx?.let { cfg.user(it) } ?: ApplicationServicesConfig.defaultUser })
+    ModelSelection.install(user = { ctx -> ctx?.let { cfg.user(it) } ?: CognotikConfig.localUser })
     ModelSelectionActions.install()
     if (!installed.compareAndSet(false, true)) return
     FsAction.register(
@@ -233,8 +233,8 @@ object ModifyFilesFsAction {
     val label = ctx.req.getParameter("name")?.takeIf { it.isNotBlank() }
       ?: prompt?.lineSequence()?.firstOrNull()?.trim()?.take(60)
       ?: "ModifyFiles @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
-    SessionProxyServer.metadataStorage.setSessionName(null, session, label)
-    SessionProxyServer.agents[session] = PatchChatManager(
+    SessionProxyServer.metadataStorage.setSessionName(user=user, session, label)
+    SessionProxyServer.agents[session.withUser(user)] = PatchChatManager(
       session = session,
       model = models.smart.asChatInterface(user),
       fastModel = models.fast.asChatInterface(user),

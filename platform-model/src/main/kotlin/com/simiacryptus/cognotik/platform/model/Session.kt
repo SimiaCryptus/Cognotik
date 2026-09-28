@@ -3,9 +3,15 @@ package com.simiacryptus.cognotik.platform.model
 import java.security.SecureRandom
 import java.time.LocalDate
 
+data class UserSession(
+  val session: Session,
+  val user: User
+)
+
 open class Session(
   val sessionId: String
 ) {
+  fun withUser(user: User): UserSession = UserSession(this, user)
 
   /*
    * NOTE: this init block calls an `open` member, which is a known hazard

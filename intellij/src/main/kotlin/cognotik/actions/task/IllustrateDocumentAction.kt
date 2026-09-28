@@ -1,5 +1,6 @@
 package cognotik.actions.task
 
+
 import cognotik.actions.BaseAction
 import cognotik.actions.agent.toFile
 import cognotik.actions.plan.PlanConfigDialog
@@ -16,17 +17,17 @@ import com.intellij.ui.dsl.builder.panel
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.config.AppSettingsState
-import com.simiacryptus.cognotik.config.AppSettingsState.Companion.localUser
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
-import com.simiacryptus.cognotik.plan.toApiChatModel
-import com.simiacryptus.cognotik.platform.ApiChatModel
-import com.simiacryptus.cognotik.platform.ApplicationServicesImpl.Companion.fileApplicationServices
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.StorageInterface
+import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.file.DataStorage
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.webui.application.AppInfoData
@@ -115,8 +116,8 @@ class IllustrateDocumentAction : BaseAction() {
                 model.instance() ?: throw IllegalStateException("Model or Provider not set")
         }
 
-      app.getSettingsFile(session, AppSettingsState.localUser).writeText(orchestrationConfig.toJson())
-        SessionProxyServer.chats[session] = app
+      app.getSettingsFile(session, CognotikConfig.localUser).writeText(orchestrationConfig.toJson())
+        SessionProxyServer.chats[session.withUser(CognotikConfig.localUser)] = app
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Document Illustration Task",
             inputCnt = 0,
@@ -124,7 +125,9 @@ class IllustrateDocumentAction : BaseAction() {
             showMenubar = false
         )
         SessionProxyServer.metadataStorage.setSessionName(
-            null, session, "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
+            CognotikConfig.localUser,
+            session,
+            "Document Illustration @ ${SimpleDateFormat("HH:mm:ss").format(System.currentTimeMillis())}"
         )
     }
 
@@ -346,12 +349,12 @@ class IllustrateDocumentAction : BaseAction() {
         fun getOrchestrationConfig(): OrchestrationConfig {
             val selectedTextModel = textModelCombo.selectedItem as? String
             val textModel = selectedTextModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(CognotikConfig.localUser)
             }
 
             val selectedImageModel = imageModelCombo.selectedItem as? String
             val imageModel = selectedImageModel?.let { modelName ->
-                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(localUser)
+                visibleModelsCache.find { it.modelId == modelName }?.toApiChatModel(CognotikConfig.localUser)
             }
 
             return OrchestrationConfig(
@@ -368,12 +371,12 @@ class IllustrateDocumentAction : BaseAction() {
                 shellCmd = listOf(
                     if (System.getProperty("os.name").lowercase().contains("win")) "powershell" else "bash"
                 ),
-                user = localUser
+                user = CognotikConfig.localUser
             )
         }
 
         private fun getVisibleModels() =
-          fileApplicationServices().userSettingsManager.getUserSettings(localUser).apis.flatMap { apiData ->
+            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                     model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(
                         model
