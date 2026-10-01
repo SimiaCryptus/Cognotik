@@ -12,6 +12,27 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
  * Prices are USD per 1K tokens (published per-million prices / 1000).
  */
 object XAIModels {
+  @JvmStatic
+  val Grok47 by lazy {
+    ChatModel(
+      name = "Grok47",
+      modelId = "grok-4.7",
+      maxTotalTokens = 500000,
+      maxOutTokens = 64000,
+      provider = CoreProviders.XAI,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 2.00 / 1000.0,
+        TokenTypes.Cached to 0.50 / 1000.0,
+        TokenTypes.Completion to 6.00 / 1000.0,
+        TokenTypes.Thinking to 6.00 / 1000.0,
+      ),
+      supportsTemperature = false,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
+      outputModalities = setOf(ChatMessageModality.TEXT),
+    )
+  }
+
 
   @JvmStatic
   val Grok46 by lazy {
@@ -254,6 +275,7 @@ object XAIModels {
   @JvmStatic
   val values by lazy {
     mapOf(
+      "Grok47" to Grok47,
       "Grok46" to Grok46,
       "Grok45" to Grok45,
       "Grok43" to Grok43,

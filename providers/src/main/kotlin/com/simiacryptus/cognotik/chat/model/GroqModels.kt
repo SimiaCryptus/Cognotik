@@ -205,6 +205,19 @@ object GroqModels {
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
+  val MiniMaxM2_7 by lazy {
+    ChatModel(
+      name = "MiniMaxM2_7",
+      modelId = "minimaxai/minimax-m2.7",
+      maxTotalTokens = 196608,
+      maxOutTokens = 131072,
+      provider = CoreProviders.Groq,
+      inputTokenPricePerK = 0.0,
+      outputTokenPricePerK = 0.0,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
   val Qwen3_32b by lazy {
     ChatModel(
       name = "Qwen3_32b",
@@ -215,6 +228,19 @@ object GroqModels {
       inputTokenPricePerK = 0.29 / 1000.0,
       outputTokenPricePerK = 0.59 / 1000.0,
       inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  val Qwen38_27b by lazy {
+    ChatModel(
+      name = "Qwen38_27b",
+      modelId = "qwen/qwen3.8-27b",
+      maxTotalTokens = 131072,
+      maxOutTokens = 16384,
+      provider = CoreProviders.Groq,
+      inputTokenPricePerK = 0.80 / 1000.0,
+      outputTokenPricePerK = 4.00 / 1000.0,
+      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
@@ -239,7 +265,9 @@ object GroqModels {
       "LlamaPromptGuard2_22m" to LlamaPromptGuard2_22m,
       "LlamaPromptGuard2_86m" to LlamaPromptGuard2_86m,
       "GptOssSafeguard20b" to GptOssSafeguard20b,
+      "MiniMaxM2_7" to MiniMaxM2_7,
       "Qwen3_32b" to Qwen3_32b,
+      "Qwen38_27b" to Qwen38_27b,
     )
   }
 }
