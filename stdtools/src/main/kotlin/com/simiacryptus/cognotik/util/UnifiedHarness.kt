@@ -413,22 +413,12 @@ open class UnifiedHarness(
       CognotikPlatform.init()
       ServiceKey.AUTHENTICATION.factory = {
         object : AuthenticationInterface {
-          init {
-            log.info("AuthenticationManager initialized", RuntimeException("Stack Trace"))
-          }
-
           override fun getUser(accessToken: String?) = user
-          fun getAccessToken(user: User) = "test-token"
           override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-          fun logout(accessToken: String, user: User) {}
         }
       }
       ServiceKey.AUTHORIZATION_MANAGER.factory = {
         object : AuthorizationManager() {
-          init {
-            log.info("AuthorizationManager initialized with permissive local auth for desktop mode")
-          }
-
           override fun isAuthorized(
             applicationClass: Class<*>?,
             user: User?,
