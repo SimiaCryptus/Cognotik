@@ -188,9 +188,7 @@ open class CognotikApps(
 
     fun checkIsAlive() {
         try {
-          val threadPoolManager =
-            ServiceRouter as ThreadPoolManager
-            val alive = threadPoolManager.isAlive()
+            val alive = ThreadPoolManager.isAlive()
             val systemTrayManager = systemTrayManager
             if (systemTrayManager != null) {
                 systemTrayManager.updateStatus(alive)

@@ -6,7 +6,6 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
-import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -59,14 +58,12 @@ class BasicChatApp(
         val api = userSettings.apis.find {
           it.provider?.name == chatModel.provider?.name
         } ?: return null
-        val threadPoolManager =
-          ServiceRouter as ThreadPoolManager
         chatModel.instance(
           key = api.key!!,
           base = api.apiBase,
-          workPool = threadPoolManager.getPool(session, user),
+          workPool = ThreadPoolManager.getPool(session, user),
           temperature = settings.temperature,
-          scheduledPool = threadPoolManager.getScheduledPool(session, user),
+          scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
           session = session,
           user = user,
         )
