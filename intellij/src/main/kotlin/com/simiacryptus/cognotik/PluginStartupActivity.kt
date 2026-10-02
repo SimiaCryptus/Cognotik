@@ -41,7 +41,7 @@ class PluginStartupActivity : ProjectActivity {
 
     init {
         require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
-        DatabaseFacet.root = File(System.getProperty("user.home")).resolve(".cognotik").absolutePath
+        DatabaseFacet.root = File(System.getProperty("user.home")).resolve(".cognotik2").absolutePath
         OrchestrationConfig.instanceFn =
             { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
         ServiceKey.AUTHORIZATION_MANAGER.factory = {
@@ -76,17 +76,19 @@ class PluginStartupActivity : ProjectActivity {
         } catch (e: Exception) {
             log.error("Failed to load apps.json", e)
         }
-        try {
-            ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
-        } catch (e: Exception) {
-            log.error("Error loading plugins", e)
-        }
     }
 
     override suspend fun execute(project: Project) {
         log.info("Starting Cognotik plugin initialization for project: ${project.name}")
         val extFile = project.getExternalConfigurationDir()?.toFile()
-        if (!DatabaseFacet.isInitialized() &&  null != extFile) DatabaseFacet.root = extFile.resolve(".cognotik").absolutePath
+        if (!DatabaseFacet.isInitialized() && null != extFile) {
+            DatabaseFacet.root = extFile.resolve(".cognotik").absolutePath
+        }
+        try {
+            ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        } catch (e: Exception) {
+            log.error("Error loading plugins", e)
+        }
         ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
         System.getProperty("cognotik.config")?.let { configFile ->

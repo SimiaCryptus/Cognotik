@@ -1,8 +1,11 @@
 package com.simiacryptus.cognotik.providers.test
 
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.DynamicEnum
+import com.simiacryptus.cognotik.util.SecureString
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertSame
@@ -12,6 +15,9 @@ import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.DynamicTest
 import org.junit.jupiter.api.Test
 import org.junit.jupiter.api.TestFactory
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.util.concurrent.ExecutorService
 
 class CoreProvidersRegistrationTest {
 
@@ -102,12 +108,12 @@ class CoreProvidersRegistrationTest {
     val name = "test-only-provider-${System.nanoTime()}"
     val probe = object : APIProvider(name, "http://localhost") {
       override fun getChatClient(
-        key: com.simiacryptus.cognotik.util.SecureString,
-        workPool: java.util.concurrent.ExecutorService,
-        logLevel: org.slf4j.event.Level,
-        logStreams: MutableList<java.io.BufferedOutputStream>,
-        scheduledPool: com.google.common.util.concurrent.ListeningScheduledExecutorService,
-        session: com.simiacryptus.cognotik.platform.model.Session
+        key: SecureString,
+        logLevel: Level,
+        session: Session,
+        logStreams: MutableList<BufferedOutputStream>,
+        workPool: ExecutorService,
+        scheduledPool: ListeningScheduledExecutorService
       ) = throw UnsupportedOperationException("test probe")
     }
     DynamicEnum.register(APIProvider::class.java, probe)

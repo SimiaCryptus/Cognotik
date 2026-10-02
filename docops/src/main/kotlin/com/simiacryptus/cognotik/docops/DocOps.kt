@@ -3,33 +3,24 @@ package com.simiacryptus.cognotik.docops
 import com.simiacryptus.cognotik.docops.exec.DocTaskKind
 import com.simiacryptus.cognotik.docops.exec.DocTaskKindResolver
 import com.simiacryptus.cognotik.docops.exec.DocTaskRunner
-import com.simiacryptus.cognotik.docops.exec.DocTaskScheduler
 import com.simiacryptus.cognotik.docops.model.DocSpec
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.docops.plan.DocPlanner
 import com.simiacryptus.cognotik.docops.plan.RelatedFileCollector
 import com.simiacryptus.cognotik.docops.plan.ResolveContext
 import com.simiacryptus.cognotik.docops.plan.TaskBuilder
-import com.simiacryptus.cognotik.docops.plan.policy.ContextMessageComposer
-import com.simiacryptus.cognotik.docops.plan.policy.RootPolicy
-import com.simiacryptus.cognotik.docops.plan.policy.TaskConfigPolicy
-import com.simiacryptus.cognotik.docops.plan.policy.TaskDescriptionComposer
-import com.simiacryptus.cognotik.docops.plan.policy.TaskKindPolicy
-import com.simiacryptus.cognotik.docops.plan.policy.UpdateModePolicy
-import com.simiacryptus.cognotik.docops.resolve.CompositeResourceResolver
-import com.simiacryptus.cognotik.docops.resolve.FileResourceResolver
-import com.simiacryptus.cognotik.docops.resolve.ResourceResolver
-import com.simiacryptus.cognotik.docops.resolve.UrlCache
-import com.simiacryptus.cognotik.docops.resolve.UrlResourceResolver
+import com.simiacryptus.cognotik.docops.plan.policy.*
+import com.simiacryptus.cognotik.docops.resolve.*
 import com.simiacryptus.cognotik.docops.spec.DocSpecLoader
 import com.simiacryptus.cognotik.docops.spec.MarkdownDocSpecLoader
-import com.simiacryptus.cognotik.docops.spec.TemplateEngine
 import com.simiacryptus.cognotik.docops.status.DocStatusStore
 import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
-import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursivelyBy
 import org.slf4j.LoggerFactory
 import java.io.File
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -167,10 +158,10 @@ class DocOps<K : DocTaskKind, S : Any>(
 
   fun run(
     plan: WorkPlan<K> = plan(),
-    scheduler: DocTaskScheduler = host.newScheduler(),
     cancelFlag: AtomicBoolean = AtomicBoolean(false),
     onNewSession: (S) -> Unit = { },
-  ): List<S> = runner.run(plan, scheduler, cancelFlag, onNewSession)
+    executorService: ExecutorService = ThreadPoolManager.getPool(Session.newUserID())
+  ): List<S> = runner.run(plan, cancelFlag, onNewSession, executorService)
 
   companion object {
     private val log = LoggerFactory.getLogger(DocOps::class.java)

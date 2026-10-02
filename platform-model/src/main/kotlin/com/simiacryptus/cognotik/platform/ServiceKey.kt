@@ -20,9 +20,9 @@ class ServiceKey<T : Any>(
     set(value) {
       when {
         null == value -> fail("Factory cannot be null")
-        null != field -> log.info("Ignoring duplicate factory registration for service '$name': $value", RuntimeException("Stack trace"))
+        null != field -> log.info("Ignoring duplicate factory registration for service '$name': $value", /*RuntimeException("Stack trace")*/)
         else -> {
-          log.info("Registering factory for service '$name': $value", RuntimeException("Stack trace"))
+          log.info("Registering factory for service '$name': $value", /*RuntimeException("Stack trace")*/)
           field = value
         }
       }

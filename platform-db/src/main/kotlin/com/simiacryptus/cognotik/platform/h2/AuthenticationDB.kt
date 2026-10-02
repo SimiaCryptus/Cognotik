@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 open class AuthenticationDB : AuthenticationInterface {
   init {
-    log.info("AuthenticationManager initialized", RuntimeException("Stack Trace"))
+    log.info("AuthenticationManager initialized", /*RuntimeException("Stack Trace")*/)
   }
 
   /**

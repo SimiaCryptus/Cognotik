@@ -1,20 +1,21 @@
 package com.simiacryptus.cognotik.agents
 
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.exceptions.BudgetException
+import com.simiacryptus.cognotik.exceptions.NonRetryableException
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.AudioSegment
 import com.simiacryptus.cognotik.platform.model.ModelSchema.*
-import com.simiacryptus.cognotik.exceptions.BudgetException
-import com.simiacryptus.cognotik.exceptions.NonRetryableException
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.toContentList
 import java.util.*
 import java.util.concurrent.ExecutionException
-import java.util.concurrent.atomic.AtomicBoolean
-import java.util.concurrent.atomic.AtomicInteger
-import java.util.concurrent.Executors
 import java.util.concurrent.ThreadFactory
 import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.math.pow
 
 /**
@@ -313,10 +314,16 @@ open class AudioProcessingAgent(
         // Render in parallel. Use daemon threads with descriptive names so a stuck
         // pool cannot prevent JVM shutdown and is easy to identify in thread dumps.
         val poolSize = parallelism.coerceAtLeast(1)
-        val pool = Executors.newFixedThreadPool(poolSize, namedDaemonThreadFactory("audio-render"))
-        val timeoutScheduler = Executors.newScheduledThreadPool(
+        val pool = ThreadPoolManager.newFixedThreadPool(
+            poolSize,
+            Session.NULL,
+            threadFactory = namedDaemonThreadFactory("audio-render")
+        )
+
+        val timeoutScheduler = ThreadPoolManager.newScheduledThreadPool(
             poolSize.coerceAtMost(2),
-            namedDaemonThreadFactory("audio-render-watchdog")
+            Session.NULL,
+            threadFactory = namedDaemonThreadFactory("audio-render-watchdog")
         )
         val overallStart = System.currentTimeMillis()
         try {

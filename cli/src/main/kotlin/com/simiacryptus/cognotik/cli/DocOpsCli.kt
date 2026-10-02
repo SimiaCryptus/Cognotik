@@ -2,9 +2,8 @@ package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.cli.CliSupport.email
+import com.simiacryptus.cognotik.cli.DocOpsCli.printPlan
 import com.simiacryptus.cognotik.docops.DocProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
@@ -15,14 +14,10 @@ import com.simiacryptus.cognotik.docops.status.JsonFileDocStatusStore
 import com.simiacryptus.cognotik.docops.status.TaskStatus
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
-import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
-import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.UnifiedHarness
 import com.simiacryptus.cognotik.util.encrypt
@@ -33,7 +28,6 @@ import java.io.File
 import java.io.PrintStream
 import java.net.URI
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.system.exitProcess
 
@@ -204,7 +198,11 @@ object DocOpsCli {
 
     val cancelFlag = AtomicBoolean(false)
     val pool = FixedConcurrencyProcessor(
-      Executors.newCachedThreadPool { r -> Thread(r, "docops-cli").apply { isDaemon = true } },
+      ThreadPoolManager.newCachedThreadPool(Session.NULL) { r: Runnable ->
+        Thread(r, "docops-cli").apply {
+          isDaemon = true
+        }
+      },
       opts.concurrency
     )
     val shutdownHook = Thread {
@@ -639,10 +637,9 @@ fun ApiChatModel.instance(
   },
   base = provider?.provider?.base ?: model?.provider?.base
   ?: throw IllegalStateException("No API base configured for model $model"),
-  workPool = service,
-  temperature = temperature,
-  scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
   session = session,
+  workPool = service,
+  scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
   user = user,
 )
 

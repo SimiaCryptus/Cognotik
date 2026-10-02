@@ -1,17 +1,18 @@
 package com.simiacryptus.cognotik.util
 
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.listFilesRecursively
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.concurrent.Executors
 
 open class FileGenerator {
   fun run(
@@ -31,7 +32,7 @@ open class FileGenerator {
     user: User = CognotikConfig.localUser
   ) {
     val concurrencyProcessor = FixedConcurrencyProcessor(
-      pool = Executors.newCachedThreadPool(),
+      pool = ThreadPoolManager.newCachedThreadPool(Session.NULL),
       concurrencyLimit = concurrencyLimit
     )
     object : UnifiedHarness(

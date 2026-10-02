@@ -18,12 +18,12 @@ import java.util.concurrent.ExecutorService
 class XAIProvider : APIProvider("xAI", DEFAULT_BASE) {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = XAIChatClient(
     apiKey = key,
     apiBase = base,

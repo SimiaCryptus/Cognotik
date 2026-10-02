@@ -408,7 +408,7 @@ open class UnifiedHarness(
 
     @JvmStatic
     fun configurePlatform(user: User) {
-      log.info("Configuring platform for user: {}", user, RuntimeException("Stack Trace"))
+      log.info("Configuring platform for user: {}", user, /*RuntimeException("Stack Trace")*/)
       PlanHarness.initDynamicEnums()
       CognotikPlatform.init()
       ServiceKey.AUTHENTICATION.factory = {

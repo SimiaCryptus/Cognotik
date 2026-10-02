@@ -1,14 +1,6 @@
 package com.simiacryptus.cognotik.docops
 
-import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.docops.exec.DocExecutionContext
-import com.simiacryptus.cognotik.docops.exec.DocTaskCallbacks
-import com.simiacryptus.cognotik.docops.exec.DocTaskInferenceRequest
-import com.simiacryptus.cognotik.docops.exec.DocTaskKind
-import com.simiacryptus.cognotik.docops.exec.DocTaskKindResolver
-import com.simiacryptus.cognotik.docops.exec.DocTaskRequest
-import com.simiacryptus.cognotik.docops.exec.DocTaskScheduler
+import com.simiacryptus.cognotik.docops.exec.*
 import com.simiacryptus.cognotik.docops.model.DocSpec
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.docops.spec.TemplateEngine
@@ -21,19 +13,16 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.plan.tools.run.SubPlanTask
 import com.simiacryptus.cognotik.plan.tools.writing.RenderErbTemplateTask.RenderErbTemplateTaskExecutionConfig
+import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
-import com.simiacryptus.cognotik.util.PlanHarness
-import com.simiacryptus.cognotik.util.UnifiedHarness
-import com.simiacryptus.cognotik.util.asChatInterface
-import com.simiacryptus.cognotik.util.jsonCast
-import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.ServiceRouter
-import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.util.*
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.concurrent.CompletableFuture
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -72,10 +61,6 @@ object PlatformTaskKinds : DocTaskKindResolver<PlatformTaskKind> {
   }
 }
 
-/** [DocTaskScheduler] backed by the platform thread pools. */
-class FixedConcurrencyScheduler(private val pool: FixedConcurrencyProcessor) : DocTaskScheduler {
-  override fun submit(block: () -> Unit): CompletableFuture<*> = pool.submit { block() }
-}
 
 /**
  * Platform binding of the doc-ops engine: task kinds are [TaskType]s and sessions are [Session]s.
@@ -127,7 +112,6 @@ class DocProcessor(
 
   override val taskKinds: DocTaskKindResolver<PlatformTaskKind> = PlatformTaskKinds
 
-  override fun newScheduler(): DocTaskScheduler = FixedConcurrencyScheduler(newProcessor(user = user))
 
   override fun newExecutionContext(): DocExecutionContext<PlatformTaskKind, Session> =
     HarnessExecutionContext()
@@ -143,31 +127,32 @@ class DocProcessor(
     if (markdownFiles.isEmpty()) docOps.plan() else docOps.plan(markdownFiles.toList())
 
   /** Plan and execute every document under [docsFolder]. */
-  fun run(): List<Session> = docOps.run()
+  fun run(executorService: ExecutorService = ThreadPoolManager.getPool(Session.newUserID())): List<Session> =
+    docOps.run(executorService = executorService)
 
   fun runAll(
     plan: WorkPlan<PlatformTaskKind>,
     pool: FixedConcurrencyProcessor,
     cancelFlag: AtomicBoolean = AtomicBoolean(false),
     onNewSession: (Session) -> Unit = { _ -> }
-  ): Array<Session> = execute(plan, FixedConcurrencyScheduler(pool), cancelFlag, onNewSession)
+  ): Array<Session> = execute(plan, cancelFlag, onNewSession, executorService = pool.pool)
 
   fun runAll(
     plan: WorkPlan<PlatformTaskKind> = docOps.plan(),
     cancelFlag: AtomicBoolean = AtomicBoolean(false),
     onNewSession: (Session) -> Unit = { _ -> }
-  ): Array<Session> = execute(plan, newScheduler(), cancelFlag, onNewSession)
+  ): Array<Session> = execute(plan, cancelFlag, onNewSession)
 
   private fun execute(
     plan: WorkPlan<PlatformTaskKind>,
-    scheduler: DocTaskScheduler,
     cancelFlag: AtomicBoolean,
     onNewSession: (Session) -> Unit,
+    executorService: ExecutorService = ThreadPoolManager.getPool(Session.newUserID()),
   ): Array<Session> = docOps.run(
     plan = plan,
-    scheduler = scheduler,
     cancelFlag = cancelFlag,
     onNewSession = onNewSession,
+    executorService = executorService,
   ).toTypedArray()
 
   /*

@@ -1,15 +1,14 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.apps.SessionProxyServer
+import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import org.slf4j.LoggerFactory
 import java.io.File
-import kotlin.String
 
 class BasicChatApp(
   root: File,
@@ -61,10 +60,9 @@ class BasicChatApp(
         chatModel.instance(
           key = api.key!!,
           base = api.apiBase,
-          workPool = ThreadPoolManager.getPool(session, user),
-          temperature = settings.temperature,
-          scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
           session = session,
+          workPool = ThreadPoolManager.getPool(session, user),
+          scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
           user = user,
         )
       } else {

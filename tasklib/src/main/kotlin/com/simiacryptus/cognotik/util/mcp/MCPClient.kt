@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.util.mcp
 
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -8,7 +10,6 @@ import java.io.BufferedWriter
 import java.io.InputStreamReader
 import java.io.OutputStreamWriter
 import java.util.concurrent.Callable
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
 
@@ -21,7 +22,8 @@ class MCPClient(
   private var process: Process? = null
   private var writer: BufferedWriter? = null
   private var reader: BufferedReader? = null
-  private val executor = Executors.newSingleThreadExecutor()
+  private val executor = ThreadPoolManager.newSingleThreadExecutor(Session.NULL)
+
   private var messageId = 0
 
   data class MCPTool(

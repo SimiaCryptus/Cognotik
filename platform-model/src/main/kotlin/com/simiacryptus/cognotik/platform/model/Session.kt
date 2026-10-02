@@ -90,11 +90,13 @@ open class Session(
      */
     fun tryParse(sessionID: String): Session? = if (isValid(sessionID)) Session(sessionID) else null
 
+    @JvmStatic
     fun newGlobalID(): Session {
       val yyyyMMdd = LocalDate.now().toString().replace("-", "")
       return Session("G-$yyyyMMdd-${id2()}")
     }
 
+    @JvmStatic
     fun newUserID(): Session {
       val yyyyMMdd = LocalDate.now().toString().replace("-", "")
       return Session("U-$yyyyMMdd-${id2()}")

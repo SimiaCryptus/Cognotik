@@ -51,7 +51,7 @@ data class SessionMetadata(
 var LOCAL_WORKER_ID : String? = null
   set(value) {
     if(field != value) {
-      SessionMetadata.log.info("Setting session worker id to $value (was $field)", RuntimeException("Stack trace"))
+      SessionMetadata.log.info("Setting session worker id to $value (was $field)", /*RuntimeException("Stack trace")*/)
       field = value
     }
   }

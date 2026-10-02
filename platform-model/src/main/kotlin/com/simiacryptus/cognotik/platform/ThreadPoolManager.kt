@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.platform
 
+import com.google.common.util.concurrent.ListeningExecutorService
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
 import com.google.common.util.concurrent.ThreadFactoryBuilder
@@ -7,17 +8,15 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import org.slf4j.LoggerFactory
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.CopyOnWriteArrayList
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.*
 
 open class ThreadPoolManager {
 
   private data class SessionKey(val session: Session, val user: User?)
 
-  private val poolCache = ConcurrentHashMap<SessionKey, ImmediateExecutorService>()
+  private val poolCache = ConcurrentHashMap<SessionKey, ListeningExecutorService>()
   private val scheduledPoolCache = ConcurrentHashMap<SessionKey, ListeningScheduledExecutorService>()
+  private val managedExecutors = ConcurrentHashMap<SessionKey, CopyOnWriteArrayList<ExecutorService>>()
 
   /**
    * Every factory handed out, indexed by scope. The scheduled pools are wrapped by
@@ -27,8 +26,15 @@ open class ThreadPoolManager {
   private val factories = ConcurrentHashMap<SessionKey, CopyOnWriteArrayList<RecordingThreadFactory>>()
 
   @JvmOverloads
-  fun threadFactory(session: Session, user: User? = null): RecordingThreadFactory =
-    RecordingThreadFactory(session, user).also { factory ->
+  fun threadFactory(
+    session: Session,
+    user: User? = null,
+    inner: ThreadFactory? = null,
+  ): RecordingThreadFactory =
+    (if (inner != null) RecordingThreadFactory(session, user, inner) else RecordingThreadFactory(
+      session,
+      user
+    )).also { factory ->
       factories.computeIfAbsent(SessionKey(session, user)) { CopyOnWriteArrayList() }.add(factory)
     }
 
@@ -36,7 +42,7 @@ open class ThreadPoolManager {
   fun getPool(
     session: Session,
     user: User? = null,
-  ): ImmediateExecutorService = poolCache.computeIfAbsent(SessionKey(session, user)) {
+  ) = poolCache.computeIfAbsent(SessionKey(session, user)) {
     log.debug("Creating thread pool for session: {}, user: {}", session, user)
     createPool(session, user)
   }
@@ -45,10 +51,55 @@ open class ThreadPoolManager {
   fun getScheduledPool(
     session: Session,
     user: User? = null,
-  ): ListeningScheduledExecutorService = scheduledPoolCache.computeIfAbsent(SessionKey(session, user)) {
+  ) = scheduledPoolCache.computeIfAbsent(SessionKey(session, user)) {
     log.debug("Creating scheduled pool for session: {}, user: {}", session, user)
-    createScheduledPool(session, user)
+    ScheduledThreadPoolExecutor(1).apply {
+      this.threadFactory = threadFactory(session, user)
+    }.let { MoreExecutors.listeningDecorator(it) }
   }
+
+  @JvmOverloads
+  fun newCachedThreadPool(
+    session: Session,
+    user: User? = null,
+    threadFactory: ThreadFactory? = null,
+  ) = Executors.newCachedThreadPool(threadFactory(session, user, threadFactory)).also { executor ->
+    recordExecutor(session, user, executor)
+  }.let { MoreExecutors.listeningDecorator(it) }
+
+  @JvmOverloads
+  fun newFixedThreadPool(
+    nThreads: Int,
+    session: Session,
+    user: User? = null,
+    threadFactory: ThreadFactory? = null,
+  ) = Executors.newFixedThreadPool(nThreads, threadFactory(session, user, threadFactory)).also { executor ->
+    recordExecutor(session, user, executor)
+  }.let { MoreExecutors.listeningDecorator(it) }
+
+  @JvmOverloads
+  fun newScheduledThreadPool(
+    nThreads: Int,
+    session: Session,
+    user: User? = null,
+    threadFactory: ThreadFactory? = null,
+  ) = Executors.newScheduledThreadPool(nThreads, threadFactory(session, user, threadFactory)).also { executor ->
+    recordExecutor(session, user, executor)
+  }.let { MoreExecutors.listeningDecorator(it) }
+
+  @JvmOverloads
+  fun newSingleThreadExecutor(
+    session: Session,
+    user: User? = null,
+    threadFactory: ThreadFactory? = null,
+  ) = Executors.newSingleThreadExecutor(threadFactory(session, user, threadFactory)).also { executor ->
+    recordExecutor(session, user, executor)
+  }.let { MoreExecutors.listeningDecorator(it) }
+
+  private fun recordExecutor(session: Session, user: User?, executor: ExecutorService) {
+    managedExecutors.computeIfAbsent(SessionKey(session, user)) { CopyOnWriteArrayList() }.add(executor)
+  }
+
 
   fun isAlive(
     session: Session? = null,
@@ -72,10 +123,19 @@ open class ThreadPoolManager {
    */
   @JvmOverloads
   fun shutdown(session: Session, user: User? = null) {
-    val key = SessionKey(session, user)
-    (poolCache.remove(key) as? ExecutorService)?.let { runCatching { it.shutdown() } }
-    scheduledPoolCache.remove(key)?.let { runCatching { it.shutdown() } }
-    factories.remove(key)
+    val matchingKeys = if (user == null) {
+      (poolCache.keys + scheduledPoolCache.keys + managedExecutors.keys + factories.keys)
+        .filter { it.session == session }
+        .toSet()
+    } else {
+      setOf(SessionKey(session, user))
+    }
+    for (key in matchingKeys) {
+      (poolCache.remove(key) as? ExecutorService)?.let { runCatching { it.shutdown() } }
+      scheduledPoolCache.remove(key)?.let { runCatching { it.shutdown() } }
+      managedExecutors.remove(key)?.forEach { runCatching { it.shutdown() } }
+      factories.remove(key)
+    }
     log.debug("Shut down pools for session: {}, user: {}", session, user)
   }
 
@@ -94,10 +154,10 @@ open class ThreadPoolManager {
 
   class RecordingThreadFactory(
     val session: Session,
-    val user: User?
+    val user: User?,
+    private val inner: ThreadFactory =
+      ThreadFactoryBuilder().setNameFormat("Session $session; User $user; #%d").setDaemon(true).build(),
   ) : ImmediateExecutorService.ThreadFactoryTrackerInterface() {
-    private val inner =
-      ThreadFactoryBuilder().setNameFormat("Session $session; User $user; #%d").setDaemon(true).build()
 
     override fun newThread(r: Runnable): Thread {
       log.debug("Creating new thread for session: {}, user: {}", session, user)
@@ -115,13 +175,28 @@ open class ThreadPoolManager {
   }
 
   private fun createPool(session: Session, user: User?) = ImmediateExecutorService(threadFactory(session, user))
+    .let { MoreExecutors.listeningDecorator(it) }
 
-  private fun createScheduledPool(session: Session, user: User?) =
-    MoreExecutors.listeningDecorator(ScheduledThreadPoolExecutor(1).apply {
-      threadFactory = this@ThreadPoolManager.threadFactory(session, user)
-    })
+  fun livingThreads() : List<Thread> = factories.values.flatMap { list ->
+    list.flatMap { factory ->
+      synchronized(factory.threads) {
+        factory.threads.filter { it.isAlive }
+      }
+    }
+  }
 
   companion object : ThreadPoolManager() {
+
     private val log = LoggerFactory.getLogger(ThreadPoolManager::class.java)
   }
 }
+
+val ListeningExecutorService.threadFactory: ThreadPoolManager.RecordingThreadFactory
+  get() {
+    val field = this::class.java.getDeclaredField("delegate")
+    field.isAccessible = true
+    val delegate = field.get(this)
+    val delegateField = delegate::class.java.getDeclaredField("threadFactory")
+    delegateField.isAccessible = true
+    return delegateField.get(delegate) as ThreadPoolManager.RecordingThreadFactory
+  }
