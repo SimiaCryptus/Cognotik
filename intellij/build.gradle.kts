@@ -128,11 +128,6 @@ tasks {
     buildSearchableOptions {
         enabled = false
     }
-    withType<KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-        }
-    }
 
     jar {
         duplicatesStrategy = DuplicatesStrategy.EXCLUDE
@@ -149,12 +144,6 @@ tasks {
         systemProperty("junit.jupiter.extensions.autodetection.enabled", "true")
 
         include("**/*Test.class")
-    }
-    withType<KotlinCompile> {
-        compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-            javaParameters.set(true)
-        }
     }
 
     runIde {
