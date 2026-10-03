@@ -557,7 +557,7 @@ class LoginServlet : HttpServlet() {
       log.debug("doGet action='{}' from remote='{}'", action, req.remoteAddr)
       // If the user is already authenticated, redirect them away from the login flow
       // regardless of which action was requested (login, register, or default).
-      if (action != "logout" && isAlreadyAuthenticated(req)) {
+       if (action != "logout" && !methodAllowsAuthenticated(req, action) && isAlreadyAuthenticated(req)) {
         val redirectUrl = resolveRedirectTarget(req.getParameter("target"))
         log.debug("User already authenticated, redirecting to '{}'", redirectUrl)
         resp.sendRedirect(redirectUrl)
@@ -593,7 +593,7 @@ class LoginServlet : HttpServlet() {
       val action = req.getParameter("action") ?: req.getParameter("formAction")
       log.debug("doPost action='{}' from remote='{}'", action, req.remoteAddr)
       // If the user is already authenticated, redirect them away from login/register flows.
-      if (action != "logout" && isAlreadyAuthenticated(req)) {
+       if (action != "logout" && !methodAllowsAuthenticated(req, action) && isAlreadyAuthenticated(req)) {
         val redirectUrl = resolveRedirectTarget(req.getParameter("target"))
         log.debug("User already authenticated on POST, redirecting to '{}'", redirectUrl)
         resp.sendRedirect(redirectUrl)
@@ -629,6 +629,22 @@ class LoginServlet : HttpServlet() {
       }
     }
   }
+   /**
+    * Returns true if the request targets a [LoginMethod] that explicitly needs to handle
+    * already-authenticated users (e.g. QR login approval from a logged-in phone).
+    */
+   private fun methodAllowsAuthenticated(req: HttpServletRequest, action: String?): Boolean {
+     if (action != "login") return false
+     val methodName = req.getParameter("loginMethod")
+     if (methodName.isNullOrBlank()) return false
+     return try {
+       LoginMethod.valueOf(methodName).allowsAuthenticatedUser(req)
+     } catch (e: Exception) {
+       log.debug("Could not resolve login method '{}' for auth bypass check", methodName)
+       false
+     }
+   }
+
 
   /**
    * Dispatches the POST to the selected [LoginMethod] (if any). If the method's
@@ -1020,6 +1036,7 @@ class LoginServlet : HttpServlet() {
     target: String? = null
   ) {
     try {
+       val error = error ?: req.getParameter("error")?.takeIf { it.isNotBlank() }?.take(300)
       val effectiveTarget = target ?: req.getParameter("target")
       // If the user is already authenticated, skip the login form and redirect them
       // to either the requested target or the homepage. This applies regardless of

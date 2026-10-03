@@ -17,7 +17,7 @@ if (typeof module !== 'undefined' && module.exports) {
 
 // Initialize services
 const httpService = new HttpService();
-const notificationService = { showNotification };
+const notificationService = {showNotification};
 
 // Initialize app state with dependencies
 let appState = new AppState({
@@ -62,6 +62,7 @@ const taskConfigManager = new TaskConfigManager({
 function showNotification(message, type = 'info') {
     return uiManager.showNotification(message, type);
 }
+
 // ===== API Key Banner =====
 function hasConfiguredApiKeys(state) {
     if (!state || !state.apiSettings) return false;
@@ -73,35 +74,38 @@ function hasConfiguredApiKeys(state) {
         return v !== null && v !== undefined && String(v).trim() !== '';
     });
 }
+
 function isCognotikHostedEnvironment() {
-     try {
-         const host = (window.location.hostname || '').toLowerCase();
-         if (!host) return false;
-         // Match hosted.cognotik.com exactly, or any subdomain of cognotik.com
-         if (host === 'hosted.cognotik.com') return true;
-         if (host === 'cognotik.com') return true;
-         if (host.endsWith('.cognotik.com')) return true;
-         return false;
-     } catch (e) {
-         return false;
-     }
+    try {
+        const host = (window.location.hostname || '').toLowerCase();
+        if (!host) return false;
+        // Match hosted.cognotik.com exactly, or any subdomain of cognotik.com
+        if (host === 'hosted.cognotik.com') return true;
+        if (host === 'cognotik.com') return true;
+        if (host.endsWith('.cognotik.com')) return true;
+        return false;
+    } catch (e) {
+        return false;
+    }
 }
+
 function updateApiKeyBanner() {
     const banner = document.getElementById('api-key-banner');
     if (!banner) return;
-     // Suppress the banner entirely on the hosted Cognotik environment,
-     // where API keys are managed server-side and users do not need to
-     // configure their own.
-     if (isCognotikHostedEnvironment()) {
-         banner.style.display = 'none';
-         return;
-     }
+    // Suppress the banner entirely on the hosted Cognotik environment,
+    // where API keys are managed server-side and users do not need to
+    // configure their own.
+    if (isCognotikHostedEnvironment()) {
+        banner.style.display = 'none';
+        return;
+    }
     if (hasConfiguredApiKeys(appState)) {
         banner.style.display = 'none';
     } else {
         banner.style.display = 'block';
     }
 }
+
 function setupApiKeyBanner() {
     const actionBtn = document.getElementById('api-key-banner-action');
     if (actionBtn) {
@@ -113,6 +117,7 @@ function setupApiKeyBanner() {
         });
     }
 }
+
 // ===== Localhost detection: hide User Settings button when not on localhost =====
 function isLocalhost() {
     const host = window.location.hostname;
@@ -121,12 +126,14 @@ function isLocalhost() {
         || host === '::1'
         || host === '[::1]';
 }
+
 function applyLocalhostRestrictions() {
     if (!isLocalhost()) {
         const pluginManagerBtn = document.getElementById('plugin-manager-btn');
         if (pluginManagerBtn) pluginManagerBtn.style.display = 'none';
     }
 }
+
 // ===== Update logout button label with user name =====
 function updateLogoutButtonLabel() {
     try {
@@ -142,7 +149,9 @@ function updateLogoutButtonLabel() {
             btn.setAttribute('aria-label', 'Login');
             btn.setAttribute('title', 'Login');
             btn.innerHTML = '<span class="btn-icon" aria-hidden="true">🔑</span> Login';
-            btn.onclick = () => { window.location.href = '/login/'; };
+            btn.onclick = () => {
+                window.location.href = '/login/';
+            };
         } else {
             // Clone the button to strip any pre-existing event listeners
             // (e.g. the login redirect handler attached by the Menubar component)
@@ -160,6 +169,7 @@ function updateLogoutButtonLabel() {
         console.warn('[init] Unable to update logout button label:', e);
     }
 }
+
 function setupUserMenu(btn, label) {
     // Make the parent a positioning context for the dropdown
     const parent = btn.parentElement;
@@ -204,8 +214,12 @@ function setupUserMenu(btn, label) {
         item.style.font = 'inherit';
         item.style.color = 'inherit';
         item.innerHTML = '<span aria-hidden="true">' + icon + '</span> ' + escapeHtmlSafe(text);
-        item.addEventListener('mouseenter', () => { item.style.background = 'rgba(0,0,0,0.06)'; });
-        item.addEventListener('mouseleave', () => { item.style.background = 'transparent'; });
+        item.addEventListener('mouseenter', () => {
+            item.style.background = 'rgba(0,0,0,0.06)';
+        });
+        item.addEventListener('mouseleave', () => {
+            item.style.background = 'transparent';
+        });
         item.addEventListener('click', (e) => {
             e.stopPropagation();
             hideMenu();
@@ -228,11 +242,16 @@ function setupUserMenu(btn, label) {
         if (btn) btn.click();
     });
     menuInner.appendChild(apiKeysItem);
+    const workersItem = makeItem('🖥️', 'Manage Nodes', () => {
+        const btn = document.getElementById('workers-manage-btn');
+        if (btn) btn.click();
+    });
+    menuInner.appendChild(workersItem);
     const logoutItem = makeItem('🚪', 'Logout', () => {
         const confirmMessage = 'Are you sure you want to log out' +
             (label && label !== 'Logout' ? ' as ' + label : '') + '?';
         if (window.confirm(confirmMessage)) {
-            fetch('/login/?action=logout', { method: 'POST' }).then(() => location.reload());
+            fetch('/login/?action=logout', {method: 'POST'}).then(() => location.reload());
         }
     });
     menuInner.appendChild(logoutItem);
@@ -298,6 +317,7 @@ function setupUserMenu(btn, label) {
         }
     });
 }
+
 function escapeHtmlSafe(s) {
     if (typeof HtmlUtils !== 'undefined' && HtmlUtils && typeof HtmlUtils.escapeHtml === 'function') {
         return HtmlUtils.escapeHtml(s);
@@ -306,9 +326,10 @@ function escapeHtmlSafe(s) {
         '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
     }[c]));
 }
+
 // ===== Usage modal =====
 // Generic helper to wire up a modal that displays a given URL in an iframe.
-function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url, loadingOverlayId }) {
+function setupIframeModal({buttonId, modalId, iframeId, closeBtnId, url, loadingOverlayId}) {
     const btn = document.getElementById(buttonId);
     const modal = document.getElementById(modalId);
     const iframe = document.getElementById(iframeId);
@@ -346,6 +367,7 @@ function setupIframeModal({ buttonId, modalId, iframeId, closeBtnId, url, loadin
         if (e.key === 'Escape' && modal.style.display === 'block') close();
     });
 }
+
 // ===== Sessions button =====
 function setupSessionsButton() {
     setupIframeModal({
@@ -357,6 +379,7 @@ function setupSessionsButton() {
         loadingOverlayId: 'sessions-loading-overlay'
     });
 }
+
 // ===== API Keys button =====
 function setupApiKeysButton() {
     setupIframeModal({
@@ -368,6 +391,59 @@ function setupApiKeysButton() {
         loadingOverlayId: 'api-keys-loading-overlay'
     });
 }
+
+// ===== Manage Nodes (workers) button =====
+// Builds the modal DOM on demand (if not already in the page) and wires it
+// to the hidden trigger button used by the user dropdown menu.
+function ensureWorkersManageModal() {
+    if (document.getElementById('workers-manage-modal')) return;
+    const modal = document.createElement('div');
+    modal.id = 'workers-manage-modal';
+    modal.setAttribute('role', 'dialog');
+    modal.setAttribute('aria-label', 'Manage Nodes');
+    modal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;' +
+        'background:rgba(0,0,0,0.5);z-index:2000;';
+    const content = document.createElement('div');
+    content.style.cssText = 'position:relative;width:90%;max-width:1100px;height:85vh;' +
+        'margin:5vh auto;background:var(--color-surface, #fff);border-radius:8px;' +
+        'display:flex;flex-direction:column;overflow:hidden;' +
+        'box-shadow:0 8px 24px rgba(0,0,0,0.3);';
+    const header = document.createElement('div');
+    header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
+        'padding:8px 14px;border-bottom:1px solid var(--color-border, #ddd);';
+    const title = document.createElement('strong');
+    title.textContent = 'Manage Nodes';
+    const closeBtn = document.createElement('button');
+    closeBtn.id = 'close-workers-manage-modal';
+    closeBtn.type = 'button';
+    closeBtn.setAttribute('aria-label', 'Close');
+    closeBtn.innerHTML = '&times;';
+    closeBtn.style.cssText = 'background:transparent;border:none;font-size:24px;' +
+        'line-height:1;cursor:pointer;color:inherit;';
+    header.appendChild(title);
+    header.appendChild(closeBtn);
+    const iframe = document.createElement('iframe');
+    iframe.id = 'workers-manage-iframe';
+    iframe.title = 'Manage Nodes';
+    iframe.src = 'about:blank';
+    iframe.style.cssText = 'flex:1;width:100%;border:0;';
+    content.appendChild(header);
+    content.appendChild(iframe);
+    modal.appendChild(content);
+    document.body.appendChild(modal);
+}
+
+function setupWorkersManageButton() {
+    ensureWorkersManageModal();
+    setupIframeModal({
+        buttonId: 'workers-manage-btn',
+        modalId: 'workers-manage-modal',
+        iframeId: 'workers-manage-iframe',
+        closeBtnId: 'close-workers-manage-modal',
+        url: '/workers/manage'
+    });
+}
+
 // ===== Budget / Usage button (unified) =====
 function formatBudget(amount) {
     if (typeof amount !== 'number' || isNaN(amount)) return '—';
@@ -375,12 +451,13 @@ function formatBudget(amount) {
     const abs = Math.abs(amount);
     return sign + '$' + abs.toFixed(2);
 }
+
 function updateBudgetDisplay() {
     const span = document.getElementById('budget-amount');
     if (!span) return;
     const btn = document.getElementById('budget-btn');
     fetch('/usage/?format=json', {
-        headers: { 'Accept': 'application/json' }
+        headers: {'Accept': 'application/json'}
     }).then(response => {
         if (!response.ok) {
             throw new Error('Failed to fetch usage: ' + response.status);
@@ -423,6 +500,7 @@ function updateBudgetDisplay() {
         updateBudgetWarningBanner(null);
     });
 }
+
 function setupBudgetButton() {
     setupIframeModal({
         buttonId: 'budget-btn',
@@ -435,6 +513,7 @@ function setupBudgetButton() {
     // Refresh budget every 60 seconds
     setInterval(updateBudgetDisplay, 60000);
 }
+
 function updateBudgetWarningBanner(budget) {
     const banner = document.getElementById('budget-warning-banner');
     if (!banner) return;
@@ -462,11 +541,11 @@ function updateBudgetWarningBanner(budget) {
 
 
 // ===== Main Initialization =====
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', function () {
     // Render top menubar via reusable component
     renderMenubar();
 
-    setupBasicChatModal({ httpService, notificationService, sessionId });
+    setupBasicChatModal({httpService, notificationService, sessionId});
     setupSettingsSection(notificationService);
     setupCustomPipelineModal({
         appState, modelManager, validationService, uiManager,
@@ -487,6 +566,7 @@ document.addEventListener('DOMContentLoaded', function() {
     setupApiKeyBanner();
     setupSessionsButton();
     setupApiKeysButton();
+    setupWorkersManageButton();
     setupBudgetButton();
     applyLocalhostRestrictions();
     if (typeof setupAuthBanner === 'function') setupAuthBanner();
@@ -505,6 +585,7 @@ document.addEventListener('DOMContentLoaded', function() {
         console.error('[init] Error loading app directory:', error);
     });
 });
+
 function renderMenubar() {
     if (typeof Menubar === 'undefined') {
         console.warn('[renderMenubar] Menubar component not loaded');
@@ -515,19 +596,19 @@ function renderMenubar() {
         title: 'Cognotik',
         titleAriaLabel: 'About Cognotik',
         titleClickable: true,
-        onTitleClick: function() {
+        onTitleClick: function () {
             if (typeof window.__openAboutModal === 'function') {
                 window.__openAboutModal();
             }
         },
         showLayoutSelector: true,
         showThemeSelector: true,
-        onLayoutChange: function(layout) {
+        onLayoutChange: function (layout) {
             if (appGridSection) appGridSection.setAttribute('data-layout', layout);
         },
         buttons: [
-            { id: 'plugin-manager-btn', icon: '🔌', label: 'Plugins', ariaLabel: 'Open Plugin Manager' },
-            { id: 'sessions-btn', icon: '📁', label: 'Sessions', ariaLabel: 'Open Sessions' },
+            {id: 'plugin-manager-btn', icon: '🔌', label: 'Plugins', ariaLabel: 'Open Plugin Manager'},
+            {id: 'sessions-btn', icon: '📁', label: 'Sessions', ariaLabel: 'Open Sessions'},
             {
                 id: 'budget-btn',
                 icon: '📊',
@@ -542,7 +623,9 @@ function renderMenubar() {
                 label: 'Login',
                 labelId: 'auth-btn-label',
                 ariaLabel: 'Login',
-                onClick: function() { window.location.href = '/login/'; }
+                onClick: function () {
+                    window.location.href = '/login/';
+                }
             }
         ]
     });
@@ -564,48 +647,57 @@ function renderMenubar() {
         hiddenApiKeysBtn.style.display = 'none';
         document.body.appendChild(hiddenApiKeysBtn);
     }
+    // Hidden trigger button for the Manage Nodes modal, invoked from the
+    // user dropdown menu item.
+    if (!document.getElementById('workers-manage-btn')) {
+        const hiddenWorkersBtn = document.createElement('button');
+        hiddenWorkersBtn.id = 'workers-manage-btn';
+        hiddenWorkersBtn.type = 'button';
+        hiddenWorkersBtn.style.display = 'none';
+        document.body.appendChild(hiddenWorkersBtn);
+    }
 }
 
 // Load API providers and models first, then initialize everything
 loadApiProviders().then(() => {
     uiManager.setupTooltips();
-     return loadUserSettings(httpService, appState);
+    return loadUserSettings(httpService, appState);
 }).then(() => {
-     // Ensure DOM (and menubar) are ready before touching auth-btn etc.
-     const applyPostSettings = () => {
-         modelManager.populateModelSelections();
-         populateQuickSettingsModels(appState, availableModels);
-         updateApiKeyBanner();
-         updateLogoutButtonLabel();
-         // Re-render app grid now that login state is known
-         renderAppGrid();
-         setupAppCards();
-     };
-     if (document.readyState === 'loading') {
-         document.addEventListener('DOMContentLoaded', applyPostSettings);
-     } else {
-         // Defer to next tick to ensure DOMContentLoaded handler
-         // (which renders the menubar) has run.
-         setTimeout(applyPostSettings, 0);
-     }
+    // Ensure DOM (and menubar) are ready before touching auth-btn etc.
+    const applyPostSettings = () => {
+        modelManager.populateModelSelections();
+        populateQuickSettingsModels(appState, availableModels);
+        updateApiKeyBanner();
+        updateLogoutButtonLabel();
+        // Re-render app grid now that login state is known
+        renderAppGrid();
+        setupAppCards();
+    };
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', applyPostSettings);
+    } else {
+        // Defer to next tick to ensure DOMContentLoaded handler
+        // (which renders the menubar) has run.
+        setTimeout(applyPostSettings, 0);
+    }
     // Sync the collect-session-data checkbox with loaded settings.
     // Wrap in a helper that waits for the DOM to be ready, since this
     // initialization chain runs outside of DOMContentLoaded and the
     // checkbox element may not yet exist when settings finish loading.
     const syncCollectSessionDataCheckbox = () => {
         const cs = document.getElementById('collect-session-data');
-         console.log('[syncCollectSessionDataCheckbox] checkbox found:', !!cs,
-             'apiSettings exists:', !!appState.apiSettings);
+        console.log('[syncCollectSessionDataCheckbox] checkbox found:', !!cs,
+            'apiSettings exists:', !!appState.apiSettings);
         if (cs && appState.apiSettings) {
             const v = appState.apiSettings.collectSessionData;
-             const checked = (v === true || v === 'true' || v === 1 || v === '1');
-             console.log('[syncCollectSessionDataCheckbox] value:', v,
-                 '(type:', typeof v, ') => checked:', checked);
-             cs.checked = checked;
-             console.log('[syncCollectSessionDataCheckbox] cs.checked after:', cs.checked);
-         } else {
-             console.warn('[syncCollectSessionDataCheckbox] Skipping sync - ' +
-                 'checkbox:', !!cs, 'apiSettings:', !!appState.apiSettings);
+            const checked = (v === true || v === 'true' || v === 1 || v === '1');
+            console.log('[syncCollectSessionDataCheckbox] value:', v,
+                '(type:', typeof v, ') => checked:', checked);
+            cs.checked = checked;
+            console.log('[syncCollectSessionDataCheckbox] cs.checked after:', cs.checked);
+        } else {
+            console.warn('[syncCollectSessionDataCheckbox] Skipping sync - ' +
+                'checkbox:', !!cs, 'apiSettings:', !!appState.apiSettings);
         }
     };
     if (document.readyState === 'loading') {
@@ -617,18 +709,18 @@ loadApiProviders().then(() => {
 }).catch(error => {
     console.error('[init] Error during initialization:', error);
     uiManager.setupTooltips();
-     loadUserSettings(httpService, appState).then(() => {
-         const applyFallback = () => {
-             populateQuickSettingsModels(appState, availableModels);
-             updateApiKeyBanner();
-             updateLogoutButtonLabel();
-             renderAppGrid();
-             setupAppCards();
-         };
-         if (document.readyState === 'loading') {
-             document.addEventListener('DOMContentLoaded', applyFallback);
-         } else {
-             setTimeout(applyFallback, 0);
-         }
-     });
+    loadUserSettings(httpService, appState).then(() => {
+        const applyFallback = () => {
+            populateQuickSettingsModels(appState, availableModels);
+            updateApiKeyBanner();
+            updateLogoutButtonLabel();
+            renderAppGrid();
+            setupAppCards();
+        };
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', applyFallback);
+        } else {
+            setTimeout(applyFallback, 0);
+        }
+    });
 });
