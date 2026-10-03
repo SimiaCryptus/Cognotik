@@ -1,16 +1,15 @@
 package com.simiacryptus.cognotik.auth
 
 import org.slf4j.LoggerFactory
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.CopyOnWriteArrayList
 import java.util.concurrent.TimeUnit
 
 /**
  * Chains multiple [AuthorizationStep]s together. Each step must succeed before the next is attempted.
  * The final [onSuccess] callback is invoked only if all steps pass.
  */
-import java.util.concurrent.CopyOnWriteArrayList
-
 class AuthorizationChain(
   val steps: List<AuthorizationStep>
 ) {
@@ -22,6 +21,7 @@ class AuthorizationChain(
    */
   fun onSessionStatusChanged(listener: (AuthorizationSession) -> Unit) {
     sessionStatusListeners.add(listener)
+    log.debug("Registered session status listener (total: {})", sessionStatusListeners.size)
   }
 
   /**
@@ -33,7 +33,8 @@ class AuthorizationChain(
       try {
         listener(session)
       } catch (e: Exception) {
-        // Prevent one listener from breaking others
+        // Prevent one listener from breaking others, but don't hide the problem
+        log.warn("Session status listener failed for session {}", session.sessionId, e)
       }
     }
   }
@@ -46,6 +47,10 @@ class AuthorizationChain(
 
     /** Maximum session age before automatic cleanup (30 minutes) */
     private val SESSION_TIMEOUT_MS = TimeUnit.MINUTES.toMillis(30)
+
+    /** Readable step name; anonymous classes and lambdas have an empty simpleName. */
+    private fun stepName(step: AuthorizationStep): String =
+      step.javaClass.simpleName.ifEmpty { step.javaClass.name }
 
     /**
      * Builder DSL for constructing an [AuthorizationChain].
@@ -62,14 +67,21 @@ class AuthorizationChain(
      */
     fun getSession(sessionId: String): AuthorizationSession? {
       cleanupExpiredSessions()
-      return activeSessions[sessionId]
+      val session = activeSessions[sessionId]
+      if (session == null) {
+        log.debug("Authorization session not found (unknown or expired)")
+      }
+      return session
     }
 
     /**
      * Remove a completed or expired session.
      */
     fun removeSession(sessionId: String) {
-      activeSessions.remove(sessionId)
+      val removed = activeSessions.remove(sessionId)
+      if (removed != null) {
+        log.debug("Removed authorization session {} (status={})", sessionId, removed.status)
+      }
     }
 
     /**
@@ -80,9 +92,13 @@ class AuthorizationChain(
       val expired = activeSessions.entries.filter { (_, session) ->
         now - session.createdAt > SESSION_TIMEOUT_MS
       }
-      for ((id, _) in expired) {
-        activeSessions.remove(id)
-        log.info("Cleaned up expired authorization session: {}", id)
+      for ((id, session) in expired) {
+        if (activeSessions.remove(id) != null) {
+          log.info(
+            "Cleaned up expired authorization session: {} (age={}s, status={})",
+            id, (now - session.createdAt) / 1000, session.status
+          )
+        }
       }
     }
   }
@@ -101,9 +117,10 @@ class AuthorizationChain(
 
     @Volatile
     var status: SessionStatus = SessionStatus.IN_PROGRESS
-      set(value)  {
+      set(value) {
         synchronized(this) {
           if (field == value) return // No change
+          log.debug("Authorization session {} status changed: {} -> {}", sessionId, field, value)
           field = value
           // Notify listeners of status change
           notifySessionStatusChanged(this)
@@ -149,6 +166,7 @@ class AuthorizationChain(
       onSuccess()
       return
     }
+    log.debug("Executing authorization chain with {} step(s)", steps.size)
     executeStep(0, onSuccess, onFailure)
   }
 
@@ -159,7 +177,10 @@ class AuthorizationChain(
    * @return The authorization session, or null if there are no steps
    */
   fun startWebFlow(): AuthorizationSession? {
-    if (steps.isEmpty()) return null
+    if (steps.isEmpty()) {
+      log.debug("Not starting web authorization flow: chain has no steps")
+      return null
+    }
     val sessionId = UUID.randomUUID().toString()
     val session = AuthorizationSession(
       sessionId = sessionId,
@@ -168,7 +189,10 @@ class AuthorizationChain(
     // Skip any non-interactive steps at the beginning
     advancePastNonInteractiveSteps(session)
     activeSessions[sessionId] = session
-    log.info("Started web authorization flow, sessionId={}, totalSteps={}", sessionId, steps.size)
+    log.info(
+      "Started web authorization flow, sessionId={}, totalSteps={}, currentStep={}, status={}",
+      sessionId, steps.size, session.currentStepIndex + 1, session.status
+    )
     return session
   }
 
@@ -188,7 +212,7 @@ class AuthorizationChain(
       var failReason = ""
       log.debug(
         "Auto-executing non-interactive step {}/{}: {}",
-        session.currentStepIndex + 1, steps.size, step.javaClass.simpleName
+        session.currentStepIndex + 1, steps.size, stepName(step)
       )
       try {
         step.authorize(
@@ -200,25 +224,34 @@ class AuthorizationChain(
         )
       } catch (e: Exception) {
         log.error(
-          "Exception executing non-interactive step {}/{}: {}",
-          session.currentStepIndex + 1, steps.size, e.message, e
+          "Exception executing non-interactive step {}/{} ({}) in session {}",
+          session.currentStepIndex + 1, steps.size, stepName(step), session.sessionId, e
         )
-        session.status = SessionStatus.FAILED
+        // Set the reason first so status listeners can see it
         session.failureReason = "Step execution error: ${e.message}"
+        session.status = SessionStatus.FAILED
         break
       }
       if (stepFailed) {
-        session.status = SessionStatus.FAILED
+        log.warn(
+          "Non-interactive step {}/{} ({}) failed in session {}: {}",
+          session.currentStepIndex + 1, steps.size, stepName(step), session.sessionId, failReason
+        )
         session.failureReason = failReason
+        session.status = SessionStatus.FAILED
         break
       }
       if (stepPassed) {
+        log.debug(
+          "Non-interactive step {}/{} ({}) passed in session {}",
+          session.currentStepIndex + 1, steps.size, stepName(step), session.sessionId
+        )
         session.currentStepIndex++
       } else {
         // Step didn't call either callback synchronously - treat as needing interaction
         log.debug(
-          "Non-interactive step {}/{} did not invoke callback synchronously, treating as interactive",
-          session.currentStepIndex + 1, steps.size
+          "Non-interactive step {}/{} ({}) did not invoke callback synchronously, treating as interactive",
+          session.currentStepIndex + 1, steps.size, stepName(step)
         )
         break
       }
@@ -232,17 +265,20 @@ class AuthorizationChain(
       return
     }
     val step = steps[index]
-    log.debug("Executing authorization step {}/{}: {}", index + 1, steps.size, step.javaClass.simpleName)
+    log.debug("Executing authorization step {}/{}: {}", index + 1, steps.size, stepName(step))
     try {
       step.authorize(
-        onSuccess = { executeStep(index + 1, onSuccess, onFailure) },
+        onSuccess = {
+          log.debug("Authorization step {}/{} ({}) succeeded", index + 1, steps.size, stepName(step))
+          executeStep(index + 1, onSuccess, onFailure)
+        },
         onFailure = { reason ->
-          log.debug("Authorization step {}/{} failed: {}", index + 1, steps.size, reason)
+          log.warn("Authorization step {}/{} ({}) failed: {}", index + 1, steps.size, stepName(step), reason)
           onFailure(reason)
         }
       )
     } catch (e: Exception) {
-      log.error("Exception in authorization step {}/{}: {}", index + 1, steps.size, e.message, e)
+      log.error("Exception in authorization step {}/{} ({})", index + 1, steps.size, stepName(step), e)
       onFailure("Step execution error: ${e.message}")
     }
   }

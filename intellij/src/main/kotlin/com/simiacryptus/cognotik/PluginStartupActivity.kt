@@ -17,20 +17,22 @@ import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.platform.ChatInterface.Companion.ENABLE_LOGS
 import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceMap
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
-import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
 import com.simiacryptus.cognotik.platform.model.ResourceRef
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.text.validate.FileValidators
 import com.simiacryptus.cognotik.util.IntelliJPsiValidator
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
+import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.concurrent.atomic.AtomicBoolean
@@ -39,6 +41,31 @@ class PluginStartupActivity : ProjectActivity {
 
     init {
         require(null != CodeRuntimes.GroovyRuntime) { "Groovy runtime not initialized" } // Force DynamicEnum initialization
+        DatabaseFacet.root = File(System.getProperty("user.home")).resolve(".cognotik2").absolutePath
+        OrchestrationConfig.instanceFn =
+            { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
+        ServiceKey.AUTHORIZATION_MANAGER.factory = {
+            object : AuthorizationInterface {
+                override fun isAuthorized(
+                    resource: ResourceRef?,
+                    principal: Principal,
+                    operationType: OperationType
+                ): Boolean {
+                    return true
+                }
+            }
+        }
+        ServiceKey.AUTHENTICATION.factory = {
+            object : AuthenticationInterface {
+                override fun getUser(accessToken: String?) = CognotikConfig.localUser
+                override fun putUser(accessToken: String, user: User) = user
+            }
+        }
+        ServiceKey.USER_RESOLVER.factory = {
+            object : UserProvider {
+                override fun authenticate(request: HttpServletRequest) = CognotikConfig.localUser
+            }
+        }
         //ResourceApps("/apps/disabled_apps.json").init()
         CoreProviders.init()
         CoreTasks.init()
@@ -49,19 +76,19 @@ class PluginStartupActivity : ProjectActivity {
         } catch (e: Exception) {
             log.error("Failed to load apps.json", e)
         }
+    }
+
+    override suspend fun execute(project: Project) {
+        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
+        val extFile = project.getExternalConfigurationDir()?.toFile()
+        if (!DatabaseFacet.isInitialized() && null != extFile) {
+            DatabaseFacet.root = extFile.resolve(".cognotik").absolutePath
+        }
         try {
             ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         } catch (e: Exception) {
             log.error("Error loading plugins", e)
         }
-    }
-
-    override suspend fun execute(project: Project) {
-        log.info("Starting Cognotik plugin initialization for project: ${project.name}")
-        //DatabaseFacet.resetAll()
-        val extFile = project.getExternalConfigurationDir()?.toFile()
-        if(!DatabaseFacet.isInitialized()) DatabaseFacet.root = (extFile ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
-        //DatabaseFacet.root = (project.basePath?.let { File(it) } ?: File(System.getProperty("user.home"))).resolve(".cognotik").absolutePath
         ENABLE_LOGS = true // TODO: Make this configurable via system property or plugin settings
         configLogging()
         System.getProperty("cognotik.config")?.let { configFile ->
@@ -134,21 +161,6 @@ class PluginStartupActivity : ProjectActivity {
         require(TaskType.values().isNotEmpty())
         AppSettingsState.instance.apply {
             log.debug("Configuring AWS platform - profile: $awsProfile, region: $awsRegion, bucket: $awsBucket")
-        }
-        OrchestrationConfig.instanceFn =
-            { model, user -> model.instance() ?: throw IllegalStateException("Model or Provider not set") }
-        ServiceMap[ServiceKey.AUTHORIZATION_MANAGER] = object : AuthorizationInterface {
-              override fun isAuthorized(
-                  resource: ResourceRef?,
-                  principal: Principal,
-                  operationType: OperationType
-              ): Boolean {
-                  return true
-              }
-          }
-        ServiceMap[ServiceKey.AUTHENTICATION] = object : AuthenticationInterface {
-            override fun getUser(accessToken: String?) = CognotikConfig.localUser
-            override fun putUser(accessToken: String, user: User) = user
         }
     }
 

@@ -15,12 +15,12 @@ object ServiceProviders {
   val SearchAPI: APIProvider = object : APIProvider("SearchAPI", "https://api.searchapi.com") {
 
     override fun getChatClient(
-        key: SecureString,
-        workPool: ExecutorService,
-        logLevel: Level,
-        logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService,
-        session: Session
+      key: SecureString,
+      logLevel: Level,
+      session: Session,
+      logStreams: MutableList<BufferedOutputStream>,
+      workPool: ExecutorService,
+      scheduledPool: ListeningScheduledExecutorService
     ) = throw UnsupportedOperationException("SearchAPI does not support chat functionality")
   }
 
@@ -28,12 +28,12 @@ object ServiceProviders {
   val Google: APIProvider = object : APIProvider("GoogleSearch", "c581d1409962d72e1") {
 
     override fun getChatClient(
-        key: SecureString,
-        workPool: ExecutorService,
-        logLevel: Level,
-        logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService,
-        session: Session
+      key: SecureString,
+      logLevel: Level,
+      session: Session,
+      logStreams: MutableList<BufferedOutputStream>,
+      workPool: ExecutorService,
+      scheduledPool: ListeningScheduledExecutorService
     ) = throw UnsupportedOperationException("Google Search API does not support chat functionality")
   }
 
@@ -41,12 +41,12 @@ object ServiceProviders {
   val Github: APIProvider = object : APIProvider("Github", "https://api.github.com") {
 
     override fun getChatClient(
-        key: SecureString,
-        workPool: ExecutorService,
-        logLevel: Level,
-        logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService,
-        session: Session
+      key: SecureString,
+      logLevel: Level,
+      session: Session,
+      logStreams: MutableList<BufferedOutputStream>,
+      workPool: ExecutorService,
+      scheduledPool: ListeningScheduledExecutorService
     ) = throw UnsupportedOperationException("Github API does not support chat functionality")
   }
 

@@ -15,12 +15,12 @@ import java.util.concurrent.ExecutorService
 class OllamaProvider : APIProvider("Ollama", "http://localhost:11434") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = OllamaChatClient(
     apiKey = key,
     apiBase = base,

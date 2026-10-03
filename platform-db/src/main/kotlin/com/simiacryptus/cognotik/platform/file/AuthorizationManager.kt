@@ -25,7 +25,7 @@ import java.util.*
  */
 open class AuthorizationManager : AuthorizationInterface {
   init {
-    log.info("AuthorizationManager initialized", RuntimeException("Stack Trace"))
+//    log.info("AuthorizationManager initialized", RuntimeException("Stack Trace"))
   }
 
   override fun isAuthorized(

@@ -73,11 +73,11 @@ abstract class ProxyProvider(
 
   override fun getChatClient(
     key: SecureString,
-    workPool: ExecutorService,
     logLevel: Level,
+    session: Session,
     logStreams: MutableList<BufferedOutputStream>,
-    scheduledPool: ListeningScheduledExecutorService,
-    session: Session
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ): ChatClientInterface {
     log.debug("Creating ProxyChatClient for upstream='${upstreamProviderNames}' base='$base'")
     return try {

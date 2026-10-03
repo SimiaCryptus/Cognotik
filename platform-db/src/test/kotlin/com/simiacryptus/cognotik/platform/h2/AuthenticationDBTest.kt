@@ -1,23 +1,21 @@
 package com.simiacryptus.cognotik.platform.h2
 
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import org.junit.jupiter.api.AfterEach
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.Assertions.assertNotNull
 import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicInteger
 
@@ -573,7 +571,8 @@ class AuthenticationDBTest {
     fun `concurrent writes and reads are consistent`() {
       val threads = 4
       val perThread = 25
-      val pool = Executors.newFixedThreadPool(threads)
+      val pool = ThreadPoolManager.newFixedThreadPool(threads, Session.NULL)
+
       val start = CountDownLatch(1)
       val tokens = ConcurrentHashMap.newKeySet<String>()
       val failures = ConcurrentHashMap.newKeySet<String>()
@@ -608,7 +607,8 @@ class AuthenticationDBTest {
     fun `concurrent writes of the same token leave exactly one row`() {
       val t = token()
       val threads = 8
-      val pool = Executors.newFixedThreadPool(threads)
+      val pool = ThreadPoolManager.newFixedThreadPool(threads, Session.NULL)
+
       val start = CountDownLatch(1)
 
       try {
@@ -635,7 +635,8 @@ class AuthenticationDBTest {
       db.putUser(t, alice)
 
       val threads = 8
-      val pool = Executors.newFixedThreadPool(threads)
+      val pool = ThreadPoolManager.newFixedThreadPool(threads, Session.NULL)
+
       val start = CountDownLatch(1)
       val successes = AtomicInteger()
 

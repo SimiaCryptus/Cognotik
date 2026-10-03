@@ -12,12 +12,12 @@ import java.util.concurrent.ExecutorService
 class DeepSeekProvider : APIProvider("DeepSeek", "https://api.deepseek.com") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = DeepSeekChatClient(
     apiKey = key,
     apiBase = base,

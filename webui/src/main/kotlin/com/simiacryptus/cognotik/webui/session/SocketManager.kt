@@ -1,11 +1,10 @@
 package com.simiacryptus.cognotik.webui.session
 
-import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.service.StorageInterface
-import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
-import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.util.renderMarkdown
 import org.slf4j.LoggerFactory
 import java.io.File
@@ -14,7 +13,6 @@ import java.net.URLDecoder
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ConcurrentLinkedDeque
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.concurrent.atomic.AtomicLong
 import java.util.function.Consumer
@@ -607,10 +605,12 @@ abstract class SocketManager(
     if (!cancelable) """$operationID,""" else
       """$operationID,<button class="cancel-button" data-id="$operationID">&times;</button>"""
 
+  private val ioPool by lazy { ThreadPoolManager.newCachedThreadPool(sessionId) }
+
   companion object {
     private val log = LoggerFactory.getLogger(SocketManager::class.java)
     private val trafficLog = LoggerFactory.getLogger("TRAFFIC.com.simiacryptus.cognotik.webui.session")
-    private val ioPool = Executors.newCachedThreadPool()
+
     private val range1 = ('a'..'y').toList().toTypedArray()
     private val range2 = range1 + 'z'
 

@@ -219,7 +219,7 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun setSessionWorker(session: Session, user: User, workerId: String?) {
-    log.info("setSessionWorker for session: ${session} to ${workerId}", RuntimeException("Stack Trace"))
+    log.info("setSessionWorker for session: ${session} to ${workerId}", /*RuntimeException("Stack Trace")*/)
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)
   }

@@ -1,19 +1,13 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.ServiceRouter
-import com.simiacryptus.cognotik.platform.service.UserProvider
-import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
-import java.util.concurrent.Executors
 
 class ApiProviderServlet : HttpServlet() {
   data class ApiProvidersResponse(
@@ -250,13 +244,13 @@ class ApiProviderServlet : HttpServlet() {
           if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
 
             models += try {
-             (provider.getChatModels(
-               key = apiConfig.key!!,
-               baseUrl = apiConfig.apiBase
-             ) ?: emptyList())
-               .filter { !it.deprecated }
-               /* Multiple enum aliases can share the same modelId - collapse them */
-               .distinctBy { it.modelId }
+              (provider.getChatModels(
+                key = apiConfig.key!!,
+                baseUrl = apiConfig.apiBase
+              ) ?: emptyList())
+                .filter { !it.deprecated }
+                /* Multiple enum aliases can share the same modelId - collapse them */
+                .distinctBy { it.modelId }
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()
@@ -266,7 +260,7 @@ class ApiProviderServlet : HttpServlet() {
           log.error("Error processing provider ${provider.name}", e)
         }
       }
-     return models.distinctBy { it.modelId }.associateBy { it.name }
+      return models.distinctBy { it.modelId }.associateBy { it.name }
     }
 
     fun UserSettings.providerInfos(): List<ProviderInfo> {
@@ -282,17 +276,17 @@ class ApiProviderServlet : HttpServlet() {
 
           if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
             val models = try {
-             (provider.getChatModels(
-               key = apiConfig.key!!,
-               baseUrl = apiConfig.apiBase
-             ) ?: emptyList())
-               .filter { !it.deprecated }
-               /*
-                * A provider can expose several enum constants that resolve to the
-                * same wire-level modelId (aliases / dated snapshots / "latest").
-                * Keep only the first occurrence of each modelId.
-                */
-               .distinctBy { it.modelId }
+              (provider.getChatModels(
+                key = apiConfig.key!!,
+                baseUrl = apiConfig.apiBase
+              ) ?: emptyList())
+                .filter { !it.deprecated }
+                /*
+                 * A provider can expose several enum constants that resolve to the
+                 * same wire-level modelId (aliases / dated snapshots / "latest").
+                 * Keep only the first occurrence of each modelId.
+                 */
+                .distinctBy { it.modelId }
             } catch (e: Exception) {
               log.warn("Failed to fetch models for provider ${provider.name}", e)
               emptyList()
@@ -308,16 +302,15 @@ class ApiProviderServlet : HttpServlet() {
                     inputModalities = model.inputModalities.map { it.name }.toSet(),
                     outputModalities = model.outputModalities.map { it.name }.toSet(),
                   )
-               }.distinctBy { it.name }.sortedBy { it.name },
+                }.distinctBy { it.name }.sortedBy { it.name },
                 supportsChat = models.isNotEmpty(),
                 supportsEmbedding = try {
                   provider.getEmbeddingClient(
                     key = apiConfig.key!!,
                     base = apiConfig.apiBase,
-                    workPool = MoreExecutors.newDirectExecutorService(),
-                    scheduledPool = MoreExecutors.listeningDecorator(
-                      Executors.newScheduledThreadPool(1)
-                    )
+                    workPool = ThreadPoolManager.newCachedThreadPool(Session.NULL),
+                    scheduledPool = ThreadPoolManager.newScheduledThreadPool(1, Session.NULL)
+
                   )
                   true
                 } catch (e: UnsupportedOperationException) {
@@ -335,8 +328,10 @@ class ApiProviderServlet : HttpServlet() {
       }
       return providers
     }
+
     fun User.userSettings(): UserSettings =
       ServiceRouter.getUserSettings(this)
+
     fun UserSettings.getAvailableProviders(): List<AvailableProviderInfo> =
       APIProvider.values().map { provider ->
         val isConfigured = apis.any {

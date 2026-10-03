@@ -20,12 +20,12 @@ import java.util.concurrent.ExecutorService
 class OpenAIProvider : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = OpenAIChatClient(
     apiKey = key,
     apiBase = base,

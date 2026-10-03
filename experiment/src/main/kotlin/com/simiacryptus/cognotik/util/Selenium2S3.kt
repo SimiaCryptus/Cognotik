@@ -1,5 +1,9 @@
 package com.simiacryptus.cognotik.util
 
+import com.google.common.util.concurrent.ListeningExecutorService
+import com.google.common.util.concurrent.MoreExecutors.listeningDecorator
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
 import jakarta.servlet.http.Cookie
 import org.apache.hc.client5.http.async.methods.SimpleHttpRequest
 import org.apache.hc.client5.http.async.methods.SimpleHttpResponse
@@ -25,11 +29,10 @@ import java.net.URL
 import java.time.Duration
 import java.time.temporal.ChronoUnit
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.Semaphore
 
 open class Selenium2S3(
-  val pool: ExecutorService = Executors.newCachedThreadPool() as ExecutorService,
+  val pool: ExecutorService,
   private val cookies: Array<out Cookie>? = null,
   val driver: RemoteWebDriver = chromeDriver()
 ) : Selenium {

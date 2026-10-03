@@ -202,7 +202,7 @@ class SessionMetadataClient(
   }
 
   override fun setSessionWorker(session: Session, user: User, ownerId: String?) {
-      log.info("setSessionWorker called with sessionId=${session.sessionId}, ownerId=$ownerId, user=${user}", RuntimeException("Stack Trace"))
+      log.info("setSessionWorker called with sessionId=${session.sessionId}, ownerId=$ownerId, user=${user}", /*RuntimeException("Stack Trace")*/)
     requireNotNull(user) { "user is required" }
     post("setSessionWorker", SetSessionWorkerRequest(session.sessionId, ownerId), user.getAuthCookies())
   }

@@ -384,13 +384,16 @@ open class FileServer {
     ModelSelection.install(user = { cliUser }, smart = config.smartModel, fast = config.fastModel)
     ModelSelectionActions.install()
     models = try {
-      CliSupport.resolveModels(
-        user = cliUser,
-        smartModel = ModelSelection.smart,
-        fastModel = ModelSelection.fast,
-        imageModel = config.imageModel,
-        audioModel = config.audioModel,
-      )
+      when (ModelSelection.smart) {
+        null -> null
+        else -> CliSupport.resolveModels(
+          user = cliUser,
+          smartModel = ModelSelection.smart,
+          fastModel = ModelSelection.fast,
+          imageModel = config.imageModel,
+          audioModel = config.audioModel,
+        )
+      }
     } catch (e: Exception) {
       /* Starting without a model is no longer fatal - pick one from the web UI. */
       log.warn("Could not resolve models at start-up; continuing without them", e)

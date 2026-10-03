@@ -9,7 +9,6 @@ import org.junit.jupiter.params.ParameterizedTest
 import org.junit.jupiter.params.provider.CsvSource
 import org.junit.jupiter.params.provider.ValueSource
 import java.util.concurrent.Callable
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class FullReplacementProcessorTest {
@@ -355,7 +354,7 @@ class FullReplacementProcessorTest {
     fun `is safe for concurrent use`() {
       val threads = 8
       val iterations = 500
-      val pool = Executors.newFixedThreadPool(threads)
+      val pool = java.util.concurrent.Executors.newFixedThreadPool(threads)
       try {
         val tasks = (0 until threads).map { t ->
           Callable {

@@ -1,14 +1,15 @@
 package com.simiacryptus.cognotik.webui.servlet
-    
-    import com.simiacryptus.cognotik.platform.model.Session
-    import com.simiacryptus.cognotik.platform.ThreadPoolManager
-    import com.simiacryptus.cognotik.platform.ServiceRouter
-    import com.simiacryptus.cognotik.platform.service.UserProvider
-    import jakarta.servlet.http.HttpServlet
-    import jakarta.servlet.http.HttpServletRequest
-    import jakarta.servlet.http.HttpServletResponse
-    
-    class SessionThreadsServlet : HttpServlet() {
+
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.threadFactory
+import jakarta.servlet.http.HttpServlet
+import jakarta.servlet.http.HttpServletRequest
+import jakarta.servlet.http.HttpServletResponse
+
+
+class SessionThreadsServlet : HttpServlet() {
         override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
             response.contentType = "text/html"
             response.status = HttpServletResponse.SC_OK

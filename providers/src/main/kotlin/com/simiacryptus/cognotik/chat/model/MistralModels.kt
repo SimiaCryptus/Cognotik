@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
  * Mistral AI model catalog.
  *
  * Reference: https://docs.mistral.ai/models/overview
+   * Reference: https://docs.mistral.ai/getting-started/pricing
  *
  * Organized into:
  *  - Featured Models (latest flagship offerings)
@@ -33,33 +34,51 @@ object MistralModels {
       maxTotalTokens = 131072,
       provider = CoreProviders.Mistral,
       inputTokenPricePerK = 0.0015,
-      outputTokenPricePerK = 0.0045,
+       outputTokenPricePerK = 0.0075,
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
+   /**
+    * Mistral Small 4 (v26.03) - Featured.
+    * Hybrid model unifying instruct, reasoning, and coding in a single efficient model.
+    */
+   val MistralSmall4 by lazy {
+     ChatModel(
+       name = "MistralSmall4",
+       modelId = "mistral-small-2603",
+       maxTotalTokens = 131072,
+       provider = CoreProviders.Mistral,
+       inputTokenPricePerK = 0.00015,
+       outputTokenPricePerK = 0.0006,
+       inputModalities = setOf(ChatMessageModality.TEXT),
+       outputModalities = setOf(ChatMessageModality.TEXT)
+     )
+   }
+   /**
+    * Z.ai GLM 5.3 (v5.3) - Featured third-party model.
+    * Third-party open weight text model from Z.ai with a 1M-token context window.
+    */
+   val ZaiGlm5_3 by lazy {
+     ChatModel(
+       name = "ZaiGlm5_3",
+       modelId = "zai-glm-5-3",
+       maxTotalTokens = 1048576,
+       provider = CoreProviders.Mistral,
+       inputTokenPricePerK = 0.0014,
+       outputTokenPricePerK = 0.0044,
+       inputModalities = setOf(ChatMessageModality.TEXT),
+       outputModalities = setOf(ChatMessageModality.TEXT)
+     )
+   }
+
 
   // ============================================================
   // Frontier Generalist Models
   // ============================================================
 
   /**
-   * Mistral Small 4 (v26.03) - Hybrid model unifying instruct, reasoning, and coding.
-   */
-  val MistralSmall4 by lazy {
-    ChatModel(
-      name = "MistralSmall4",
-      modelId = "mistral-small-2603",
-      maxTotalTokens = 131072,
-      provider = CoreProviders.Mistral,
-      inputTokenPricePerK = 0.0001,
-      outputTokenPricePerK = 0.0003,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
 
-  /**
    * Mistral Large 3 (v25.12) - State-of-the-art, open-weight, general-purpose multimodal model.
    */
   val MistralLarge3 by lazy {
@@ -68,8 +87,8 @@ object MistralModels {
       modelId = "mistral-large-2512",
       maxTotalTokens = 131072,
       provider = CoreProviders.Mistral,
-      inputTokenPricePerK = 0.002,
-      outputTokenPricePerK = 0.006,
+       inputTokenPricePerK = 0.0005,
+       outputTokenPricePerK = 0.0015,
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -116,8 +135,8 @@ object MistralModels {
       modelId = "ministral-14b-2512",
       maxTotalTokens = 32768,
       provider = CoreProviders.Mistral,
-      inputTokenPricePerK = 0.00009,
-      outputTokenPricePerK = 0.00009,
+       inputTokenPricePerK = 0.0002,
+       outputTokenPricePerK = 0.0002,
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -132,8 +151,8 @@ object MistralModels {
       modelId = "ministral-8b-2512",
       maxTotalTokens = 32768,
       provider = CoreProviders.Mistral,
-      inputTokenPricePerK = 0.00009,
-      outputTokenPricePerK = 0.00009,
+       inputTokenPricePerK = 0.00015,
+       outputTokenPricePerK = 0.00015,
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -148,8 +167,8 @@ object MistralModels {
       modelId = "ministral-3b-2512",
       maxTotalTokens = 32768,
       provider = CoreProviders.Mistral,
-      inputTokenPricePerK = 0.00004,
-      outputTokenPricePerK = 0.00004,
+       inputTokenPricePerK = 0.0001,
+       outputTokenPricePerK = 0.0001,
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
@@ -229,7 +248,7 @@ object MistralModels {
   val Devstral2 by lazy {
     ChatModel(
       name = "Devstral2",
-      modelId = "devstral-large-2512",
+       modelId = "devstral-2512",
       maxTotalTokens = 131072,
       provider = CoreProviders.Mistral,
       inputTokenPricePerK = 0.002,
@@ -365,8 +384,10 @@ object MistralModels {
     mapOf(
       // Featured
       "MistralMedium3_5" to MistralMedium3_5,
+       "MistralSmall4" to MistralSmall4,
+       "ZaiGlm5_3" to ZaiGlm5_3,
+       "zai-glm-5-3" to ZaiGlm5_3,
       // Frontier Generalist
-      "MistralSmall4" to MistralSmall4,
       "MistralLarge3" to MistralLarge3,
       "MistralMedium3_1" to MistralMedium3_1,
       "MistralSmall3_2" to MistralSmall3_2,

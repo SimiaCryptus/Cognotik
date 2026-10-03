@@ -68,7 +68,11 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     private fun serveUserInfo(request: HttpServletRequest, response: HttpServletResponse) {
         val user =
           ServiceRouter.authenticate(request)
-            ?: throw IllegalStateException("Authentication failed")
+            ?: run {
+                log.warn("Authentication failed for request: ${request.requestURI}")
+                response.sendError(401, "Authentication failed")
+                return
+            }
         val mapper = jacksonObjectMapper()
         response.contentType = "application/json"
         try {
@@ -82,7 +86,11 @@ open class WelcomeServlet(private val parent: ApplicationDirectory) : HttpServle
     private fun serveAppList(request: HttpServletRequest, response: HttpServletResponse) {
         val user =
           ServiceRouter.authenticate(request)
-            ?: throw IllegalStateException("Authentication failed")
+            ?: run {
+                log.warn("Authentication failed for request: ${request.requestURI}")
+                response.sendError(401, "Authentication failed")
+                return
+            }
         val authorizedApps = parent.childWebApps.filter {
           val isAuthorized = ServiceRouter.isAuthorized(
             ResourceRef.of(it.server.javaClass),

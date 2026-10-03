@@ -3,12 +3,7 @@ package com.simiacryptus.cognotik.platform.model
 import com.fasterxml.jackson.databind.annotation.JsonDeserialize
 import com.fasterxml.jackson.databind.annotation.JsonSerialize
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.model.AudioModels
-import com.simiacryptus.cognotik.platform.model.ChatClientInterface
-import com.simiacryptus.cognotik.platform.model.EmbeddingModel
-import com.simiacryptus.cognotik.platform.model.ImageClientInterface
-import com.simiacryptus.cognotik.platform.model.ImageModel
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.util.DynamicEnum
 import com.simiacryptus.cognotik.util.DynamicEnumDeserializer
 import com.simiacryptus.cognotik.util.DynamicEnumSerializer
@@ -18,7 +13,6 @@ import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 private val log: Logger = getLogger(APIProvider::class.java)
 
@@ -28,15 +22,11 @@ abstract class APIProvider(name: String, open val base: String) : DynamicEnum<AP
 
   abstract fun getChatClient(
     key: SecureString,
-    workPool: ExecutorService = MoreExecutors.newDirectExecutorService(),
     logLevel: Level = Level.DEBUG,
+    session: Session,
     logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-    scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(
-      Executors.newScheduledThreadPool(
-        1
-      )
-    ),
-    session: Session
+    workPool: ExecutorService = ThreadPoolManager.newCachedThreadPool(session),
+    scheduledPool: ListeningScheduledExecutorService = ThreadPoolManager.newScheduledThreadPool(1, session)
   ): ChatClientInterface
 
   open fun getChatModels(key: SecureString, baseUrl: String) =
@@ -76,11 +66,11 @@ abstract class APIProvider(name: String, open val base: String) : DynamicEnum<AP
     val NULL: APIProvider = object : APIProvider("NULL", "") {
       override fun getChatClient(
         key: SecureString,
-        workPool: ExecutorService,
         logLevel: Level,
+        session: Session,
         logStreams: MutableList<BufferedOutputStream>,
-        scheduledPool: ListeningScheduledExecutorService,
-        session: Session
+        workPool: ExecutorService,
+        scheduledPool: ListeningScheduledExecutorService
       ): ChatClientInterface {
         throw UnsupportedOperationException("NULL provider does not support chat functionality")
       }

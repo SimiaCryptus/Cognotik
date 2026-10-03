@@ -19,12 +19,12 @@ package com.simiacryptus.cognotik.providers
         private val log = LoggerFactory.getLogger(ElevenLabsProvider::class.java)
 
         override fun getChatClient(
-            key: SecureString,
-            workPool: ExecutorService,
-            logLevel: Level,
-            logStreams: MutableList<BufferedOutputStream>,
-            scheduledPool: ListeningScheduledExecutorService,
-            session: Session
+          key: SecureString,
+          logLevel: Level,
+          session: Session,
+          logStreams: MutableList<BufferedOutputStream>,
+          workPool: ExecutorService,
+          scheduledPool: ListeningScheduledExecutorService
         ): ChatClientInterface {
             log.debug("Creating ElevenLabs chat client (TTS-only) for base={}", base)
             return ElevenLabsChatClient(
