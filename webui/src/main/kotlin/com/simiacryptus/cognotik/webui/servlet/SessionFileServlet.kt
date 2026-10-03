@@ -240,9 +240,18 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
       throw RuntimeException("Failed to resolve directory: ${e.message}", e)
     }
   }
+  /**
+   * Root of the git working tree for [session]. Defaults to the platform user directory;
+   * override when the session's files are served from a different folder.
+   */
+  open fun gitSessionDir(user: User, session: Session): File = dataStorage.getUserDir(user, session)
+
   override val git: GitProvider = object : GitProvider(dataStorage) {
     override fun authenticate(request: HttpServletRequest, response: HttpServletResponse) =
       ServiceRouter.authenticate(request)
+   override fun resolveSessionDir(user: User, session: Session): File =
+     this@SessionFileServlet.gitSessionDir(user, session)
+
 
     override fun onSession(session: Session, user: User?) {
       this@SessionFileServlet.onSession(session, user)
