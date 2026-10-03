@@ -101,13 +101,15 @@ open class ThreadPoolManager {
   }
 
 
+  /**
+   * True if any tracked thread matching the filter is alive. Derived from [livingThreads]
+   * so the two can never disagree for the same snapshot.
+   */
   fun isAlive(
     session: Session? = null,
     user: User? = null,
   ): Boolean {
-    val anyAlive = factories.entries.any { (key, list) ->
-      matchesKey(key, session, user) && list.any { it.hasLiveThreads() }
-    }
+    val anyAlive = livingThreads(session, user).isNotEmpty()
     if (anyAlive) {
       log.debug("Found alive threads for session: {}, user: {}", session, user)
     } else {
@@ -171,19 +173,24 @@ open class ThreadPoolManager {
       return thread
     }
 
-    fun hasLiveThreads(): Boolean = synchronized(threads) { threads.any { it.isAlive } }
+    /** Snapshot of the currently-alive threads created by this factory. */
+    fun liveThreads(): List<Thread> = synchronized(threads) { threads.filter { it.isAlive } }
+
+    fun hasLiveThreads(): Boolean = liveThreads().isNotEmpty()
   }
 
   private fun createPool(session: Session, user: User?) = ImmediateExecutorService(threadFactory(session, user))
     .let { MoreExecutors.listeningDecorator(it) }
 
-  fun livingThreads() : List<Thread> = factories.values.flatMap { list ->
-    list.flatMap { factory ->
-      synchronized(factory.threads) {
-        factory.threads.filter { it.isAlive }
-      }
-    }
-  }
+  /** Alive threads matching the session/user filter (null = any), de-duplicated. */
+  @JvmOverloads
+  fun livingThreads(
+    session: Session? = null,
+    user: User? = null,
+  ): List<Thread> = factories.entries
+    .filter { (key, _) -> matchesKey(key, session, user) }
+    .flatMap { (_, list) -> list.flatMap { it.liveThreads() } }
+    .distinct()
 
   companion object : ThreadPoolManager() {
 
