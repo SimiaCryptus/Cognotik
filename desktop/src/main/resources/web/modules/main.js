@@ -242,6 +242,11 @@ function setupUserMenu(btn, label) {
         if (btn) btn.click();
     });
     menuInner.appendChild(apiKeysItem);
+    const usageGraphItem = makeItem('📈', 'Usage Graph', () => {
+        const btn = document.getElementById('usage-graph-btn');
+        if (btn) btn.click();
+    });
+    menuInner.appendChild(usageGraphItem);
     const workersItem = makeItem('🖥️', 'Manage Nodes', () => {
         const btn = document.getElementById('workers-manage-btn');
         if (btn) btn.click();
@@ -395,12 +400,12 @@ function setupApiKeysButton() {
 // ===== Manage Nodes (workers) button =====
 // Builds the modal DOM on demand (if not already in the page) and wires it
 // to the hidden trigger button used by the user dropdown menu.
-function ensureWorkersManageModal() {
-    if (document.getElementById('workers-manage-modal')) return;
+function ensureDynamicIframeModal({modalId, iframeId, closeBtnId, title: titleText}) {
+    if (document.getElementById(modalId)) return;
     const modal = document.createElement('div');
-    modal.id = 'workers-manage-modal';
+    modal.id = modalId;
     modal.setAttribute('role', 'dialog');
-    modal.setAttribute('aria-label', 'Manage Nodes');
+    modal.setAttribute('aria-label', titleText);
     modal.style.cssText = 'display:none;position:fixed;top:0;left:0;width:100%;height:100%;' +
         'background:rgba(0,0,0,0.5);z-index:2000;';
     const content = document.createElement('div');
@@ -412,9 +417,9 @@ function ensureWorkersManageModal() {
     header.style.cssText = 'display:flex;align-items:center;justify-content:space-between;' +
         'padding:8px 14px;border-bottom:1px solid var(--color-border, #ddd);';
     const title = document.createElement('strong');
-    title.textContent = 'Manage Nodes';
+    title.textContent = titleText;
     const closeBtn = document.createElement('button');
-    closeBtn.id = 'close-workers-manage-modal';
+    closeBtn.id = closeBtnId;
     closeBtn.type = 'button';
     closeBtn.setAttribute('aria-label', 'Close');
     closeBtn.innerHTML = '&times;';
@@ -423,8 +428,8 @@ function ensureWorkersManageModal() {
     header.appendChild(title);
     header.appendChild(closeBtn);
     const iframe = document.createElement('iframe');
-    iframe.id = 'workers-manage-iframe';
-    iframe.title = 'Manage Nodes';
+    iframe.id = iframeId;
+    iframe.title = titleText;
     iframe.src = 'about:blank';
     iframe.style.cssText = 'flex:1;width:100%;border:0;';
     content.appendChild(header);
@@ -432,6 +437,33 @@ function ensureWorkersManageModal() {
     modal.appendChild(content);
     document.body.appendChild(modal);
 }
+
+function ensureWorkersManageModal() {
+    ensureDynamicIframeModal({
+        modalId: 'workers-manage-modal',
+        iframeId: 'workers-manage-iframe',
+        closeBtnId: 'close-workers-manage-modal',
+        title: 'Manage Nodes'
+    });
+}
+
+// ===== Usage Graph button =====
+function setupUsageGraphButton() {
+    ensureDynamicIframeModal({
+        modalId: 'usage-graph-modal',
+        iframeId: 'usage-graph-iframe',
+        closeBtnId: 'close-usage-graph-modal',
+        title: 'Usage Graph'
+    });
+    setupIframeModal({
+        buttonId: 'usage-graph-btn',
+        modalId: 'usage-graph-modal',
+        iframeId: 'usage-graph-iframe',
+        closeBtnId: 'close-usage-graph-modal',
+        url: '/usageGraphQL.html'
+    });
+}
+
 
 function setupWorkersManageButton() {
     ensureWorkersManageModal();
@@ -566,6 +598,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupApiKeyBanner();
     setupSessionsButton();
     setupApiKeysButton();
+    setupUsageGraphButton();
     setupWorkersManageButton();
     setupBudgetButton();
     applyLocalhostRestrictions();
@@ -646,6 +679,15 @@ function renderMenubar() {
         hiddenApiKeysBtn.type = 'button';
         hiddenApiKeysBtn.style.display = 'none';
         document.body.appendChild(hiddenApiKeysBtn);
+    }
+    // Hidden trigger button for the Usage Graph modal, invoked from the
+    // user dropdown menu item.
+    if (!document.getElementById('usage-graph-btn')) {
+        const hiddenUsageGraphBtn = document.createElement('button');
+        hiddenUsageGraphBtn.id = 'usage-graph-btn';
+        hiddenUsageGraphBtn.type = 'button';
+        hiddenUsageGraphBtn.style.display = 'none';
+        document.body.appendChild(hiddenUsageGraphBtn);
     }
     // Hidden trigger button for the Manage Nodes modal, invoked from the
     // user dropdown menu item.

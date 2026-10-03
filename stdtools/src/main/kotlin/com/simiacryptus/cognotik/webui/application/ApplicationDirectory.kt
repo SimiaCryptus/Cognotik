@@ -91,6 +91,8 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized LogoutServlet") }
   open val usageServlet: HttpServlet = UsageServlet()
     .also { log.debug("Initialized UsageServlet") }
+  open val usageGraphQLServlet: HttpServlet = UsageGraphQLServlet()
+    .also { log.debug("Initialized UsageGraphQLServlet") }
 
   open val usageStorageApiServlet: HttpServlet = UsageStorageApiServlet()
     .also { log.debug("Initialized UsageStorageApiServlet") }
@@ -224,6 +226,7 @@ abstract class ApplicationDirectory(
       newWebAppContext("/userInfo", userInfoServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/userSettings", userSettingsServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/usage", usageServlet).configureAuth(ApplicationServer::class.java),
+      newWebAppContext("/usageGraphQL", usageGraphQLServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/taskConfig", taskConfigServlet).configureAuth(ApplicationServer::class.java),
       pluginManagerServlet?.let { pluginManagerServlet ->
         newWebAppContext("/pluginManager", pluginManagerServlet).configureAuth(ApplicationServer::class.java)

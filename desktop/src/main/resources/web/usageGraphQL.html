@@ -1,0 +1,799 @@
+<!DOCTYPE html>
+<!-- Provide a ui for `/usageGraphQL/` -->
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Usage Dashboard</title>
+<style>
+  :root {
+    --bg: #f6f7f9; --panel: #ffffff; --fg: #1d2330; --muted: #6b7385; --border: #dde1e8;
+    --accent: #3b6fd8; --accent-fg: #fff; --danger: #c0392b; --ok: #1e8e4e; --hover: #eef2fa;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #14171d; --panel: #1c2028; --fg: #e3e7ef; --muted: #8d95a7; --border: #2e3440;
+      --accent: #5b8cf0; --accent-fg: #fff; --danger: #e5675a; --ok: #3fbf77; --hover: #232936;
+    }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); }
+  header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 18px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
+  header h1 { font-size: 17px; margin: 0 12px 0 0; }
+  header .spacer { flex: 1; }
+  header .stat { font-size: 13px; color: var(--muted); }
+  header .stat b { color: var(--fg); }
+  nav { display: flex; gap: 4px; }
+  nav button { background: none; border: 1px solid transparent; color: var(--muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
+  nav button.active { color: var(--fg); border-color: var(--border); background: var(--bg); }
+  main { padding: 18px; max-width: 1400px; margin: 0 auto; }
+  section.tab { display: none; }
+  section.tab.active { display: block; }
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; }
+  .panel h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; }
+  .panel h2 .right { margin-left: auto; font-weight: normal; font-size: 13px; display: flex; gap: 8px; align-items: center; }
+  .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+  label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); gap: 3px; }
+  input, select, textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+  textarea { font-family: var(--mono); font-size: 12.5px; width: 100%; resize: vertical; }
+  button.btn { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--fg); cursor: pointer; }
+  button.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+  button.btn:disabled { opacity: .5; cursor: default; }
+  .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; }
+  .card .k { font-size: 12px; color: var(--muted); }
+  .card .v { font-size: 22px; font-weight: 600; margin-top: 2px; }
+  .card .v.neg { color: var(--danger); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 12px; white-space: nowrap; cursor: default; }
+  th.sortable { cursor: pointer; user-select: none; }
+  td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tfoot td { font-weight: 600; border-top: 2px solid var(--border); }
+  tbody tr.clickable { cursor: pointer; }
+  tbody tr.clickable:hover { background: var(--hover); }
+  .chip { display: inline-block; font-size: 11px; padding: 1px 6px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); margin: 1px 3px 1px 0; white-space: nowrap; }
+  .swatch { display: inline-block; width: 10px; height: 10px; border-radius: 2px; margin-right: 6px; vertical-align: middle; }
+  .legend { display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; margin-top: 6px; }
+  .muted { color: var(--muted); }
+  .mono { font-family: var(--mono); font-size: 12px; }
+  .error { color: var(--danger); white-space: pre-wrap; }
+  .empty { color: var(--muted); padding: 12px 0; }
+  pre { margin: 0; font-family: var(--mono); font-size: 12px; white-space: pre-wrap; word-break: break-word; }
+  pre.box { background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 10px; max-height: 420px; overflow: auto; }
+  .detail-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  @media (max-width: 900px) { .detail-grid { grid-template-columns: 1fr; } }
+  .chart { width: 100%; overflow-x: auto; }
+  .chart svg text { fill: var(--muted); font-size: 10px; }
+  .chart svg .grid { stroke: var(--border); }
+  .chart svg rect.bar:hover { opacity: .75; }
+  a { color: var(--accent); cursor: pointer; text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  #toast { position: fixed; bottom: 16px; right: 16px; max-width: 480px; background: var(--danger); color: #fff; padding: 10px 14px; border-radius: 8px; display: none; z-index: 20; white-space: pre-wrap; }
+  .loading { opacity: .55; pointer-events: none; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Usage</h1>
+  <nav id="nav">
+    <button data-tab="overview" class="active">Overview</button>
+    <button data-tab="session">Session</button>
+    <button data-tab="sessions">Sessions</button>
+    <button data-tab="console">GraphQL</button>
+  </nav>
+  <div class="spacer"></div>
+  <span class="stat">Balance: <b id="hdrBalance">—</b></span>
+  <span class="stat">Available: <b id="hdrBudget">—</b></span>
+  <label style="flex-direction:row;align-items:center;gap:6px">Endpoint
+    <input id="endpoint" size="22" class="mono">
+  </label>
+</header>
+
+<main>
+  <!-- ================= Overview ================= -->
+  <section class="tab active" id="tab-overview">
+    <div class="panel">
+      <div class="row">
+        <label>From (inclusive, UTC)<input type="date" id="fromDate"></label>
+        <label>To (exclusive, UTC)<input type="date" id="toDate"></label>
+        <button class="btn primary" id="btnLoadUser">Load</button>
+        <span class="muted" style="margin-left:8px">Presets:</span>
+        <button class="btn" data-preset="7">7d</button>
+        <button class="btn" data-preset="30">30d</button>
+        <button class="btn" data-preset="90">90d</button>
+        <button class="btn" data-preset="month">This month</button>
+        <button class="btn" data-preset="lastmonth">Last month</button>
+      </div>
+    </div>
+
+    <div class="cards" id="userCards"></div>
+
+    <div class="panel">
+      <h2>Daily usage
+        <span class="right">
+          <label style="flex-direction:row;align-items:center;gap:6px">Metric
+            <select id="dailyMetric">
+              <option value="cost">Cost</option>
+              <option value="totalTokens">Total tokens</option>
+              <option value="promptTokens">Prompt tokens</option>
+              <option value="completionTokens">Completion tokens</option>
+            </select>
+          </label>
+          <label style="flex-direction:row;align-items:center;gap:6px">Model
+            <select id="dailyModel"><option value="">All models</option></select>
+          </label>
+        </span>
+      </h2>
+      <div class="chart" id="dailyChart"></div>
+      <div class="legend" id="dailyLegend"></div>
+      <details style="margin-top:10px">
+        <summary class="muted">Daily table</summary>
+        <div id="dailyTable"></div>
+      </details>
+    </div>
+
+    <div class="panel">
+      <h2>By model</h2>
+      <div id="userModels"></div>
+    </div>
+
+    <div class="panel">
+      <h2>Credits</h2>
+      <div id="userCredits"></div>
+    </div>
+  </section>
+
+  <!-- ================= Session ================= -->
+  <section class="tab" id="tab-session">
+    <div class="panel">
+      <div class="row">
+        <label style="flex:1;min-width:260px">Session ID<input id="sessionId" class="mono" placeholder="e.g. U-20240101-abcd"></label>
+        <button class="btn primary" id="btnLoadSession">Load</button>
+      </div>
+    </div>
+    <div id="sessionOut"></div>
+  </section>
+
+  <!-- ================= Sessions (bulk) ================= -->
+  <section class="tab" id="tab-sessions">
+    <div class="panel">
+      <h2>Bulk session summaries <span class="muted" style="font-weight:normal;font-size:12px">(non-recursive)</span></h2>
+      <label>Session IDs (one per line, or comma/space separated)
+        <textarea id="bulkIds" rows="5"></textarea>
+      </label>
+      <div class="row" style="margin-top:8px">
+        <button class="btn primary" id="btnLoadBulk">Load</button>
+      </div>
+    </div>
+    <div class="panel"><div id="bulkOut" class="empty">No data loaded.</div></div>
+  </section>
+
+  <!-- ================= Console ================= -->
+  <section class="tab" id="tab-console">
+    <div class="panel">
+      <div class="row" style="margin-bottom:8px">
+        <label>Example
+          <select id="exampleSel"></select>
+        </label>
+        <label>Operation name<input id="opName" class="mono" size="18"></label>
+        <button class="btn primary" id="btnRun">Run (Ctrl+Enter)</button>
+        <button class="btn" id="btnSchema">Show schema</button>
+      </div>
+      <div class="detail-grid">
+        <div>
+          <label>Query<textarea id="gqlQuery" rows="18"></textarea></label>
+          <label style="margin-top:8px">Variables (JSON)<textarea id="gqlVars" rows="5">{}</textarea></label>
+        </div>
+        <div>
+          <label>Result</label>
+          <pre class="box" id="gqlOut" style="min-height:300px;max-height:640px"></pre>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="toast"></div>
+
+<script type="module">
+'use strict';
+
+// ---------------------------------------------------------------- utilities
+const $ = (s, root = document) => root.querySelector(s);
+const $$ = (s, root = document) => [...root.querySelectorAll(s)];
+const esc = v => String(v ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+const fmtNum = v => v == null ? '—' : Number(v).toLocaleString();
+const fmtCost = v => {
+  if (v == null) return '—';
+  const n = Number(v);
+  const digits = n !== 0 && Math.abs(n) < 0.01 ? 6 : 4;
+  return (n < 0 ? '-$' : '$') + Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: digits });
+};
+const fmtDateTime = s => {
+  if (!s) return '—';
+  const d = new Date(s);
+  return isNaN(d) ? s : d.toLocaleString();
+};
+const isoDay = d => d.toISOString().slice(0, 10);
+const utcToday = () => { const n = new Date(); return new Date(Date.UTC(n.getUTCFullYear(), n.getUTCMonth(), n.getUTCDate())); };
+const addDays = (d, n) => { const r = new Date(d); r.setUTCDate(r.getUTCDate() + n); return r; };
+
+function colorFor(name) {
+  let h = 0;
+  for (const c of String(name)) h = (h * 31 + c.charCodeAt(0)) >>> 0;
+  return `hsl(${h % 360}, 62%, 55%)`;
+}
+
+let toastTimer;
+function toast(msg) {
+  const t = $('#toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => (t.style.display = 'none'), 7000);
+}
+$('#toast').addEventListener('click', () => ($('#toast').style.display = 'none'));
+
+async function busy(el, fn) {
+  el?.classList.add('loading');
+  try { return await fn(); }
+  catch (e) { console.error(e); toast(e.message || String(e)); }
+  finally { el?.classList.remove('loading'); }
+}
+
+// ---------------------------------------------------------------- endpoint
+const ENDPOINT_KEY = 'usageGraphQL.endpoint';
+const urlParams = new URLSearchParams(location.search);
+const endpointInput = $('#endpoint');
+endpointInput.value = urlParams.get('endpoint') || localStorage.getItem(ENDPOINT_KEY) || '/usageGraphQL/';
+endpointInput.addEventListener('change', () => localStorage.setItem(ENDPOINT_KEY, endpointInput.value.trim()));
+const endpoint = () => endpointInput.value.trim() || '/usageGraphQL/';
+
+async function rawGraphQL(query, variables = {}, operationName) {
+  const res = await fetch(endpoint(), {
+    method: 'POST',
+    credentials: 'same-origin',
+    headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
+    body: JSON.stringify({ query, variables, operationName: operationName || undefined })
+  });
+  const text = await res.text();
+  let json;
+  try { json = JSON.parse(text); }
+  catch { throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`); }
+  return { status: res.status, json };
+}
+
+async function gql(query, variables = {}) {
+  const { status, json } = await rawGraphQL(query, variables);
+  const errs = json.errors || [];
+  if (errs.length && !json.data) throw new Error(errs.map(e => e.message).join('\n') || `HTTP ${status}`);
+  if (errs.length) toast('Partial result:\n' + errs.map(e => e.message).join('\n'));
+  return json.data;
+}
+
+// ---------------------------------------------------------------- rendering helpers
+const USAGE_FIELDS = 'cost totalTokens promptTokens completionTokens tokens { type count }';
+
+const tokenChips = tokens => (tokens || [])
+  .filter(t => t.count)
+  .map(t => `<span class="chip">${esc(t.type)}: ${fmtNum(t.count)}</span>`).join('') || '<span class="muted">—</span>';
+
+function usageTable(models, totals, { modelLink } = {}) {
+  if (!models?.length) return '<div class="empty">No usage in this range.</div>';
+  const sorted = [...models].sort((a, b) => b.cost - a.cost || b.totalTokens - a.totalTokens);
+  const body = sorted.map(m => `
+    <tr>
+      <td><span class="swatch" style="background:${colorFor(m.model)}"></span>${modelLink ? modelLink(m.model) : esc(m.model)}</td>
+      <td class="num">${fmtCost(m.cost)}</td>
+      <td class="num">${fmtNum(m.totalTokens)}</td>
+      <td class="num">${fmtNum(m.promptTokens)}</td>
+      <td class="num">${fmtNum(m.completionTokens)}</td>
+      <td>${tokenChips(m.tokens)}</td>
+    </tr>`).join('');
+  const foot = totals ? `
+    <tfoot><tr>
+      <td>Total</td>
+      <td class="num">${fmtCost(totals.cost)}</td>
+      <td class="num">${fmtNum(totals.totalTokens)}</td>
+      <td class="num">${fmtNum(totals.promptTokens)}</td>
+      <td class="num">${fmtNum(totals.completionTokens)}</td>
+      <td>${tokenChips(totals.tokens)}</td>
+    </tr></tfoot>` : '';
+  return `<table>
+    <thead><tr><th>Model</th><th class="num">Cost</th><th class="num">Total tokens</th><th class="num">Prompt</th><th class="num">Completion</th><th>Breakdown</th></tr></thead>
+    <tbody>${body}</tbody>${foot}</table>`;
+}
+
+function card(k, v, cls = '') {
+  return `<div class="card"><div class="k">${esc(k)}</div><div class="v ${cls}">${v}</div></div>`;
+}
+
+// ---------------------------------------------------------------- tabs / routing
+function showTab(name) {
+  $$('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  $$('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
+}
+$$('#nav button').forEach(b => b.addEventListener('click', () => {
+  showTab(b.dataset.tab);
+  if (b.dataset.tab !== 'session') history.replaceState(null, '', location.pathname + location.search + '#' + b.dataset.tab);
+}));
+
+// ---------------------------------------------------------------- header stats
+function setHeaderStats(balance, budget) {
+  $('#hdrBalance').textContent = fmtCost(balance);
+  $('#hdrBudget').textContent = fmtCost(budget);
+  $('#hdrBudget').style.color = budget != null && budget < 0 ? 'var(--danger)' : '';
+}
+
+// ---------------------------------------------------------------- overview
+let userData = null;
+
+function applyPreset(p) {
+  const today = utcToday();
+  let from, to;
+  if (p === 'month') {
+    from = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+    to = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() + 1, 1));
+  } else if (p === 'lastmonth') {
+    from = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth() - 1, 1));
+    to = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), 1));
+  } else {
+    to = addDays(today, 1);
+    from = addDays(to, -Number(p));
+  }
+  $('#fromDate').value = isoDay(from);
+  $('#toDate').value = isoDay(to);
+  loadUser();
+}
+$$('[data-preset]').forEach(b => b.addEventListener('click', () => applyPreset(b.dataset.preset)));
+$('#btnLoadUser').addEventListener('click', () => loadUser());
+
+const USER_QUERY = `
+query UserUsage($from: String, $to: String) {
+  availableBudget
+  balance
+  userUsage(from: $from, to: $to) {
+    from
+    to
+    totals { ${USAGE_FIELDS} }
+    models { model ${USAGE_FIELDS} }
+    daily { day model ${USAGE_FIELDS} }
+    credits { datetime amount comment metadata { key value } }
+  }
+}`;
+
+async function loadUser() {
+  await busy($('#tab-overview'), async () => {
+    const vars = {};
+    if ($('#fromDate').value) vars.from = $('#fromDate').value;
+    if ($('#toDate').value) vars.to = $('#toDate').value;
+    const data = await gql(USER_QUERY, vars);
+    userData = data;
+    const u = data.userUsage;
+    $('#fromDate').value = u.from;
+    $('#toDate').value = u.to;
+    setHeaderStats(data.balance, data.availableBudget);
+    renderUser();
+  });
+}
+
+function renderUser() {
+  if (!userData) return;
+  const u = userData.userUsage;
+  const days = [...dayRange(u.from, u.to)].length || 1;
+  $('#userCards').innerHTML = [
+    card('Cost', fmtCost(u.totals.cost)),
+    card('Avg cost / day', fmtCost(u.totals.cost / days)),
+    card('Total tokens', fmtNum(u.totals.totalTokens)),
+    card('Prompt tokens', fmtNum(u.totals.promptTokens)),
+    card('Completion tokens', fmtNum(u.totals.completionTokens)),
+    card('Models used', fmtNum(u.models.length)),
+    card('Balance', fmtCost(userData.balance), userData.balance < 0 ? 'neg' : ''),
+    card('Available budget', fmtCost(userData.availableBudget), userData.availableBudget < 0 ? 'neg' : '')
+  ].join('');
+
+  $('#userModels').innerHTML = usageTable(u.models, u.totals, {
+    modelLink: m => `<a data-filter-model="${esc(m)}">${esc(m)}</a>`
+  });
+  $$('#userModels [data-filter-model]').forEach(a => a.addEventListener('click', () => {
+    $('#dailyModel').value = a.dataset.filterModel;
+    renderDaily();
+    $('#dailyChart').scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }));
+
+  const sel = $('#dailyModel');
+  const cur = sel.value;
+  const models = [...new Set(u.daily.map(d => d.model))].sort();
+  sel.innerHTML = '<option value="">All models</option>' + models.map(m => `<option>${esc(m)}</option>`).join('');
+  sel.value = models.includes(cur) ? cur : '';
+
+  renderDaily();
+  renderCredits(u.credits);
+}
+
+function* dayRange(from, to) {
+  if (!from || !to) return;
+  let d = new Date(from + 'T00:00:00Z');
+  const end = new Date(to + 'T00:00:00Z');
+  let n = 0;
+  while (d < end && n++ < 1500) { yield isoDay(d); d = addDays(d, 1); }
+}
+
+function renderDaily() {
+  if (!userData) return;
+  const u = userData.userUsage;
+  const metric = $('#dailyMetric').value;
+  const modelFilter = $('#dailyModel').value;
+  const rows = u.daily.filter(d => !modelFilter || d.model === modelFilter);
+  const fmt = metric === 'cost' ? fmtCost : fmtNum;
+
+  let days = [...dayRange(u.from, u.to)];
+  if (!days.length) days = [...new Set(rows.map(r => r.day))].sort();
+
+  const modelTotals = new Map();
+  const byDay = new Map(days.map(d => [d, new Map()]));
+  for (const r of rows) {
+    modelTotals.set(r.model, (modelTotals.get(r.model) || 0) + r[metric]);
+    if (!byDay.has(r.day)) byDay.set(r.day, new Map());
+    const m = byDay.get(r.day);
+    m.set(r.model, (m.get(r.model) || 0) + r[metric]);
+  }
+  days = [...byDay.keys()].sort();
+  const models = [...modelTotals.keys()].sort((a, b) => modelTotals.get(b) - modelTotals.get(a));
+
+  const chart = $('#dailyChart');
+  if (!rows.length) {
+    chart.innerHTML = '<div class="empty">No daily usage in this range.</div>';
+    $('#dailyLegend').innerHTML = '';
+    $('#dailyTable').innerHTML = '';
+    return;
+  }
+
+  const W = Math.max(chart.clientWidth || 800, days.length * 6 + 80);
+  const H = 260, padL = 70, padR = 10, padT = 10, padB = 34;
+  const plotW = W - padL - padR, plotH = H - padT - padB;
+  const stackMax = Math.max(...days.map(d => [...byDay.get(d).values()].reduce((a, b) => a + b, 0)), 0);
+  const yMax = niceMax(stackMax);
+  const slot = plotW / days.length;
+  const barW = Math.max(1, slot * 0.78);
+  const y = v => padT + plotH - (v / yMax) * plotH;
+
+  let svg = `<svg width="${W}" height="${H}" viewBox="0 0 ${W} ${H}" xmlns="http://www.w3.org/2000/svg">`;
+  const ticks = 4;
+  for (let i = 0; i <= ticks; i++) {
+    const v = yMax * i / ticks, yy = y(v);
+    svg += `<line class="grid" x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}" />`;
+    svg += `<text x="${padL - 6}" y="${yy + 3}" text-anchor="end">${esc(fmtAxis(v, metric))}</text>`;
+  }
+  const labelEvery = Math.max(1, Math.ceil(days.length / Math.floor(plotW / 60)));
+  days.forEach((day, i) => {
+    const x = padL + i * slot + (slot - barW) / 2;
+    let acc = 0;
+    const m = byDay.get(day);
+    for (const model of models) {
+      const v = m.get(model) || 0;
+      if (!v) continue;
+      const y1 = y(acc + v), y0 = y(acc);
+      svg += `<rect class="bar" x="${x.toFixed(2)}" y="${y1.toFixed(2)}" width="${barW.toFixed(2)}" height="${Math.max(0.5, y0 - y1).toFixed(2)}" fill="${colorFor(model)}"><title>${esc(day)}\n${esc(model)}: ${esc(fmt(v))}</title></rect>`;
+      acc += v;
+    }
+    if (acc > 0) {
+      svg += `<rect x="${(padL + i * slot).toFixed(2)}" y="${padT}" width="${slot.toFixed(2)}" height="${plotH}" fill="transparent" pointer-events="none"/>`;
+    }
+    if (i % labelEvery === 0) {
+      svg += `<text x="${(padL + i * slot + slot / 2).toFixed(2)}" y="${H - padB + 14}" text-anchor="middle">${esc(day.slice(5))}</text>`;
+    }
+  });
+  svg += `<line class="grid" x1="${padL}" x2="${padL}" y1="${padT}" y2="${padT + plotH}" />`;
+  svg += '</svg>';
+  chart.innerHTML = svg;
+
+  $('#dailyLegend').innerHTML = models.map(m =>
+    `<span><span class="swatch" style="background:${colorFor(m)}"></span>${esc(m)} <span class="muted">${esc(fmt(modelTotals.get(m)))}</span></span>`).join('');
+
+  const tableRows = [...rows].sort((a, b) => b.day.localeCompare(a.day) || b.cost - a.cost);
+  $('#dailyTable').innerHTML = `<table>
+    <thead><tr><th>Day</th><th>Model</th><th class="num">Cost</th><th class="num">Total</th><th class="num">Prompt</th><th class="num">Completion</th><th>Breakdown</th></tr></thead>
+    <tbody>${tableRows.map(r => `<tr>
+      <td class="mono">${esc(r.day)}</td>
+      <td><span class="swatch" style="background:${colorFor(r.model)}"></span>${esc(r.model)}</td>
+      <td class="num">${fmtCost(r.cost)}</td>
+      <td class="num">${fmtNum(r.totalTokens)}</td>
+      <td class="num">${fmtNum(r.promptTokens)}</td>
+      <td class="num">${fmtNum(r.completionTokens)}</td>
+      <td>${tokenChips(r.tokens)}</td></tr>`).join('')}</tbody></table>`;
+}
+
+function niceMax(v) {
+  if (!(v > 0)) return 1;
+  const p = Math.pow(10, Math.floor(Math.log10(v)));
+  for (const m of [1, 1.2, 1.5, 2, 2.5, 3, 4, 5, 6, 8, 10]) if (m * p >= v) return m * p;
+  return 10 * p;
+}
+function fmtAxis(v, metric) {
+  if (metric === 'cost') return '$' + (v >= 100 ? v.toFixed(0) : v >= 1 ? v.toFixed(2) : v.toPrecision(2));
+  if (v >= 1e9) return (v / 1e9).toFixed(1) + 'B';
+  if (v >= 1e6) return (v / 1e6).toFixed(1) + 'M';
+  if (v >= 1e3) return (v / 1e3).toFixed(1) + 'k';
+  return String(Math.round(v));
+}
+
+$('#dailyMetric').addEventListener('change', renderDaily);
+$('#dailyModel').addEventListener('change', renderDaily);
+let resizeTimer;
+window.addEventListener('resize', () => { clearTimeout(resizeTimer); resizeTimer = setTimeout(renderDaily, 150); });
+
+function renderCredits(credits) {
+  const el = $('#userCredits');
+  if (!credits?.length) { el.innerHTML = '<div class="empty">No credits in this range.</div>'; return; }
+  const sorted = [...credits].sort((a, b) => String(b.datetime).localeCompare(String(a.datetime)));
+  const total = sorted.reduce((a, c) => a + c.amount, 0);
+  el.innerHTML = `<table>
+    <thead><tr><th>Date</th><th class="num">Amount</th><th>Comment</th><th>Metadata</th></tr></thead>
+    <tbody>${sorted.map(c => `<tr>
+      <td>${esc(fmtDateTime(c.datetime))}</td>
+      <td class="num" style="color:${c.amount < 0 ? 'var(--danger)' : 'var(--ok)'}">${fmtCost(c.amount)}</td>
+      <td>${esc(c.comment ?? '')}</td>
+      <td>${(c.metadata || []).map(kv => `<span class="chip">${esc(kv.key)}: ${esc(kv.value)}</span>`).join('')}</td>
+    </tr>`).join('')}</tbody>
+    <tfoot><tr><td>Total</td><td class="num">${fmtCost(total)}</td><td></td><td></td></tr></tfoot>
+  </table>`;
+}
+
+// ---------------------------------------------------------------- session
+const sessionState = { id: null, model: '', limit: 50, offset: 0, summary: null };
+
+const SESSION_SUMMARY_QUERY = `
+query SessionSummary($id: String!) {
+  sessionUsage(sessionId: $id) {
+    sessionId
+    parentSessionId
+    rowCount
+    totals { ${USAGE_FIELDS} }
+    models { model ${USAGE_FIELDS} }
+  }
+}`;
+
+const SESSION_ROWS_QUERY = `
+query SessionRows($id: String!, $model: String, $limit: Int, $offset: Int) {
+  sessionUsage(sessionId: $id) {
+    rows(model: $model, limit: $limit, offset: $offset) {
+      id sessionId userId model datetime
+      ${USAGE_FIELDS}
+      inputText outputText
+    }
+  }
+}`;
+
+$('#btnLoadSession').addEventListener('click', () => openSession($('#sessionId').value.trim()));
+$('#sessionId').addEventListener('keydown', e => { if (e.key === 'Enter') openSession($('#sessionId').value.trim()); });
+
+async function openSession(id) {
+  if (!id) { toast('Enter a session ID'); return; }
+  showTab('session');
+  $('#sessionId').value = id;
+  history.replaceState(null, '', location.pathname + location.search + '#session=' + encodeURIComponent(id));
+  Object.assign(sessionState, { id, model: '', offset: 0, summary: null });
+  await busy($('#tab-session'), async () => {
+    const data = await gql(SESSION_SUMMARY_QUERY, { id });
+    sessionState.summary = data.sessionUsage;
+    renderSessionSummary();
+    await loadSessionRows();
+  });
+}
+
+function renderSessionSummary() {
+  const s = sessionState.summary;
+  const models = s.models.map(m => m.model).sort();
+  $('#sessionOut').innerHTML = `
+    <div class="cards">
+      ${card('Session', `<span class="mono" style="font-size:13px">${esc(s.sessionId)}</span>`)}
+      ${card('Parent', s.parentSessionId ? `<a class="mono" style="font-size:13px" data-session="${esc(s.parentSessionId)}">${esc(s.parentSessionId)}</a>` : '<span class="muted" style="font-size:13px">none</span>')}
+      ${card('Cost', fmtCost(s.totals.cost))}
+      ${card('Total tokens', fmtNum(s.totals.totalTokens))}
+      ${card('Prompt tokens', fmtNum(s.totals.promptTokens))}
+      ${card('Completion tokens', fmtNum(s.totals.completionTokens))}
+      ${card('Calls', fmtNum(s.rowCount))}
+    </div>
+    <div class="panel"><h2>By model <span class="muted" style="font-weight:normal;font-size:12px">(includes descendant sessions)</span></h2>${usageTable(s.models, s.totals)}</div>
+    <div class="panel">
+      <h2>Calls
+        <span class="right">
+          <label style="flex-direction:row;align-items:center;gap:6px">Model
+            <select id="rowModel"><option value="">All models</option>${models.map(m => `<option>${esc(m)}</option>`).join('')}</select>
+          </label>
+          <label style="flex-direction:row;align-items:center;gap:6px">Page size
+            <select id="rowLimit">${[25, 50, 100, 250].map(n => `<option ${n === sessionState.limit ? 'selected' : ''}>${n}</option>`).join('')}</select>
+          </label>
+          <button class="btn" id="rowPrev">&larr; Prev</button>
+          <span id="rowPageInfo" class="muted"></span>
+          <button class="btn" id="rowNext">Next &rarr;</button>
+        </span>
+      </h2>
+      <div id="sessionRows"></div>
+    </div>`;
+  $$('#sessionOut [data-session]').forEach(a => a.addEventListener('click', () => openSession(a.dataset.session)));
+  $('#rowModel').addEventListener('change', e => { sessionState.model = e.target.value; sessionState.offset = 0; loadSessionRows(); });
+  $('#rowLimit').addEventListener('change', e => { sessionState.limit = Number(e.target.value); sessionState.offset = 0; loadSessionRows(); });
+  $('#rowPrev').addEventListener('click', () => { sessionState.offset = Math.max(0, sessionState.offset - sessionState.limit); loadSessionRows(); });
+  $('#rowNext').addEventListener('click', () => { sessionState.offset += sessionState.limit; loadSessionRows(); });
+}
+
+async function loadSessionRows() {
+  const st = sessionState;
+  const el = $('#sessionRows');
+  await busy(el, async () => {
+    const vars = { id: st.id, limit: st.limit, offset: st.offset };
+    if (st.model) vars.model = st.model;
+    const data = await gql(SESSION_ROWS_QUERY, vars);
+    const rows = data.sessionUsage.rows;
+    const knownTotal = st.model ? null : st.summary?.rowCount;
+    $('#rowPrev').disabled = st.offset === 0;
+    $('#rowNext').disabled = rows.length < st.limit || (knownTotal != null && st.offset + rows.length >= knownTotal);
+    $('#rowPageInfo').textContent = rows.length
+      ? `${st.offset + 1}–${st.offset + rows.length}${knownTotal != null ? ' of ' + knownTotal : ''}`
+      : '0 rows';
+    if (!rows.length) { el.innerHTML = '<div class="empty">No calls.</div>'; return; }
+    el.innerHTML = `<table>
+      <thead><tr><th>Time</th><th>Model</th><th>Session</th><th class="num">Cost</th><th class="num">Total</th><th class="num">Prompt</th><th class="num">Completion</th><th>Breakdown</th></tr></thead>
+      <tbody>${rows.map((r, i) => `
+        <tr class="clickable" data-idx="${i}" title="Click to show input/output">
+          <td style="white-space:nowrap">${esc(fmtDateTime(r.datetime))}</td>
+          <td><span class="swatch" style="background:${colorFor(r.model)}"></span>${esc(r.model ?? '—')}</td>
+          <td class="mono">${r.sessionId && r.sessionId !== st.id ? `<a data-session="${esc(r.sessionId)}">${esc(r.sessionId)}</a>` : esc(r.sessionId ?? '')}</td>
+          <td class="num">${fmtCost(r.cost)}</td>
+          <td class="num">${fmtNum(r.totalTokens)}</td>
+          <td class="num">${fmtNum(r.promptTokens)}</td>
+          <td class="num">${fmtNum(r.completionTokens)}</td>
+          <td>${tokenChips(r.tokens)}</td>
+        </tr>
+        <tr class="detail" data-detail="${i}" style="display:none"><td colspan="8">
+          <div class="muted mono" style="margin-bottom:6px">id: ${esc(r.id)}${r.userId ? ' · user: ' + esc(r.userId) : ''}</div>
+          <div class="detail-grid">
+            <div><div class="muted">Input</div><pre class="box">${esc(r.inputText ?? '(none)')}</pre></div>
+            <div><div class="muted">Output</div><pre class="box">${esc(r.outputText ?? '(none)')}</pre></div>
+          </div>
+        </td></tr>`).join('')}</tbody></table>`;
+    $$('tr.clickable', el).forEach(tr => tr.addEventListener('click', e => {
+      if (e.target.closest('a')) return;
+      const d = $(`tr[data-detail="${tr.dataset.idx}"]`, el);
+      d.style.display = d.style.display === 'none' ? '' : 'none';
+    }));
+    $$('a[data-session]', el).forEach(a => a.addEventListener('click', e => { e.stopPropagation(); openSession(a.dataset.session); }));
+  });
+}
+
+// ---------------------------------------------------------------- bulk sessions
+const BULK_QUERY = `
+query Bulk($ids: [String!]!) {
+  sessionsUsage(sessionIds: $ids) {
+    sessionId
+    totals { ${USAGE_FIELDS} }
+    models { model cost totalTokens }
+  }
+}`;
+
+$('#btnLoadBulk').addEventListener('click', async () => {
+  const ids = [...new Set($('#bulkIds').value.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean))];
+  if (!ids.length) { toast('Enter at least one session ID'); return; }
+  await busy($('#tab-sessions'), async () => {
+    const data = await gql(BULK_QUERY, { ids });
+    const list = data.sessionsUsage;
+    const el = $('#bulkOut');
+    el.classList.remove('empty');
+    if (!list.length) { el.innerHTML = '<div class="empty">No results.</div>'; return; }
+    const sum = k => list.reduce((a, s) => a + (s.totals[k] || 0), 0);
+    el.innerHTML = `<table>
+      <thead><tr><th>Session</th><th class="num">Cost</th><th class="num">Total</th><th class="num">Prompt</th><th class="num">Completion</th><th>Models</th></tr></thead>
+      <tbody>${[...list].sort((a, b) => b.totals.cost - a.totals.cost).map(s => `<tr>
+        <td class="mono"><a data-session="${esc(s.sessionId)}">${esc(s.sessionId)}</a></td>
+        <td class="num">${fmtCost(s.totals.cost)}</td>
+        <td class="num">${fmtNum(s.totals.totalTokens)}</td>
+        <td class="num">${fmtNum(s.totals.promptTokens)}</td>
+        <td class="num">${fmtNum(s.totals.completionTokens)}</td>
+        <td>${s.models.map(m => `<span class="chip"><span class="swatch" style="background:${colorFor(m.model)}"></span>${esc(m.model)}: ${fmtCost(m.cost)}</span>`).join('')}</td>
+      </tr>`).join('')}</tbody>
+      <tfoot><tr><td>Total (${list.length})</td>
+        <td class="num">${fmtCost(sum('cost'))}</td>
+        <td class="num">${fmtNum(sum('totalTokens'))}</td>
+        <td class="num">${fmtNum(sum('promptTokens'))}</td>
+        <td class="num">${fmtNum(sum('completionTokens'))}</td><td></td></tr></tfoot>
+    </table>`;
+    $$('a[data-session]', el).forEach(a => a.addEventListener('click', () => openSession(a.dataset.session)));
+  });
+});
+
+// ---------------------------------------------------------------- console
+const EXAMPLES = {
+  'Budget & balance': ['query { availableBudget balance }', {}],
+  'Token types': ['query { tokenTypes { name parent } }', {}],
+  'User usage (last 30 days)': [`query {
+  userUsage {
+    from to
+    totals { cost totalTokens tokens { type count } }
+    models { model cost totalTokens }
+  }
+}`, {}],
+  'Daily usage (range)': [`query Daily($from: String, $to: String, $model: String) {
+  userUsage(from: $from, to: $to) {
+    daily(model: $model) { day model cost totalTokens }
+  }
+}`, { from: isoDay(addDays(utcToday(), -7)), to: isoDay(addDays(utcToday(), 1)) }],
+  'Credits': [`query {
+  userUsage(from: "2000-01-01") {
+    credits { datetime amount comment metadata { key value } }
+  }
+}`, {}],
+  'Session usage': [`query Session($id: String!) {
+  sessionUsage(sessionId: $id) {
+    sessionId parentSessionId rowCount
+    totals { cost totalTokens }
+    rows(limit: 10) { id model datetime cost totalTokens }
+  }
+}`, { id: '' }],
+  'Bulk sessions': [`query Bulk($ids: [String!]!) {
+  sessionsUsage(sessionIds: $ids) { sessionId totals { cost totalTokens } }
+}`, { ids: [] }]
+};
+const exSel = $('#exampleSel');
+exSel.innerHTML = '<option value="">— choose —</option>' + Object.keys(EXAMPLES).map(k => `<option>${esc(k)}</option>`).join('');
+exSel.addEventListener('change', () => {
+  const ex = EXAMPLES[exSel.value];
+  if (!ex) return;
+  $('#gqlQuery').value = ex[0];
+  $('#gqlVars').value = JSON.stringify(ex[1], null, 2);
+  $('#opName').value = '';
+});
+$('#gqlQuery').value = EXAMPLES['Budget & balance'][0];
+
+async function runConsole() {
+  const out = $('#gqlOut');
+  let vars = {};
+  const vtext = $('#gqlVars').value.trim();
+  if (vtext) {
+    try { vars = JSON.parse(vtext); }
+    catch (e) { out.innerHTML = `<span class="error">Invalid variables JSON: ${esc(e.message)}</span>`; return; }
+  }
+  await busy(out, async () => {
+    const t0 = performance.now();
+    try {
+      const { status, json } = await rawGraphQL($('#gqlQuery').value, vars, $('#opName').value.trim());
+      const ms = Math.round(performance.now() - t0);
+      out.textContent = `// HTTP ${status} · ${ms} ms\n` + JSON.stringify(json, null, 2);
+    } catch (e) {
+      out.innerHTML = `<span class="error">${esc(e.message)}</span>`;
+    }
+  });
+}
+$('#btnRun').addEventListener('click', runConsole);
+$('#gqlQuery').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runConsole(); } });
+$('#gqlVars').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); runConsole(); } });
+$('#btnSchema').addEventListener('click', async () => {
+  const out = $('#gqlOut');
+  await busy(out, async () => {
+    const res = await fetch(endpoint(), { credentials: 'same-origin' });
+    out.textContent = await res.text();
+  });
+});
+
+// ---------------------------------------------------------------- init
+function initFromHash() {
+  const h = decodeURIComponent(location.hash.slice(1));
+  if (h.startsWith('session=')) { openSession(h.slice('session='.length)); return true; }
+  if (['overview', 'session', 'sessions', 'console'].includes(h)) showTab(h);
+  return false;
+}
+window.addEventListener('hashchange', initFromHash);
+
+(function init() {
+  const from = urlParams.get('from'), to = urlParams.get('to');
+  if (from) $('#fromDate').value = from;
+  if (to) $('#toDate').value = to;
+  initFromHash();
+  loadUser();
+})();
+</script>
+</body>
+</html>
