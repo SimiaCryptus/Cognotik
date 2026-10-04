@@ -1,0 +1,1 @@
+/* This file should define the manifest of the available themes */

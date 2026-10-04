@@ -1,0 +1,83 @@
+/* Point-CAD theme — 18 colours, themes: light, dark */
+:root {
+    --color-canvas: oklch(97.248% 0.00454 258.32);
+    --color-brand: oklch(65.309% 0.1347 242.69);
+    --color-danger: oklch(63.068% 0.19401 29.44);
+    --color-accent: oklch(52.606% 0.17049 314.65);
+    --color-warning: oklch(69.576% 0.15964 55.54);
+    --color-success: oklch(66.288% 0.16023 152.37);
+    --color-surface: oklch(100% 0.00001 269.94);
+    --color-surface-alt: oklch(98.282% 0.00218 258.2);
+    --color-border: oklch(91.71% 0.0057 251.97);
+    --color-border-strong: oklch(66.36% 0.0133 251.98);
+    --color-text: oklch(29.597% 0.71098 293.25);
+    --color-heading: oklch(35.571% 0.03493 242.63);
+    --color-text-muted: oklch(32.461% 0.62379 304.73);
+    --color-brand-hover: oklch(58.409% 0.11962 242.69);
+    --color-link: oklch(55.386% 0.1347 242.69);
+    --color-danger-hover: oklch(54.468% 0.17465 29.44);
+    --color-secondary: oklch(71.28% 0.01822 201);
+    --color-secondary-hover: oklch(62.583% 0.01559 201);
+}
+@media (prefers-color-scheme: dark) {
+    :root {
+        --color-canvas: oklch(20.098% 0.02108 267.58);
+        --color-brand: oklch(65.309% 0.1347 242.69);
+        --color-danger: oklch(63.068% 0.19401 29.44);
+        --color-accent: oklch(52.606% 0.17049 314.65);
+        --color-warning: oklch(69.576% 0.15964 55.54);
+        --color-success: oklch(66.288% 0.16023 152.37);
+        --color-surface: oklch(25.26% 0.03343 267.63);
+        --color-surface-alt: oklch(28.847% 0.01503 267.39);
+        --color-border: oklch(32.454% 0 353.93);
+        --color-border-strong: oklch(49.56% 0 353.96);
+        --color-text: oklch(83.78% 0.26295 326.89);
+        --color-heading: oklch(90.835% 0 260.07);
+        --color-text-muted: oklch(58.689% 5.85028 157.99);
+        --color-brand-hover: oklch(58.409% 0.11962 242.69);
+        --color-link: oklch(65.309% 0.1347 242.69);
+        --color-danger-hover: oklch(54.468% 0.17465 29.44);
+        --color-secondary: oklch(44.892% 0 353.99);
+        --color-secondary-hover: oklch(51.46% 0 354.01);
+    }
+}
+[data-theme="light"] {
+    --color-canvas: oklch(97.248% 0.00454 258.32);
+    --color-brand: oklch(65.309% 0.1347 242.69);
+    --color-danger: oklch(63.068% 0.19401 29.44);
+    --color-accent: oklch(52.606% 0.17049 314.65);
+    --color-warning: oklch(69.576% 0.15964 55.54);
+    --color-success: oklch(66.288% 0.16023 152.37);
+    --color-surface: oklch(100% 0.00001 269.94);
+    --color-surface-alt: oklch(98.282% 0.00218 258.2);
+    --color-border: oklch(91.71% 0.0057 251.97);
+    --color-border-strong: oklch(66.36% 0.0133 251.98);
+    --color-text: oklch(29.597% 0.71098 293.25);
+    --color-heading: oklch(35.571% 0.03493 242.63);
+    --color-text-muted: oklch(32.461% 0.62379 304.73);
+    --color-brand-hover: oklch(58.409% 0.11962 242.69);
+    --color-link: oklch(55.386% 0.1347 242.69);
+    --color-danger-hover: oklch(54.468% 0.17465 29.44);
+    --color-secondary: oklch(71.28% 0.01822 201);
+    --color-secondary-hover: oklch(62.583% 0.01559 201);
+}
+[data-theme="dark"] {
+    --color-canvas: oklch(20.098% 0.02108 267.58);
+    --color-brand: oklch(65.309% 0.1347 242.69);
+    --color-danger: oklch(63.068% 0.19401 29.44);
+    --color-accent: oklch(52.606% 0.17049 314.65);
+    --color-warning: oklch(69.576% 0.15964 55.54);
+    --color-success: oklch(66.288% 0.16023 152.37);
+    --color-surface: oklch(25.26% 0.03343 267.63);
+    --color-surface-alt: oklch(28.847% 0.01503 267.39);
+    --color-border: oklch(32.454% 0 353.93);
+    --color-border-strong: oklch(49.56% 0 353.96);
+    --color-text: oklch(83.78% 0.26295 326.89);
+    --color-heading: oklch(90.835% 0 260.07);
+    --color-text-muted: oklch(58.689% 5.85028 157.99);
+    --color-brand-hover: oklch(58.409% 0.11962 242.69);
+    --color-link: oklch(65.309% 0.1347 242.69);
+    --color-danger-hover: oklch(54.468% 0.17465 29.44);
+    --color-secondary: oklch(44.892% 0 353.99);
+    --color-secondary-hover: oklch(51.46% 0 354.01);
+}
