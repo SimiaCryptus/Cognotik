@@ -737,7 +737,7 @@ class UsageDB : UsageInterface {
   }
 
   override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> {
-    log.debug("Getting session usage rows for session: {}", session)
+//    log.debug("Getting session usage rows for session: {}", session)
     return transaction(database) {
       val allSessionIds = collectSessionIds(session.sessionId)
       if (allSessionIds.isEmpty()) return@transaction emptyList()
