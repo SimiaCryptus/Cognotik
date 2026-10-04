@@ -2,18 +2,16 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.genai.Client
+import com.google.genai.errors.ApiException
 import com.google.genai.types.*
 import com.google.genai.types.Content.builder
 import com.google.genai.types.Part.fromText
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GeminiModels
-import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.exceptions.*
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
 import okio.ByteString.Companion.decodeBase64
@@ -189,6 +187,12 @@ class GeminiSdkChatClient(
       )
       val response = try {
         client.models.generateContent(model.modelId, contents, config)
+      } catch (e: ApiException) {
+        log.error(
+          "Request {}: Gemini API error for model {} (code={}, status={}): {}",
+          requestID, model.modelId, e.code(), e.status(), e.message
+        )
+        throw translateApiException(e, model.modelId)
       } catch (e: java.net.SocketTimeoutException) {
         log.error("Request {}: Timeout calling Gemini API for model {}: {}", requestID, model.modelId, e.message)
         throw e
@@ -217,7 +221,16 @@ class GeminiSdkChatClient(
       val elapsed = System.currentTimeMillis() - startTime
       when (response.finishReason().toString()) {
         "MALFORMED_FUNCTION_CALL" -> throw IllegalStateException("Gemini API returned MALFORMED_FUNCTION_CALL for request $requestID")
-        else -> log.debug("Request {}: Gemini API responded in {} ms with finish reason {}", requestID, elapsed, response.finishReason())
+        "SAFETY", "PROHIBITED_CONTENT", "BLOCKLIST", "SPII" -> throw AIServiceException(
+          "Gemini rejected request $requestID (finish reason ${response.finishReason()}) as a result of its safety system."
+        )
+
+        else -> log.debug(
+          "Request {}: Gemini API responded in {} ms with finish reason {}",
+          requestID,
+          elapsed,
+          response.finishReason()
+        )
       }
       // Log response
       log(
@@ -236,10 +249,12 @@ class GeminiSdkChatClient(
       }
       if (chatResponse.usage != null) {
         try {
-          usageHandler.onUsage(model, chatResponse.usage!!, ModelSchema.UsageData(
-            input_text = sysText + "\n\n" + inputText,
-            output_text = chatResponse.choices.joinToString("\n\n") { choice -> choice.message?.content ?: "" },
-          ))
+          usageHandler.onUsage(
+            model, chatResponse.usage!!, ModelSchema.UsageData(
+              input_text = sysText + "\n\n" + inputText,
+              output_text = chatResponse.choices.joinToString("\n\n") { choice -> choice.message?.content ?: "" },
+            )
+          )
         } catch (e: Exception) {
           log.warn("Request {}: Failed to record usage: {}", requestID, e.message, e)
         }
@@ -249,7 +264,7 @@ class GeminiSdkChatClient(
       }
       log.info(
         "Request {}: completed successfully in {} ms ({} choices)",
-        requestID, System.currentTimeMillis() - startTime, chatResponse.choices?.size ?: 0
+        requestID, System.currentTimeMillis() - startTime, chatResponse.choices.size ?: 0
       )
       return chatResponse
     } catch (e: Exception) {
@@ -261,6 +276,51 @@ class GeminiSdkChatClient(
       throw e
     }
   }
+
+  /**
+   * Translate a Gemini SDK [ApiException] into a typed Cognotik exception so that
+   * ErrorUtil.isFatal / ErrorUtil.errorType can classify it for retries and metrics.
+   * The original exception is attached as the cause so its details are not lost.
+   */
+  private fun translateApiException(e: ApiException, modelId: String): Throwable {
+    val msg = e.message ?: ""
+    val translated: Throwable = when (e.code()) {
+      429 -> {
+        // Gemini RESOURCE_EXHAUSTED: usually a per-minute limit, so it is retryable.
+        val delaySec = Regex("""retry in ([\d.]+)s""", RegexOption.IGNORE_CASE)
+          .find(msg)?.groupValues?.get(1)?.toDoubleOrNull()?.toLong() ?: 60L
+        RateLimitException("gemini", 0, delaySec)
+      }
+
+      503, 529 -> RequestOverloadException(msg.ifBlank { "That model is currently overloaded with other requests." })
+      404 -> InvalidModelException(modelId)
+      400 -> {
+        val m = Regex(
+          """input token count \(?(\d+)\)? exceeds the maximum number of tokens allowed \(?(\d+)\)?""",
+          RegexOption.IGNORE_CASE
+        )
+          .find(msg)
+        if (m != null) {
+          val requested = m.groupValues[1].toInt()
+          ModelMaxException(m.groupValues[2].toInt(), requested, requested, 0)
+        } else {
+          AIServiceException("Gemini rejected request: $msg", isFatal = true)
+        }
+      }
+
+      401, 403 -> AIServiceException("Gemini authorization failed: $msg", isFatal = true)
+      in 500..599 -> AIServiceException("Gemini server error (${e.code()}): $msg", isFatal = false)
+      else -> AIServiceException("Gemini API error (${e.code()}): $msg", isFatal = false)
+    }
+    if (translated.cause == null) {
+      try {
+        translated.initCause(e)
+      } catch (_: IllegalStateException) {
+      }
+    }
+    return translated
+  }
+
 
   /**
    * Some Gemini models (notably TTS and certain preview models) do not support
@@ -297,8 +357,7 @@ class GeminiSdkChatClient(
           }
           part.inlineData().getOrNull()?.let { inlineData ->
             val rawMime = inlineData.mimeType().getOrNull()
-            val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()
-            when (baseMime) {
+            when (val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()) {
               "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
                 try {
                   val imageBytes = inlineData.data().getOrNull()
@@ -329,7 +388,7 @@ class GeminiSdkChatClient(
                     val logBytes = java.io.ByteArrayOutputStream()
                     javax.imageio.ImageIO.write(
                       sourceImage,
-                      baseMime!!.substringAfter("image/"),
+                      baseMime.substringAfter("image/"),
                       logBytes
                     )
                     val outBytes = logBytes.toByteArray()
@@ -356,7 +415,7 @@ class GeminiSdkChatClient(
                 try {
                   val audioBytes = inlineData.data().getOrNull()
                   if (audioBytes != null) {
-                    val mime = rawMime ?: "audio/wav"
+                    val mime = rawMime
                     sb.append(
                       "<audio controls src=\"data:${mime};base64,${audioBytes.base64()}\">[audio: ${mime}, ${audioBytes.size} bytes]</audio>\n"
                     )
@@ -690,8 +749,7 @@ class GeminiSdkChatClient(
           try {
             part.inlineData()?.getOrNull()?.apply {
               val rawMime = mimeType().getOrNull()
-              val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()
-              when (baseMime) {
+              when (val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()) {
                 "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
                   chatMessageResponse.image_data = this.data().getOrNull()
                   chatMessageResponse.image_mime_type = rawMime
@@ -815,4 +873,4 @@ class GeminiSdkChatClient(
 }
 
 
-private fun ByteArray.base64() = java.util.Base64.getEncoder().encodeToString(this)
+private fun ByteArray.base64() = Base64.getEncoder().encodeToString(this)

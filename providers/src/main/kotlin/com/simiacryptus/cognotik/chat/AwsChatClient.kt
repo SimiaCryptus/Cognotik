@@ -2,13 +2,9 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.model.LLMModel
-import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.exceptions.*
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -26,9 +22,7 @@ import software.amazon.awssdk.services.bedrockruntime.BedrockRuntimeAsyncClient
 import software.amazon.awssdk.services.bedrockruntime.model.*
 import java.io.BufferedOutputStream
 import java.time.Duration
-import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.TimeUnit
+import java.util.concurrent.*
 
 class AwsChatClient(
   apiKey: SecureString,
@@ -329,7 +323,8 @@ class AwsChatClient(
       } catch (e: Exception) {
         log.error("Failed to create AWS request for model: ${model.modelId}", e)
         logStreams.debug("Error details: ${e.message}")
-        throw RuntimeException("Failed to create AWS request", e)
+        // A request that cannot be built will not succeed on retry
+        throw NonRetryableException("Failed to create AWS request: ${e.message}", e)
       }
 
       val converseResponse = try {
@@ -342,13 +337,16 @@ class AwsChatClient(
         response
       } catch (e: Exception) {
         log.error("Failed to invoke AWS Bedrock model: ${model.modelId}", e)
-        throw RuntimeException("Failed to invoke AWS Bedrock model", e.cause ?: e)
+        val typed = toTypedException(e, model)
+        logStreams.debug("AWS Bedrock error mapped to ${typed.javaClass.simpleName}: ${typed.message}")
+        throw typed
       }
 
       val response = fromConverseResponse(converseResponse)
 
       if (response.usage != null) {
-        log.debug("Usage for model ${model.modelId}: prompt_tokens=${
+        log.debug(
+          "Usage for model ${model.modelId}: prompt_tokens=${
           response.usage?.let {
             it.counts.getOrDefault(
               TokenTypes.Prompt,
@@ -369,7 +367,7 @@ class AwsChatClient(
         )
       }
 
-      log.info("AWS Bedrock chat completed successfully for model: ${model.modelId}, choices=${response.choices?.size ?: 0}")
+      log.info("AWS Bedrock chat completed successfully for model: ${model.modelId}, choices=${response.choices.size ?: 0}")
       response
     }
   }
@@ -377,7 +375,7 @@ class AwsChatClient(
   private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
     log.debug("Validating chat request: messages=${chatRequest.messages.size}, model=${model.modelId}, region=${awsAuth.region}")
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+    require(model.modelId.isNotBlank() == true) { "Model name cannot be blank" }
     require(awsAuth.region.isNotBlank()) { "AWS region must be specified" }
   }
 
@@ -404,6 +402,37 @@ class AwsChatClient(
       val models: Map<String, String> = emptyMap(), // Custom model ids
       val flattenChat: Boolean? = null, // Whether to flatten the chat history into a single user message (true) or keep as separate messages (false). Default is false.
     )
+
+    /**
+     * Maps AWS Bedrock runtime exceptions to Cognotik's typed LLM exceptions so that
+     * ErrorUtil.isFatal / errorType classify them correctly for retries and metrics.
+     */
+    fun toTypedException(e: Throwable, model: LLMModel?): Throwable {
+      var root: Throwable = e
+      while ((root is ExecutionException || root is CompletionException) && root.cause != null && root.cause !== root) {
+        root = root.cause!!
+      }
+      if (root is InterruptedException) {
+        Thread.currentThread().interrupt()
+        return root
+      }
+      val msg = root.message ?: root.javaClass.simpleName
+      val mapped: Throwable = when (root) {
+        is ThrottlingException -> RateLimitException(null, 0, 1L)
+        is ServiceUnavailableException, is ModelNotReadyException -> RequestOverloadException(msg)
+        is ResourceNotFoundException -> InvalidModelException(model?.modelId)
+        is AccessDeniedException -> AIServiceException("AWS Bedrock access denied: $msg", isFatal = true)
+        is ServiceQuotaExceededException -> AIServiceException("AWS Bedrock quota exceeded: $msg", isFatal = true)
+        is ValidationException -> AIServiceException("AWS Bedrock validation error: $msg", isFatal = true)
+        is ModelTimeoutException, is InternalServerException, is ModelErrorException ->
+          AIServiceException("AWS Bedrock transient error: $msg", isFatal = false)
+
+        else -> return RuntimeException("Failed to invoke AWS Bedrock model: $msg", root)
+      }
+      if (mapped !== root) mapped.initCause(root)
+      return mapped
+    }
+
 
     fun toConverseRequest(
       model: LLMModel,

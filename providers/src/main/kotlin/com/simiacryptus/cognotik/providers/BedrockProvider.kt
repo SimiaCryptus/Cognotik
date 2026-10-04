@@ -25,7 +25,7 @@ class BedrockProvider : APIProvider("AWS", "https://api.openai.aws") {
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 
 }

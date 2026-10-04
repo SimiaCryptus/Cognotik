@@ -81,5 +81,11 @@ class ServiceKey<T : Any>(
       * Callers should create it once and cache it; fall back to [NoOpMetrics] when unregistered.
       */
      val METRICS = ServiceKey("metrics", MetricsInterface::class)
+    /**
+     * Alert notification delivery (email, Slack, SNS, ...), called by metrics backends on
+     * alert transitions. Resolve via [NotificationsInterface.resolve], which falls back to
+     * [LoggingNotifications] when unregistered.
+     */
+    val NOTIFICATIONS = ServiceKey("notifications", NotificationsInterface::class)
   }
 }

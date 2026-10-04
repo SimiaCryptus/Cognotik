@@ -15,10 +15,10 @@ object DeepSeekModels {
 //   cache miss (Prompt) input: $0.30  / 1M
 //   output (Completion):       $1.20  / 1M
   private val flashPricing = mapOf(
-   TokenTypes.Prompt to 0.3 / 1000.0,
-   TokenTypes.Cached to 0.006 / 1000.0,
-   TokenTypes.Completion to 1.2 / 1000.0,
-   TokenTypes.Thinking to 1.2 / 1000.0,
+    TokenTypes.Prompt to 0.3 / 1000.0,
+    TokenTypes.Cached to 0.006 / 1000.0,
+    TokenTypes.Completion to 1.2 / 1000.0,
+    TokenTypes.Thinking to 1.2 / 1000.0,
   )
 
   // deepseek-v4-pro:
@@ -26,10 +26,10 @@ object DeepSeekModels {
 //   cache miss (Prompt) input: $1.32  / 1M
 //   output (Completion):       $3.96  / 1M
   private val proPricing = mapOf(
-   TokenTypes.Prompt to 1.32 / 1000.0,
-   TokenTypes.Cached to 0.044 / 1000.0,
-   TokenTypes.Completion to 3.96 / 1000.0,
-   TokenTypes.Thinking to 3.96 / 1000.0,
+    TokenTypes.Prompt to 1.32 / 1000.0,
+    TokenTypes.Cached to 0.044 / 1000.0,
+    TokenTypes.Completion to 3.96 / 1000.0,
+    TokenTypes.Thinking to 3.96 / 1000.0,
   )
 
   // deepseek-flash: DeepSeek-V4.1-Flash, 1M context, 384K max output,

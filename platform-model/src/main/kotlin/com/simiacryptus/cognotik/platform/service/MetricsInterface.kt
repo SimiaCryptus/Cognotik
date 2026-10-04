@@ -1,5 +1,10 @@
 package com.simiacryptus.cognotik.platform.service
 
+import com.simiacryptus.cognotik.platform.model.Alert
+import com.simiacryptus.cognotik.platform.model.AlertPolicy
+import com.simiacryptus.cognotik.platform.model.AlertSeverity
+import com.simiacryptus.cognotik.platform.model.AlertState
+import com.simiacryptus.cognotik.platform.model.AlertStatistic
 import com.simiacryptus.cognotik.platform.model.Attributes
 import com.simiacryptus.cognotik.platform.model.CounterType
 import com.simiacryptus.cognotik.platform.model.DistributionType
@@ -65,6 +70,18 @@ data class EventQuery(
   val limit: Int = 100,
 )
 
+/**
+ * Filter for [MetricsInterface.listAlerts]. Null fields match everything.
+ *
+ * @param limit maximum number of alerts returned (firing first, then most recently resolved)
+ */
+data class AlertQuery(
+  val state: AlertState? = null,
+  val policyId: String? = null,
+  val severity: AlertSeverity? = null,
+  val limit: Int = 100,
+)
+
 /** A discrete event as recorded by a backend that retains events. */
 data class RecordedEvent(val type: EventType, val attributes: Attributes, val timestamp: Instant)
 
@@ -88,6 +105,14 @@ data class RecordedEvent(val type: EventType, val attributes: Attributes, val ti
  *   when it is false, all query methods return empty results.
  * - Query methods are thread-safe. Unlike recording, they may throw if a queryable
  *   backend fails; callers (e.g. a dashboard) are expected to handle that.
+ *
+ * Contract (alerting, optional):
+ * - Check [supportsAlerting]; when false, [putAlertPolicy] throws
+ *   [UnsupportedOperationException] and the other alerting methods return empty results.
+ * - Backends evaluate policies (on write, on [evaluateAlerts], or natively, e.g. as
+ *   CloudWatch alarms) and report every FIRING/RESOLVED transition to
+ *   [NotificationsInterface] (see [NotificationsInterface.resolve]).
+ * - [evaluateAlerts] MUST NOT throw; policy management may throw on invalid input.
  */
 interface MetricsInterface {
 
@@ -140,6 +165,40 @@ interface MetricsInterface {
 
   /** Metrics that currently have at least one series. Derived from [querySeries] by default. */
   fun listMetrics(): List<MetricType> = querySeries().map { it.metric }.distinct()
+
+  // ---------------- Alerting (optional) ----------------
+
+  /** True if this backend evaluates alert policies. Default false. */
+  val supportsAlerting: Boolean get() = false
+
+  /**
+   * Creates or replaces (by [AlertPolicy.id]) an alert policy.
+   * Alerts already firing for a replaced policy keep firing if still breached.
+   *
+   * @return the previous policy with the same id, if any
+   * @throws UnsupportedOperationException if [supportsAlerting] is false
+   */
+  fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? =
+    throw UnsupportedOperationException("${javaClass.simpleName} does not support alerting")
+
+  /** Removes a policy; its active alerts are dropped without notification. @return true if it existed */
+  fun removeAlertPolicy(id: String): Boolean = false
+
+  fun getAlertPolicy(id: String): AlertPolicy? = listAlertPolicies().firstOrNull { it.id == id }
+
+  fun listAlertPolicies(): List<AlertPolicy> = emptyList()
+
+  /**
+   * Evaluates all policies now (sampling registered gauges). Backends that evaluate
+   * only on demand need this to be called periodically. Never throws. Default no-op.
+   */
+  fun evaluateAlerts() {}
+
+  /** Alerts matching [query]: firing alerts first, then recently resolved, newest first. */
+  fun listAlerts(query: AlertQuery = AlertQuery()): List<Alert> = emptyList()
+
+  /** All currently firing alerts. */
+  fun triggeredAlerts(): List<Alert> = listAlerts(AlertQuery(state = AlertState.FIRING, limit = Int.MAX_VALUE))
 }
 
 /** Discards everything; the safe default when no backend is configured. */
@@ -150,6 +209,9 @@ object NoOpMetrics : MetricsInterface {
   override fun registerGauge(metric: GaugeType, attributes: Attributes, supplier: () -> Double?) =
     AutoCloseable {}
   override fun event(type: EventType, attributes: Attributes, timestamp: Instant) {}
+
+  /** Policies are discarded too, so startup code registering policies does not fail. */
+  override fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? = null
 }
 
 /**
@@ -159,6 +221,9 @@ object NoOpMetrics : MetricsInterface {
  * Reads are served by the first delegate that [supportsQueries]; if it fails, the next
  * queryable delegate is tried. Results are never merged across delegates, since all
  * delegates receive the same writes and merging would double-count.
+ *
+ * Alerting is delegated to the first delegate that [supportsAlerting] only; installing
+ * policies in several backends would produce duplicate notifications.
  */
 class CompositeMetrics(private val delegates: List<MetricsInterface>) : MetricsInterface {
 
@@ -185,6 +250,8 @@ class CompositeMetrics(private val delegates: List<MetricsInterface>) : MetricsI
     }
     return emptyList()
   }
+
+  private val alerting: MetricsInterface? get() = delegates.firstOrNull { it.supportsAlerting }
 
   override fun increment(metric: CounterType, amount: Double, attributes: Attributes) =
     each("increment $metric") { it.increment(metric, amount, attributes) }
@@ -216,6 +283,30 @@ class CompositeMetrics(private val delegates: List<MetricsInterface>) : MetricsI
   override fun queryEvents(query: EventQuery): List<RecordedEvent> =
     firstQueryable("queryEvents") { it.queryEvents(query) }
 
+  override val supportsAlerting: Boolean get() = alerting != null
+
+  override fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? =
+    (alerting ?: throw UnsupportedOperationException("No delegate supports alerting")).putAlertPolicy(policy)
+
+  override fun removeAlertPolicy(id: String): Boolean = alerting?.removeAlertPolicy(id) ?: false
+
+  override fun getAlertPolicy(id: String): AlertPolicy? = alerting?.getAlertPolicy(id)
+
+  override fun listAlertPolicies(): List<AlertPolicy> = alerting?.listAlertPolicies() ?: emptyList()
+
+  override fun evaluateAlerts() {
+    val delegate = alerting ?: return
+    try {
+      delegate.evaluateAlerts()
+    } catch (e: Exception) {
+      log.warn("Metrics backend ${delegate.javaClass.simpleName} failed on evaluateAlerts", e)
+    }
+  }
+
+  override fun listAlerts(query: AlertQuery): List<Alert> = alerting?.listAlerts(query) ?: emptyList()
+
+  override fun triggeredAlerts(): List<Alert> = alerting?.triggeredAlerts() ?: emptyList()
+
   companion object {
     private val log = LoggerFactory.getLogger(CompositeMetrics::class.java)
   }
@@ -224,11 +315,21 @@ class CompositeMetrics(private val delegates: List<MetricsInterface>) : MetricsI
 /**
  * In-process reference implementation, for tests, local development and as the
  * behavioural reference for real backends. Applies [MetricType.sanitize] to all
- * series; events retain their full attributes. Supports queries.
+ * series; events retain their full attributes. Supports queries and alerting.
+ *
+ * Alerting: policies for a metric are re-evaluated on every write to that metric.
+ * Values from [registerGauge] suppliers are only sampled by [evaluateAlerts], which
+ * should therefore be called periodically if such gauges are alerted on.
  *
  * @param maxEvents number of most recent events retained
+ * @param maxResolvedAlerts number of most recently resolved alerts retained for [listAlerts]
+ * @param notifications resolves the notification sink at delivery time
  */
-class InMemoryMetrics(private val maxEvents: Int = 10_000) : MetricsInterface {
+class InMemoryMetrics(
+  private val maxEvents: Int = 10_000,
+  private val maxResolvedAlerts: Int = 1_000,
+  private val notifications: () -> NotificationsInterface = { NotificationsInterface.resolve() },
+) : MetricsInterface {
 
   data class SeriesKey(val metric: MetricType, val attributes: Attributes)
 
@@ -261,6 +362,13 @@ class InMemoryMetrics(private val maxEvents: Int = 10_000) : MetricsInterface {
   private val events = ConcurrentLinkedDeque<RecordedEvent>()
   private val eventCount = AtomicInteger()
 
+  private val policies = ConcurrentHashMap<String, AlertPolicy>()
+  private val alertLock = Any()
+  /** Firing alerts keyed by (policy id, series attributes). Guarded by [alertLock]. */
+  private val activeAlerts = LinkedHashMap<Pair<String, Attributes>, Alert>()
+  /** Recently resolved alerts, oldest first. Guarded by [alertLock]. */
+  private val resolvedAlerts = ArrayDeque<Alert>()
+
   private fun key(metric: MetricType, attributes: Attributes) = SeriesKey(metric, metric.sanitize(attributes))
 
   override fun increment(metric: CounterType, amount: Double, attributes: Attributes) {
@@ -269,14 +377,17 @@ class InMemoryMetrics(private val maxEvents: Int = 10_000) : MetricsInterface {
       return
     }
     counters.computeIfAbsent(key(metric, attributes)) { DoubleAdder() }.add(amount)
+    evaluateFor(metric)
   }
 
   override fun gauge(metric: GaugeType, value: Double, attributes: Attributes) {
     gauges[key(metric, attributes)] = value
+    evaluateFor(metric)
   }
 
   override fun record(metric: DistributionType, value: Double, attributes: Attributes) {
     distributions.computeIfAbsent(key(metric, attributes)) { DistributionSummary() }.add(value)
+    evaluateFor(metric)
   }
 
   override fun registerGauge(metric: GaugeType, attributes: Attributes, supplier: () -> Double?): AutoCloseable {
@@ -311,14 +422,14 @@ class InMemoryMetrics(private val maxEvents: Int = 10_000) : MetricsInterface {
       }
     }
 
-    // Registered suppliers are sampled now; explicit values take precedence.
+    // Registered suppliers are sampled now (only those that match); explicit values take precedence.
     val gaugeValues = LinkedHashMap<SeriesKey, Double>()
-    gaugeSuppliers.forEach { (k, s) -> runCatching(s).getOrNull()?.let { gaugeValues[k] = it } }
-    gauges.forEach { (k, v) -> gaugeValues[k] = v }
+    gaugeSuppliers.forEach { (k, s) ->
+      if (matches(k, MetricKind.GAUGE)) runCatching(s).getOrNull()?.let { gaugeValues[k] = it }
+    }
+    gauges.forEach { (k, v) -> if (matches(k, MetricKind.GAUGE)) gaugeValues[k] = v }
     gaugeValues.forEach { (k, v) ->
-      if (matches(k, MetricKind.GAUGE)) {
-        result += SeriesSnapshot(k.metric, MetricKind.GAUGE, k.attributes, v)
-      }
+      result += SeriesSnapshot(k.metric, MetricKind.GAUGE, k.attributes, v)
     }
 
     distributions.forEach { (k, v) ->
@@ -339,6 +450,121 @@ class InMemoryMetrics(private val maxEvents: Int = 10_000) : MetricsInterface {
       .take(query.limit)
       .toList()
   }
+
+  // ---------------- Alerting ----------------
+
+  override val supportsAlerting: Boolean get() = true
+
+  override fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? {
+    val previous = policies.put(policy.id, policy)
+    evaluate(listOf(policy))
+    return previous
+  }
+
+  override fun removeAlertPolicy(id: String): Boolean {
+    policies.remove(id) ?: return false
+    synchronized(alertLock) { activeAlerts.keys.removeIf { it.first == id } }
+    return true
+  }
+
+  override fun getAlertPolicy(id: String): AlertPolicy? = policies[id]
+
+  override fun listAlertPolicies(): List<AlertPolicy> = policies.values.sortedBy { it.id }
+
+  override fun evaluateAlerts() = evaluate(policies.values.toList())
+
+  override fun listAlerts(query: AlertQuery): List<Alert> {
+    if (query.limit <= 0) return emptyList()
+    val all = synchronized(alertLock) {
+      activeAlerts.values.sortedByDescending { it.triggeredAt } + resolvedAlerts.reversed()
+    }
+    return all.asSequence()
+      .filter { query.state == null || it.state == query.state }
+      .filter { query.policyId == null || it.policy.id == query.policyId }
+      .filter { query.severity == null || it.policy.severity == query.severity }
+      .take(query.limit)
+      .toList()
+  }
+
+  private fun evaluateFor(metric: MetricType) {
+    if (policies.isEmpty()) return
+    val targets = policies.values.filter { it.metric == metric }
+    if (targets.isNotEmpty()) evaluate(targets)
+  }
+
+  /** Evaluates [targets], updates alert state and dispatches transitions. Never throws. */
+  private fun evaluate(targets: Collection<AlertPolicy>) {
+    if (targets.isEmpty()) return
+    val transitions = mutableListOf<Alert>()
+    try {
+      // Sample outside the lock: gauge suppliers may be slow.
+      val samples = targets.associateWith { sample(it) }
+      val now = Instant.now()
+      synchronized(alertLock) {
+        for ((policy, values) in samples) {
+          if (policies[policy.id] != policy) continue // removed or replaced concurrently
+          val breached = values.filterValues { policy.isBreached(it) }
+          for ((attrs, value) in breached) {
+            val k = policy.id to attrs
+            val existing = activeAlerts[k]
+            if (existing == null) {
+              val alert = Alert(policy, attrs, AlertState.FIRING, value, triggeredAt = now)
+              activeAlerts[k] = alert
+              transitions += alert
+            } else {
+              activeAlerts[k] = existing.copy(policy = policy, value = value, lastEvaluatedAt = now)
+            }
+          }
+          val it = activeAlerts.entries.iterator()
+          while (it.hasNext()) {
+            val (k, alert) = it.next()
+            if (k.first != policy.id || k.second in breached) continue
+            it.remove()
+            val resolved = alert.copy(
+              policy = policy,
+              state = AlertState.RESOLVED,
+              value = values[k.second] ?: alert.value,
+              lastEvaluatedAt = now,
+              resolvedAt = now,
+            )
+            resolvedAlerts.addLast(resolved)
+            while (resolvedAlerts.size > maxResolvedAlerts) resolvedAlerts.removeFirst()
+            transitions += resolved
+          }
+        }
+      }
+    } catch (e: Exception) {
+      log.warn("Alert evaluation failed", e)
+    }
+    transitions.forEach { dispatch(it) }
+  }
+
+  /** Current statistic value per matching series; empty for disabled policies. */
+  private fun sample(policy: AlertPolicy): Map<Attributes, Double> {
+    if (!policy.enabled) return emptyMap()
+    return querySeries(MetricQuery(metric = policy.metric))
+      .filter { policy.matches(it.attributes) }
+      .mapNotNull { s -> statistic(policy.statistic, s)?.let { s.attributes to it } }
+      .toMap()
+  }
+
+  private fun statistic(stat: AlertStatistic, s: SeriesSnapshot): Double? = when (stat) {
+    AlertStatistic.VALUE -> s.value
+    AlertStatistic.COUNT -> s.distribution?.count?.toDouble()
+    AlertStatistic.MEAN -> s.distribution?.mean
+    AlertStatistic.MIN -> s.distribution?.min
+    AlertStatistic.MAX -> s.distribution?.max
+  }?.takeUnless { it.isNaN() }
+
+  private fun dispatch(alert: Alert) {
+    try {
+      notifications().notifyAlert(alert)
+    } catch (e: Exception) {
+      log.warn("Alert notification failed for ${alert.id}", e)
+    }
+  }
+
+  // ---------------- Test helpers ----------------
 
   fun counter(metric: CounterType, attributes: Attributes = Attributes.EMPTY): Double =
     counters[key(metric, attributes)]?.sum() ?: 0.0
@@ -367,9 +593,12 @@ class InMemoryMetrics(private val maxEvents: Int = 10_000) : MetricsInterface {
     distributions.forEach { (k, v) -> put(k, v.sum) }
   }
 
+  /** Clears all series, events, alert policies and alert state. */
   fun reset() {
     counters.clear(); gauges.clear(); gaugeSuppliers.clear(); distributions.clear()
     events.clear(); eventCount.set(0)
+    policies.clear()
+    synchronized(alertLock) { activeAlerts.clear(); resolvedAlerts.clear() }
   }
 
   companion object {

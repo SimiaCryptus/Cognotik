@@ -19,12 +19,12 @@ class AnthropicProvider : APIProvider("Anthropic", "https://api.anthropic.com/v1
     workPool: ExecutorService,
     scheduledPool: ListeningScheduledExecutorService
   ) = AnthropicChatClient(
-      apiKey = key,
-      apiBase = base,
-      workPool = workPool,
-      logLevel = logLevel,
-      logStreams = logStreams,
-      scheduledPool = scheduledPool,
-      session = session,
+    apiKey = key,
+    apiBase = base,
+    workPool = workPool,
+    logLevel = logLevel,
+    logStreams = logStreams,
+    scheduledPool = scheduledPool,
+    session = session,
   )
 }

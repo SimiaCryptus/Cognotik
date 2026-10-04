@@ -3,13 +3,10 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.GroqModels
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -113,7 +110,9 @@ class GroqChatClient(
       modelsCache[apiBase] = models
       models
     } catch (e: Exception) {
-      log.warn("Failed to fetch models from Groq API: ${e.message}")
+      log.warn(
+        "Failed to fetch models from Groq API [${ErrorUtil.errorType(e)}, fatal=${ErrorUtil.isFatal(e)}]: ${e.message}"
+      )
       emptyList()
     }
   }
@@ -137,9 +136,10 @@ class GroqChatClient(
       val groqRequest = toGroq(chatRequest)
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(groqRequest)
-      val result =
-        post("${apiBase}/chat/completions", json)
-      checkError(result)
+      // Pass the model so AI_ERROR metrics can be broken down by model
+      val result = post("${apiBase}/chat/completions", json, model = model.modelId)
+      // post() only reports embedded API errors; we must throw them ourselves
+      checkError(result, model)
       val response = JsonUtil.objectMapper().readValue(
         result,
         ModelSchema.ChatResponse::class.java

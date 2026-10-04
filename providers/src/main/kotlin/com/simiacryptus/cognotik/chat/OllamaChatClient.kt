@@ -4,17 +4,18 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.annotation.JsonProperty
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.model.LLMModel
+import com.simiacryptus.cognotik.exceptions.AIServiceException
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
+import com.simiacryptus.cognotik.exceptions.InvalidModelException
+import com.simiacryptus.cognotik.exceptions.RequestOverloadException
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.*
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
+import java.io.IOException
 import java.util.concurrent.ExecutorService
 
 class OllamaChatClient(
@@ -47,7 +48,7 @@ class OllamaChatClient(
   override fun chat(
     chatRequest: ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>,
+    logStreams: MutableList<BufferedOutputStream>,
     usageHandler: UsageListener
   ): ChatResponse {
     validateChatRequest(chatRequest, model)
@@ -71,7 +72,7 @@ class OllamaChatClient(
       }
 
       val ollamaRequest = OllamaChatRequest(
-        model = chatRequest.model ?: model.modelId!!,
+        model = chatRequest.model ?: model.modelId,
         messages = ollamaMessages,
         stream = false,
         options = OllamaOptions(
@@ -84,26 +85,9 @@ class OllamaChatClient(
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(ollamaRequest)
 
-      val rawResponse = post("${apiBase}/api/chat", json)
+      val rawResponse = post("${apiBase}/api/chat", json, model = model.modelId)
 
-      // Check if response is an error by trying to parse it as JSON
-      // Ollama returns plain text errors or JSON responses
-      try {
-        val jsonResponse = JsonUtil.objectMapper().readTree(rawResponse)
-        if (jsonResponse.has("error")) {
-          throw RuntimeException("Ollama API error: ${jsonResponse.get("error").asText()}")
-        }
-      } catch (e: com.fasterxml.jackson.core.JsonParseException) {
-        // If it's not valid JSON, treat it as an error message
-        if (rawResponse.contains("error", ignoreCase = true) ||
-          rawResponse.contains("not found", ignoreCase = true) ||
-          rawResponse.contains("invalid", ignoreCase = true)
-        ) {
-          throw RuntimeException("Ollama API error: $rawResponse")
-        }
-        // If it's not JSON and doesn't look like an error, re-throw the parse exception
-        throw RuntimeException("Invalid JSON response from Ollama: $rawResponse", e)
-      }
+      checkOllamaError(rawResponse, model, chatRequest.model ?: model.modelId)
 
       val ollamaResponse = JsonUtil.objectMapper().readValue(rawResponse, OllamaChatResponse::class.java)
 
@@ -118,7 +102,8 @@ class OllamaChatClient(
             index = 0,
             message = ollamaResponse.message.let { message ->
               ChatMessageResponse(
-                role = message.role.let { Role.valueOf(it) },
+                role = Role.values().firstOrNull { it.name.equals(message.role, ignoreCase = true) }
+                  ?: Role.valueOf("assistant"),
                 content = message.content,
               )
             },
@@ -136,7 +121,7 @@ class OllamaChatClient(
       }
 
 
-       response
+      response
     }
   }
 
@@ -163,9 +148,50 @@ class OllamaChatClient(
     }
   }
 
+  /**
+   * Converts Ollama error payloads (`{"error": "..."}` or plain text) into typed
+   * Cognotik exceptions so retry logic and metrics classify them correctly.
+   */
+  private fun checkOllamaError(rawResponse: String, model: LLMModel, modelName: String?) {
+    val jsonResponse = try {
+      JsonUtil.objectMapper().readTree(rawResponse)
+    } catch (e: com.fasterxml.jackson.core.JsonProcessingException) {
+      if (rawResponse.contains("error", ignoreCase = true) ||
+        rawResponse.contains("not found", ignoreCase = true) ||
+        rawResponse.contains("invalid", ignoreCase = true)
+      ) {
+        throw mapOllamaError(rawResponse.trim(), modelName)
+      }
+      throw IOException("Invalid JSON response: $rawResponse\nChat Model: ${model.modelId}", e)
+    }
+    val error = jsonResponse?.get("error") ?: return
+    if (error.isTextual) {
+      throw mapOllamaError(error.asText(), modelName)
+    }
+    // OpenAI-style error object; delegate to the shared pattern matcher
+    ErrorUtil.checkError(rawResponse, model)
+  }
+
+  private fun mapOllamaError(message: String, modelName: String?): IOException {
+    val lower = message.lowercase()
+    return when {
+      lower.contains("model") && (lower.contains("not found") || lower.contains("does not exist")) ->
+        InvalidModelException(modelName)
+
+      lower.contains("overloaded") || lower.contains("server busy") || lower.contains("too many requests") ->
+        RequestOverloadException("Ollama API error: $message")
+
+      lower.contains("context length") || lower.contains("too long") ->
+        AIServiceException("Ollama API error: $message", isFatal = true)
+
+      else -> AIServiceException("Ollama API error: $message", isFatal = false)
+    }
+  }
+
+
   private fun validateChatRequest(chatRequest: ChatRequest, model: LLMModel) {
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+    require(model.modelId.isNotBlank() == true) { "Model name cannot be blank" }
     require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
   }
 

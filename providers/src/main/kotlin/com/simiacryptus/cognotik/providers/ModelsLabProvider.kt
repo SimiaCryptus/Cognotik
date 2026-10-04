@@ -25,6 +25,6 @@ class ModelsLabProvider : APIProvider("ModelsLab", "https://modelslab.com/api/v6
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 }

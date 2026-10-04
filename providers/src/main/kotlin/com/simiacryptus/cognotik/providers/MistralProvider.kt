@@ -25,6 +25,6 @@ class MistralProvider : APIProvider("Mistral", "https://api.mistral.ai/v1") {
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 }

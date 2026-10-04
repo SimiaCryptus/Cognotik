@@ -1,46 +1,46 @@
 package com.simiacryptus.cognotik.providers
 
-    import com.google.common.util.concurrent.ListeningScheduledExecutorService
-    import com.simiacryptus.cognotik.platform.model.AudioModels
-    import com.simiacryptus.cognotik.platform.model.ChatClientInterface
-    import com.simiacryptus.cognotik.chat.ElevenLabsChatClient
-    import com.simiacryptus.cognotik.platform.model.APIProvider
-    import com.simiacryptus.cognotik.platform.model.Session
-    import com.simiacryptus.cognotik.util.SecureString
-    import org.slf4j.LoggerFactory
-    import org.slf4j.event.Level
-    import java.io.BufferedOutputStream
-    import java.util.concurrent.ExecutorService
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.simiacryptus.cognotik.chat.ElevenLabsChatClient
+import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.AudioModels
+import com.simiacryptus.cognotik.platform.model.ChatClientInterface
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.util.SecureString
+import org.slf4j.LoggerFactory
+import org.slf4j.event.Level
+import java.io.BufferedOutputStream
+import java.util.concurrent.ExecutorService
 
-    class ElevenLabsProvider : APIProvider(
-        name = "ElevenLabs",
-        base = "https://api.elevenlabs.io"
-    ) {
-        private val log = LoggerFactory.getLogger(ElevenLabsProvider::class.java)
+class ElevenLabsProvider : APIProvider(
+  name = "ElevenLabs",
+  base = "https://api.elevenlabs.io"
+) {
+  private val log = LoggerFactory.getLogger(ElevenLabsProvider::class.java)
 
-        override fun getChatClient(
-          key: SecureString,
-          logLevel: Level,
-          session: Session,
-          logStreams: MutableList<BufferedOutputStream>,
-          workPool: ExecutorService,
-          scheduledPool: ListeningScheduledExecutorService
-        ): ChatClientInterface {
-            log.debug("Creating ElevenLabs chat client (TTS-only) for base={}", base)
-            return ElevenLabsChatClient(
-                apiKey = key,
-                apiBase = base,
-                workPool = workPool,
-                logLevel = logLevel,
-                logStreams = logStreams,
-                scheduledPool = scheduledPool,
-                session = session,
-            )
-        }
+  override fun getChatClient(
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
+  ): ChatClientInterface {
+    log.debug("Creating ElevenLabs chat client (TTS-only) for base={}", base)
+    return ElevenLabsChatClient(
+      apiKey = key,
+      apiBase = base,
+      workPool = workPool,
+      logLevel = logLevel,
+      logStreams = logStreams,
+      scheduledPool = scheduledPool,
+      session = session,
+    )
+  }
 
-        override fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> {
-            // ElevenLabs supports speech-to-text via Scribe model
-            return emptyList()
-        }
+  override fun getTranscriptionModels(key: SecureString, baseUrl: String): List<AudioModels> {
+    // ElevenLabs supports speech-to-text via Scribe model
+    return emptyList()
+  }
 
-    }
+}

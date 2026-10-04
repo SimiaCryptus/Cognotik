@@ -488,7 +488,7 @@ object AnthropicModels {
       "ClaudeHaiku3" to ClaudeHaiku3,
       "Claude35Haiku" to Claude35Haiku,
       "Claude45Haiku" to Claude45Haiku,
-      "Claude37Sonnet" to Claude37Sonnet,
+      "Claude37Sonnet" to Claude4Sonnet,
       "Claude4Sonnet" to Claude4Sonnet,
       "Claude45Sonnet" to Claude45Sonnet,
       "Claude46Sonnet" to Claude46Sonnet,

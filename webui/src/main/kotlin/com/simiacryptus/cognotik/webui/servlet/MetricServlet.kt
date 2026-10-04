@@ -25,9 +25,17 @@ import java.util.concurrent.CopyOnWriteArraySet
 import kotlin.math.abs
 import kotlin.math.floor
 
+/**
+ * GraphQL endpoint for metrics, events and alerting.
+ *
+ * @param isAllowed gate for all access (queries)
+ * @param canManageAlerts gate for alert mutations (put/remove policy, evaluate); defaults to
+ *                        [isAllowed] — replace with an admin-only predicate where appropriate
+ */
 class MetricServlet(
   private val isAllowed: (User) -> Boolean = { defaultAuthorization(it) },
   private val metricsProvider: () -> MetricsInterface = { ServiceRouter },
+  private val canManageAlerts: (User) -> Boolean = isAllowed,
 ) : HttpServlet() {
 
   public override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) = handle(req, resp)
@@ -160,6 +168,40 @@ class MetricServlet(
     "attributes" to attrList(e.attributes),
   )
 
+  private fun policyMap(p: AlertPolicy, firingCount: Int?): Map<String, Any?> = mapOf(
+    "id" to p.id,
+    "metric" to p.metric.name,
+    "kind" to kindOf(p.metric)?.name,
+    "unit" to p.metric.unit.name,
+    "comparison" to p.comparison.name,
+    "comparisonSymbol" to p.comparison.symbol,
+    "threshold" to p.threshold.finiteOrNull(),
+    "statistic" to p.statistic.name,
+    "severity" to p.severity.name,
+    "description" to p.description,
+    "channels" to p.channels.sorted(),
+    "enabled" to p.enabled,
+    "filter" to attrList(p.filter),
+    "firingCount" to firingCount,
+  )
+
+  private fun alertMap(a: Alert): Map<String, Any?> = mapOf(
+    "id" to a.id,
+    "policyId" to a.policy.id,
+    "policy" to policyMap(a.policy, null),
+    "metric" to a.policy.metric.name,
+    "severity" to a.policy.severity.name,
+    "state" to a.state.name,
+    "attributes" to attrList(a.attributes),
+    "value" to a.value.finiteOrNull(),
+    "triggeredAt" to a.triggeredAt.toString(),
+    "triggeredAtMs" to a.triggeredAt.toEpochMilli().toDouble(),
+    "lastEvaluatedAt" to a.lastEvaluatedAt.toString(),
+    "resolvedAt" to a.resolvedAt?.toString(),
+    "resolvedAtMs" to a.resolvedAt?.toEpochMilli()?.toDouble(),
+    "message" to a.message,
+  )
+
   // ------------------------------------------------------------------ resolvers
 
   private fun listMetricInfo(env: DataFetchingEnvironment): List<Map<String, Any?>> {
@@ -276,6 +318,95 @@ class MetricServlet(
       }
   }
 
+  // ------------------------------------------------------------------ alerting
+
+  private fun firingCounts(m: MetricsInterface): Map<String, Int> =
+    if (!m.supportsAlerting) emptyMap()
+    else m.triggeredAlerts().groupingBy { it.policy.id }.eachCount()
+
+  private fun listAlertPolicies(): List<Map<String, Any?>> {
+    val m = metrics()
+    if (!m.supportsAlerting) return emptyList()
+    val firing = firingCounts(m)
+    return m.listAlertPolicies().sortedBy { it.id }.map { policyMap(it, firing[it.id] ?: 0) }
+  }
+
+  private fun listAlerts(env: DataFetchingEnvironment): List<Map<String, Any?>> {
+    val m = metrics()
+    if (!m.supportsAlerting) return emptyList()
+    val f = filterArg(env)
+    val limit = (env.getArgument<Int?>("limit") ?: 100).coerceIn(1, MAX_ALERTS)
+    val query = AlertQuery(
+      state = f["state"]?.toString()?.let { AlertState.valueOf(it) },
+      policyId = (f["policyId"] as? String)?.trim()?.takeIf { it.isNotEmpty() },
+      severity = f["severity"]?.toString()?.let { AlertSeverity.valueOf(it) },
+      limit = limit,
+    )
+    return m.listAlerts(query).map { alertMap(it) }
+  }
+
+  private fun requireManage(env: DataFetchingEnvironment) {
+    val user = env.graphQlContext.get<User>("user") ?: throw SecurityException("Authentication required")
+    val ok = try {
+      canManageAlerts(user)
+    } catch (e: Exception) {
+      log.warn("Alert management authorization check failed for {}", user.email, e)
+      false
+    }
+    if (!ok) throw SecurityException("Not allowed to manage alerts")
+  }
+
+  private fun requireAlerting(m: MetricsInterface) {
+    if (!m.supportsAlerting) throw UnsupportedOperationException("The metrics backend does not support alerting")
+  }
+
+  private fun resolveMetric(name: String): MetricType {
+    knownMetrics().firstOrNull { it.name == name }?.let { return it }
+    val m = metrics()
+    if (m.supportsQueries) {
+      m.listMetrics().firstOrNull { it.name == name }?.let { return it }
+    }
+    throw IllegalArgumentException("Unknown metric: $name")
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  private fun buildFilter(metric: MetricType, raw: Map<String, String>): Attributes {
+    val values = raw.map { (name, rendered) ->
+      val attr = metric.attributes.firstOrNull { it.name == name }
+        ?: throw IllegalArgumentException("Attribute '$name' is not declared by metric ${metric.name}")
+      val typed = parseAttributeValue(attr.type, rendered)
+        ?: throw IllegalArgumentException("Invalid value '$rendered' for attribute '$name'")
+      (attr as MetricAttribute<Any>)(typed)
+    }
+    return Attributes.of(*values.toTypedArray<AttributeValue<*>?>())
+  }
+
+  private fun parsePolicy(input: Map<String, Any?>): AlertPolicy {
+    val id = input["id"]?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+      ?: throw IllegalArgumentException("Missing policy 'id'")
+    val metricName = input["metric"]?.toString()?.trim()?.takeIf { it.isNotEmpty() }
+      ?: throw IllegalArgumentException("Missing policy 'metric'")
+    val metric = resolveMetric(metricName)
+    val comparison = input["comparison"]?.toString()?.let { Comparison.valueOf(it) }
+      ?: throw IllegalArgumentException("Missing policy 'comparison'")
+    val threshold = (input["threshold"] as? Number)?.toDouble()
+      ?: throw IllegalArgumentException("Missing policy 'threshold'")
+    return AlertPolicy(
+      id = id,
+      metric = metric,
+      comparison = comparison,
+      threshold = threshold,
+      filter = buildFilter(metric, attributeFilter(input["filter"])),
+      statistic = input["statistic"]?.toString()?.let { AlertStatistic.valueOf(it) } ?: AlertStatistic.VALUE,
+      severity = input["severity"]?.toString()?.let { AlertSeverity.valueOf(it) } ?: AlertSeverity.WARNING,
+      description = input["description"]?.toString() ?: "",
+      channels = (input["channels"] as? List<*>)
+        ?.mapNotNull { it?.toString()?.trim()?.takeIf { s -> s.isNotEmpty() } }
+        ?.toSet() ?: emptySet(),
+      enabled = input["enabled"] as? Boolean ?: true,
+    )
+  }
+
   // ------------------------------------------------------------------ schema
 
   private val graphQL: GraphQL by lazy { buildGraphQL() }
@@ -305,6 +436,47 @@ class MetricServlet(
                 "attributes" to t.attributes.map { it.name }.sorted(),
               )
             }
+          })
+          .dataFetcher("supportsAlerting", DataFetcher { _ -> metrics().supportsAlerting })
+          .dataFetcher("alertPolicies", DataFetcher { _ -> listAlertPolicies() })
+          .dataFetcher("alertPolicy", DataFetcher { env ->
+            val m = metrics()
+            val id = env.getArgument<String>("id")
+            if (!m.supportsAlerting || id == null) null
+            else m.getAlertPolicy(id)?.let { policyMap(it, firingCounts(m)[it.id] ?: 0) }
+          })
+          .dataFetcher("alerts", DataFetcher { env -> listAlerts(env) })
+          .dataFetcher("triggeredAlerts", DataFetcher { _ ->
+            val m = metrics()
+            if (!m.supportsAlerting) emptyList()
+            else m.triggeredAlerts().sortedByDescending { it.triggeredAt }.map { alertMap(it) }
+          })
+      }
+      .type("Mutation") { b ->
+        b.dataFetcher("putAlertPolicy", DataFetcher { env ->
+          requireManage(env)
+          val m = metrics()
+          requireAlerting(m)
+          @Suppress("UNCHECKED_CAST")
+          val input = env.getArgument<Any?>("policy") as? Map<String, Any?>
+            ?: throw IllegalArgumentException("Missing 'policy'")
+          val policy = parsePolicy(input)
+          m.putAlertPolicy(policy)
+          policyMap(m.getAlertPolicy(policy.id) ?: policy, firingCounts(m)[policy.id] ?: 0)
+        })
+          .dataFetcher("removeAlertPolicy", DataFetcher { env ->
+            requireManage(env)
+            val m = metrics()
+            requireAlerting(m)
+            val id = env.getArgument<String>("id") ?: throw IllegalArgumentException("Missing 'id'")
+            m.removeAlertPolicy(id)
+          })
+          .dataFetcher("evaluateAlerts", DataFetcher { env ->
+            requireManage(env)
+            val m = metrics()
+            requireAlerting(m)
+            m.evaluateAlerts()
+            m.triggeredAlerts().sortedByDescending { it.triggeredAt }.map { alertMap(it) }
           })
       }
       .build()
@@ -423,6 +595,7 @@ class MetricServlet(
     private const val MAX_EVENT_SCAN = 10_000
     private const val MAX_SERIES = 10_000
     private const val MAX_BUCKETS = 10_000L
+    private const val MAX_ALERTS = 1_000
     private const val NONE_VALUE = "(none)"
 
     private val gsonIn: Gson = Gson()
@@ -490,6 +663,19 @@ class MetricServlet(
       return required.all { (k, v) -> actual[k] == v }
     }
 
+    /** Parses a rendered attribute value back into the attribute's declared type. */
+    private fun parseAttributeValue(type: Class<*>, raw: String): Any? = runCatching {
+      when {
+        type == String::class.java -> raw
+        type.isEnum -> type.enumConstants.firstOrNull { (it as Enum<*>).name == raw || it.toString() == raw }
+        type == java.lang.Double::class.java -> raw.toDouble()
+        type == java.lang.Long::class.java -> raw.toLong()
+        type == java.lang.Integer::class.java -> raw.toInt()
+        type == java.lang.Boolean::class.java -> raw.toBooleanStrict()
+        else -> type.getConstructor(String::class.java).newInstance(raw)
+      }
+    }.getOrNull()
+
     private fun Double.finiteOrNull(): Double? = takeIf { it.isFinite() }
 
     private fun parseTime(s: String?): Instant? {
@@ -503,9 +689,13 @@ class MetricServlet(
     }
 
     val SDL: String = """
-      schema { query: Query }
+      schema { query: Query mutation: Mutation }
 
       enum MetricKind { COUNTER GAUGE DISTRIBUTION }
+      enum AlertSeverity { INFO WARNING CRITICAL }
+      enum AlertState { FIRING RESOLVED }
+      enum Comparison { GREATER_THAN GREATER_OR_EQUAL LESS_THAN LESS_OR_EQUAL EQUAL NOT_EQUAL }
+      enum AlertStatistic { VALUE COUNT MEAN MIN MAX }
 
       type Attribute {
         key: String!
@@ -604,6 +794,63 @@ class MetricServlet(
         count: Int!
       }
 
+      type AlertPolicy {
+        id: String!
+        metric: String!
+        kind: MetricKind
+        unit: String!
+        comparison: Comparison!
+        comparisonSymbol: String!
+        # Null when the threshold is infinite
+        threshold: Float
+        statistic: AlertStatistic!
+        severity: AlertSeverity!
+        description: String!
+        channels: [String!]!
+        enabled: Boolean!
+        filter: [Attribute!]!
+        # Number of currently firing alerts (null when nested in an Alert)
+        firingCount: Int
+      }
+
+      type Alert {
+        # Stable identity of the (policy, series) pair
+        id: String!
+        policyId: String!
+        policy: AlertPolicy!
+        metric: String!
+        severity: AlertSeverity!
+        state: AlertState!
+        attributes: [Attribute!]!
+        value: Float
+        triggeredAt: String!
+        triggeredAtMs: Float!
+        lastEvaluatedAt: String!
+        resolvedAt: String
+        resolvedAtMs: Float
+        message: String!
+      }
+
+      input AlertFilter {
+        state: AlertState
+        policyId: String
+        severity: AlertSeverity
+      }
+
+      input AlertPolicyInput {
+        id: String!
+        metric: String!
+        comparison: Comparison!
+        threshold: Float!
+        # Only declared, low-cardinality attributes of the metric
+        filter: [AttributeFilter!]
+        statistic: AlertStatistic
+        severity: AlertSeverity
+        description: String
+        channels: [String!]
+        enabled: Boolean
+      }
+
       type Query {
         # False when the metrics backend is write-only; all lists are then empty
         supportsQueries: Boolean!
@@ -620,6 +867,22 @@ class MetricServlet(
         eventTimeline(filter: EventFilter, bucketSeconds: Int, groupBy: String): [EventBucket!]!
         # Event catalogue
         eventTypes: [EventTypeInfo!]!
+        # False when the metrics backend does not evaluate alert policies
+        supportsAlerting: Boolean!
+        alertPolicies: [AlertPolicy!]!
+        alertPolicy(id: String!): AlertPolicy
+        # Firing alerts first (newest first), then most recently resolved
+        alerts(filter: AlertFilter, limit: Int): [Alert!]!
+        triggeredAlerts: [Alert!]!
+      }
+
+      type Mutation {
+        # Creates or replaces (by id) an alert policy
+        putAlertPolicy(policy: AlertPolicyInput!): AlertPolicy!
+        # True if the policy existed; its active alerts are dropped without notification
+        removeAlertPolicy(id: String!): Boolean!
+        # Evaluates all policies now; returns the currently firing alerts
+        evaluateAlerts: [Alert!]!
       }
     """.trimIndent()
   }

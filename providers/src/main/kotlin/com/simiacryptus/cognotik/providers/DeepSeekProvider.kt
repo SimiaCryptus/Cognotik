@@ -25,6 +25,6 @@ class DeepSeekProvider : APIProvider("DeepSeek", "https://api.deepseek.com") {
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 }

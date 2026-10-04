@@ -4,14 +4,10 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.fasterxml.jackson.databind.node.ObjectNode
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.XAIModels
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.platform.model.LLMModel
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -64,8 +60,8 @@ class XAIChatClient(
       val rawJson = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(sanitizedRequest)
       val json = sanitizeContentForXAI(rawJson)
-      val rawResponse = post("${apiBase}/chat/completions", json)
-      checkError(rawResponse)
+      val rawResponse = post("${apiBase}/chat/completions", json, model = model.modelId)
+      checkError(rawResponse, model)
       val response = JsonUtil.objectMapper().readValue(
         rawResponse,
         ModelSchema.ChatResponse::class.java
@@ -110,7 +106,7 @@ class XAIChatClient(
 
   private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+    require(model.modelId.isNotBlank() == true) { "Model name cannot be blank" }
     require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
   }
 
@@ -142,7 +138,11 @@ class XAIChatClient(
       modelsCache[apiBase] = models
       models
     } catch (e: Exception) {
-      log.error("Failed to fetch xAI models", e)
+      if (ErrorUtil.isFatal(e)) {
+        log.error("Fatal error fetching xAI models (${ErrorUtil.errorType(e)})", e)
+        throw e
+      }
+      log.error("Failed to fetch xAI models (${ErrorUtil.errorType(e)})", e)
       emptyList()
     }
   }

@@ -21,11 +21,11 @@ import java.util.concurrent.ScheduledExecutorService
 class OpenAIEmbeddingClient(
   apiKey: SecureString = "".encrypt,
   apiBase: String = "https://api.openai.com/v1",
-  workPool: ExecutorService = ThreadPoolManager.newCachedThreadPool(Session.NULL)
+  workPool: ExecutorService = ThreadPoolManager.newCachedThreadPool(null as Session)
     .let<ExecutorService, ListeningExecutorService> { listeningDecorator(it) },
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-  scheduledPool: ListeningScheduledExecutorService = ThreadPoolManager.newScheduledThreadPool(1, Session.NULL)
+  scheduledPool: ListeningScheduledExecutorService = ThreadPoolManager.newScheduledThreadPool(1, null as Session)
     .let<ScheduledExecutorService, ListeningScheduledExecutorService> { MoreExecutors.listeningDecorator(it) }
 ) : SingleProviderEmbeddingClient(
   provider = APIProvider.valueOf("OpenAI"),

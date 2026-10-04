@@ -344,21 +344,21 @@ object ZAIModels {
 
   val values by lazy {
     mapOf(
-    "GLM46" to GLM46,
-    "GLM53Flash" to GLM53Flash,
-    "GLM53" to GLM53,
-    "GLM52" to GLM52,
-    "GLM51" to GLM51,
-    "GLM5" to GLM5,
-    "GLM47" to GLM47,
-    "GLM47FlashX" to GLM47FlashX,
-    "GLM47Flash" to GLM47Flash,
-    "GLM45X" to GLM45X,
-    "GLM45AirX" to GLM45AirX,
-    "GLM432B0414" to GLM432B0414,
-    "GLM45" to GLM45,
-    "GLM45Air" to GLM45Air,
-    "GLM45Flash" to GLM45Flash,
-  )
+      "GLM46" to GLM46,
+      "GLM53Flash" to GLM53Flash,
+      "GLM53" to GLM53,
+      "GLM52" to GLM52,
+      "GLM51" to GLM51,
+      "GLM5" to GLM5,
+      "GLM47" to GLM47,
+      "GLM47FlashX" to GLM47FlashX,
+      "GLM47Flash" to GLM47Flash,
+      "GLM45X" to GLM45X,
+      "GLM45AirX" to GLM45AirX,
+      "GLM432B0414" to GLM432B0414,
+      "GLM45" to GLM45,
+      "GLM45Air" to GLM45Air,
+      "GLM45Flash" to GLM45Flash,
+    )
   }
 }

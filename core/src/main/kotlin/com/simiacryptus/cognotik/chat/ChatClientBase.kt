@@ -3,9 +3,15 @@ package com.simiacryptus.cognotik.chat
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.HttpClientManager
 import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.Attributes
 import com.simiacryptus.cognotik.platform.model.ChatClientInterface
+import com.simiacryptus.cognotik.platform.model.EventType
+import com.simiacryptus.cognotik.platform.model.MetricAttribute
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.service.MetricsInterface
+import com.simiacryptus.cognotik.platform.service.NoOpMetrics
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
@@ -47,13 +53,38 @@ abstract class ChatClientBase(
 
 
   var user: Any? = null
+   /** Metrics sink for exception events. Override, or set [metricsProvider] globally. */
+   protected open val metrics: MetricsInterface get() = metricsProvider()
+   /**
+    * Reports [e] as an [EventType.AI_ERROR] event (which also increments the AI_ERRORS counter).
+    * Never throws: metrics failures must not break requests.
+    */
+   protected open fun reportException(e: Throwable, requestID: String? = null, model: String? = null) {
+     try {
+       metrics.event(
+         EventType.AI_ERROR,
+         Attributes.of(
+           MetricAttribute.PROVIDER(provider.toString()),
+           model?.let { MetricAttribute.MODEL(it) },
+           MetricAttribute.ERROR_TYPE(ErrorUtil.errorType(e)),
+           MetricAttribute.FATAL(ErrorUtil.isFatal(e)),
+           user?.toString()?.let { MetricAttribute.USER(it) },
+           MetricAttribute.SESSION(session.toString()),
+         )
+       )
+     } catch (t: Throwable) {
+       log.debug("Failed to report exception metric for request $requestID", t)
+     }
+   }
+
 
   @Throws(IOException::class, InterruptedException::class)
   fun post(
     url: String,
     json: String,
     requestID: String = UUID.randomUUID().toString(),
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams
+     logStreams: MutableList<BufferedOutputStream> = this.logStreams,
+     model: String? = null
   ): String {
     validatePostRequest(url, json)
     val request = HttpPost(url)
@@ -61,7 +92,7 @@ abstract class ChatClientBase(
     request.addHeader("Accept", "application/json")
     authorize(request)
     request.entity = StringEntity(json, Charsets.UTF_8, false)
-    return post(request, requestID = requestID, logStreams = logStreams)
+     return post(request, requestID = requestID, logStreams = logStreams, model = model)
   }
 
   private fun validatePostRequest(url: String, json: String) {
@@ -76,7 +107,8 @@ abstract class ChatClientBase(
   fun post(
     request: HttpPost,
     requestID: String = UUID.randomUUID().toString(),
-    logStreams: MutableList<BufferedOutputStream> = this.logStreams
+     logStreams: MutableList<BufferedOutputStream> = this.logStreams,
+     model: String? = null
   ): String = try {
     log(
       level = Level.DEBUG,
@@ -107,8 +139,16 @@ abstract class ChatClientBase(
       ),
       logStreams
     )
+     // Report API-level errors embedded in the response body without changing behaviour:
+     // callers still run ErrorUtil.checkError themselves and receive the exception there.
+     try {
+       ErrorUtil.checkError(response)
+     } catch (e: Exception) {
+       if (!ErrorUtil.isUnparseableResponse(e)) reportException(e, requestID, model)
+     }
     response
   } catch (e: Exception) {
+     reportException(e, requestID, model)
     log(
       Level.ERROR,
       "Error during POST request to ${request.uri}\nID:$requestID\nRequest Entity:\n${request.entity.formatEntityForLogging()}",
@@ -137,6 +177,10 @@ abstract class ChatClientBase(
 
   companion object {
     private val log = LoggerFactory.getLogger(ChatClientBase::class.java)
+     /** Global metrics resolver used by [metrics]; wire to the configured backend at startup. */
+     @JvmStatic
+     @Volatile
+     var metricsProvider: () -> MetricsInterface = { NoOpMetrics }
   }
 }
 

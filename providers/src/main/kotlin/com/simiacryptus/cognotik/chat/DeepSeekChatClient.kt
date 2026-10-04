@@ -2,13 +2,10 @@ package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.DeepSeekModels
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -74,7 +71,9 @@ class DeepSeekChatClient(
       modelsCache[apiBase] = models
       models
     } catch (e: Exception) {
-      log.error("Failed to fetch DeepSeek models", e)
+      // Fatal errors (interrupted, cancelled, quota, ...) must not be masked by the fallback
+      if (ErrorUtil.isFatal(e)) throw e
+      log.error("Failed to fetch DeepSeek models (${ErrorUtil.errorType(e)})", e)
       // Fall back to the statically-known models
       DeepSeekModels.values.values.toList()
     }
@@ -92,18 +91,18 @@ class DeepSeekChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>,
+    logStreams: MutableList<BufferedOutputStream>,
     usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     val deepSeekRequest = toDeepSeek(chatRequest)
     val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
       .writeValueAsString(deepSeekRequest)
-    val result = post("$apiBase/chat/completions", json)
-    checkError(result)
+    // Pass the model so AI_ERROR metrics can be broken down by model
+    val result = post("$apiBase/chat/completions", json, model = model.modelName)
+    // post() only reports embedded API errors; checkError throws the typed exception
+    checkError(result, model)
     val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
-    if (response.usage != null && model is ChatModel) {
-      usageHandler.onUsage(model, response.usage!!)
-    }
+    response.usage?.let { usageHandler.onUsage(model, it) }
     return response
   }
 
@@ -138,7 +137,7 @@ class DeepSeekChatClient(
         },
         "stream" to false
       )
-      chatRequest.temperature?.let { request["temperature"] = it }
+      chatRequest.temperature.let { request["temperature"] = it }
       chatRequest.max_tokens?.let { request["max_tokens"] = it }
 //            chatRequest.top_p?.let { request["top_p"] = it }
 //            chatRequest.frequency_penalty?.let { request["frequency_penalty"] = it }

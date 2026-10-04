@@ -1,9 +1,16 @@
 package com.simiacryptus.cognotik.platform.h2
 
 import com.google.gson.Gson
+import com.google.gson.GsonBuilder
 import com.google.gson.reflect.TypeToken
+import com.simiacryptus.cognotik.platform.model.Alert
+import com.simiacryptus.cognotik.platform.model.AlertPolicy
+import com.simiacryptus.cognotik.platform.model.AlertSeverity
+import com.simiacryptus.cognotik.platform.model.AlertState
+import com.simiacryptus.cognotik.platform.model.AlertStatistic
 import com.simiacryptus.cognotik.platform.model.Attributes
 import com.simiacryptus.cognotik.platform.model.AttributeValue
+import com.simiacryptus.cognotik.platform.model.Comparison
 import com.simiacryptus.cognotik.platform.model.CounterType
 import com.simiacryptus.cognotik.platform.model.DistributionType
 import com.simiacryptus.cognotik.platform.model.EventType
@@ -11,11 +18,13 @@ import com.simiacryptus.cognotik.platform.model.GaugeType
 import com.simiacryptus.cognotik.platform.model.MetricAttribute
 import com.simiacryptus.cognotik.platform.model.MetricType
 import com.simiacryptus.cognotik.platform.model.MetricUnit
+import com.simiacryptus.cognotik.platform.service.AlertQuery
 import com.simiacryptus.cognotik.platform.service.DistributionStats
 import com.simiacryptus.cognotik.platform.service.EventQuery
 import com.simiacryptus.cognotik.platform.service.MetricKind
 import com.simiacryptus.cognotik.platform.service.MetricQuery
 import com.simiacryptus.cognotik.platform.service.MetricsInterface
+import com.simiacryptus.cognotik.platform.service.NotificationsInterface
 import com.simiacryptus.cognotik.platform.service.RecordedEvent
 import com.simiacryptus.cognotik.platform.service.SeriesSnapshot
 import org.jetbrains.exposed.v1.core.*
@@ -47,15 +56,24 @@ import java.util.concurrent.atomic.AtomicLong
  * built-in vocabulary and every type seen on write; unknown names (written by other
  * nodes or previous runs) are synthesized with string-typed attributes.
  *
+ * Alerting: supported. Policies and alert state are persisted, so they survive restarts
+ * and are shared by all nodes using the same database. Policies are evaluated against the
+ * persisted (aggregated) series after every background flush, on [evaluateAlerts] and when
+ * a policy is put. Transitions are claimed transactionally (insert/delete of the active
+ * alert row), so each FIRING/RESOLVED transition is notified by exactly one node.
+ *
  * @param flushIntervalMillis background export period; <= 0 disables the background flusher
- * @param eventRetention events older than this are purged (null keeps events forever)
+ *                            (and with it periodic alert evaluation)
+ * @param eventRetention events and resolved alerts older than this are purged (null keeps them forever)
  * @param maxBufferedEvents upper bound on events buffered between flushes (oldest dropped)
+ * @param notifications resolves the notification sink at delivery time
  */
 class MetricsDB(
   private val flushIntervalMillis: Long =
     System.getProperty("cognotik.metrics.flushIntervalMillis", "10000").toLongOrNull() ?: 10_000L,
   private val eventRetention: Duration? = Duration.ofDays(30),
   private val maxBufferedEvents: Int = 10_000,
+  private val notifications: () -> NotificationsInterface = { NotificationsInterface.resolve() },
 ) : MetricsInterface {
 
   object SeriesTable : Table("metric_series") {
@@ -85,6 +103,43 @@ class MetricsDB(
     }
   }
 
+  /** Alert policies; [spec] is the JSON-encoded policy. */
+  object AlertPoliciesTable : Table("metric_alert_policies") {
+    val id = varchar("id", 255)
+    val metric = varchar("metric", 255)
+    val spec = text("spec")
+    val updatedAt = timestamp("updated_at")
+    override val primaryKey = PrimaryKey(id)
+  }
+
+  /** Currently firing alerts, one row per (policy, series). */
+  object ActiveAlertsTable : Table("metric_alerts_active") {
+    val policyId = varchar("policy_id", 255)
+    val attrs = varchar("attrs", 1024)
+    val alertValue = double("alert_value")
+    val triggeredAt = timestamp("triggered_at")
+    val lastEvaluatedAt = timestamp("last_evaluated_at")
+    override val primaryKey = PrimaryKey(policyId, attrs)
+  }
+
+  /** Resolved alerts, with a snapshot of the policy at resolution time. */
+  object ResolvedAlertsTable : Table("metric_alerts_resolved") {
+    val id = long("id").autoIncrement()
+    val policyId = varchar("policy_id", 255)
+    val severity = varchar("severity", 16)
+    val attrs = varchar("attrs", 1024)
+    val policySpec = text("policy_spec")
+    val alertValue = double("alert_value")
+    val triggeredAt = timestamp("triggered_at")
+    val resolvedAt = timestamp("resolved_at")
+    override val primaryKey = PrimaryKey(id)
+
+    init {
+      index("idx_metric_alerts_resolved_ts", false, resolvedAt)
+      index("idx_metric_alerts_resolved_policy", false, policyId, resolvedAt)
+    }
+  }
+
   // ---------------- Buffers ----------------
 
   /** Pending (unexported) aggregate for one series. Only mutated inside ConcurrentHashMap.compute. */
@@ -98,12 +153,38 @@ class MetricsDB(
 
   private data class PendingEvent(val typeName: String, val attrsJson: String, val timestamp: Instant)
 
+  /** Serialized form of an [AlertPolicy]. Fields are nullable because Gson may leave them unset. */
+  private data class PolicySpec(
+    val id: String?,
+    val metric: String?,
+    val kind: String?,
+    val unit: String?,
+    val metricDescription: String?,
+    val comparison: String?,
+    val threshold: Double?,
+    val filter: Map<String, String>?,
+    val statistic: String?,
+    val severity: String?,
+    val description: String?,
+    val channels: List<String>?,
+    val enabled: Boolean?,
+  )
+
+  private data class ActiveRow(
+    val policyId: String,
+    val attrsKey: String,
+    val value: Double,
+    val triggeredAt: Instant,
+  )
+
   private val pending = ConcurrentHashMap<String, Pending>()
   private val pendingEvents = ConcurrentLinkedDeque<PendingEvent>()
   private val pendingEventCount = AtomicInteger()
   private val droppedEvents = AtomicLong()
   private val gaugeSuppliers = ConcurrentHashMap<String, Pair<GaugeType, Pair<Attributes, () -> Double?>>>()
   private val flushLock = Any()
+  /** Serializes alert evaluation and policy changes on this node. */
+  private val alertLock = Any()
   @Volatile private var lastPurgeNanos = 0L
   @Volatile private var shutDown = false
 
@@ -126,6 +207,9 @@ class MetricsDB(
       transaction(database) {
         SeriesTable.selectAll().limit(1).toList()
         EventsTable.selectAll().limit(1).toList()
+        AlertPoliciesTable.selectAll().limit(1).toList()
+        ActiveAlertsTable.selectAll().limit(1).toList()
+        ResolvedAlertsTable.selectAll().limit(1).toList()
       }
     } catch (e: Exception) {
       // Non-fatal: metrics must never break startup. Later flushes will retry.
@@ -136,6 +220,11 @@ class MetricsDB(
         flush()
       } catch (t: Throwable) {
         log.warn("Background metrics flush failed", t)
+      }
+      try {
+        evaluateAlerts()
+      } catch (t: Throwable) {
+        log.warn("Background alert evaluation failed", t)
       }
     }, flushIntervalMillis, flushIntervalMillis, TimeUnit.MILLISECONDS)
   }
@@ -384,8 +473,12 @@ class MetricsDB(
     lastPurgeNanos = nowNanos
     val cutoff = Instant.now().minus(retention)
     try {
-      val deleted = transaction(database) { EventsTable.deleteWhere { EventsTable.ts less cutoff } }
-      if (deleted > 0) log.info("Purged {} metric event(s) older than {}", deleted, cutoff)
+      val (events, alerts) = transaction(database) {
+        EventsTable.deleteWhere { EventsTable.ts less cutoff } to
+          ResolvedAlertsTable.deleteWhere { ResolvedAlertsTable.resolvedAt less cutoff }
+      }
+      if (events > 0) log.info("Purged {} metric event(s) older than {}", events, cutoff)
+      if (alerts > 0) log.info("Purged {} resolved alert(s) older than {}", alerts, cutoff)
     } catch (e: Exception) {
       log.warn("Failed to purge old metric events: {}", e.message, e)
     }
@@ -397,12 +490,15 @@ class MetricsDB(
 
   override fun querySeries(query: MetricQuery): List<SeriesSnapshot> {
     flush()
-    return transaction(database) {
-      val q = SeriesTable.selectAll()
-      query.metric?.let { m -> q.andWhere { SeriesTable.metric eq m.name } }
-      query.kind?.let { k -> q.andWhere { SeriesTable.kind eq k.name } }
-      q.mapNotNull { row -> toSnapshot(row, query) }
-    }
+    return transaction(database) { readSeries(query) }
+  }
+
+  /** Reads persisted series without flushing. Must be invoked inside a transaction. */
+  private fun readSeries(query: MetricQuery): List<SeriesSnapshot> {
+    val q = SeriesTable.selectAll()
+    query.metric?.let { m -> q.andWhere { SeriesTable.metric eq m.name } }
+    query.kind?.let { k -> q.andWhere { SeriesTable.kind eq k.name } }
+    return q.mapNotNull { row -> toSnapshot(row, query) }
   }
 
   private fun toSnapshot(row: ResultRow, query: MetricQuery): SeriesSnapshot? {
@@ -444,15 +540,333 @@ class MetricsDB(
     }
   }
 
-  /** Deletes all persisted series and events and clears buffers. Intended for tests/admin. */
-  fun clear() {
-    synchronized(flushLock) {
-      pending.clear()
-      pendingEvents.clear()
-      pendingEventCount.set(0)
+  // ---------------- Alerting ----------------
+
+  override val supportsAlerting: Boolean get() = true
+
+  override fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? {
+    require(kindOf(policy.metric) != null) {
+      "Metric ${policy.metric} is not a counter, gauge or distribution (policy ${policy.id})"
+    }
+    metricTypes.putIfAbsent(policy.metric.name, policy.metric)
+    val spec = encodePolicy(policy)
+    val previousSpec = synchronized(alertLock) {
       transaction(database) {
-        SeriesTable.deleteAll()
-        EventsTable.deleteAll()
+        val prev = AlertPoliciesTable.selectAll()
+          .where { AlertPoliciesTable.id eq policy.id }
+          .firstOrNull()?.get(AlertPoliciesTable.spec)
+        val now = Instant.now()
+        if (prev == null) {
+          AlertPoliciesTable.insert {
+            it[AlertPoliciesTable.id] = policy.id
+            it[AlertPoliciesTable.metric] = policy.metric.name
+            it[AlertPoliciesTable.spec] = spec
+            it[AlertPoliciesTable.updatedAt] = now
+          }
+        } else {
+          AlertPoliciesTable.update({ AlertPoliciesTable.id eq policy.id }) {
+            it[AlertPoliciesTable.metric] = policy.metric.name
+            it[AlertPoliciesTable.spec] = spec
+            it[AlertPoliciesTable.updatedAt] = now
+          }
+        }
+        prev
+      }
+    }
+    evaluate(listOf(policy))
+    return previousSpec?.let { decodePolicy(it) }
+  }
+
+  override fun removeAlertPolicy(id: String): Boolean = synchronized(alertLock) {
+    transaction(database) {
+      ActiveAlertsTable.deleteWhere { ActiveAlertsTable.policyId eq id }
+      AlertPoliciesTable.deleteWhere { AlertPoliciesTable.id eq id } > 0
+    }
+  }
+
+  override fun getAlertPolicy(id: String): AlertPolicy? =
+    transaction(database) {
+      AlertPoliciesTable.selectAll()
+        .where { AlertPoliciesTable.id eq id }
+        .firstOrNull()?.get(AlertPoliciesTable.spec)
+    }?.let { decodePolicy(it) }
+
+  override fun listAlertPolicies(): List<AlertPolicy> = loadPolicies()
+
+  override fun evaluateAlerts() {
+    val targets = try {
+      loadPolicies()
+    } catch (e: Exception) {
+      log.warn("Failed to load alert policies: {}", e.message, e)
+      return
+    }
+    evaluate(targets)
+  }
+
+  override fun listAlerts(query: AlertQuery): List<Alert> {
+    if (query.limit <= 0) return emptyList()
+    return transaction(database) {
+      val firing = if (query.state == null || query.state == AlertState.FIRING) {
+        val pq = AlertPoliciesTable.selectAll()
+        query.policyId?.let { id -> pq.andWhere { AlertPoliciesTable.id eq id } }
+        val policies = pq.mapNotNull { decodePolicy(it[AlertPoliciesTable.spec]) }
+          .filter { query.severity == null || it.severity == query.severity }
+          .associateBy { it.id }
+        if (policies.isEmpty()) emptyList() else {
+          ActiveAlertsTable.selectAll()
+            .where { ActiveAlertsTable.policyId inList policies.keys.toList() }
+            .mapNotNull { row ->
+              val policy = policies[row[ActiveAlertsTable.policyId]] ?: return@mapNotNull null
+              Alert(
+                policy = policy,
+                attributes = decodeAttributes(policy.metric.attributes, decodeMap(row[ActiveAlertsTable.attrs])),
+                state = AlertState.FIRING,
+                value = row[ActiveAlertsTable.alertValue],
+                triggeredAt = row[ActiveAlertsTable.triggeredAt],
+                lastEvaluatedAt = row[ActiveAlertsTable.lastEvaluatedAt],
+              )
+            }
+            .sortedByDescending { it.triggeredAt }
+        }
+      } else emptyList()
+
+      val remaining = query.limit - firing.size
+      val resolved = if ((query.state == null || query.state == AlertState.RESOLVED) && remaining > 0) {
+        val rq = ResolvedAlertsTable.selectAll()
+        query.policyId?.let { id -> rq.andWhere { ResolvedAlertsTable.policyId eq id } }
+        query.severity?.let { s -> rq.andWhere { ResolvedAlertsTable.severity eq s.name } }
+        rq.orderBy(ResolvedAlertsTable.resolvedAt to SortOrder.DESC, ResolvedAlertsTable.id to SortOrder.DESC)
+          .limit(remaining)
+          .mapNotNull { row ->
+            val policy = decodePolicy(row[ResolvedAlertsTable.policySpec]) ?: return@mapNotNull null
+            val resolvedAt = row[ResolvedAlertsTable.resolvedAt]
+            Alert(
+              policy = policy,
+              attributes = decodeAttributes(policy.metric.attributes, decodeMap(row[ResolvedAlertsTable.attrs])),
+              state = AlertState.RESOLVED,
+              value = row[ResolvedAlertsTable.alertValue],
+              triggeredAt = row[ResolvedAlertsTable.triggeredAt],
+              lastEvaluatedAt = resolvedAt,
+              resolvedAt = resolvedAt,
+            )
+          }
+      } else emptyList()
+
+      (firing + resolved).take(query.limit)
+    }
+  }
+
+  private fun loadPolicies(): List<AlertPolicy> =
+    transaction(database) { AlertPoliciesTable.selectAll().map { it[AlertPoliciesTable.spec] } }
+      .mapNotNull { decodePolicy(it) }
+      .sortedBy { it.id }
+
+  /** Evaluates [targets], persists transitions and dispatches them. Never throws. */
+  private fun evaluate(targets: Collection<AlertPolicy>) {
+    if (targets.isEmpty()) return
+    val transitions = try {
+      synchronized(alertLock) { evaluateLocked(targets) }
+    } catch (e: Exception) {
+      log.warn("Alert evaluation failed: {}", e.message, e)
+      emptyList()
+    }
+    transitions.forEach { dispatch(it) }
+  }
+
+  private fun evaluateLocked(targets: Collection<AlertPolicy>): List<Alert> {
+    flush()
+    val metrics = targets.filter { it.enabled }.map { it.metric }.distinctBy { it.name }
+    val series: Map<String, List<SeriesSnapshot>> = if (metrics.isEmpty()) emptyMap() else
+      transaction(database) { metrics.associate { m -> m.name to readSeries(MetricQuery(metric = m)) } }
+    val samples = targets.associateWith { sample(it, series[it.metric.name].orEmpty()) }
+    val now = Instant.now()
+    var lastError: Exception? = null
+    // A concurrent transition by another node (duplicate active row) aborts the transaction;
+    // nothing was committed, so retrying once re-reads the now-current alert state.
+    for (attempt in 1..2) {
+      try {
+        return transaction(database) { applySamples(samples, now) }
+      } catch (e: Exception) {
+        lastError = e
+        log.debug("Alert evaluation attempt {}/2 failed: {}", attempt, e.message, e)
+      }
+    }
+    throw lastError!!
+  }
+
+  /** Must be invoked inside a transaction. Returns the committed transitions. */
+  private fun applySamples(
+    samples: Map<AlertPolicy, Map<String, Pair<Attributes, Double>>>,
+    now: Instant,
+  ): List<Alert> {
+    val transitions = mutableListOf<Alert>()
+    val ids = samples.keys.map { it.id }.distinct()
+    val live = AlertPoliciesTable.selectAll()
+      .where { AlertPoliciesTable.id inList ids }
+      .map { it[AlertPoliciesTable.id] }
+      .toSet()
+    val active = ActiveAlertsTable.selectAll()
+      .where { ActiveAlertsTable.policyId inList ids }
+      .map {
+        ActiveRow(
+          it[ActiveAlertsTable.policyId],
+          it[ActiveAlertsTable.attrs],
+          it[ActiveAlertsTable.alertValue],
+          it[ActiveAlertsTable.triggeredAt],
+        )
+      }
+      .groupBy { it.policyId }
+
+    for ((policy, values) in samples) {
+      if (policy.id !in live) continue // removed concurrently
+      val existing = active[policy.id].orEmpty().associateBy { it.attrsKey }
+      val breached = values.filterValues { (_, v) -> policy.isBreached(v) }
+
+      for ((key, sv) in breached) {
+        val (attrs, value) = sv
+        if (existing[key] == null) {
+          ActiveAlertsTable.insert {
+            it[ActiveAlertsTable.policyId] = policy.id
+            it[ActiveAlertsTable.attrs] = key
+            it[ActiveAlertsTable.alertValue] = value
+            it[ActiveAlertsTable.triggeredAt] = now
+            it[ActiveAlertsTable.lastEvaluatedAt] = now
+          }
+          transitions += Alert(policy, attrs, AlertState.FIRING, value, triggeredAt = now)
+        } else {
+          ActiveAlertsTable.update({
+            (ActiveAlertsTable.policyId eq policy.id) and (ActiveAlertsTable.attrs eq key)
+          }) {
+            it[ActiveAlertsTable.alertValue] = value
+            it[ActiveAlertsTable.lastEvaluatedAt] = now
+          }
+        }
+      }
+
+      for ((key, row) in existing) {
+        if (key in breached) continue
+        val deleted = ActiveAlertsTable.deleteWhere {
+          (ActiveAlertsTable.policyId eq policy.id) and (ActiveAlertsTable.attrs eq key)
+        }
+        if (deleted == 0) continue // resolved by another node
+        val sv = values[key]
+        val value = sv?.second ?: row.value
+        val attrs = sv?.first ?: decodeAttributes(policy.metric.attributes, decodeMap(key))
+        ResolvedAlertsTable.insert {
+          it[ResolvedAlertsTable.policyId] = policy.id
+          it[ResolvedAlertsTable.severity] = policy.severity.name
+          it[ResolvedAlertsTable.attrs] = key
+          it[ResolvedAlertsTable.policySpec] = encodePolicy(policy)
+          it[ResolvedAlertsTable.alertValue] = value
+          it[ResolvedAlertsTable.triggeredAt] = row.triggeredAt
+          it[ResolvedAlertsTable.resolvedAt] = now
+        }
+        transitions += Alert(
+          policy = policy,
+          attributes = attrs,
+          state = AlertState.RESOLVED,
+          value = value,
+          triggeredAt = row.triggeredAt,
+          lastEvaluatedAt = now,
+          resolvedAt = now,
+        )
+      }
+    }
+    return transitions
+  }
+
+  /** Statistic per matching series, keyed by the canonical attribute encoding; empty for disabled policies. */
+  private fun sample(policy: AlertPolicy, series: List<SeriesSnapshot>): Map<String, Pair<Attributes, Double>> {
+    if (!policy.enabled) return emptyMap()
+    val filter = policy.filter.asStringMap()
+    return series.mapNotNull { s ->
+      val raw = s.attributes.asStringMap()
+      if (!filter.all { (k, v) -> raw[k] == v }) return@mapNotNull null
+      val value = statistic(policy.statistic, s) ?: return@mapNotNull null
+      encodeMap(raw) to (s.attributes to value)
+    }.toMap()
+  }
+
+  private fun statistic(stat: AlertStatistic, s: SeriesSnapshot): Double? = when (stat) {
+    AlertStatistic.VALUE -> s.value
+    AlertStatistic.COUNT -> s.distribution?.count?.toDouble()
+    AlertStatistic.MEAN -> s.distribution?.mean
+    AlertStatistic.MIN -> s.distribution?.min
+    AlertStatistic.MAX -> s.distribution?.max
+  }?.takeUnless { it.isNaN() }
+
+  private fun dispatch(alert: Alert) {
+    try {
+      notifications().notifyAlert(alert)
+    } catch (e: Exception) {
+      log.warn("Alert notification failed for {}", alert.id, e)
+    }
+  }
+
+  private fun encodePolicy(policy: AlertPolicy): String {
+    val kind = kindOf(policy.metric)
+      ?: throw IllegalArgumentException("Metric ${policy.metric} has no supported kind (policy ${policy.id})")
+    return specGson.toJson(
+      PolicySpec(
+        id = policy.id,
+        metric = policy.metric.name,
+        kind = kind.name,
+        unit = policy.metric.unit.name,
+        metricDescription = policy.metric.description,
+        comparison = policy.comparison.name,
+        threshold = policy.threshold,
+        filter = policy.filter.asStringMap(),
+        statistic = policy.statistic.name,
+        severity = policy.severity.name,
+        description = policy.description,
+        channels = policy.channels.sorted(),
+        enabled = policy.enabled,
+      )
+    )
+  }
+
+  private fun decodePolicy(json: String): AlertPolicy? = try {
+    val s = specGson.fromJson(json, PolicySpec::class.java)
+      ?: throw IllegalArgumentException("empty policy spec")
+    val name = s.metric ?: throw IllegalArgumentException("missing metric")
+    val kind = MetricKind.valueOf(s.kind ?: throw IllegalArgumentException("missing kind"))
+    val filterRaw = s.filter.orEmpty()
+    val metric = metricTypes[name]?.takeIf { kindOf(it) == kind }
+      ?: synthesizeMetric(name, kind, s.unit ?: "None", s.metricDescription ?: "", filterRaw.keys)
+      ?: throw IllegalArgumentException("cannot resolve metric $name")
+    AlertPolicy(
+      id = s.id ?: throw IllegalArgumentException("missing id"),
+      metric = metric,
+      comparison = Comparison.valueOf(s.comparison ?: throw IllegalArgumentException("missing comparison")),
+      threshold = s.threshold ?: throw IllegalArgumentException("missing threshold"),
+      filter = decodeAttributes(metric.attributes, filterRaw),
+      statistic = s.statistic?.let { AlertStatistic.valueOf(it) } ?: AlertStatistic.VALUE,
+      severity = s.severity?.let { AlertSeverity.valueOf(it) } ?: AlertSeverity.WARNING,
+      description = s.description ?: "",
+      channels = s.channels.orEmpty().toSet(),
+      enabled = s.enabled ?: true,
+    )
+  } catch (e: Exception) {
+    log.warn("Failed to decode alert policy '{}': {}", json.take(200), e.message)
+    null
+  }
+
+  // ---------------- Admin ----------------
+
+  /** Deletes all persisted series, events, alert policies and alert state, and clears buffers. Intended for tests/admin. */
+  fun clear() {
+    synchronized(alertLock) {
+      synchronized(flushLock) {
+        pending.clear()
+        pendingEvents.clear()
+        pendingEventCount.set(0)
+        transaction(database) {
+          SeriesTable.deleteAll()
+          EventsTable.deleteAll()
+          ActiveAlertsTable.deleteAll()
+          ResolvedAlertsTable.deleteAll()
+          AlertPoliciesTable.deleteAll()
+        }
       }
     }
   }
@@ -507,6 +921,8 @@ class MetricsDB(
   companion object {
     private val log = LoggerFactory.getLogger(MetricsDB::class.java)
     private val gson = Gson()
+    /** Policy thresholds may be infinite, which plain JSON cannot represent. */
+    private val specGson: Gson = GsonBuilder().serializeSpecialFloatingPointValues().create()
     private val mapType = object : TypeToken<Map<String, String>>() {}.type
     private val PURGE_INTERVAL_NANOS = Duration.ofHours(1).toNanos()
 
@@ -524,6 +940,13 @@ class MetricsDB(
       }
     }
 
+    private fun kindOf(m: MetricType): MetricKind? = when (m) {
+      is CounterType -> MetricKind.COUNTER
+      is GaugeType -> MetricKind.GAUGE
+      is DistributionType -> MetricKind.DISTRIBUTION
+      else -> null
+    }
+
     private fun builtinMetricTypes(): List<MetricType> = runCatching {
       MetricType.Companion::class.java.methods
         .filter { it.parameterCount == 0 && MetricType::class.java.isAssignableFrom(it.returnType) }
@@ -539,7 +962,7 @@ class MetricsDB(
     internal val facet by lazy {
       DatabaseFacet(
         name = "metrics",
-        tables = listOf(SeriesTable, EventsTable),
+        tables = listOf(SeriesTable, EventsTable, AlertPoliciesTable, ActiveAlertsTable, ResolvedAlertsTable),
       )
     }
   }

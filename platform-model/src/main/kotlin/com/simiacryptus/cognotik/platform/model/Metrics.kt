@@ -85,6 +85,10 @@ class MetricAttribute<T : Any>(
     val SERVICE = of<String>("service")
     val STATUS = of<ServiceStatus>("status")
     val WORKER = of<String>("worker")
+     // --- Errors ---
+     val ERROR_TYPE = of<String>("error_type")
+     val FATAL = of<Boolean>("fatal")
+
 
     // --- High-cardinality identifiers (events only, by convention) ---
     val USER = of<String>("user", highCardinality = true)
@@ -122,6 +126,10 @@ class Attributes private constructor(
   /** Removes attributes flagged as high-cardinality. */
   fun withoutHighCardinality(): Attributes =
     Attributes(values.filterKeys { !it.highCardinality })
+   /** True if every attribute value in [other] is also present (with an equal value) in this set. */
+   fun containsAll(other: Attributes): Boolean =
+     other.values.all { (k, v) -> values[k] == v }
+
 
   /** Backend-neutral string form (sorted by key for stable series identity). */
   fun asStringMap(): Map<String, String> =
@@ -173,6 +181,14 @@ interface MetricType {
         MetricAttribute.MODEL, MetricAttribute.PROVIDER, MetricAttribute.APP,
       )
     }
+     // ---------------- AI service errors ----------------
+     val AI_ERRORS: CounterType by lazy {
+       CounterType.of(
+         "cognotik.ai.errors", MetricUnit.COUNT, "Errors raised by AI service calls, per error type",
+         MetricAttribute.PROVIDER, MetricAttribute.MODEL, MetricAttribute.ERROR_TYPE, MetricAttribute.FATAL,
+       )
+     }
+
 
     // ---------------- Input cash ----------------
     val INPUT_CASH: CounterType by lazy {
@@ -355,6 +371,10 @@ interface EventType {
       vararg attributes: MetricAttribute<*>,
     ): EventType = SimpleEvent(name, description, attributes.toSet(), counter)
 
+    val AI_ERROR = of(
+      "cognotik.event.ai_error", "An AI service call raised an error", MetricType.AI_ERRORS,
+      MetricAttribute.PROVIDER, MetricAttribute.MODEL, MetricAttribute.ERROR_TYPE, MetricAttribute.FATAL,
+    )
     val APP_STARTED = of(
       "cognotik.event.app_started", "An app session was started", MetricType.APP_SESSIONS,
       MetricAttribute.APP, MetricAttribute.USER, MetricAttribute.SESSION, MetricAttribute.WORKER,

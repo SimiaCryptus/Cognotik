@@ -26,11 +26,14 @@ import java.util.concurrent.atomic.AtomicBoolean
  * (token usage, credit grants, gift claims, session file transfers). Recording never
  * throws and never affects the result of the intercepted call. Backends must therefore
  * NOT also record these same facts, or they will be double counted.
+  *
+  * Alerting: alert policy management and status are forwarded to the metrics backend;
+  * [notifyAlert] is forwarded to the registered [NotificationsInterface].
  */
 @Suppress("unused")
 object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageInterface, SessionMetadataInterface,
   UsageInterface, UserSettingsInterface, UserProvider, AuthenticationInterface, GiftedCreditsInterface,
-  MetricsInterface {
+   MetricsInterface, NotificationsInterface {
 
   /* ---------------------------------------------------------------- resolution */
 
@@ -49,6 +52,8 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     } catch (e: UnsupportedOperationException) {
       NoOpMetrics
     }
+   private val notifications: NotificationsInterface
+     get() = NotificationsInterface.resolve()
 
   /* ---------------------------------------------------------------- metrics interception helpers */
   private val log = LoggerFactory.getLogger(ServiceRouter::class.java)
@@ -510,6 +515,26 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun listMetrics(): List<MetricType> =
     metrics.listMetrics()
+   /* Alerting (optional; unsupported when the backend does not evaluate policies) */
+   override val supportsAlerting: Boolean
+     get() = metrics.supportsAlerting
+   override fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? =
+     metrics.putAlertPolicy(policy)
+   override fun removeAlertPolicy(id: String): Boolean =
+     metrics.removeAlertPolicy(id)
+   override fun getAlertPolicy(id: String): AlertPolicy? =
+     metrics.getAlertPolicy(id)
+   override fun listAlertPolicies(): List<AlertPolicy> =
+     metrics.listAlertPolicies()
+   override fun evaluateAlerts() =
+     safely("evaluateAlerts") { metrics.evaluateAlerts() }
+   override fun listAlerts(query: AlertQuery): List<Alert> =
+     metrics.listAlerts(query)
+   override fun triggeredAlerts(): List<Alert> =
+     metrics.triggeredAlerts()
+   /* ---------------------------------------------------------------- NotificationsInterface */
+   override fun notifyAlert(alert: Alert) =
+     safely("notifyAlert ${alert.id}") { notifications.notifyAlert(alert) }
 
 
   /** Shuts down both the plugin manager and the metrics backend (the signatures collide). */
@@ -817,4 +842,3 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   }
 }
-

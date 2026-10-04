@@ -23,6 +23,6 @@ class PerplexityProvider : APIProvider("Perplexity", "https://api.perplexity.ai"
     apiBase = base,
     workPool = workPool,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 }
