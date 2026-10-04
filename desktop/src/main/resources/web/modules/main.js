@@ -242,7 +242,7 @@ function setupUserMenu(btn, label) {
         if (btn) btn.click();
     });
     menuInner.appendChild(apiKeysItem);
-    const usageGraphItem = makeItem('📈', 'Usage Graph', () => {
+    const usageGraphItem = makeItem('📈', 'Activity', () => {
         const btn = document.getElementById('usage-graph-btn');
         if (btn) btn.click();
     });
@@ -373,17 +373,6 @@ function setupIframeModal({buttonId, modalId, iframeId, closeBtnId, url, loading
     });
 }
 
-// ===== Sessions button =====
-function setupSessionsButton() {
-    setupIframeModal({
-        buttonId: 'sessions-btn',
-        modalId: 'sessions-modal',
-        iframeId: 'sessions-iframe',
-        closeBtnId: 'close-sessions-modal',
-        url: '/sessions/',
-        loadingOverlayId: 'sessions-loading-overlay'
-    });
-}
 
 // ===== API Keys button =====
 function setupApiKeysButton() {
@@ -453,7 +442,7 @@ function setupUsageGraphButton() {
         modalId: 'usage-graph-modal',
         iframeId: 'usage-graph-iframe',
         closeBtnId: 'close-usage-graph-modal',
-        title: 'Usage Graph'
+        title: 'Activity'
     });
     setupIframeModal({
         buttonId: 'usage-graph-btn',
@@ -596,7 +585,6 @@ document.addEventListener('DOMContentLoaded', function () {
     });
     setupPluginManagerModal();
     setupApiKeyBanner();
-    setupSessionsButton();
     setupApiKeysButton();
     setupUsageGraphButton();
     setupWorkersManageButton();
@@ -641,7 +629,6 @@ function renderMenubar() {
         },
         buttons: [
             {id: 'plugin-manager-btn', icon: '🔌', label: 'Plugins', ariaLabel: 'Open Plugin Manager'},
-            {id: 'sessions-btn', icon: '📁', label: 'Sessions', ariaLabel: 'Open Sessions'},
             {
                 id: 'budget-btn',
                 icon: '📊',

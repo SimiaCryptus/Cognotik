@@ -20,13 +20,15 @@
   * { box-sizing: border-box; }
   body { margin: 0; font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); }
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 18px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
-  header h1 { font-size: 17px; margin: 0 12px 0 0; }
   header .spacer { flex: 1; }
   header .stat { font-size: 13px; color: var(--muted); }
   header .stat b { color: var(--fg); }
   nav { display: flex; gap: 4px; flex-wrap: wrap; }
   nav button { background: none; border: 1px solid transparent; color: var(--muted); padding: 6px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
   nav button.active { color: var(--fg); border-color: var(--border); background: var(--bg); }
+   nav button.subtle { font-size: 12px; opacity: .7; margin-left: 10px; }
+   nav button.subtle.active, nav button.subtle:hover { opacity: 1; }
+   nav.subnav { margin-bottom: 12px; }
   main { padding: 18px; max-width: 1400px; margin: 0 auto; }
   section.tab { display: none; }
   section.tab.active { display: block; }
@@ -109,15 +111,11 @@
 </head>
 <body>
 <header>
-  <h1>Usage</h1>
   <nav id="nav">
-    <button data-tab="overview" class="active">Overview</button>
+     <button data-tab="usage" class="active">Usage</button>
     <button data-tab="traffic">Traffic</button>
     <button data-tab="sessions">Sessions</button>
-    <button data-tab="session">Session</button>
-    <button data-tab="bulk">Bulk</button>
-    <button data-tab="console">GraphQL</button>
-    <button data-tab="schema">Schema</button>
+     <button data-tab="advanced" class="subtle" title="GraphQL console and schema">Advanced</button>
   </nav>
   <div class="spacer"></div>
   <span class="stat">Balance: <b id="hdrBalance">—</b></span>
@@ -131,14 +129,11 @@
       <option value="300">5m</option>
     </select>
   </label>
-  <label class="inline">Endpoint
-    <input id="endpoint" size="22" class="mono">
-  </label>
 </header>
 
 <main>
-  <!-- ================= Overview ================= -->
-  <section class="tab active" id="tab-overview">
+   <!-- ================= Usage ================= -->
+   <section class="tab active" id="tab-usage">
     <div class="panel">
       <div class="row">
         <label>From (inclusive, UTC)<input type="date" id="fromDate"></label>
@@ -285,6 +280,7 @@
 
   <!-- ================= Sessions (list) ================= -->
   <section class="tab" id="tab-sessions">
+     <div id="sessionsListView">
     <div class="panel">
       <div class="row">
         <label style="flex:1;min-width:200px">Name / ID contains<input id="slName" placeholder="search…"></label>
@@ -312,12 +308,12 @@
         <button class="btn" id="btnResetList">Reset</button>
       </div>
       <div class="muted" style="font-size:12px;margin-top:6px">Costs here are direct (non-recursive). Open a session to see its full child-session tree. Cost/token sorts, min-cost and root-only filters are evaluated across all matching sessions.</div>
+       <div id="recentSessions"></div>
     </div>
     <div class="panel">
       <h2>Sessions
         <span class="right">
           <span id="slInfo" class="muted"></span>
-          <button class="btn small" id="slToBulk" title="Add checked sessions (or the whole page) to the bulk list">→ Bulk</button>
           <button class="btn small" data-csv="#sessionList" data-name="sessions">CSV</button>
           <button class="btn" id="slPrev" disabled>&larr; Prev</button>
           <button class="btn" id="slNext" disabled>Next &rarr;</button>
@@ -325,47 +321,31 @@
       </h2>
       <div id="sessionList" class="empty">Not loaded.</div>
     </div>
-  </section>
 
 
-  <!-- ================= Session ================= -->
-  <section class="tab" id="tab-session">
-    <div class="panel">
-      <div class="row">
-        <label style="flex:1;min-width:260px">Session ID<input id="sessionId" class="mono" placeholder="e.g. U-20240101-abcd"></label>
-        <button class="btn primary" id="btnLoadSession">Load</button>
-        <button class="btn" id="btnAddToBulk" title="Append to the bulk Sessions list">Add to bulk</button>
-      </div>
-      <div id="recentSessions"></div>
-    </div>
-    <div id="sessionOut"></div>
-  </section>
 
-  <!-- ================= Bulk ================= -->
-  <section class="tab" id="tab-bulk">
-    <div class="panel">
-      <h2>Bulk session summaries <span class="muted" style="font-weight:normal;font-size:12px">(non-recursive)</span></h2>
-      <label>Session IDs (one per line, or comma/space separated)
-        <textarea id="bulkIds" rows="5"></textarea>
-      </label>
-      <div class="row" style="margin-top:8px">
-        <button class="btn primary" id="btnLoadBulk">Load</button>
-        <button class="btn" id="btnBulkRecent">Use recent sessions</button>
-        <button class="btn" id="btnBulkClear">Clear</button>
-      </div>
-    </div>
-    <div class="panel">
-      <h2>Sessions <span class="right"><button class="btn small" data-csv="#bulkOut" data-name="sessions">CSV</button></span></h2>
-      <div id="bulkOut" class="empty">No data loaded.</div>
-    </div>
-    <div class="panel">
-      <h2>Totals by model across sessions <span class="right"><button class="btn small" data-csv="#bulkModels" data-name="sessions-by-model">CSV</button></span></h2>
-      <div id="bulkModels" class="empty">No data loaded.</div>
-    </div>
-  </section>
 
-  <!-- ================= Console ================= -->
-  <section class="tab" id="tab-console">
+     </div>
+
+     <div id="sessionDetailView" hidden>
+       <div class="panel">
+         <div class="row">
+           <button class="btn" id="btnBackToList">&larr; All sessions</button>
+           <label style="flex:1;min-width:260px">Session ID<input id="sessionId" class="mono" placeholder="e.g. U-20240101-abcd"></label>
+           <button class="btn primary" id="btnLoadSession">Load</button>
+         </div>
+       </div>
+       <div id="sessionOut"></div>
+     </div>
+   </section>
+
+   <!-- ================= Advanced (GraphQL console + schema) ================= -->
+   <section class="tab" id="tab-advanced">
+     <nav class="subnav" id="advNav">
+       <button data-adv="console" class="active">GraphQL console</button>
+       <button data-adv="schema">Schema</button>
+     </nav>
+     <div id="adv-console">
     <div class="panel">
       <div class="row" style="margin-bottom:8px">
         <label>Example
@@ -377,7 +357,6 @@
         <label>Operation name<input id="opName" class="mono" size="18"></label>
         <button class="btn primary" id="btnRun">Run (Ctrl+Enter)</button>
         <button class="btn" id="btnFormatVars">Format variables</button>
-        <button class="btn" id="btnSchema">Schema</button>
       </div>
       <div class="detail-grid">
         <div>
@@ -393,10 +372,10 @@
         </div>
       </div>
     </div>
-  </section>
 
-  <!-- ================= Schema ================= -->
-  <section class="tab" id="tab-schema">
+     </div>
+
+     <div id="adv-schema" hidden>
     <div class="panel">
       <div class="row">
         <label style="flex:1;min-width:220px">Filter<input id="schemaFilter" placeholder="type or field name…"></label>
@@ -406,6 +385,7 @@
       </div>
     </div>
     <div class="panel"><div id="schemaOut" class="empty">Not loaded.</div></div>
+     </div>
   </section>
 </main>
 
@@ -587,18 +567,11 @@ document.addEventListener('click', e => {
 });
 
 // ---------------------------------------------------------------- endpoint
-const ENDPOINT_KEY = 'usageGraphQL.endpoint';
+const ENDPOINT = '/usageGraphQL/';
 const urlParams = new URLSearchParams(location.search);
-const endpointInput = $('#endpoint');
-endpointInput.value = urlParams.get('endpoint') || localStorage.getItem(ENDPOINT_KEY) || '/usageGraphQL/';
-endpointInput.addEventListener('change', () => {
-  localStorage.setItem(ENDPOINT_KEY, endpointInput.value.trim());
-  schemaText = null;
-});
-const endpoint = () => endpointInput.value.trim() || '/usageGraphQL/';
 
 async function rawGraphQL(query, variables = {}, operationName) {
-  const res = await fetch(endpoint(), {
+   const res = await fetch(ENDPOINT, {
     method: 'POST',
     credentials: 'same-origin',
     headers: { 'Content-Type': 'application/json', 'Accept': 'application/json' },
@@ -768,28 +741,60 @@ function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumula
 }
 
 // ---------------------------------------------------------------- tabs / routing
-const TABS = ['overview', 'traffic', 'sessions', 'session', 'bulk', 'console', 'schema'];
+const TABS = ['usage', 'traffic', 'sessions', 'advanced'];
+// Old hashes (from before tabs were merged) still resolve to the right place.
+const TAB_ALIASES = { overview: 'usage', session: 'sessions', bulk: 'sessions', console: 'advanced', graphql: 'advanced', schema: 'advanced' };
 const activeTab = () => $('#nav button.active')?.dataset.tab;
+let sessionsView = 'list';    // 'list' | 'detail'
+let advancedView = 'console'; // 'console' | 'schema'
 
 function showTab(name) {
   $$('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
   $$('section.tab').forEach(s => s.classList.toggle('active', s.id === 'tab-' + name));
-  if (name === 'schema' && schemaText == null) loadSchema();
-  if (name === 'overview' && userData) requestAnimationFrame(renderDaily);
-  if (name === 'session' && sessionState.light) requestAnimationFrame(renderSessionTimeline);
-  if (name === 'sessions' && !listState.loaded) loadSessionList();
+   if (name === 'usage' && userData) requestAnimationFrame(renderDaily);
+   if (name === 'sessions') {
+     $('#sessionsListView').hidden = sessionsView !== 'list';
+     $('#sessionDetailView').hidden = sessionsView !== 'detail';
+     if (sessionsView === 'detail') {
+       if (sessionState.light) requestAnimationFrame(renderSessionTimeline);
+     } else if (!listState.loaded) loadSessionList();
+   }
   if (name === 'traffic') {
     if (!trafficState.loaded) loadTraffic();
     else requestAnimationFrame(renderTrafficTimeline);
   }
+   if (name === 'advanced') showAdvanced(advancedView);
+}
+function showAdvanced(view) {
+   advancedView = view;
+   $$('#advNav button').forEach(b => b.classList.toggle('active', b.dataset.adv === view));
+   $('#adv-console').hidden = view !== 'console';
+   $('#adv-schema').hidden = view !== 'schema';
+   if (view === 'schema' && schemaText == null) loadSchema();
 }
 function setHash(h) {
   history.replaceState(null, '', location.pathname + location.search + '#' + h);
 }
+function tabHash(tab) {
+   if (tab === 'sessions') return sessionsView === 'detail' && sessionState.id ? 'session=' + encodeURIComponent(sessionState.id) : 'sessions';
+   if (tab === 'advanced') return advancedView === 'schema' ? 'schema' : 'advanced';
+   return tab;
+}
+function showSessionList() {
+   sessionsView = 'list';
+   showTab('sessions');
+   setHash('sessions');
+}
 $$('#nav button').forEach(b => b.addEventListener('click', () => {
-  showTab(b.dataset.tab);
-  if (b.dataset.tab === 'session' && sessionState.id) setHash('session=' + encodeURIComponent(sessionState.id));
-  else setHash(b.dataset.tab);
+   const tab = b.dataset.tab;
+   // Clicking "Sessions" while viewing a session goes back to the list.
+   if (tab === 'sessions' && activeTab() === 'sessions' && sessionsView === 'detail') sessionsView = 'list';
+   showTab(tab);
+   setHash(tabHash(tab));
+}));
+$$('#advNav button').forEach(b => b.addEventListener('click', () => {
+   showAdvanced(b.dataset.adv);
+   setHash(tabHash('advanced'));
 }));
 
 // ---------------------------------------------------------------- header stats / refresh
@@ -801,12 +806,13 @@ function setHeaderStats(balance, budget) {
 
 function refreshActive() {
   switch (activeTab()) {
-    case 'overview': return loadUser();
+     case 'usage': return loadUser();
     case 'traffic': return loadTraffic({ reset: false });
-    case 'session': return sessionState.id ? openSession(sessionState.id, { keep: true }) : undefined;
-    case 'sessions': return loadSessionList({ reset: false });
-    case 'bulk': return $('#bulkIds').value.trim() ? loadBulk() : undefined;
-    case 'schema': return loadSchema();
+     case 'sessions':
+       return sessionsView === 'detail' && sessionState.id
+         ? openSession(sessionState.id, { keep: true })
+         : loadSessionList({ reset: false });
+     case 'advanced': return advancedView === 'schema' ? loadSchema() : undefined;
   }
 }
 $('#btnRefresh').addEventListener('click', () => refreshActive());
@@ -820,7 +826,7 @@ function setupAuto() {
   clearInterval(autoTimer);
   const sec = Number(autoSel.value);
   store(AUTO_KEY, sec);
-  if (sec > 0) autoTimer = setInterval(() => { if (!document.hidden && activeTab() !== 'console') refreshActive(); }, sec * 1000);
+   if (sec > 0) autoTimer = setInterval(() => { if (!document.hidden && activeTab() !== 'advanced') refreshActive(); }, sec * 1000);
 }
 autoSel.addEventListener('change', setupAuto);
 
@@ -879,7 +885,7 @@ function syncUrlRange(from, to) {
 async function loadUser() {
   const from = $('#fromDate').value, to = $('#toDate').value;
   if (from && to && from >= to) { toast('"From" must be before "To"'); return; }
-  await busy($('#tab-overview'), async () => {
+   await busy($('#tab-usage'), async () => {
     const vars = { withPrev: false };
     if (from) vars.from = from;
     if (to) vars.to = to;
@@ -944,7 +950,7 @@ function renderUser() {
   renderDaily();
   renderTokenTypes(u.totals.tokens, userData.tokenTypes);
   renderCredits(u.credits);
-  enhanceTables($('#tab-overview'));
+   enhanceTables($('#tab-usage'));
 }
 
 function* dayRange(from, to) {
@@ -1141,29 +1147,21 @@ function renderRecent() {
     : '';
 }
 
-function addToBulk(ids) {
-  ids = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
-  if (!ids.length) return;
-  const ta = $('#bulkIds');
-  const existing = ta.value.split(/[\s,;]+/).filter(Boolean);
-  const merged = [...new Set([...existing, ...ids])];
-  ta.value = merged.join('\n');
-  toast(`Added ${merged.length - existing.length} to bulk list (${merged.length} total)`, 'info');
-}
 
 $('#btnLoadSession').addEventListener('click', () => openSession($('#sessionId').value.trim()));
 $('#sessionId').addEventListener('keydown', e => { if (e.key === 'Enter') openSession($('#sessionId').value.trim()); });
-$('#btnAddToBulk').addEventListener('click', () => addToBulk($('#sessionId').value.trim() || sessionState.id));
+$('#btnBackToList').addEventListener('click', showSessionList);
 
 async function openSession(id, { keep = false } = {}) {
   if (!id) { toast('Enter a session ID'); return; }
-  showTab('session');
+   sessionsView = 'detail';
+   showTab('sessions');
   $('#sessionId').value = id;
   setHash('session=' + encodeURIComponent(id));
   if (!keep || sessionState.id !== id) Object.assign(sessionState, { model: '', offset: 0, collapsed: new Set() });
   Object.assign(sessionState, { id, summary: null, light: null, tree: null });
   addRecent(id);
-  await busy($('#tab-session'), async () => {
+   await busy($('#sessionDetailView'), async () => {
     const data = await gql(SESSION_SUMMARY_QUERY, { id });
     if (sessionState.id !== id) return;
     sessionState.summary = data.sessionUsage;
@@ -1221,7 +1219,6 @@ function renderSessionSummary() {
           </label>
           <button class="btn small" id="treeExpand">Expand all</button>
           <button class="btn small" id="treeCollapse">Collapse</button>
-          <button class="btn small" id="treeToBulk" title="Add every session in the tree to the bulk list">→ Bulk</button>
           <button class="btn small" data-csv="#sessionTree" data-name="session-tree">CSV</button>
         </span>
       </h2>
@@ -1280,7 +1277,6 @@ function renderSessionSummary() {
     st.collapsed = new Set((st.tree?.nodes || []).filter(n => n.depth >= 1 && n.childCount).map(n => n.sessionId));
     renderSessionTree();
   });
-  $('#treeToBulk').addEventListener('click', () => addToBulk((st.tree?.nodes || []).map(n => n.sessionId)));
   $('#sessionTree').addEventListener('click', e => {
     const tg = e.target.closest('[data-toggle]');
     if (!tg) return;
@@ -1483,7 +1479,7 @@ function setAllRows(open, root = '#sessionRows') {
 async function exportSessionCalls() {
   const st = sessionState;
   if (!st.id) return;
-  await busy($('#tab-session'), async () => {
+   await busy($('#sessionDetailView'), async () => {
     const vars = { id: st.id };
     if (st.model) vars.model = st.model;
     const data = await gql(SESSION_ROWS_QUERY, vars);
@@ -1643,14 +1639,12 @@ function renderSessionList() {
   const pageCost = items.reduce((a, s) => a + (s.totals?.cost || 0), 0);
   el.innerHTML = `<table>
     <thead><tr>
-      <th data-nosort><input type="checkbox" id="slAll" title="Select page"></th>
       <th>Name</th><th>Session</th><th>Path</th><th>Started</th><th>Parent</th>
       <th class="num">Cost</th><th class="num">Share (page)</th><th class="num">Tokens</th><th data-nosort>Models</th>
     </tr></thead>
     <tbody>${items.map(s => {
       const t = tsOf(s.time);
       return `<tr class="clickable" data-sid="${esc(s.sessionId)}" title="Open session">
-        <td data-csv=""><input type="checkbox" class="slPick" value="${esc(s.sessionId)}"></td>
         <td>${s.name && s.name !== s.sessionId ? esc(s.name) : '<span class="muted">—</span>'}</td>
         <td class="mono" data-csv="${esc(s.sessionId)}"><a data-session="${esc(s.sessionId)}">${esc(s.sessionId)}</a></td>
         <td class="mono">${esc(s.path ?? '')}</td>
@@ -1662,7 +1656,6 @@ function renderSessionList() {
         <td data-csv="${esc(s.models.map(m => `${m.model}=${m.cost}`).join('; '))}">${s.models.map(m => `<span class="chip">${swatch(m.model)}${esc(m.model)}: ${fmtCost(m.cost)}</span>`).join('')}</td>
       </tr>`;
     }).join('')}</tbody></table>`;
-  $('#slAll').addEventListener('change', e => $$('.slPick', el).forEach(c => (c.checked = e.target.checked)));
   $$('tr.clickable', el).forEach(tr => tr.addEventListener('click', e => {
     if (e.target.closest('a, input, button')) return;
     openSession(tr.dataset.sid);
@@ -1686,94 +1679,12 @@ $('#slPrev').addEventListener('click', () => {
 $('#slNext').addEventListener('click', () => {
   if (listState.cursors[listState.page + 1]) { listState.page++; loadSessionList({ reset: false }); }
 });
-$('#slToBulk').addEventListener('click', () => {
-  const picked = $$('#sessionList .slPick:checked').map(c => c.value);
-  addToBulk(picked.length ? picked : listState.items.map(s => s.sessionId));
-});
 
 
-// ---------------------------------------------------------------- bulk sessions
-const BULK_QUERY = `
-query Bulk($ids: [String!]!) {
-  sessionsUsage(sessionIds: $ids) {
-    sessionId
-    totals { ${USAGE_FIELDS} }
-    models { model cost totalTokens }
-  }
-}`;
 
-$('#btnLoadBulk').addEventListener('click', () => loadBulk());
-$('#btnBulkRecent').addEventListener('click', () => {
-  const r = getRecent();
-  if (!r.length) { toast('No recent sessions'); return; }
-  $('#bulkIds').value = r.join('\n');
-});
-$('#btnBulkClear').addEventListener('click', () => { $('#bulkIds').value = ''; });
-$('#bulkIds').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); loadBulk(); } });
 
-async function loadBulk() {
-  const ids = [...new Set($('#bulkIds').value.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean))];
-  if (!ids.length) { toast('Enter at least one session ID'); return; }
-  await busy($('#tab-bulk'), async () => {
-    const data = await gql(BULK_QUERY, { ids });
-    const list = data.sessionsUsage;
-    const el = $('#bulkOut'), mel = $('#bulkModels');
-    el.classList.remove('empty');
-    mel.classList.remove('empty');
-    const returned = new Set(list.map(s => s.sessionId));
-    const missing = ids.filter(id => !returned.has(id));
-    const missingNote = missing.length
-      ? `<div class="muted" style="margin-top:8px">No data for ${missing.length} ID(s): ${missing.map(m => `<span class="chip mono">${esc(m)}</span>`).join('')}</div>`
-      : '';
-    if (!list.length) {
-      el.innerHTML = '<div class="empty">No results.</div>' + missingNote;
-      mel.innerHTML = '<div class="empty">No results.</div>';
-      return;
-    }
-    const sum = k => list.reduce((a, s) => a + (s.totals[k] || 0), 0);
-    const totalCost = sum('cost');
-    el.innerHTML = `<table>
-      <thead><tr><th>Session</th><th class="num">Cost</th><th class="num">Share</th><th class="num">Total</th><th class="num">Prompt</th><th class="num">Completion</th><th data-nosort>Models</th></tr></thead>
-      <tbody>${[...list].sort((a, b) => b.totals.cost - a.totals.cost).map(s => `<tr>
-        <td class="mono" data-csv="${esc(s.sessionId)}"><a data-session="${esc(s.sessionId)}">${esc(s.sessionId)}</a></td>
-        ${numCell(s.totals.cost, fmtCost)}
-        ${shareCell(totalCost ? s.totals.cost / totalCost : null)}
-        ${numCell(s.totals.totalTokens)}
-        ${numCell(s.totals.promptTokens)}
-        ${numCell(s.totals.completionTokens)}
-        <td data-csv="${esc(s.models.map(m => `${m.model}=${m.cost}`).join('; '))}">${s.models.map(m => `<span class="chip">${swatch(m.model)}${esc(m.model)}: ${fmtCost(m.cost)}</span>`).join('')}</td>
-      </tr>`).join('')}</tbody>
-      <tfoot><tr><td>Total (${list.length})</td>
-        ${numCell(totalCost, fmtCost)}
-        <td></td>
-        ${numCell(sum('totalTokens'))}
-        ${numCell(sum('promptTokens'))}
-        ${numCell(sum('completionTokens'))}<td></td></tr></tfoot>
-    </table>${missingNote}`;
 
-    const agg = new Map();
-    list.forEach(s => s.models.forEach(m => {
-      const a = agg.get(m.model) || { model: m.model, cost: 0, totalTokens: 0, sessions: 0 };
-      a.cost += m.cost || 0;
-      a.totalTokens += m.totalTokens || 0;
-      a.sessions++;
-      agg.set(m.model, a);
-    }));
-    const models = [...agg.values()].sort((a, b) => b.cost - a.cost);
-    mel.innerHTML = models.length ? `<table>
-      <thead><tr><th>Model</th><th class="num">Sessions</th><th class="num">Cost</th><th class="num">Share</th><th class="num">Total tokens</th><th class="num">Avg cost / session</th></tr></thead>
-      <tbody>${models.map(a => `<tr>
-        <td data-csv="${esc(a.model)}">${swatch(a.model)}${esc(a.model)}</td>
-        ${numCell(a.sessions)}
-        ${numCell(a.cost, fmtCost)}
-        ${shareCell(totalCost ? a.cost / totalCost : null)}
-        ${numCell(a.totalTokens)}
-        ${numCell(a.cost / a.sessions, fmtCost)}
-      </tr>`).join('')}</tbody></table>` : '<div class="empty">No model data.</div>';
-    enhanceTables(el);
-    enhanceTables(mel);
-  });
-}
+
 // ---------------------------------------------------------------- traffic (time-based, session-agnostic)
 const TRAFFIC_KEY = 'usageGraphQL.traffic';
 const trafficState = { loaded: false, cursors: [null], page: 0, rangeHours: 24, data: null, step: 3600e3, limit: 100, fromMs: 0, toMs: 0 };
@@ -2149,7 +2060,6 @@ $('#btnDownloadResult').addEventListener('click', () => {
   if (!t.trim()) { toast('No result'); return; }
   download('graphql-result.json', t, 'application/json');
 });
-$('#btnSchema').addEventListener('click', () => { showTab('schema'); setHash('schema'); });
 
 // ---------------------------------------------------------------- schema
 let schemaText = null;
@@ -2157,7 +2067,7 @@ let schemaText = null;
 async function loadSchema() {
   const out = $('#schemaOut');
   await busy(out, async () => {
-    const res = await fetch(endpoint(), { credentials: 'same-origin' });
+     const res = await fetch(ENDPOINT, { credentials: 'same-origin' });
     const text = await res.text();
     if (!res.ok) throw new Error(`HTTP ${res.status}: ${text.slice(0, 300)}`);
     schemaText = text;
@@ -2212,10 +2122,17 @@ function initFromHash() {
   if (h.startsWith('session=')) {
     const id = h.slice('session='.length);
     if (id && id !== sessionState.id) openSession(id);
-    else showTab('session');
+     else {
+       sessionsView = sessionState.id ? 'detail' : 'list';
+       showTab('sessions');
+     }
     return true;
   }
-  if (TABS.includes(h)) showTab(h);
+   const tab = TAB_ALIASES[h] || h;
+   if (h === 'schema') advancedView = 'schema';
+   else if (h === 'console' || h === 'graphql') advancedView = 'console';
+   if (h === 'sessions') sessionsView = 'list';
+   if (TABS.includes(tab)) showTab(tab);
   return false;
 }
 window.addEventListener('hashchange', initFromHash);
