@@ -464,11 +464,23 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     ids: List<String>
   ) = ServiceMap[ServiceKey.METADATA_DB].setMessageIds(user, session, ids)
 
+  override fun getSessionTimestamp(
+    user: User,
+    session: Session
+  ) : Instant? = ServiceMap[ServiceKey.METADATA_DB].getSessionTimestamp(user, session)
+
   override fun setSessionTimestamp(
     user: User,
     session: Session,
     time: Instant
   ) = ServiceMap[ServiceKey.METADATA_DB].setSessionTimestamp(user, session, time)
+
+  override fun listSessionsByPath(
+    user: User,
+    path: String
+  ) = ServiceMap[ServiceKey.METADATA_DB].listSessionsByPath(user, path)
+
+  override fun listSessionsForUser(user: User) = ServiceMap[ServiceKey.METADATA_DB].listSessionsForUser(user)
 
   override fun setSessionOwner(
     session: Session,

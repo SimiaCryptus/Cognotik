@@ -66,8 +66,7 @@ interface SessionMetadataInterface {
 
   /** `java.time` accessor for the session timestamp. */
   @Suppress("DEPRECATION")
-  fun getSessionTimestamp(user: User, session: Session): Instant? =
-    getSessionTimestamp(user, session)
+  fun getSessionTimestamp(user: User, session: Session): Instant?
 
   /** `java.time` mutator for the session timestamp. */
   @Suppress("DEPRECATION")
@@ -75,11 +74,11 @@ interface SessionMetadataInterface {
 
   /** Lists all session IDs associated with [path]. */
   @Suppress("DEPRECATION")
-  fun listSessionsByPath(user: User, path: String): List<String> = listSessionsByPath(user = user, path = path)
+  fun listSessionsByPath(user: User, path: String): List<String>
 
   /** Lists all session IDs associated with [user]. */
   @Suppress("DEPRECATION")
-  fun listSessionsForUser(user: User): List<String> = listSessionsForUser(user)
+  fun listSessionsForUser(user: User): List<String>
 
   /**
    * Sets or updates the owner ID for a session.

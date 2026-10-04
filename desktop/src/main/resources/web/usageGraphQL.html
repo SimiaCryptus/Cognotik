@@ -101,6 +101,10 @@
   #toast { position: fixed; bottom: 16px; right: 16px; max-width: 480px; background: var(--danger); color: #fff; padding: 10px 14px; border-radius: 8px; display: none; z-index: 20; white-space: pre-wrap; cursor: pointer; }
   #toast.info { background: var(--ok); }
   .loading { opacity: .55; pointer-events: none; }
+  .tgl { display: inline-block; width: 14px; color: var(--muted); cursor: pointer; user-select: none; text-decoration: none !important; }
+  .tree-name { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
+  .note { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+  .note:empty { display: none; }
 </style>
 </head>
 <body>
@@ -108,8 +112,9 @@
   <h1>Usage</h1>
   <nav id="nav">
     <button data-tab="overview" class="active">Overview</button>
-    <button data-tab="session">Session</button>
     <button data-tab="sessions">Sessions</button>
+    <button data-tab="session">Session</button>
+    <button data-tab="bulk">Bulk</button>
     <button data-tab="console">GraphQL</button>
     <button data-tab="schema">Schema</button>
   </nav>
@@ -196,6 +201,50 @@
       <div id="userCredits"></div>
     </div>
   </section>
+  <!-- ================= Sessions (list) ================= -->
+  <section class="tab" id="tab-sessions">
+    <div class="panel">
+      <div class="row">
+        <label style="flex:1;min-width:200px">Name / ID contains<input id="slName" placeholder="search…"></label>
+        <label>Path<select id="slPath" style="max-width:220px"><option value="">Any path</option></select></label>
+        <label>Started from (UTC)<input type="date" id="slFrom"></label>
+        <label>Started before (UTC)<input type="date" id="slTo"></label>
+        <label>Min cost ($)<input type="number" id="slMinCost" min="0" step="0.01" style="width:90px"></label>
+        <label>Sort
+          <select id="slSort">
+            <option value="TIME_DESC">Newest first</option>
+            <option value="TIME_ASC">Oldest first</option>
+            <option value="NAME_ASC">Name A→Z</option>
+            <option value="NAME_DESC">Name Z→A</option>
+            <option value="COST_DESC">Cost (high→low)</option>
+            <option value="COST_ASC">Cost (low→high)</option>
+            <option value="TOKENS_DESC">Tokens (high→low)</option>
+            <option value="TOKENS_ASC">Tokens (low→high)</option>
+          </select>
+        </label>
+        <label>Page size
+          <select id="slLimit"><option>25</option><option selected>50</option><option>100</option><option>250</option></select>
+        </label>
+        <label class="inline"><input type="checkbox" id="slRoots"> Root sessions only</label>
+        <button class="btn primary" id="btnLoadList">Search</button>
+        <button class="btn" id="btnResetList">Reset</button>
+      </div>
+      <div class="muted" style="font-size:12px;margin-top:6px">Costs here are direct (non-recursive). Open a session to see its full child-session tree. Cost/token sorts, min-cost and root-only filters are evaluated across all matching sessions.</div>
+    </div>
+    <div class="panel">
+      <h2>Sessions
+        <span class="right">
+          <span id="slInfo" class="muted"></span>
+          <button class="btn small" id="slToBulk" title="Add checked sessions (or the whole page) to the bulk list">→ Bulk</button>
+          <button class="btn small" data-csv="#sessionList" data-name="sessions">CSV</button>
+          <button class="btn" id="slPrev" disabled>&larr; Prev</button>
+          <button class="btn" id="slNext" disabled>Next &rarr;</button>
+        </span>
+      </h2>
+      <div id="sessionList" class="empty">Not loaded.</div>
+    </div>
+  </section>
+
 
   <!-- ================= Session ================= -->
   <section class="tab" id="tab-session">
@@ -210,8 +259,8 @@
     <div id="sessionOut"></div>
   </section>
 
-  <!-- ================= Sessions (bulk) ================= -->
-  <section class="tab" id="tab-sessions">
+  <!-- ================= Bulk ================= -->
+  <section class="tab" id="tab-bulk">
     <div class="panel">
       <h2>Bulk session summaries <span class="muted" style="font-weight:normal;font-size:12px">(non-recursive)</span></h2>
       <label>Session IDs (one per line, or comma/space separated)
@@ -426,7 +475,7 @@ function tableToCsv(table) {
 
 // ---------------------------------------------------------------- global delegated clicks
 document.addEventListener('click', e => {
-  const csv = e.target.closest('[data-csv]');
+  const csv = e.target.closest('button[data-csv]');
   if (csv) {
     e.preventDefault();
     e.stopPropagation();
@@ -637,7 +686,7 @@ function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumula
 }
 
 // ---------------------------------------------------------------- tabs / routing
-const TABS = ['overview', 'session', 'sessions', 'console', 'schema'];
+const TABS = ['overview', 'sessions', 'session', 'bulk', 'console', 'schema'];
 const activeTab = () => $('#nav button.active')?.dataset.tab;
 
 function showTab(name) {
@@ -646,6 +695,7 @@ function showTab(name) {
   if (name === 'schema' && schemaText == null) loadSchema();
   if (name === 'overview' && userData) requestAnimationFrame(renderDaily);
   if (name === 'session' && sessionState.light) requestAnimationFrame(renderSessionTimeline);
+  if (name === 'sessions' && !listState.loaded) loadSessionList();
 }
 function setHash(h) {
   history.replaceState(null, '', location.pathname + location.search + '#' + h);
@@ -667,7 +717,8 @@ function refreshActive() {
   switch (activeTab()) {
     case 'overview': return loadUser();
     case 'session': return sessionState.id ? openSession(sessionState.id, { keep: true }) : undefined;
-    case 'sessions': return $('#bulkIds').value.trim() ? loadBulk() : undefined;
+    case 'sessions': return loadSessionList({ reset: false });
+    case 'bulk': return $('#bulkIds').value.trim() ? loadBulk() : undefined;
     case 'schema': return loadSchema();
   }
 }
@@ -939,7 +990,8 @@ function renderCredits(credits) {
 // ---------------------------------------------------------------- session
 const sessionState = {
   id: null, model: '', limit: 50, offset: 0, summary: null, light: null,
-  tlMetric: 'cost', tlMode: 'per', tlGroup: 'model'
+  tlMetric: 'cost', tlMode: 'per', tlGroup: 'model',
+  tree: null, treeView: 'tree', treeDepth: 64, collapsed: new Set()
 };
 
 const SESSION_SUMMARY_QUERY = `
@@ -975,6 +1027,19 @@ const PARENT_QUERY = `
 query Parent($id: String!) {
   sessionUsage(sessionId: $id) { parentSessionId }
 }`;
+const SESSION_TREE_QUERY = `
+query SessionTree($id: String!, $maxDepth: Int) {
+  usageSessionTree(sessionId: $id, maxDepth: $maxDepth) {
+    rootSessionId discoverySupported truncated
+    nodes {
+      sessionId parentSessionId depth childCount descendantCount name path time
+      calls firstCall lastCall
+      direct { cost totalTokens }
+      subtree { cost totalTokens }
+      models { model cost totalTokens }
+    }
+  }
+}`;
 
 const RECENT_KEY = 'usageGraphQL.recentSessions';
 const getRecent = () => load(RECENT_KEY, []);
@@ -989,12 +1054,14 @@ function renderRecent() {
     : '';
 }
 
-function addToBulk(id) {
-  if (!id) return;
+function addToBulk(ids) {
+  ids = (Array.isArray(ids) ? ids : [ids]).filter(Boolean);
+  if (!ids.length) return;
   const ta = $('#bulkIds');
   const existing = ta.value.split(/[\s,;]+/).filter(Boolean);
-  if (!existing.includes(id)) ta.value = [...existing, id].join('\n');
-  toast(`Added to bulk list (${ta.value.split(/[\s,;]+/).filter(Boolean).length})`, 'info');
+  const merged = [...new Set([...existing, ...ids])];
+  ta.value = merged.join('\n');
+  toast(`Added ${merged.length - existing.length} to bulk list (${merged.length} total)`, 'info');
 }
 
 $('#btnLoadSession').addEventListener('click', () => openSession($('#sessionId').value.trim()));
@@ -1006,15 +1073,15 @@ async function openSession(id, { keep = false } = {}) {
   showTab('session');
   $('#sessionId').value = id;
   setHash('session=' + encodeURIComponent(id));
-  if (!keep || sessionState.id !== id) Object.assign(sessionState, { model: '', offset: 0 });
-  Object.assign(sessionState, { id, summary: null, light: null });
+  if (!keep || sessionState.id !== id) Object.assign(sessionState, { model: '', offset: 0, collapsed: new Set() });
+  Object.assign(sessionState, { id, summary: null, light: null, tree: null });
   addRecent(id);
   await busy($('#tab-session'), async () => {
     const data = await gql(SESSION_SUMMARY_QUERY, { id });
     if (sessionState.id !== id) return;
     sessionState.summary = data.sessionUsage;
     renderSessionSummary();
-    await Promise.all([loadSessionRows(), loadSessionLight(id)]);
+    await Promise.all([loadSessionRows(), loadSessionLight(id), loadSessionTree(id)]);
     loadAncestry(id, sessionState.summary.parentSessionId);
   });
 }
@@ -1028,6 +1095,7 @@ function renderSessionSummary() {
     <div class="crumbs" id="sessionCrumbs"></div>
     <div class="cards">
       ${card('Session', `<span class="mono" style="font-size:13px">${esc(s.sessionId)}</span>`)}
+      ${card('Name', '<span class="muted" style="font-size:13px">…</span>', '', '', 'sesName')}
       ${card('Parent', s.parentSessionId ? `<a class="mono" style="font-size:13px" data-session="${esc(s.parentSessionId)}">${esc(s.parentSessionId)}</a>` : '<span class="muted" style="font-size:13px">none</span>')}
       ${card('Cost', fmtCost(s.totals.cost))}
       ${card('Calls', fmtNum(s.rowCount), '', s.rowCount ? `<div class="delta muted">${fmtCost(s.totals.cost / s.rowCount)} / call</div>` : '')}
@@ -1036,6 +1104,7 @@ function renderSessionSummary() {
       ${card('Completion tokens', fmtNum(s.totals.completionTokens))}
       ${card('Duration', '<span class="muted">…</span>', '', '', 'sesDuration')}
       ${card('Sessions in tree', '<span class="muted">…</span>', '', '', 'sesSubCount')}
+      ${card('Tree depth', '<span class="muted">…</span>', '', '', 'sesDepth')}
     </div>
     <div class="panel">
       <h2>Timeline
@@ -1054,17 +1123,28 @@ function renderSessionSummary() {
       <div class="chart" id="sessionTimeline"><div class="empty">Loading…</div></div>
       <div class="legend" id="sessionTimelineLegend"></div>
     </div>
-    <div class="detail-grid spaced">
-      <div class="panel">
-        <h2>By model <span class="muted" style="font-weight:normal;font-size:12px">(includes descendant sessions)</span>
-          <span class="right"><button class="btn small" data-csv="#sessionModels" data-name="session-models">CSV</button></span></h2>
-        <div id="sessionModels">${usageTable(s.models, s.totals)}</div>
-      </div>
-      <div class="panel">
-        <h2>Sessions in tree
-          <span class="right"><button class="btn small" data-csv="#sessionChildren" data-name="session-tree">CSV</button></span></h2>
-        <div id="sessionChildren"><div class="empty">Loading…</div></div>
-      </div>
+    <div class="panel">
+      <h2>Session tree <span class="muted" style="font-weight:normal;font-size:12px">(transitive child sessions)</span>
+        <span class="right">
+          <label class="inline">View
+            <select id="treeView"><option value="tree">Tree</option><option value="flat">Flat (sortable)</option></select>
+          </label>
+          <label class="inline">Max depth
+            <select id="treeDepth">${[[64, 'All'], [1, '1'], [2, '2'], [3, '3'], [5, '5'], [10, '10']].map(([v, l]) => `<option value="${v}" ${v === st.treeDepth ? 'selected' : ''}>${l}</option>`).join('')}</select>
+          </label>
+          <button class="btn small" id="treeExpand">Expand all</button>
+          <button class="btn small" id="treeCollapse">Collapse</button>
+          <button class="btn small" id="treeToBulk" title="Add every session in the tree to the bulk list">→ Bulk</button>
+          <button class="btn small" data-csv="#sessionTree" data-name="session-tree">CSV</button>
+        </span>
+      </h2>
+      <div class="note" id="sesTreeNote"></div>
+      <div id="sessionTree"><div class="empty">Loading…</div></div>
+    </div>
+    <div class="panel">
+      <h2>By model <span class="muted" style="font-weight:normal;font-size:12px">(includes descendant sessions)</span>
+        <span class="right"><button class="btn small" data-csv="#sessionModels" data-name="session-models">CSV</button></span></h2>
+      <div id="sessionModels">${usageTable(s.models, s.totals)}</div>
     </div>
     <div class="panel">
       <h2>Calls
@@ -1100,6 +1180,28 @@ function renderSessionSummary() {
   $('#rowExpand').addEventListener('click', () => setAllRows(true));
   $('#rowCollapse').addEventListener('click', () => setAllRows(false));
   $('#rowExport').addEventListener('click', exportSessionCalls);
+  $('#treeView').value = st.treeView;
+  $('#treeView').addEventListener('change', e => { st.treeView = e.target.value; renderSessionTree(); });
+  $('#treeDepth').addEventListener('change', e => {
+    st.treeDepth = Number(e.target.value);
+    st.tree = null;
+    renderSessionTree();
+    loadSessionTree(st.id);
+  });
+  $('#treeExpand').addEventListener('click', () => { st.collapsed = new Set(); renderSessionTree(); });
+  $('#treeCollapse').addEventListener('click', () => {
+    st.collapsed = new Set((st.tree?.nodes || []).filter(n => n.depth >= 1 && n.childCount).map(n => n.sessionId));
+    renderSessionTree();
+  });
+  $('#treeToBulk').addEventListener('click', () => addToBulk((st.tree?.nodes || []).map(n => n.sessionId)));
+  $('#sessionTree').addEventListener('click', e => {
+    const tg = e.target.closest('[data-toggle]');
+    if (!tg) return;
+    e.preventDefault();
+    const id = tg.dataset.toggle;
+    if (st.collapsed.has(id)) st.collapsed.delete(id); else st.collapsed.add(id);
+    renderSessionTree();
+  });
 }
 
 async function loadAncestry(id, parent) {
@@ -1132,7 +1234,7 @@ async function loadSessionLight(id) {
     sessionState.light = [];
   }
   renderSessionTimeline();
-  renderSessionChildren();
+  renderSessionDuration();
 }
 
 const STEPS = [60e3, 5 * 60e3, 15 * 60e3, 3600e3, 6 * 3600e3, 86400e3, 7 * 86400e3, 30 * 86400e3];
@@ -1176,46 +1278,102 @@ function renderSessionTimeline() {
   $('#sessionTimelineLegend').innerHTML = legendHtml(series, totals, fmt);
 }
 
-function renderSessionChildren() {
-  const el = $('#sessionChildren');
-  if (!el) return;
-  const light = sessionState.light || [];
-  const times = light.map(r => tsOf(r.datetime)).filter(t => t != null);
-  const dur = times.length ? Math.max(...times) - Math.min(...times) : null;
-  const durCard = $('#sesDuration .v');
-  if (durCard) durCard.innerHTML = times.length ? esc(fmtDuration(dur)) : '<span class="muted">—</span>';
 
-  const agg = new Map();
-  for (const r of light) {
-    const k = r.sessionId ?? '(none)';
-    const a = agg.get(k) || { id: k, calls: 0, cost: 0, tokens: 0, first: null, last: null, models: new Set() };
-    a.calls++;
-    a.cost += r.cost || 0;
-    a.tokens += r.totalTokens || 0;
-    const t = tsOf(r.datetime);
-    if (t != null) { a.first = a.first == null ? t : Math.min(a.first, t); a.last = a.last == null ? t : Math.max(a.last, t); }
-    if (r.model) a.models.add(r.model);
-    agg.set(k, a);
-  }
-  const subCard = $('#sesSubCount .v');
-  if (subCard) subCard.textContent = fmtNum(agg.size);
-  if (!agg.size) { el.innerHTML = '<div class="empty">No calls.</div>'; return; }
-  const total = [...agg.values()].reduce((s, a) => s + a.cost, 0);
-  const list = [...agg.values()].sort((a, b) => b.cost - a.cost);
-  el.innerHTML = `<table>
-    <thead><tr><th>Session</th><th class="num">Calls</th><th class="num">Cost</th><th class="num">Share</th><th class="num">Tokens</th><th>First</th><th class="num">Duration</th><th data-nosort>Models</th></tr></thead>
-    <tbody>${list.map(a => `<tr>
-      <td class="mono" data-csv="${esc(a.id)}">${a.id === sessionState.id ? `${esc(a.id)} <span class="muted">(this)</span>` : `<a data-session="${esc(a.id)}">${esc(a.id)}</a>`}</td>
-      ${numCell(a.calls)}
-      ${numCell(a.cost, fmtCost)}
-      ${shareCell(total ? a.cost / total : null)}
-      ${numCell(a.tokens)}
-      <td data-v="${a.first ?? ''}" style="white-space:nowrap">${a.first != null ? esc(new Date(a.first).toLocaleString()) : '—'}</td>
-      <td class="num" data-v="${a.first != null ? a.last - a.first : ''}">${a.first != null ? esc(fmtDuration(a.last - a.first)) : '—'}</td>
-      <td data-csv="${esc([...a.models].join('; '))}">${[...a.models].map(m => `<span class="chip">${swatch(m)}${esc(m)}</span>`).join('')}</td>
-    </tr>`).join('')}</tbody></table>`;
-  enhanceTables(el);
+function renderSessionDuration() {
+  const times = (sessionState.light || []).map(r => tsOf(r.datetime)).filter(t => t != null);
+  const durCard = $('#sesDuration .v');
+  if (!durCard) return;
+  if (!times.length) { durCard.innerHTML = '<span class="muted">—</span>'; return; }
+  const min = times.reduce((a, b) => Math.min(a, b)), max = times.reduce((a, b) => Math.max(a, b));
+  durCard.innerHTML = esc(fmtDuration(max - min));
 }
+
+async function loadSessionTree(id) {
+  if (!id) return;
+  try {
+    const data = await gql(SESSION_TREE_QUERY, { id, maxDepth: sessionState.treeDepth });
+    if (sessionState.id !== id) return;
+    sessionState.tree = data.usageSessionTree;
+  } catch (e) {
+    console.warn('session tree failed', e);
+    if (sessionState.id !== id) return;
+    sessionState.tree = { error: e.message || String(e), nodes: [] };
+  }
+  renderSessionTree();
+}
+
+function renderSessionTree() {
+  const el = $('#sessionTree');
+  if (!el) return;
+  const st = sessionState, t = st.tree;
+  const note = $('#sesTreeNote');
+  if (!t) { el.innerHTML = '<div class="empty">Loading…</div>'; if (note) note.textContent = ''; return; }
+  if (t.error) { el.innerHTML = `<div class="error">${esc(t.error)}</div>`; return; }
+  const nodes = t.nodes || [];
+  const root = nodes.find(n => n.sessionId === t.rootSessionId) || nodes[0];
+
+  const sub = $('#sesSubCount .v');
+  if (sub) sub.innerHTML = fmtNum(nodes.length) + (t.truncated ? ' <span class="muted" style="font-size:12px">(truncated)</span>' : '');
+  const dc = $('#sesDepth .v');
+  if (dc) dc.textContent = fmtNum(nodes.reduce((m, n) => Math.max(m, n.depth), 0));
+  const nc = $('#sesName .v');
+  if (nc) nc.innerHTML = root?.name && root.name !== root.sessionId
+    ? `<span style="font-size:15px">${esc(root.name)}</span>${root.path ? `<div class="delta muted mono">${esc(root.path)}</div>` : ''}`
+    : '<span class="muted" style="font-size:13px">unnamed</span>';
+  if (note) {
+    const notes = [];
+    if (!t.discoverySupported) notes.push('Child-session discovery is not supported by this backend; the tree was rebuilt from usage rows and parent links, so sessions without usage may be missing.');
+    if (t.truncated) notes.push('Discovery was truncated by the depth/size limit; increase "Max depth" to see more.');
+    note.textContent = notes.join(' ');
+  }
+  if (!nodes.length) { el.innerHTML = '<div class="empty">No sessions.</div>'; return; }
+
+  const flat = st.treeView === 'flat';
+  const byId = new Map(nodes.map(n => [n.sessionId, n]));
+  const hidden = n => {
+    if (flat) return false;
+    let p = n.parentSessionId, guard = 0;
+    while (p && byId.has(p) && guard++ < 200) {
+      if (st.collapsed.has(p)) return true;
+      p = byId.get(p).parentSessionId;
+    }
+    return false;
+  };
+  const rootCost = root?.subtree.cost || 0;
+  const list = (flat ? [...nodes].sort((a, b) => b.subtree.cost - a.subtree.cost) : nodes).filter(n => !hidden(n));
+  const ns = flat ? '' : ' data-nosort';
+  el.innerHTML = `<table>
+    <thead><tr>
+      <th${ns}>Session</th><th class="num"${ns}>Depth</th><th class="num"${ns}>Children</th><th class="num"${ns}>Calls</th>
+      <th class="num"${ns}>Direct cost</th><th class="num"${ns}>Subtree cost</th><th class="num"${ns}>Share</th>
+      <th class="num"${ns}>Subtree tokens</th><th${ns}>First call</th><th class="num"${ns}>Span</th><th data-nosort>Models (direct)</th>
+    </tr></thead>
+    <tbody>${list.map(n => {
+      const first = tsOf(n.firstCall), last = tsOf(n.lastCall);
+      const tgl = flat ? '' : n.childCount
+        ? `<a class="tgl" data-toggle="${esc(n.sessionId)}" title="${fmtNum(n.descendantCount)} descendant(s)">${st.collapsed.has(n.sessionId) ? '▸' : '▾'}</a>`
+        : '<span class="tgl"></span>';
+      const label = n.sessionId === st.id
+        ? `<b class="mono">${esc(n.sessionId)}</b> <span class="muted">(this)</span>`
+        : `<a class="mono" data-session="${esc(n.sessionId)}">${esc(n.sessionId)}</a>`;
+      const name = n.name && n.name !== n.sessionId ? `<div class="tree-name" style="margin-left:${flat ? 0 : 14}px">${esc(n.name)}</div>` : '';
+      return `<tr>
+        <td data-csv="${esc(n.sessionId)}" style="padding-left:${8 + (flat ? 0 : n.depth * 18)}px">${tgl}${label}${name}</td>
+        ${numCell(n.depth)}
+        ${numCell(n.childCount)}
+        ${numCell(n.calls)}
+        ${numCell(n.direct.cost, fmtCost)}
+        ${numCell(n.subtree.cost, fmtCost)}
+        ${shareCell(rootCost ? n.subtree.cost / rootCost : null)}
+        ${numCell(n.subtree.totalTokens)}
+        <td data-v="${first ?? ''}" data-csv="${esc(n.firstCall ?? '')}" style="white-space:nowrap">${first != null ? esc(new Date(first).toLocaleString()) : '—'}</td>
+        <td class="num" data-v="${first != null && last != null ? last - first : ''}">${first != null && last != null ? esc(fmtDuration(last - first)) : '—'}</td>
+        <td data-csv="${esc(n.models.map(m => `${m.model}=${m.cost}`).join('; '))}">${n.models.map(m => `<span class="chip">${swatch(m.model)}${esc(m.model)}: ${fmtCost(m.cost)}</span>`).join('') || '<span class="muted">—</span>'}</td>
+       </tr>`;
+     }).join('')}</tbody></table>`;
+   enhanceTables(el);
+}
+
 
 function applyRowFilter() {
   const q = ($('#rowFilter')?.value || '').trim().toLowerCase();
@@ -1303,6 +1461,138 @@ async function loadSessionRows() {
     applyRowFilter();
   });
 }
+// ---------------------------------------------------------------- session list
+const LIST_KEY = 'usageGraphQL.sessionList';
+const listState = { cursors: [null], page: 0, loaded: false, pathsLoaded: false, items: [], total: 0, limit: 50 };
+const SESSION_LIST_QUERY = `
+query SessionList($filter: UsageSessionFilter, $sort: UsageSessionSort, $limit: Int, $cursor: String, $withPaths: Boolean!) {
+  usageSessions(filter: $filter, sort: $sort, limit: $limit, cursor: $cursor) {
+    total
+    nextCursor
+    paths @include(if: $withPaths)
+    items {
+      sessionId name path ownerId time parentSessionId
+      totals { cost totalTokens promptTokens completionTokens }
+      models { model cost totalTokens }
+    }
+  }
+}`;
+const LIST_FIELDS = { name: '#slName', from: '#slFrom', to: '#slTo', minCost: '#slMinCost', sort: '#slSort', limit: '#slLimit' };
+function setPathOptions(paths, keep) {
+  const sel = $('#slPath');
+  const all = [...new Set([...(paths || []), ...(keep ? [keep] : [])])].sort();
+  sel.innerHTML = '<option value="">Any path</option>' + all.map(p => `<option value="${esc(p)}">${esc(p)}</option>`).join('');
+  sel.value = keep || '';
+}
+function saveListUi() {
+  const v = { path: $('#slPath').value, roots: $('#slRoots').checked };
+  for (const [k, s] of Object.entries(LIST_FIELDS)) v[k] = $(s).value;
+  store(LIST_KEY, v);
+}
+function restoreListUi() {
+  const v = load(LIST_KEY, {});
+  if (v.path) setPathOptions([], v.path);
+  for (const [k, s] of Object.entries(LIST_FIELDS)) if (v[k] != null) $(s).value = v[k];
+  if (!$('#slSort').value) $('#slSort').value = 'TIME_DESC';
+  if (!$('#slLimit').value) $('#slLimit').value = '50';
+  $('#slRoots').checked = !!v.roots;
+}
+function listFilter() {
+  const f = {};
+  const name = $('#slName').value.trim();
+  if (name) f.nameContains = name;
+  if ($('#slPath').value) f.path = $('#slPath').value;
+  if ($('#slFrom').value) f.from = $('#slFrom').value;
+  if ($('#slTo').value) f.to = $('#slTo').value;
+  if ($('#slRoots').checked) f.rootsOnly = true;
+  const mc = parseFloat($('#slMinCost').value);
+  if (mc > 0) f.minCost = mc;
+  return f;
+}
+async function loadSessionList({ reset = true } = {}) {
+  const from = $('#slFrom').value, to = $('#slTo').value;
+  if (from && to && from >= to) { toast('"Started from" must be before "Started before"'); return; }
+  if (reset) { listState.cursors = [null]; listState.page = 0; }
+  saveListUi();
+  const limit = Number($('#slLimit').value) || 50;
+  await busy($('#tab-sessions'), async () => {
+    const data = await gql(SESSION_LIST_QUERY, {
+      filter: listFilter(),
+      sort: $('#slSort').value || 'TIME_DESC',
+      limit,
+      cursor: listState.cursors[listState.page] ?? null,
+      withPaths: !listState.pathsLoaded
+    });
+    const res = data.usageSessions;
+    if (res.paths) { setPathOptions(res.paths, $('#slPath').value); listState.pathsLoaded = true; }
+    Object.assign(listState, { loaded: true, items: res.items || [], total: res.total || 0, limit });
+    listState.cursors.length = listState.page + 1;
+    listState.cursors.push(res.nextCursor ?? null);
+    renderSessionList();
+  });
+}
+function renderSessionList() {
+  const el = $('#sessionList');
+  const { items, total, page, limit } = listState;
+  $('#slPrev').disabled = page === 0;
+  $('#slNext').disabled = !listState.cursors[page + 1];
+  const start = page * limit;
+  $('#slInfo').textContent = items.length
+    ? `${fmtNum(start + 1)}–${fmtNum(start + items.length)} of ${fmtNum(total)} · page ${page + 1}/${Math.max(1, Math.ceil(total / limit))}`
+    : `0 of ${fmtNum(total)}`;
+  if (!items.length) { el.className = 'empty'; el.innerHTML = 'No sessions match.'; return; }
+  el.className = '';
+  const pageCost = items.reduce((a, s) => a + (s.totals?.cost || 0), 0);
+  el.innerHTML = `<table>
+    <thead><tr>
+      <th data-nosort><input type="checkbox" id="slAll" title="Select page"></th>
+      <th>Name</th><th>Session</th><th>Path</th><th>Started</th><th>Parent</th>
+      <th class="num">Cost</th><th class="num">Share (page)</th><th class="num">Tokens</th><th data-nosort>Models</th>
+    </tr></thead>
+    <tbody>${items.map(s => {
+      const t = tsOf(s.time);
+      return `<tr class="clickable" data-sid="${esc(s.sessionId)}" title="Open session">
+        <td data-csv=""><input type="checkbox" class="slPick" value="${esc(s.sessionId)}"></td>
+        <td>${s.name && s.name !== s.sessionId ? esc(s.name) : '<span class="muted">—</span>'}</td>
+        <td class="mono" data-csv="${esc(s.sessionId)}"><a data-session="${esc(s.sessionId)}">${esc(s.sessionId)}</a></td>
+        <td class="mono">${esc(s.path ?? '')}</td>
+        <td data-v="${t ?? ''}" data-csv="${esc(s.time ?? '')}" style="white-space:nowrap">${esc(fmtDateTime(s.time))}</td>
+        <td class="mono" data-csv="${esc(s.parentSessionId ?? '')}">${s.parentSessionId ? `<a data-session="${esc(s.parentSessionId)}">${esc(s.parentSessionId)}</a>` : '<span class="muted">—</span>'}</td>
+        ${numCell(s.totals.cost, fmtCost)}
+        ${shareCell(pageCost ? s.totals.cost / pageCost : null)}
+        ${numCell(s.totals.totalTokens)}
+        <td data-csv="${esc(s.models.map(m => `${m.model}=${m.cost}`).join('; '))}">${s.models.map(m => `<span class="chip">${swatch(m.model)}${esc(m.model)}: ${fmtCost(m.cost)}</span>`).join('')}</td>
+      </tr>`;
+    }).join('')}</tbody></table>`;
+  $('#slAll').addEventListener('change', e => $$('.slPick', el).forEach(c => (c.checked = e.target.checked)));
+  $$('tr.clickable', el).forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.closest('a, input, button')) return;
+    openSession(tr.dataset.sid);
+  }));
+  enhanceTables(el);
+}
+$('#btnLoadList').addEventListener('click', () => loadSessionList());
+$('#btnResetList').addEventListener('click', () => {
+  ['#slName', '#slFrom', '#slTo', '#slMinCost'].forEach(s => ($(s).value = ''));
+  $('#slPath').value = '';
+  $('#slSort').value = 'TIME_DESC';
+  $('#slLimit').value = '50';
+  $('#slRoots').checked = false;
+  loadSessionList();
+});
+['#slName', '#slFrom', '#slTo', '#slMinCost'].forEach(s => $(s).addEventListener('keydown', e => { if (e.key === 'Enter') loadSessionList(); }));
+['#slPath', '#slSort', '#slLimit', '#slRoots'].forEach(s => $(s).addEventListener('change', () => loadSessionList()));
+$('#slPrev').addEventListener('click', () => {
+  if (listState.page > 0) { listState.page--; loadSessionList({ reset: false }); }
+});
+$('#slNext').addEventListener('click', () => {
+  if (listState.cursors[listState.page + 1]) { listState.page++; loadSessionList({ reset: false }); }
+});
+$('#slToBulk').addEventListener('click', () => {
+  const picked = $$('#sessionList .slPick:checked').map(c => c.value);
+  addToBulk(picked.length ? picked : listState.items.map(s => s.sessionId));
+});
+
 
 // ---------------------------------------------------------------- bulk sessions
 const BULK_QUERY = `
@@ -1326,7 +1616,7 @@ $('#bulkIds').addEventListener('keydown', e => { if (e.key === 'Enter' && (e.ctr
 async function loadBulk() {
   const ids = [...new Set($('#bulkIds').value.split(/[\s,;]+/).map(s => s.trim()).filter(Boolean))];
   if (!ids.length) { toast('Enter at least one session ID'); return; }
-  await busy($('#tab-sessions'), async () => {
+  await busy($('#tab-bulk'), async () => {
     const data = await gql(BULK_QUERY, { ids });
     const list = data.sessionsUsage;
     const el = $('#bulkOut'), mel = $('#bulkModels');
@@ -1429,7 +1719,20 @@ const EXAMPLES = {
 }`, { id: '', model: null }],
   'Bulk sessions': [`query Bulk($ids: [String!]!) {
   sessionsUsage(sessionIds: $ids) { sessionId totals { cost totalTokens } }
-}`, { ids: [] }]
+}`, { ids: [] }],
+  'Session list (filtered)': [`query List($filter: UsageSessionFilter, $sort: UsageSessionSort, $limit: Int, $cursor: String) {
+  usageSessions(filter: $filter, sort: $sort, limit: $limit, cursor: $cursor) {
+    total nextCursor
+    items { sessionId name path time parentSessionId totals { cost totalTokens } }
+  }
+}`, { filter: { nameContains: '', rootsOnly: true }, sort: 'COST_DESC', limit: 20 }],
+  'Session tree': [`query Tree($id: String!, $maxDepth: Int) {
+  usageSessionTree(sessionId: $id, maxDepth: $maxDepth) {
+    rootSessionId discoverySupported truncated
+    totals { cost totalTokens }
+    nodes { sessionId parentSessionId depth childCount name calls direct { cost } subtree { cost } }
+  }
+}`, { id: '', maxDepth: null }]
 };
 const exSel = $('#exampleSel');
 exSel.innerHTML = '<option value="">— choose —</option>' + Object.keys(EXAMPLES).map(k => `<option>${esc(k)}</option>`).join('');
@@ -1605,6 +1908,7 @@ window.addEventListener('hashchange', initFromHash);
   if (from) $('#fromDate').value = from;
   if (to) $('#toDate').value = to;
   if (!from && !to) applyPreset('30', false);
+  restoreListUi();
   renderRecent();
   setupAuto();
   initFromHash();

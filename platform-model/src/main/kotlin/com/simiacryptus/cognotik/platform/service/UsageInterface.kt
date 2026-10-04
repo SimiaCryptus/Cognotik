@@ -110,6 +110,84 @@ interface UsageInterface {
    */
   fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> =
     children.associateWith { getParentSession(user, it) }
+  /**
+   * Bulk variant of [listChildSessions]; DB-backed implementations should override
+   * this with a single `WHERE parent IN (...)` query.
+   *
+   * @return a map containing every requested parent (with an empty list when it has no children)
+   * @throws UnsupportedOperationException if the implementation cannot enumerate children
+   */
+  fun listChildSessionsBulk(user: User, parents: Collection<Session>): Map<Session, List<Session>> =
+    parents.associateWith { listChildSessions(user, it) }
+  /**
+   * Discovers all descendants of [root] transitively (breadth-first), using
+   * [listChildSessionsBulk] once per tree level.
+   *
+   * Cycle-safe: each session is reported at most once, at its shallowest depth.
+   *
+   * @param maxDepth maximum depth to descend (root is depth 0)
+   * @param maxSessions maximum number of descendants to return
+   * @return the discovered tree; [SessionTree.truncated] is set when a limit cut discovery short
+   * @throws UnsupportedOperationException if the implementation cannot enumerate children
+   */
+  fun listDescendantSessions(
+    user: User,
+    root: Session,
+    maxDepth: Int = DEFAULT_MAX_TREE_DEPTH,
+    maxSessions: Int = DEFAULT_MAX_TREE_SESSIONS,
+  ): SessionTree {
+    val edges = mutableListOf<SessionTreeEdge>()
+    val seen = hashSetOf(root)
+    var frontier = listOf(root)
+    var depth = 0
+    var truncated = false
+    while (frontier.isNotEmpty() && !truncated) {
+      val children = listChildSessionsBulk(user, frontier)
+      if (depth >= maxDepth) {
+        truncated = frontier.any { p -> children[p].orEmpty().any { it !in seen } }
+        break
+      }
+      val next = mutableListOf<Session>()
+      loop@ for (parent in frontier) {
+        for (child in children[parent].orEmpty()) {
+          if (!seen.add(child)) continue
+          if (edges.size >= maxSessions) {
+            truncated = true
+            break@loop
+          }
+          edges += SessionTreeEdge(session = child, parent = parent, depth = depth + 1)
+          next += child
+        }
+      }
+      frontier = next
+      depth++
+    }
+    return SessionTree(root = root, descendants = edges, truncated = truncated)
+  }
+  /** A single parent→child link discovered by [listDescendantSessions]. */
+  data class SessionTreeEdge(
+    val session: Session,
+    val parent: Session,
+    val depth: Int,
+  )
+  /**
+   * Result of [listDescendantSessions].
+   *
+   * @property descendants descendants in breadth-first order (root excluded)
+   * @property truncated true when a depth/size limit prevented full discovery
+   */
+  data class SessionTree(
+    val root: Session,
+    val descendants: List<SessionTreeEdge>,
+    val truncated: Boolean = false,
+  ) {
+    /** Root followed by all descendants. */
+    val sessions: List<Session> get() = listOf(root) + descendants.map { it.session }
+  }
+  companion object {
+    const val DEFAULT_MAX_TREE_DEPTH = 64
+    const val DEFAULT_MAX_TREE_SESSIONS = 5000
+  }
 
   /**
    * Returns the available budget (in cost units, e.g. USD) for a user.
