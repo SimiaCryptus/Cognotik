@@ -11,8 +11,6 @@ import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -252,8 +250,8 @@ abstract class ApplicationServer(
       FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
         val sessionOwner = request.session()?.let {
           ServiceRouter.getSessionOwner(
-            user = user!!,
-            session = it
+            session = it,
+            user = user!!
           )
         }
         return sessionOwner == null || sessionOwner == user?.id

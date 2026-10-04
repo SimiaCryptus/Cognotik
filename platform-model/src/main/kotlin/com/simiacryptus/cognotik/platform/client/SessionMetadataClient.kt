@@ -188,7 +188,8 @@ class SessionMetadataClient(
     ).ownerId
   }
 
-  override fun setSessionOwner(session: Session, user: User, ownerId: String?) {
+  override fun setSessionOwner(session: Session, user: User) {
+    val ownerId: String? = user?.id
     requireNotNull(user) { "user is required" }
     post("setSessionOwner", SetSessionOwnerRequest(session.sessionId, ownerId), user.getAuthCookies())
   }
@@ -201,8 +202,9 @@ class SessionMetadataClient(
     ).workerId
   }
 
-  override fun setSessionWorker(session: Session, user: User, ownerId: String?) {
-      log.info("setSessionWorker called with sessionId=${session.sessionId}, ownerId=$ownerId, user=${user}", /*RuntimeException("Stack Trace")*/)
+  override fun setSessionWorker(session: Session, user: User) {
+    val ownerId: String? = user?.id
+    log.info("setSessionWorker called with sessionId=${session.sessionId}, ownerId=$ownerId, user=${user}" /*RuntimeException("Stack Trace")*/)
     requireNotNull(user) { "user is required" }
     post("setSessionWorker", SetSessionWorkerRequest(session.sessionId, ownerId), user.getAuthCookies())
   }

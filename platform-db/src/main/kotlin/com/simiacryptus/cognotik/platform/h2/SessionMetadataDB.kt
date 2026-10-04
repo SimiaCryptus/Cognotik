@@ -180,7 +180,8 @@ class SessionMetadataDB : SessionMetadataInterface {
     }
   }
 
-  override fun setSessionOwner(session: Session, user: User, ownerId: String?) {
+  override fun setSessionOwner(session: Session, user: User) {
+    val ownerId: String? = user?.id
     log.info("setSessionOwner for session: {} to {}", session, ownerId)
     upsertMetadata(session.sessionId, "", "owner_id", ownerId)
   }
@@ -201,7 +202,8 @@ class SessionMetadataDB : SessionMetadataInterface {
     }
   }
 
-  override fun setSessionWorker(session: Session, user: User, workerId: String?) {
+  override fun setSessionWorker(session: Session, user: User) {
+    val workerId: String? = user?.id
     log.info("setSessionWorker for session: {} to {}", session, workerId)
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)

@@ -272,14 +272,14 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     override fun listSessionsForUser(user: User): List<String> =
       metadata.listSessionsForUser(user)
 
-    override fun setSessionOwner(session: Session, user: User, ownerId: String?) =
-      metadata.setSessionOwner(session = session, user = user, ownerId = ownerId)
+    override fun setSessionOwner(session: Session, user: User) =
+      metadata.setSessionOwner(session = session, user = user)
 
     override fun getSessionOwner(user: User, session: Session): String? =
       metadata.getSessionOwner(user, session)
 
-    override fun setSessionWorker(session: Session, user: User, ownerId: String?) =
-      metadata.setSessionWorker(session = session, user = user, ownerId = ownerId)
+    override fun setSessionWorker(session: Session, user: User) =
+      metadata.setSessionWorker(session = session, user = user)
 
     override fun getSessionWorker(user: User, session: Session): String? =
       metadata.getSessionWorker(user, session)
@@ -700,9 +700,8 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun setSessionOwner(
     session: Session,
-    user: User,
-    ownerId: String?
-  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionOwner(session, user, ownerId)
+    user: User
+  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionOwner(session, user)
 
   override fun getSessionOwner(
     user: User,
@@ -711,9 +710,8 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun setSessionWorker(
     session: Session,
-    user: User,
-    ownerId: String?
-  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionWorker(session, user, ownerId)
+    user: User
+  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionWorker(session, user)
 
   override fun getSessionWorker(
     user: User,

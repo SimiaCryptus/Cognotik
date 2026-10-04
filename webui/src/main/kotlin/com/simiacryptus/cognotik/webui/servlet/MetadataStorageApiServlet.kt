@@ -27,7 +27,6 @@ import com.simiacryptus.cognotik.platform.client.StatusResponse
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceRouter
-import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -118,8 +117,8 @@ class MetadataStorageApiServlet(
           val session = Session(requireParam(request, "sessionId"))
           writeJson(response, SessionOwnerResponse(
             ServiceRouter.getSessionOwner(
-              user = user,
-              session = session
+              session = session,
+              user = user
             )))
         }
 
@@ -128,8 +127,8 @@ class MetadataStorageApiServlet(
           val session = Session(requireParam(request, "sessionId"))
           writeJson(response, SessionWorkerResponse(
             ServiceRouter.getSessionWorker(
-              user = user,
-              session = session
+              session = session,
+              user = user
             )))
         }
 
@@ -249,7 +248,7 @@ class MetadataStorageApiServlet(
         "setSessionOwner" -> {
           val user = currentUser(request)
           val req = readBody(request, SetSessionOwnerRequest::class.java)
-          ServiceRouter.setSessionOwner(Session(req.sessionId), user, req.ownerId)
+          ServiceRouter.setSessionOwner(Session(req.sessionId), user)
           writeJson(response, StatusResponse())
         }
 
@@ -258,8 +257,7 @@ class MetadataStorageApiServlet(
           val req = readBody(request, SetSessionWorkerRequest::class.java)
           ServiceRouter.setSessionWorker(
             Session(req.sessionId),
-            user = user,
-            ownerId = req.workerId
+            user = user
           )
           writeJson(response, StatusResponse())
         }

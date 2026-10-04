@@ -14,7 +14,6 @@ import com.simiacryptus.cognotik.fileserver.handler.FsErrors
 import com.simiacryptus.cognotik.fileserver.handler.FsException
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
-import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.annotation.MultipartConfig
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -90,7 +89,7 @@ open class SessionFileServlet(val dataStorage: StorageInterface) : FilesystemSer
           )
           return
         } else if (req.method.uppercase() == "POST") {
-          val sessionOwner = metadataDB.getSessionOwner(user=user, session = session) ?: user.id
+          val sessionOwner = metadataDB.getSessionOwner(session = session, user=user) ?: user.id
           if (sessionOwner != user.id) {
             log.debug("FS API request rejected (user ${user.email} is not owner of session $sessionId; ${sessionOwner} is.)")
             FsErrors.write(

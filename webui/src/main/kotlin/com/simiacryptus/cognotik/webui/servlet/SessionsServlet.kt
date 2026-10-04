@@ -7,9 +7,7 @@ import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
-import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.service.UsageInterface
-import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -62,7 +60,7 @@ class SessionsServlet : HttpServlet() {
         }
         // Authorize: only the owner (or a user with a metadata entry for the session) can delete.
         val ownerId = try {
-            metadataDB.getSessionOwner(user=user, session = session)
+            metadataDB.getSessionOwner(session = session, user=user)
         } catch (e: Exception) {
             log.warn("Failed to fetch owner for session $sessionId", e)
             null
