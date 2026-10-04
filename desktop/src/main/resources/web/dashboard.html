@@ -130,6 +130,26 @@
   #toast { position: fixed; bottom: 16px; right: 16px; max-width: 480px; background: rgba(40,6,16,.95); border: 1px solid var(--danger); color: #fff; padding: 10px 14px; border-radius: 8px; display: none; z-index: 20; white-space: pre-wrap; cursor: pointer; }
   #toast.info { background: rgba(4,30,20,.95); border-color: var(--ok); }
   .loading { opacity: .55; pointer-events: none; }
+  [hidden] { display: none !important; }
+  .sev { display: inline-block; font-family: var(--display); font-size: 9.5px; letter-spacing: .12em; text-transform: uppercase; padding: 1px 7px; border-radius: 8px; border: 1px solid var(--border); white-space: nowrap; }
+  .sev.CRITICAL { color: var(--danger); border-color: rgba(255,77,109,.55); background: rgba(255,77,109,.1); }
+  .sev.WARNING { color: var(--warn); border-color: rgba(255,201,77,.5); background: rgba(255,201,77,.08); }
+  .sev.INFO { color: var(--accent); border-color: rgba(0,229,255,.4); background: rgba(0,229,255,.06); }
+  .state { font-family: var(--display); font-size: 10px; letter-spacing: .12em; }
+  .state.FIRING { color: var(--danger); }
+  .state.RESOLVED { color: var(--ok); }
+  nav button .badge { display: inline-block; min-width: 16px; margin-left: 6px; padding: 0 5px; border-radius: 8px; font: 600 10px var(--mono); letter-spacing: 0; color: #04060d; background: var(--warn); }
+  nav button .badge.crit { background: var(--danger); color: #fff; }
+  header .stat.firing b { color: var(--danger); }
+  .card.alerting { border-color: rgba(255,77,109,.6); box-shadow: 0 0 0 1px rgba(255,77,109,.2), 0 0 24px rgba(255,77,109,.15); }
+  .card .alert-flag { color: var(--danger); font-size: 11.5px; margin-top: 3px; }
+  tr.firing td:first-child { box-shadow: inset 3px 0 0 var(--danger); }
+  tr.disabled { opacity: .55; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; align-items: end; }
+  .actions { white-space: nowrap; }
+  .actions .btn { margin-right: 4px; }
+  button.btn.danger:hover:not(:disabled) { border-color: var(--danger); color: var(--danger); }
+  a[data-act], a[data-evtype], #ovEventsLink, #ovAlertsLink { cursor: pointer; color: var(--accent); }
   @keyframes rise { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: none; } }
   @keyframes sweep { from { background-position: 0% 0; } to { background-position: 200% 0; } }
   @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: .4; } }
@@ -143,11 +163,13 @@
     <button data-tab="overview" class="active">Overview</button>
     <button data-tab="explore">Explore</button>
     <button data-tab="events">Events</button>
+    <button data-tab="alerts">Alerts<span class="badge" id="alertBadge" hidden></span></button>
     <button data-tab="advanced" class="subtle" title="GraphQL console and schema">Advanced</button>
   </nav>
   <div class="spacer"></div>
   <span class="stat">Metrics: <b id="hdrMetrics">—</b></span>
   <span class="stat">Series: <b id="hdrSeries">—</b></span>
+  <span class="stat" id="hdrFiringWrap" hidden>Firing: <b id="hdrFiring">—</b></span>
   <span class="stat">Updated: <b id="hdrUpdated">—</b></span>
   <button class="btn small" id="btnRefresh" title="Reload the active tab">⟳ Refresh</button>
   <label class="inline">Auto
@@ -172,6 +194,10 @@
         <label class="inline"><input type="checkbox" id="ovHideEmpty"> Hide metrics without data</label>
         <label style="min-width:220px">Filter<input id="ovFilter" placeholder="metric name or description…"></label>
       </div>
+    </div>
+    <div class="panel" id="ovAlerts" hidden>
+      <h2>Firing alerts <span class="right"><a id="ovAlertsLink">Open in Alerts →</a></span></h2>
+      <div id="ovAlertList"></div>
     </div>
     <div id="ovSections"><div class="empty">Loading…</div></div>
     <div class="panel" style="margin-top:16px">
@@ -244,6 +270,66 @@
       <div id="evRows" class="empty">Not loaded.</div>
     </div>
   </section>
+  <!-- ================= Alerts ================= -->
+  <section class="tab" id="tab-alerts">
+    <div class="banner" id="noAlerting">The configured metrics backend does not evaluate alert policies (<span class="mono">supportsAlerting = false</span>).
+      Use a backend with alerting support to define policies and receive alerts.</div>
+    <div class="panel">
+      <h2>Firing <span class="muted" id="alFiringInfo" style="font:13px system-ui,sans-serif;letter-spacing:0;text-transform:none"></span>
+        <span class="right">
+          <button class="btn small" id="btnEvaluate" title="Evaluate all policies now">▶ Evaluate now</button>
+          <button class="btn small" data-csv="#alFiring" data-name="alerts-firing">CSV</button>
+        </span></h2>
+      <div id="alFiring" class="empty">Not loaded.</div>
+    </div>
+    <div class="panel">
+      <h2>Policies <span class="right">
+          <label class="inline"><input type="checkbox" id="alShowDisabled" checked> show disabled</label>
+          <button class="btn small primary" id="btnNewPolicy">+ New policy</button>
+          <button class="btn small" data-csv="#alPolicies" data-name="alert-policies">CSV</button>
+        </span></h2>
+      <div id="alPolicies" class="empty">Not loaded.</div>
+    </div>
+    <div class="panel" id="alEditor" hidden>
+      <h2 id="alEditorTitle">New policy</h2>
+      <div class="form-grid">
+        <label>Id<input id="peId" class="mono" placeholder="e.g. high-token-spend"></label>
+        <label>Metric<select id="peMetric"></select></label>
+        <label>Statistic
+          <select id="peStatistic"><option>VALUE</option><option>COUNT</option><option>MEAN</option><option>MIN</option><option>MAX</option></select>
+        </label>
+        <label>Comparison<select id="peComparison"></select></label>
+        <label>Threshold<input id="peThreshold" type="number" step="any" placeholder="0"></label>
+        <label>Severity
+          <select id="peSeverity"><option>INFO</option><option selected>WARNING</option><option>CRITICAL</option></select>
+        </label>
+      </div>
+      <div class="form-grid" style="margin-top:10px">
+        <label style="grid-column: span 2">Attribute filter<input id="peFilter" class="mono" placeholder="key=value, key2=value2"></label>
+        <label>Channels<input id="peChannels" class="mono" placeholder="comma separated, e.g. email, slack"></label>
+        <label class="inline"><input type="checkbox" id="peEnabled" checked> Enabled</label>
+      </div>
+      <label style="margin-top:10px">Description<input id="peDescription" placeholder="What does this alert mean?"></label>
+      <div class="muted" id="peHint" style="font-size:12px;margin-top:8px"></div>
+      <div class="row" style="margin-top:10px;align-items:center">
+        <button class="btn primary" id="peSave">Save policy</button>
+        <button class="btn" id="peCancel">Cancel</button>
+        <span class="muted mono" id="pePreview"></span>
+      </div>
+    </div>
+    <div class="panel">
+      <h2>History <span class="right"><span class="muted" id="alHistoryInfo"></span>
+        <button class="btn small" data-csv="#alHistory" data-name="alert-history">CSV</button></span></h2>
+      <div class="row" style="margin-bottom:8px">
+        <label>State<select id="alState"><option value="">Any</option><option>FIRING</option><option>RESOLVED</option></select></label>
+        <label>Severity<select id="alSeverity"><option value="">Any</option><option>CRITICAL</option><option>WARNING</option><option>INFO</option></select></label>
+        <label>Policy<select id="alPolicy" style="min-width:200px"><option value="">Any</option></select></label>
+        <label>Limit<select id="alLimit"><option>50</option><option selected>100</option><option>500</option><option>1000</option></select></label>
+      </div>
+      <div id="alHistory" class="empty">Not loaded.</div>
+    </div>
+  </section>
+
 
   <!-- ================= Advanced ================= -->
   <section class="tab" id="tab-advanced">
@@ -548,7 +634,35 @@ function renderEventChart(el, legendEl, buckets, fromMs, toMs, step, onPick) {
 }
 
 // ---------------------------------------------------------------- shared state
-const catalogue = { metrics: [], byName: new Map(), eventTypes: [], supports: null };
+const catalogue = { metrics: [], byName: new Map(), eventTypes: [], supports: null, firing: [], alerting: null };
+const POLICY_FIELDS = 'id metric kind unit comparison comparisonSymbol threshold statistic severity description channels enabled filter { key value } firingCount';
+const ALERT_FIELDS = 'id policyId metric severity state attributes { key value } value triggeredAt triggeredAtMs lastEvaluatedAt resolvedAt resolvedAtMs message policy { unit comparisonSymbol threshold statistic }';
+const SEV_RANK = { CRITICAL: 0, WARNING: 1, INFO: 2 };
+const sevChip = s => `<span class="sev ${esc(s)}">${esc(s)}</span>`;
+const stateChip = s => `<span class="state ${esc(s)}">${esc(s)}</span>`;
+const condText = p => !p ? '—' :
+  `${p.statistic && p.statistic !== 'VALUE' ? p.statistic.toLowerCase() + ' ' : ''}${p.comparisonSymbol} ${p.threshold == null ? '∞' : fmtUnit(p.threshold, p.unit)}`;
+const alertDuration = a => fmtDuration((a.resolvedAtMs ?? Date.now()) - a.triggeredAtMs);
+const sortAlerts = alerts => [...(alerts || [])].sort((a, b) =>
+  (SEV_RANK[a.severity] ?? 9) - (SEV_RANK[b.severity] ?? 9) || b.triggeredAtMs - a.triggeredAtMs);
+const exploreBtn = a => `<button class="btn small" data-act="explore" data-metric="${esc(a.metric)}" data-attrs="${esc(attrCsv(a.attributes))}" title="Show matching series">Explore</button>`;
+function setAlertingSupport(ok) {
+  catalogue.alerting = ok;
+  $('#noAlerting').style.display = ok === false ? 'block' : 'none';
+  $('#hdrFiringWrap').hidden = ok !== true;
+  ['#btnEvaluate', '#btnNewPolicy'].forEach(s => ($(s).disabled = ok === false));
+  if (ok === false) $('#alertBadge').hidden = true;
+}
+function setFiring(alerts) {
+  catalogue.firing = alerts || [];
+  const n = catalogue.firing.length;
+  $('#hdrFiring').textContent = fmtNum(n);
+  $('#hdrFiringWrap').classList.toggle('firing', n > 0);
+  const b = $('#alertBadge');
+  b.textContent = String(n);
+  b.hidden = !n || catalogue.alerting === false;
+  b.classList.toggle('crit', catalogue.firing.some(a => a.severity === 'CRITICAL'));
+}
 function setSupports(ok) {
   catalogue.supports = ok;
   $('#noQueries').style.display = ok === false ? 'block' : 'none';
@@ -579,9 +693,9 @@ function setCatalogue(metrics, eventTypes) {
 }
 
 // ---------------------------------------------------------------- tabs
-const TABS = ['overview', 'explore', 'events', 'advanced'];
+const TABS = ['overview', 'explore', 'events', 'alerts', 'advanced'];
 const activeTab = () => $('#nav button.active')?.dataset.tab;
-const loaded = { overview: false, explore: false, events: false };
+const loaded = { overview: false, explore: false, events: false, alerts: false };
 let advancedView = 'console';
 function showTab(name) {
   $$('#nav button').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
@@ -590,6 +704,7 @@ function showTab(name) {
   if (name === 'overview' && !loaded.overview) loadOverview();
   if (name === 'explore' && !loaded.explore) loadExplore();
   if (name === 'events' && !loaded.events) loadEvents();
+  if (name === 'alerts' && !loaded.alerts) loadAlerts();
   if (name === 'advanced') showAdvanced(advancedView);
 }
 function showAdvanced(view) {
@@ -607,6 +722,7 @@ function refreshActive() {
     case 'overview': return loadOverview();
     case 'explore': return loadExplore();
     case 'events': return loadEvents();
+    case 'alerts': return loadAlerts();
     case 'advanced': return advancedView === 'schema' ? loadSchema() : undefined;
   }
 }
@@ -629,13 +745,17 @@ const DIST = 'distribution { count sum min max mean }';
 const OVERVIEW_QUERY = `
 query Overview($since: String, $bucket: Int) {
   supportsQueries
+  supportsAlerting
+  triggeredAlerts { ${ALERT_FIELDS} }
   metrics { name kind unit description seriesCount attributes { name highCardinality } }
   aggregate { metric kind unit value seriesCount ${DIST} }
   eventTypes { name description counter attributes }
   eventTimeline(filter: { since: $since }, bucketSeconds: $bucket, groupBy: "type") { startMs key count }
 }`;
 const SECTIONS = [
+  ['Authentication', /auth|login/],
   ['Tokens & spend', /token|spend/],
+  ['AI errors', /\.ai\./],
   ['Cash & credits', /cash|credit|payment/],
   ['Apps', /app|session/],
   ['File transfer', /file|transfer/],
@@ -649,13 +769,15 @@ async function loadOverview() {
     const data = await gql(OVERVIEW_QUERY, { since: new Date(fromMs).toISOString(), bucket: step / 1000 });
     setSupports(data.supportsQueries);
     setCatalogue(data.metrics, data.eventTypes);
+    setAlertingSupport(data.supportsAlerting);
+    setFiring(data.triggeredAlerts);
     overviewData = { ...data, fromMs, toMs, step, aggByName: new Map((data.aggregate || []).map(a => [a.metric, a])) };
     loaded.overview = true;
     renderOverview();
   });
 }
 
-function metricCard(m, agg) {
+function metricCard(m, agg, nFiring = 0) {
   const unit = m.unit;
   let value = '—', detail = 'no data';
   if (agg) {
@@ -668,12 +790,13 @@ function metricCard(m, agg) {
       detail = `${agg.kind === 'GAUGE' ? 'current (sum)' : 'total'} · ${fmtNum(agg.seriesCount)} series`;
     }
   }
-  return `<div class="card${agg ? '' : ' nodata'}" data-metric="${esc(m.name)}" title="${esc(m.description)}">
+  return `<div class="card${agg ? '' : ' nodata'}${nFiring ? ' alerting' : ''}" data-metric="${esc(m.name)}" title="${esc(m.description)}">
     <span class="kind">${esc((m.kind || '?').toLowerCase())}</span>
     <div class="k">${esc(shortName(m.name))}</div>
     <div class="v">${esc(value)}</div>
     <div class="d">${esc(detail)}</div>
     <div class="d">${esc(m.description)}${unit && unit !== 'None' ? ` <span class="chip">${esc(unit)}</span>` : ''}</div>
+    ${nFiring ? `<div class="alert-flag">⚠ ${nFiring} alert${nFiring > 1 ? 's' : ''} firing</div>` : ''}
   </div>`;
 }
 
@@ -684,16 +807,31 @@ function renderOverview() {
   const q = $('#ovFilter').value.trim().toLowerCase();
   const groups = new Map(SECTIONS.map(([n]) => [n, []]));
   groups.set('Other', []);
+  const firing = sortAlerts(d.triggeredAlerts);
+  const firingByMetric = new Map();
+  for (const a of firing) firingByMetric.set(a.metric, (firingByMetric.get(a.metric) || 0) + 1);
   for (const m of d.metrics) {
     const agg = d.aggByName.get(m.name);
     if (hideEmpty && !agg) continue;
     if (q && !(m.name.toLowerCase().includes(q) || (m.description || '').toLowerCase().includes(q))) continue;
     const sec = SECTIONS.find(([, re]) => re.test(m.name))?.[0] || 'Other';
-    groups.get(sec).push(metricCard(m, agg));
+    groups.get(sec).push(metricCard(m, agg, firingByMetric.get(m.name) || 0));
   }
   const html = [...groups].filter(([, cards]) => cards.length)
     .map(([name, cards]) => `<h3 class="section">${esc(name)}</h3><div class="cards">${cards.join('')}</div>`).join('');
   $('#ovSections').innerHTML = html || '<div class="empty">No metrics match.</div>';
+  $('#ovAlerts').hidden = !firing.length;
+  const top = firing.slice(0, 8);
+  $('#ovAlertList').innerHTML = firing.length ? `<table><tbody>${top.map(a => `<tr class="firing">
+      <td>${sevChip(a.severity)}</td>
+      <td class="mono">${esc(a.policyId)}</td>
+      <td class="mono">${esc(shortName(a.metric))}</td>
+      <td>${attrChips(a.attributes)}</td>
+      <td class="num">${esc(fmtUnit(a.value, a.policy?.unit))}</td>
+      <td class="muted">${esc(a.message)}</td>
+      <td class="num muted">${esc(alertDuration(a))}</td>
+      <td class="actions">${exploreBtn(a)}</td>
+    </tr>`).join('')}</tbody></table>${firing.length > top.length ? `<div class="muted" style="margin-top:6px">…and ${fmtNum(firing.length - top.length)} more</div>` : ''}` : '';
   renderEventChart($('#ovEventChart'), $('#ovEventLegend'), d.eventTimeline, d.fromMs, d.toMs, d.step, (k, step) => {
     trafficRange(k, k + step);
     showTab('events');
@@ -712,6 +850,11 @@ $('#ovSections').addEventListener('click', e => {
   loadExplore();
 });
 $('#ovEventsLink').addEventListener('click', () => showTab('events'));
+$('#ovAlertsLink').addEventListener('click', () => showTab('alerts'));
+$('#ovAlertList').addEventListener('click', e => {
+  const b = e.target.closest('[data-act=explore]');
+  if (b) exploreAlert(b.dataset.metric, b.dataset.attrs);
+});
 
 // ---------------------------------------------------------------- explore
 const EXPLORE_QUERY = `
@@ -924,6 +1067,309 @@ $('#evJson').addEventListener('click', () => {
   if (!evState.events.length) { toast('Nothing to export'); return; }
   download('events.json', JSON.stringify(evState.events, null, 2), 'application/json');
 });
+// ---------------------------------------------------------------- alerts
+const ALERTS_QUERY = `
+query Alerts($f: AlertFilter, $limit: Int) {
+  supportsAlerting
+  triggeredAlerts { ${ALERT_FIELDS} }
+  alertPolicies { ${POLICY_FIELDS} }
+  alerts(filter: $f, limit: $limit) { ${ALERT_FIELDS} }
+}`;
+const PUT_POLICY = 'mutation Put($p: AlertPolicyInput!) { putAlertPolicy(policy: $p) { id } }';
+const AL_KEY = 'metricsDashboard.alerts';
+const COMPARISONS = [
+  ['GREATER_THAN', '>'], ['GREATER_OR_EQUAL', '≥'], ['LESS_THAN', '<'],
+  ['LESS_OR_EQUAL', '≤'], ['EQUAL', '='], ['NOT_EQUAL', '≠'],
+];
+$('#peComparison').innerHTML = COMPARISONS.map(([v, s]) => `<option value="${v}">${esc(s)}  ${esc(v.toLowerCase().replace(/_/g, ' '))}</option>`).join('');
+const alState = { policies: [], firing: [], history: [], editing: null };
+const policyById = id => alState.policies.find(p => p.id === id);
+async function ensureMetrics() {
+  if (catalogue.metrics.length) return;
+  try {
+    const d = await gql('query { metrics { name kind unit description seriesCount attributes { name highCardinality } } }');
+    setCatalogue(d.metrics);
+  } catch (e) { toast(e.message); }
+}
+function saveAlertPrefs() {
+  store(AL_KEY, { state: $('#alState').value, severity: $('#alSeverity').value, limit: $('#alLimit').value, showDisabled: $('#alShowDisabled').checked });
+}
+function alertFilter() {
+  const f = {};
+  if ($('#alState').value) f.state = $('#alState').value;
+  if ($('#alSeverity').value) f.severity = $('#alSeverity').value;
+  if ($('#alPolicy').value) f.policyId = $('#alPolicy').value;
+  return f;
+}
+async function loadAlerts() {
+  saveAlertPrefs();
+  await ensureMetrics();
+  await busy($('#tab-alerts'), async () => {
+    const data = await gql(ALERTS_QUERY, { f: alertFilter(), limit: Number($('#alLimit').value) || 100 });
+    setAlertingSupport(data.supportsAlerting);
+    alState.firing = data.triggeredAlerts || [];
+    alState.policies = data.alertPolicies || [];
+    alState.history = data.alerts || [];
+    setFiring(alState.firing);
+    loaded.alerts = true;
+    renderPolicyOptions();
+    renderFiring();
+    renderPolicies();
+    renderAlertHistory();
+    $('#hdrUpdated').textContent = new Date().toLocaleTimeString();
+  });
+}
+function renderPolicyOptions() {
+  const sel = $('#alPolicy'), cur = sel.value;
+  sel.innerHTML = '<option value="">Any</option>' + alState.policies.map(p => `<option value="${esc(p.id)}">${esc(p.id)}</option>`).join('');
+  sel.value = alState.policies.some(p => p.id === cur) ? cur : '';
+}
+function renderFiring() {
+  const el = $('#alFiring');
+  const rows = sortAlerts(alState.firing);
+  $('#alFiringInfo').textContent = rows.length ? `· ${fmtNum(rows.length)} active` : '';
+  if (!rows.length) {
+    el.className = 'empty';
+    el.innerHTML = catalogue.alerting === false ? 'Alerting is not supported.' : 'No alerts firing. ✓';
+    return;
+  }
+  el.className = '';
+  el.innerHTML = `<table>
+    <thead><tr><th>Severity</th><th>Policy</th><th>Metric</th><th data-nosort>Attributes</th><th class="num">Value</th>
+      <th>Condition</th><th>Since</th><th class="num">Duration</th><th>Message</th><th data-nosort></th></tr></thead>
+    <tbody>${rows.map(a => `<tr class="firing">
+      <td data-v="${SEV_RANK[a.severity] ?? 9}" data-csv="${esc(a.severity)}">${sevChip(a.severity)}</td>
+      <td class="mono"><a data-act="edit" data-id="${esc(a.policyId)}" title="Edit policy">${esc(a.policyId)}</a></td>
+      <td class="mono" data-csv="${esc(a.metric)}">${esc(shortName(a.metric))}</td>
+      <td data-csv="${esc(attrCsv(a.attributes))}">${attrChips(a.attributes)}</td>
+      ${numCell(a.value, v => fmtUnit(v, a.policy?.unit))}
+      <td class="mono">${esc(condText(a.policy))}</td>
+      <td style="white-space:nowrap" data-v="${a.triggeredAtMs}" data-csv="${esc(a.triggeredAt)}">${esc(fmtTime(a.triggeredAtMs))}</td>
+      <td class="num" data-v="${Date.now() - a.triggeredAtMs}">${esc(alertDuration(a))}</td>
+      <td>${esc(a.message)}</td>
+      <td class="actions" data-csv="">${exploreBtn(a)}</td>
+    </tr>`).join('')}</tbody></table>`;
+  enhanceTables(el);
+}
+function renderPolicies() {
+  const el = $('#alPolicies');
+  const showDisabled = $('#alShowDisabled').checked;
+  const rows = alState.policies.filter(p => showDisabled || p.enabled);
+  if (!rows.length) {
+    el.className = 'empty';
+    el.innerHTML = alState.policies.length ? 'All policies are disabled (enable “show disabled” to see them).'
+      : catalogue.alerting === false ? 'Alerting is not supported.' : 'No alert policies defined. Use “+ New policy” to create one.';
+    return;
+  }
+  el.className = '';
+  el.innerHTML = `<table>
+    <thead><tr><th>Id</th><th>Metric</th><th>Condition</th><th data-nosort>Filter</th><th>Severity</th><th>Channels</th>
+      <th>Enabled</th><th class="num">Firing</th><th data-nosort></th></tr></thead>
+    <tbody>${rows.map(p => `<tr class="${p.firingCount ? 'firing' : ''}${p.enabled ? '' : ' disabled'}">
+      <td class="mono" data-csv="${esc(p.id)}">${esc(p.id)}${p.description ? `<div class="muted" style="font-family:system-ui,sans-serif;font-size:11.5px">${esc(p.description)}</div>` : ''}</td>
+      <td class="mono" data-csv="${esc(p.metric)}">${esc(shortName(p.metric))} <span class="muted">${esc((p.kind || '').toLowerCase())}</span></td>
+      <td class="mono">${esc(condText(p))}</td>
+      <td data-csv="${esc(attrCsv(p.filter))}">${attrChips(p.filter)}</td>
+      <td data-v="${SEV_RANK[p.severity] ?? 9}" data-csv="${esc(p.severity)}">${sevChip(p.severity)}</td>
+      <td data-csv="${esc((p.channels || []).join('; '))}">${(p.channels || []).map(c => `<span class="chip">${esc(c)}</span>`).join('') || '<span class="muted">—</span>'}</td>
+      <td data-v="${p.enabled ? 1 : 0}" data-csv="${p.enabled}"><input type="checkbox" data-toggle="${esc(p.id)}" ${p.enabled ? 'checked' : ''} title="Enable / disable"></td>
+      ${numCell(p.firingCount)}
+      <td class="actions" data-csv="">
+        <button class="btn small" data-act="edit" data-id="${esc(p.id)}">Edit</button><button class="btn small" data-act="copy" data-id="${esc(p.id)}">Copy</button><button class="btn small" data-act="history" data-id="${esc(p.id)}" title="Show history for this policy">History</button><button class="btn small danger" data-act="delete" data-id="${esc(p.id)}">Delete</button>
+      </td>
+    </tr>`).join('')}</tbody></table>`;
+  enhanceTables(el);
+}
+function renderAlertHistory() {
+  const el = $('#alHistory');
+  const rows = alState.history;
+  $('#alHistoryInfo').textContent = rows.length ? `${fmtNum(rows.length)} shown` : '';
+  if (!rows.length) { el.className = 'empty'; el.innerHTML = 'No alerts match.'; return; }
+  el.className = '';
+  el.innerHTML = `<table>
+    <thead><tr><th>Triggered</th><th>State</th><th>Severity</th><th>Policy</th><th>Metric</th><th data-nosort>Attributes</th>
+      <th class="num">Value</th><th>Resolved</th><th class="num">Duration</th><th>Message</th></tr></thead>
+    <tbody>${rows.map(a => `<tr class="${a.state === 'FIRING' ? 'firing' : ''}">
+      <td style="white-space:nowrap" data-v="${a.triggeredAtMs}" data-csv="${esc(a.triggeredAt)}">${esc(fmtTime(a.triggeredAtMs))}</td>
+      <td data-csv="${esc(a.state)}">${stateChip(a.state)}</td>
+      <td data-v="${SEV_RANK[a.severity] ?? 9}" data-csv="${esc(a.severity)}">${sevChip(a.severity)}</td>
+      <td class="mono"><a data-act="history" data-id="${esc(a.policyId)}" title="Filter on this policy">${esc(a.policyId)}</a></td>
+      <td class="mono" data-csv="${esc(a.metric)}">${esc(shortName(a.metric))}</td>
+      <td data-csv="${esc(attrCsv(a.attributes))}">${attrChips(a.attributes)}</td>
+      ${numCell(a.value, v => fmtUnit(v, a.policy?.unit))}
+      <td style="white-space:nowrap" data-v="${a.resolvedAtMs ?? ''}" data-csv="${esc(a.resolvedAt ?? '')}">${a.resolvedAtMs != null ? esc(fmtTime(a.resolvedAtMs)) : '<span class="muted">—</span>'}</td>
+      <td class="num" data-v="${(a.resolvedAtMs ?? Date.now()) - a.triggeredAtMs}">${esc(alertDuration(a))}</td>
+      <td>${esc(a.message)}</td>
+    </tr>`).join('')}</tbody></table>`;
+  enhanceTables(el);
+}
+// --- policy editor
+function openEditor(p = null, copy = false) {
+  if (catalogue.alerting === false) { toast('Alerting is not supported by this backend'); return; }
+  alState.editing = p && !copy ? p.id : null;
+  $('#alEditorTitle').textContent = alState.editing ? `Edit policy · ${p.id}` : copy ? `New policy (copy of ${p.id})` : 'New policy';
+  const names = catalogue.metrics.map(m => m.name);
+  if (p && !names.includes(p.metric)) names.unshift(p.metric);
+  $('#peMetric').innerHTML = '<option value="">— choose metric —</option>' + names.map(n => {
+    const m = catalogue.byName.get(n);
+    return `<option value="${esc(n)}">${esc(shortName(n))}${m?.kind ? ` (${esc(m.kind.toLowerCase())})` : ''}</option>`;
+  }).join('');
+  $('#peMetric').value = p?.metric || '';
+  $('#peId').value = p ? (copy ? `${p.id}-copy` : p.id) : '';
+  $('#peId').readOnly = !!alState.editing;
+  $('#peStatistic').value = p?.statistic || 'VALUE';
+  $('#peComparison').value = p?.comparison || 'GREATER_THAN';
+  $('#peThreshold').value = p?.threshold ?? '';
+  $('#peSeverity').value = p?.severity || 'WARNING';
+  $('#peFilter').value = (p?.filter || []).map(a => `${a.key}=${a.value}`).join(', ');
+  $('#peChannels').value = (p?.channels || []).join(', ');
+  $('#peEnabled').checked = p ? !!p.enabled : true;
+  $('#peDescription').value = p?.description || '';
+  $('#alEditor').hidden = false;
+  updateEditorHint();
+  $('#alEditor').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  (alState.editing ? $('#peThreshold') : $('#peId')).focus();
+}
+function closeEditor() {
+  alState.editing = null;
+  $('#alEditor').hidden = true;
+}
+function updateEditorHint() {
+  const m = catalogue.byName.get($('#peMetric').value);
+  const stat = $('#peStatistic').value;
+  const parts = [];
+  if (m) {
+    const attrs = (m.attributes || []).filter(a => !a.highCardinality);
+    parts.push(`${esc(m.description)} <span class="chip">${esc(m.kind || '?')}</span><span class="chip">${esc(m.unit)}</span>`);
+    parts.push(`Filterable attributes: ${attrs.map(a => `<a class="chip" data-pefilter="${esc(a.name)}" title="Add to filter">${esc(a.name)}</a>`).join('') || '<span class="muted">none</span>'}`);
+    if (stat !== 'VALUE' && m.kind && m.kind !== 'DISTRIBUTION') {
+      parts.push(`<span style="color:var(--warn)">⚠ ${esc(stat)} is typically only meaningful for distributions; consider VALUE for a ${esc(m.kind.toLowerCase())}.</span>`);
+    }
+  }
+  $('#peHint').innerHTML = parts.join('<br>');
+  const thr = $('#peThreshold').value.trim();
+  const sym = Object.fromEntries(COMPARISONS)[$('#peComparison').value] || '?';
+  const metricName = $('#peMetric').value;
+  $('#pePreview').textContent = metricName && thr !== '' && isFinite(Number(thr))
+    ? `Fires when ${stat === 'VALUE' ? '' : stat.toLowerCase() + ' of '}${shortName(metricName)} ${sym} ${fmtUnit(Number(thr), m?.unit)}`
+    : '';
+}
+async function savePolicy() {
+  const id = $('#peId').value.trim();
+  const metric = $('#peMetric').value;
+  const thrRaw = $('#peThreshold').value.trim();
+  const threshold = Number(thrRaw);
+  if (!id) { toast('Policy id is required'); return; }
+  if (!metric) { toast('Choose a metric'); return; }
+  if (thrRaw === '' || !isFinite(threshold)) { toast('Threshold must be a number'); return; }
+  if (!alState.editing && policyById(id) && !confirm(`A policy "${id}" already exists. Replace it?`)) return;
+  const filter = parseAttrFilter($('#peFilter').value);
+  const m = catalogue.byName.get(metric);
+  if (m) {
+    const allowed = new Set((m.attributes || []).filter(a => !a.highCardinality).map(a => a.name));
+    const bad = filter.filter(a => !allowed.has(a.key)).map(a => a.key);
+    if (bad.length) { toast(`Not a filterable attribute of ${metric}: ${bad.join(', ')}`); return; }
+  }
+  const policy = {
+    id, metric, threshold, filter,
+    comparison: $('#peComparison').value,
+    statistic: $('#peStatistic').value,
+    severity: $('#peSeverity').value,
+    description: $('#peDescription').value.trim(),
+    channels: $('#peChannels').value.split(/[,;\s]+/).map(s => s.trim()).filter(Boolean),
+    enabled: $('#peEnabled').checked,
+  };
+  let saved = false;
+  await busy($('#alEditor'), async () => {
+    await gql(PUT_POLICY, { p: policy });
+    saved = true;
+    toast(`Saved policy ${id}`, 'info');
+    closeEditor();
+  });
+  if (saved) await loadAlerts();
+}
+const policyInput = p => ({
+  id: p.id, metric: p.metric, comparison: p.comparison, threshold: p.threshold,
+  filter: (p.filter || []).map(({ key, value }) => ({ key, value })),
+  statistic: p.statistic, severity: p.severity, description: p.description || '',
+  channels: p.channels || [], enabled: p.enabled,
+});
+async function togglePolicy(id, enabled) {
+  const p = policyById(id);
+  if (!p) return;
+  if (p.threshold == null) { toast('This policy has a non-finite threshold and cannot be edited here'); renderPolicies(); return; }
+  await busy($('#alPolicies'), async () => {
+    await gql(PUT_POLICY, { p: { ...policyInput(p), enabled } });
+    toast(`${enabled ? 'Enabled' : 'Disabled'} ${id}`, 'info');
+  });
+  await loadAlerts();
+}
+async function deletePolicy(id) {
+  if (!confirm(`Delete alert policy "${id}"?\nIts active alerts are dropped without notification.`)) return;
+  await busy($('#alPolicies'), async () => {
+    const d = await gql('mutation Rm($id: String!) { removeAlertPolicy(id: $id) }', { id });
+    toast(d.removeAlertPolicy ? `Deleted ${id}` : `Policy ${id} did not exist`, 'info');
+    if (alState.editing === id) closeEditor();
+  });
+  await loadAlerts();
+}
+async function evaluateNow() {
+  await busy($('#btnEvaluate'), async () => {
+    const d = await gql('mutation { evaluateAlerts { id } }');
+    const n = d.evaluateAlerts?.length || 0;
+    toast(`Evaluated · ${n} alert${n === 1 ? '' : 's'} firing`, 'info');
+  });
+  await loadAlerts();
+}
+function exploreAlert(metric, attrs) {
+  $('#exMetric').value = catalogue.byName.has(metric) ? metric : '';
+  $('#exKind').value = '';
+  $('#exAttrs').value = parseAttrFilter(attrs).map(a => `${a.key}=${a.value}`).join(', ');
+  renderGroupByChecks();
+  const wasLoaded = loaded.explore;
+  showTab('explore');
+  if (wasLoaded) loadExplore();
+}
+$('#tab-alerts').addEventListener('click', e => {
+  const b = e.target.closest('[data-act]');
+  if (!b) return;
+  const id = b.dataset.id;
+  switch (b.dataset.act) {
+    case 'edit': { const p = policyById(id); if (p) openEditor(p); else toast(`Unknown policy ${id}`); break; }
+    case 'copy': { const p = policyById(id); if (p) openEditor(p, true); break; }
+    case 'delete': deletePolicy(id); break;
+    case 'history':
+      $('#alPolicy').value = id;
+      loadAlerts().then(() => $('#alHistory').scrollIntoView({ behavior: 'smooth', block: 'nearest' }));
+      break;
+    case 'explore': exploreAlert(b.dataset.metric, b.dataset.attrs); break;
+  }
+});
+$('#alPolicies').addEventListener('change', e => {
+  const t = e.target.closest('input[data-toggle]');
+  if (t) togglePolicy(t.dataset.toggle, t.checked);
+});
+$('#alShowDisabled').addEventListener('change', () => { saveAlertPrefs(); renderPolicies(); });
+['#alState', '#alSeverity', '#alPolicy', '#alLimit'].forEach(s => $(s).addEventListener('change', () => loadAlerts()));
+$('#btnNewPolicy').addEventListener('click', async () => { await ensureMetrics(); openEditor(); });
+$('#btnEvaluate').addEventListener('click', evaluateNow);
+$('#peSave').addEventListener('click', savePolicy);
+$('#peCancel').addEventListener('click', closeEditor);
+['#peMetric', '#peStatistic', '#peComparison'].forEach(s => $(s).addEventListener('change', updateEditorHint));
+$('#peThreshold').addEventListener('input', updateEditorHint);
+$('#peHint').addEventListener('click', e => {
+  const a = e.target.closest('[data-pefilter]');
+  if (!a) return;
+  const input = $('#peFilter');
+  const list = parseAttrFilter(input.value).filter(x => x.key !== a.dataset.pefilter);
+  input.value = [...list.map(x => `${x.key}=${x.value}`), `${a.dataset.pefilter}=`].join(', ');
+  input.focus();
+  input.setSelectionRange(input.value.length, input.value.length);
+});
+$('#alEditor').addEventListener('keydown', e => {
+  if (e.key === 'Escape') closeEditor();
+  else if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) { e.preventDefault(); savePolicy(); }
+});
 
 // ---------------------------------------------------------------- console
 const EXAMPLES = {
@@ -932,7 +1378,13 @@ const EXAMPLES = {
   'Token usage by model': [`query Tokens($g: [String!]) {\n  aggregate(filter: { metricPrefix: "cognotik.token" }, groupBy: $g) { metric unit key { key value } value seriesCount }\n}`, { g: ['model'] }],
   'Series with attribute filter': [`query Series($f: SeriesFilter) {\n  series(filter: $f, limit: 100) { metric kind unit attributes { key value } value ${DIST} }\n}`, { f: { attributes: [{ key: 'outcome', value: 'failure' }] } }],
   'Recent events': ['query Events($f: EventFilter) {\n  events(filter: $f, limit: 50) { type timestamp attributes { key value } }\n}', { f: {} }],
-  'Event timeline (by app)': ['query Timeline($f: EventFilter) {\n  eventTimeline(filter: $f, bucketSeconds: 3600, groupBy: "app") { start key count }\n}', { f: {} }]
+  'Event timeline (by app)': ['query Timeline($f: EventFilter) {\n  eventTimeline(filter: $f, bucketSeconds: 3600, groupBy: "app") { start key count }\n}', { f: {} }],
+  'Alert policies': ['query {\n  supportsAlerting\n  alertPolicies { id metric comparisonSymbol threshold statistic severity enabled firingCount filter { key value } channels }\n}', {}],
+  'Firing alerts': ['query {\n  triggeredAlerts { id policyId metric severity value triggeredAt message attributes { key value } }\n}', {}],
+  'Alert history': ['query Alerts($f: AlertFilter) {\n  alerts(filter: $f, limit: 50) { policyId state severity value triggeredAt resolvedAt message }\n}', { f: { state: 'RESOLVED' } }],
+  'Create alert policy': ['mutation Put($p: AlertPolicyInput!) {\n  putAlertPolicy(policy: $p) { id metric comparisonSymbol threshold severity enabled }\n}',
+    { p: { id: 'ai-errors', metric: 'cognotik.ai.errors', comparison: 'GREATER_THAN', threshold: 10, severity: 'WARNING', description: 'Too many AI errors' } }],
+  'Evaluate alerts': ['mutation {\n  evaluateAlerts { id policyId severity value message }\n}', {}]
 };
 const exSel = $('#exampleSel');
 exSel.innerHTML = '<option value="">— choose —</option>' + Object.keys(EXAMPLES).map(k => `<option>${esc(k)}</option>`).join('');
@@ -1024,6 +1476,11 @@ window.addEventListener('resize', () => {
   if (ev.attrs) $('#evAttrs').value = ev.attrs;
   setEvRange(evState.rangeHours || 24);
   markEvPreset();
+  const al = load(AL_KEY, {});
+  if (al.state) $('#alState').value = al.state;
+  if (al.severity) $('#alSeverity').value = al.severity;
+  if (al.limit) $('#alLimit').value = al.limit;
+  if (al.showDisabled === false) $('#alShowDisabled').checked = false;
   setupAuto();
   const h = location.hash.slice(1);
   if (h === 'schema') advancedView = 'schema';

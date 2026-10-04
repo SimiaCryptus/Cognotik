@@ -616,6 +616,8 @@ class MetricServlet(
 
     private val BUILTIN_METRICS: List<MetricType> = listOf(
       MetricType.TOKENS_USED, MetricType.TOKEN_SPEND,
+      MetricType.AI_ERRORS,
+      MetricType.AUTH_CALLBACKS, MetricType.AUTH_SESSION_VERIFICATIONS, MetricType.AUTH_FLOW_DURATION,
       MetricType.INPUT_CASH,
       MetricType.CREDITS_BANKED, MetricType.CREDITS_GRANTED,
       MetricType.APP_SESSIONS, MetricType.APP_ACTIVE_SESSIONS, MetricType.APP_SESSION_DURATION,
@@ -627,6 +629,8 @@ class MetricServlet(
 
     private val BUILTIN_EVENTS: List<EventType> = listOf(
       EventType.APP_STARTED, EventType.APP_COMPLETED,
+      EventType.USER_REGISTERED, EventType.LOGGED_OUT, EventType.LOGIN_ATTEMPTED,
+      EventType.AI_ERROR,
       EventType.FILE_TRANSFERRED,
       EventType.PAYMENT_RECEIVED, EventType.CREDITS_GRANTED,
       EventType.FARGATE_NODE_STARTED, EventType.FARGATE_NODE_STOPPED,

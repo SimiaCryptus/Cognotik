@@ -171,19 +171,25 @@ interface MetricType {
   fun sanitize(attrs: Attributes): Attributes = attrs.restrictTo(attributes).withoutHighCardinality()
 
   companion object {
-    val AUTH_CALLBACKS: CounterType = CounterType.of(
-      "cognotik.auth.callbacks", MetricUnit.COUNT, "Authentication callbacks received",
-      MetricAttribute.LOGIN_METHOD, MetricAttribute.OUTCOME, MetricAttribute.REASON,
-    )
-    val AUTH_SESSION_VERIFICATIONS: CounterType = CounterType.of(
-      "cognotik.auth.session_verifications", MetricUnit.COUNT, "Session token verifications",
-      MetricAttribute.OUTCOME, MetricAttribute.REASON,
-    )
-    val AUTH_FLOW_DURATION: DistributionType = DistributionType.of(
-      "cognotik.auth.flow_duration", MetricUnit.MILLISECONDS, "Duration of interactive authentication flows",
-      MetricAttribute.LOGIN_METHOD, MetricAttribute.OUTCOME, MetricAttribute.REASON,
-    )
-    val NAME_REGEX = Regex("[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*")
+    val AUTH_CALLBACKS: CounterType by lazy {
+      CounterType.of(
+        "cognotik.auth.callbacks", MetricUnit.COUNT, "Authentication callbacks received",
+        MetricAttribute.LOGIN_METHOD, MetricAttribute.OUTCOME, MetricAttribute.REASON,
+      )
+    }
+    val AUTH_SESSION_VERIFICATIONS: CounterType by lazy {
+      CounterType.of(
+        "cognotik.auth.session_verifications", MetricUnit.COUNT, "Session token verifications",
+        MetricAttribute.OUTCOME, MetricAttribute.REASON,
+      )
+    }
+    val AUTH_FLOW_DURATION: DistributionType by lazy {
+      DistributionType.of(
+        "cognotik.auth.flow_duration", MetricUnit.MILLISECONDS, "Duration of interactive authentication flows",
+        MetricAttribute.LOGIN_METHOD, MetricAttribute.OUTCOME, MetricAttribute.REASON,
+      )
+    }
+    val NAME_REGEX by lazy { Regex("[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*") }
 
     // ---------------- Token spend ----------------
     val TOKENS_USED: CounterType by lazy {
