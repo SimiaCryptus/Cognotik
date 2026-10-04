@@ -1,9 +1,14 @@
 package com.simiacryptus.cognotik.cli
 
 import com.google.common.net.UrlEscapers
+import com.simiacryptus.cognotik.cli.CliSupport.defaultUser
 import com.simiacryptus.cognotik.cli.CliSupport.fail
 import com.simiacryptus.cognotik.fileserver.handler.GitOperationHandler
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.webui.servlet.ResourceExtractor
+import jakarta.servlet.http.HttpServletRequest
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
@@ -130,6 +135,14 @@ object SessionServerCli {
 
   /** Seeds [workDir] like `DocOpsApp.newSession`, using the zip at [zipUrl]. */
   fun initialize(workDir: File, zipUrl: String, strip: Boolean, tools: Boolean, git: Boolean) {
+    CognotikPlatform.init()
+    ServiceKey.USER_RESOLVER.factory = {
+      object : UserProvider {
+        override fun authenticate(
+          request: HttpServletRequest
+        ) = defaultUser
+      }
+    }
     if (tools) {
       val toolsDir = File(workDir, TOOLS_DIR).apply { mkdirs() }
       val extracted = ResourceExtractor.extract(TOOLS_RESOURCE, toolsDir, javaClass.classLoader)

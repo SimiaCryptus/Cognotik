@@ -1,10 +1,14 @@
 package com.simiacryptus.cognotik.cli
 
+import com.simiacryptus.cognotik.cli.CliSupport.defaultUser
 import com.simiacryptus.cognotik.fileserver.StaticZipServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
@@ -253,6 +257,14 @@ open class FileServer {
   // ---------------------------------------------------------------------------------
 
   fun run(args: Array<String>) {
+    CognotikPlatform.init()
+    ServiceKey.USER_RESOLVER.factory = {
+      object : UserProvider {
+        override fun authenticate(
+          request: HttpServletRequest
+        ) = defaultUser
+      }
+    }
     DatabaseFacet.root = File(".").absolutePath
 
     val parsed = parseArgs(args) ?: run {

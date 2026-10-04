@@ -2,11 +2,16 @@ package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.autofix.AutoFixTask
 import com.simiacryptus.cognotik.cli.CliSupport.Models
+import com.simiacryptus.cognotik.cli.CliSupport.defaultUser
 import com.simiacryptus.cognotik.cli.CliSupport.email
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.UnifiedHarness
+import jakarta.servlet.http.HttpServletRequest
 import java.awt.Desktop
 import java.io.File
 import java.io.PrintStream
@@ -41,6 +46,14 @@ object AutoFixCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
+    CognotikPlatform.init()
+    ServiceKey.USER_RESOLVER.factory = {
+      object : UserProvider {
+        override fun authenticate(
+          request: HttpServletRequest
+        ) = defaultUser
+      }
+    }
     DatabaseFacet.root = File(".").absolutePath
     val user = CliSupport.defaultUser
     CliSupport.bootstrapPlatform(user)
