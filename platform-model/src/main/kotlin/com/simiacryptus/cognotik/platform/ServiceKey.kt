@@ -76,7 +76,10 @@ class ServiceKey<T : Any>(
     val USER_RESOLVER = ServiceKey("userResolver", UserProvider::class)
     val AUTHENTICATION = ServiceKey("authenticationManager", AuthenticationInterface::class)
     val GIFTED_CREDITS = ServiceKey("giftedCreditsDB", GiftedCreditsInterface::class)
+     /**
+      * Central metrics backend (CloudWatch, Prometheus, or a [CompositeMetrics] of both).
+      * Callers should create it once and cache it; fall back to [NoOpMetrics] when unregistered.
+      */
+     val METRICS = ServiceKey("metrics", MetricsInterface::class)
   }
 }
-
-

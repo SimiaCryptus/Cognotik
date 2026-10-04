@@ -19,7 +19,6 @@ import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
 
 /**
- * Usage API.
  *
  * GET /usage                         -> user usage (HTML, or JSON with ?format=json / Accept: application/json)
  *     ?from=yyyy-MM-dd&to=yyyy-MM-dd -> date range (from inclusive, to exclusive, UTC)
@@ -27,6 +26,7 @@ import java.time.format.DateTimeFormatter
  *     &details=false                 -> omit per-request rows
  *     &includeText=false             -> omit input/output text from rows
  * GET|POST .../graphql               -> GraphQL endpoint (see [UsageGraphQL])
+ * Usage API.
  */
 class UsageServlet : HttpServlet() {
 

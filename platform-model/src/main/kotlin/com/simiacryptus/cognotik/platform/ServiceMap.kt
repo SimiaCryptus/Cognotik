@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.service.UsageInterface
 import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 
@@ -28,9 +27,11 @@ object ServiceMap {
 
   private fun onCreated(key: ServiceKey<*>, value: Any) {
     if (key == ServiceKey.USAGE_DB) {
-      val usage = value as UsageInterface
-      ChatModel.ON_USAGE = { model, u, user, session, data -> usage.incrementUsage(session, user, model, u, data) }
+      // Route through the router so that usage interception (token metrics) applies to model calls.
+      ChatModel.ON_USAGE =
+        { model, u, user, session, data -> ServiceRouter.incrementUsage(session, user, model, u, data) }
     }
   }
+
   val log = LoggerFactory.getLogger(ServiceMap::class.java)
 }

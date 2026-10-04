@@ -80,6 +80,8 @@ abstract class ApplicationDirectory(
     *allResources("web").map(Resource::newResource).toTypedArray()
   )
     .also { log.debug("Initialized web resources with ${allResources("web").size} resource(s)") }
+
+  open val metricsServlet by lazy { MetricServlet() }
   open val userInfoServlet: HttpServlet = UserInfoServlet()
     .also { log.debug("Initialized UserInfoServlet") }
   open val userSettingsServlet: HttpServlet = UserSettingsServlet()
@@ -224,6 +226,7 @@ abstract class ApplicationDirectory(
       newWebAppContext("/cognitiveConfig", cognitiveConfigServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/docops", docopsServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/userInfo", userInfoServlet).configureAuth(ApplicationServer::class.java),
+      newWebAppContext("/metrics", metricsServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/userSettings", userSettingsServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/usage", usageServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/usageGraphQL", usageGraphQLServlet).configureAuth(ApplicationServer::class.java),

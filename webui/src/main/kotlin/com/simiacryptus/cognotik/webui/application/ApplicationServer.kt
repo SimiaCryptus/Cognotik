@@ -32,6 +32,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URLEncoder
+import kotlin.getValue
 
 abstract class ApplicationServer(
   final override val applicationName: String,
@@ -64,6 +65,8 @@ abstract class ApplicationServer(
   }
   protected open val userInfo by lazy { ServletHolder("userInfo", UserInfoServlet()) }
   protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
+
+  /** Metrics dashboard GraphQL API; override to supply a stricter authorization predicate. */
   protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
   protected open val fileIndex by lazy {
     ServletHolder("fileIndex", object : SessionFileServlet(dataStorage) {
@@ -251,7 +254,8 @@ abstract class ApplicationServer(
           ServiceRouter.getSessionOwner(
             user = user!!,
             session = it
-          ) }
+          )
+        }
         return sessionOwner == null || sessionOwner == user?.id
       }
     }
@@ -364,4 +368,3 @@ fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
   val newCookies = prevCookies + cookies
   setCookies(newCookies)
 }
-

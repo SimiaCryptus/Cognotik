@@ -104,7 +104,7 @@ object ErrorUtil {
       val jsonElement = Gson().fromJson(result, JsonElement::class.java) ?: return
       if (jsonElement.isJsonObject) {
         val jsonObject = jsonElement.asJsonObject
-        if (jsonObject.has("error")) {
+        if (jsonObject.has("error") && jsonObject.get("error").isJsonObject) {
           val errorObject = jsonObject.getAsJsonObject("error")
           val errorMessage = errorObject["message"].asString
           errorPatterns.forEach { errorPattern ->
@@ -117,7 +117,7 @@ object ErrorUtil {
         for (element in jsonArray) {
           if (element.isJsonObject) {
             val jsonObject = element.asJsonObject
-            if (jsonObject.has("error")) {
+            if (jsonObject.has("error") && jsonObject.get("error").isJsonObject) {
               val errorObject = jsonObject.getAsJsonObject("error")
               val errorMessage = errorObject["message"].asString
               errorPatterns.forEach { errorPattern ->

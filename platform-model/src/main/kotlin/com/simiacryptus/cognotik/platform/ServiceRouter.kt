@@ -1,45 +1,14 @@
 package com.simiacryptus.cognotik.platform
 
-import com.simiacryptus.cognotik.platform.model.AIModel
-import com.simiacryptus.cognotik.platform.model.AccessToken
-import com.simiacryptus.cognotik.platform.model.Claim
-import com.simiacryptus.cognotik.platform.model.ClaimResult
-import com.simiacryptus.cognotik.platform.model.Credits
-import com.simiacryptus.cognotik.platform.model.Gift
-import com.simiacryptus.cognotik.platform.model.GiftId
-import com.simiacryptus.cognotik.platform.model.GiftStats
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.OperationType
-import com.simiacryptus.cognotik.platform.model.Page
-import com.simiacryptus.cognotik.platform.model.PageResult
-import com.simiacryptus.cognotik.platform.model.PluginId
-import com.simiacryptus.cognotik.platform.model.Principal
-import com.simiacryptus.cognotik.platform.model.ResourceRef
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.SessionListEntry
-import com.simiacryptus.cognotik.platform.model.SessionMetadata
-import com.simiacryptus.cognotik.platform.model.SessionMetadataPatch
-import com.simiacryptus.cognotik.platform.model.SessionQuery
-import com.simiacryptus.cognotik.platform.model.Topic
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
-import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
-import com.simiacryptus.cognotik.platform.service.SessionContentStore
-import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
-import com.simiacryptus.cognotik.platform.service.StorageInterface
-import com.simiacryptus.cognotik.platform.service.UsageInterface
-import com.simiacryptus.cognotik.platform.service.UserProvider
-import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.service.*
 import jakarta.servlet.http.HttpServletRequest
-import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
+import org.slf4j.LoggerFactory
+import java.io.*
 import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.util.concurrent.atomic.AtomicBoolean
 
 /**
  * Static facade over the services registered in [ServiceMap].
@@ -52,10 +21,16 @@ import java.time.LocalDate
  * [SessionMetadataInterface] is routed through the nested [Metadata] object rather
  * than implemented here: its `deleteSession(User, Session)` has the same JVM signature
  * as [StorageInterface.deleteSession] `(User?, Session)`, so one class cannot implement both.
+ *
+ * Metrics interception: the router also reports metrics for the calls it forwards
+ * (token usage, credit grants, gift claims, session file transfers). Recording never
+ * throws and never affects the result of the intercepted call. Backends must therefore
+ * NOT also record these same facts, or they will be double counted.
  */
 @Suppress("unused")
 object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageInterface, SessionMetadataInterface,
-  UsageInterface, UserSettingsInterface, UserProvider, AuthenticationInterface, GiftedCreditsInterface {
+  UsageInterface, UserSettingsInterface, UserProvider, AuthenticationInterface, GiftedCreditsInterface,
+  MetricsInterface {
 
   /* ---------------------------------------------------------------- resolution */
 
@@ -68,6 +43,78 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   private val userResolver: UserProvider get() = ServiceMap[ServiceKey.USER_RESOLVER]
   private val authentication: AuthenticationInterface get() = ServiceMap[ServiceKey.AUTHENTICATION]
   private val giftedCredits: GiftedCreditsInterface get() = ServiceMap[ServiceKey.GIFTED_CREDITS]
+  private val metrics: MetricsInterface
+    get() = try {
+      ServiceMap[ServiceKey.METRICS]
+    } catch (e: UnsupportedOperationException) {
+      NoOpMetrics
+    }
+
+  /* ---------------------------------------------------------------- metrics interception helpers */
+  private val log = LoggerFactory.getLogger(ServiceRouter::class.java)
+
+  /** When false, session file transfers are not wrapped/metered. */
+  @Volatile
+  var trackFileTransfers: Boolean = true
+
+  /** True while a gift claim is executing on this thread (suppresses ADJUSTMENT credit recording). */
+  private val inGiftClaim: ThreadLocal<Boolean> = ThreadLocal.withInitial { false }
+
+  /** Credits granted through [creditUser] during the current gift claim on this thread. */
+  private val giftClaimCredits: ThreadLocal<Double> = ThreadLocal.withInitial { 0.0 }
+
+  /** Runs a metrics recording block; never throws. */
+  private inline fun safely(op: String, block: () -> Unit) {
+    try {
+      block()
+    } catch (e: Exception) {
+      log.warn("Metrics recording failed: $op", e)
+    }
+  }
+
+  private fun recordTransfer(
+    direction: TransferDirection,
+    user: User?,
+    session: Session,
+    startNanos: Long,
+    bytes: Long,
+    failed: Boolean,
+  ) = safely("recordFileTransfer") {
+    metrics.recordFileTransfer(
+      direction = direction,
+      bytes = bytes,
+      duration = Duration.ofNanos(System.nanoTime() - startNanos),
+      outcome = if (failed) Outcomes.FAILURE else Outcomes.SUCCESS,
+      session = session,
+      user = user,
+    )
+  }
+
+  /**
+   * Runs a gift claim. Credits granted via [creditUser] during the claim are
+   * accumulated and reported once as [PaymentType.GIFT] (instead of ADJUSTMENT).
+   */
+  private inline fun trackClaim(user: User, block: () -> ClaimResult): ClaimResult {
+    val prevFlag = inGiftClaim.get()
+    val prevCredits = giftClaimCredits.get()
+    inGiftClaim.set(true)
+    giftClaimCredits.set(0.0)
+    val granted: Double
+    val result = try {
+      block()
+    } finally {
+      granted = giftClaimCredits.get()
+      inGiftClaim.set(prevFlag)
+      giftClaimCredits.set(prevCredits)
+    }
+    if (granted > 0) {
+      safely("recordCreditsGranted(gift)") {
+        metrics.recordCreditsGranted(PaymentType.GIFT, Credits.of(granted), user)
+      }
+    }
+    return result
+  }
+
 
   /* ---------------------------------------------------------------- AuthorizationInterface */
 
@@ -101,11 +148,35 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   /* SessionContentStore */
 
-  override fun openRead(user: User?, session: Session, path: String): InputStream =
-    storage.openRead(user, session, path)
+  override fun openRead(user: User?, session: Session, path: String): InputStream {
+    val start = System.nanoTime()
+    val delegate = try {
+      storage.openRead(user, session, path)
+    } catch (e: Exception) {
+      if (trackFileTransfers) recordTransfer(TransferDirection.DOWNLOAD, user, session, start, 0, true)
+      throw e
+    }
+    return if (trackFileTransfers) {
+      MeteredInputStream(delegate) { bytes, failed ->
+        recordTransfer(TransferDirection.DOWNLOAD, user, session, start, bytes, failed)
+      }
+    } else delegate
+  }
 
-  override fun openWrite(user: User?, session: Session, path: String): OutputStream =
-    storage.openWrite(user, session, path)
+  override fun openWrite(user: User?, session: Session, path: String): OutputStream = run {
+    val start = System.nanoTime()
+    val delegate = try {
+      storage.openWrite(user, session, path)
+    } catch (e: Exception) {
+      if (trackFileTransfers) recordTransfer(TransferDirection.UPLOAD, user, session, start, 0, true)
+      throw e
+    }
+    if (trackFileTransfers) {
+      MeteredOutputStream(delegate) { bytes, failed ->
+        recordTransfer(TransferDirection.UPLOAD, user, session, start, bytes, failed)
+      }
+    } else delegate
+  }
 
   override fun list(user: User?, session: Session, prefix: String): List<String> =
     storage.list(user, session, prefix)
@@ -115,8 +186,9 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun delete(user: User?, session: Session, path: String): Boolean =
     storage.delete(user, session, path)
-   override fun listEntries(user: User?, session: Session, prefix: String): List<SessionContentStore.ContentEntry> =
-     storage.listEntries(user, session, prefix)
+
+  override fun listEntries(user: User?, session: Session, prefix: String): List<SessionContentStore.ContentEntry> =
+    storage.listEntries(user, session, prefix)
 
 
   /* SessionFileStore (deprecated) */
@@ -144,8 +216,9 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun getMessage(user: User?, session: Session, messageId: String): String? =
     storage.getMessage(user, session, messageId)
-   override fun getMessages(user: User?, session: Session, messageIds: Collection<String>): Map<String, String> =
-     storage.getMessages(user, session, messageIds)
+
+  override fun getMessages(user: User?, session: Session, messageIds: Collection<String>): Map<String, String> =
+    storage.getMessages(user, session, messageIds)
 
 
   override fun updateMessage(user: User?, session: Session, messageId: String, value: String) =
@@ -243,18 +316,24 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
     override fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
       metadata.listSessionEntries(user, path, page)
-     override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
-       metadata.getSessionEntries(user, sessionIds)
-     override fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> =
-       metadata.querySessions(user, query)
-     override fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
-       metadata.querySessions(user, query, page)
-     override fun countSessions(user: User, query: SessionQuery): Int =
-       metadata.countSessions(user, query)
-     override fun listSessionPaths(user: User): List<String> =
-       metadata.listSessionPaths(user)
-     override fun getMessageCount(user: User, session: Session): Int =
-       metadata.getMessageCount(user, session)
+
+    override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
+      metadata.getSessionEntries(user, sessionIds)
+
+    override fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> =
+      metadata.querySessions(user, query)
+
+    override fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
+      metadata.querySessions(user, query, page)
+
+    override fun countSessions(user: User, query: SessionQuery): Int =
+      metadata.countSessions(user, query)
+
+    override fun listSessionPaths(user: User): List<String> =
+      metadata.listSessionPaths(user)
+
+    override fun getMessageCount(user: User, session: Session): Int =
+      metadata.getMessageCount(user, session)
   }
 
   override fun getUserUsageSummary(user: User, from: LocalDate, to: LocalDate): Map<String, ModelSchema.Usage> =
@@ -275,7 +354,10 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     model: AIModel,
     usage: ModelSchema.Usage,
     data: ModelSchema.UsageData?
-  ) = this.usage.incrementUsage(session, user, model, usage, data)
+  ) {
+    this.usage.incrementUsage(session, user, model, usage, data)
+    safely("recordTokenUsage") { metrics.recordTokenUsage(model, usage) }
+  }
 
   override fun clear() = usage.clear()
 
@@ -288,8 +370,19 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   override fun getAvailableBudget(user: User): Double =
     usage.getAvailableBudget(user)
 
-  override fun creditUser(user: User, amount: Double, comment: String?, metadata: Map<String, String>?): Double =
-    usage.creditUser(user, amount, comment, metadata)
+  override fun creditUser(user: User, amount: Double, comment: String?, metadata: Map<String, String>?): Double {
+    val balance = usage.creditUser(user, amount, comment, metadata)
+    if (amount > 0 && inGiftClaim.get() == true) {
+      giftClaimCredits.set(giftClaimCredits.get() + amount)
+    } else if (amount > 0) {
+      safely("recordCreditsGranted") {
+        val source = metadata?.get("payment_type")?.takeIf { it.isNotBlank() }?.let { PaymentType(it) }
+          ?: PaymentType.ADJUSTMENT
+        metrics.recordCreditsGranted(source, Credits.of(amount), user)
+      }
+    }
+    return balance
+  }
 
   override fun getUserDailyUsage(user: User, from: LocalDate, to: LocalDate): List<UsageInterface.DailyUsage> =
     usage.getUserDailyUsage(user, from, to)
@@ -302,20 +395,30 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> =
     usage.getSessionUsageRows(session, user)
-   override fun getUserUsageRows(user: User, from: Instant, to: Instant, includeText: Boolean): List<UsageInterface.UsageRow> =
-     usage.getUserUsageRows(user, from, to, includeText)
-   override fun listChildSessions(user: User, parent: Session): List<Session> =
-     usage.listChildSessions(user, parent)
-   override fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> =
-     usage.getParentSessions(user, children)
-   override fun listChildSessionsBulk(user: User, parents: Collection<Session>): Map<Session, List<Session>> =
-     usage.listChildSessionsBulk(user, parents)
-   override fun listDescendantSessions(
-     user: User,
-     root: Session,
-     maxDepth: Int,
-     maxSessions: Int
-   ): UsageInterface.SessionTree = usage.listDescendantSessions(user, root, maxDepth, maxSessions)
+
+  override fun getUserUsageRows(
+    user: User,
+    from: Instant,
+    to: Instant,
+    includeText: Boolean
+  ): List<UsageInterface.UsageRow> =
+    usage.getUserUsageRows(user, from, to, includeText)
+
+  override fun listChildSessions(user: User, parent: Session): List<Session> =
+    usage.listChildSessions(user, parent)
+
+  override fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> =
+    usage.getParentSessions(user, children)
+
+  override fun listChildSessionsBulk(user: User, parents: Collection<Session>): Map<Session, List<Session>> =
+    usage.listChildSessionsBulk(user, parents)
+
+  override fun listDescendantSessions(
+    user: User,
+    root: Session,
+    maxDepth: Int,
+    maxSessions: Int
+  ): UsageInterface.SessionTree = usage.listDescendantSessions(user, root, maxDepth, maxSessions)
 
 
   /* ---------------------------------------------------------------- PluginManagerInterface */
@@ -366,8 +469,57 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   override fun isLoaded(jarFile: File): Boolean =
     pluginManager.isLoaded(jarFile)
 
-  override fun shutdown() =
-    pluginManager.shutdown()
+  override fun increment(
+    metric: CounterType,
+    amount: Double,
+    attributes: Attributes
+  ) = metrics.increment(metric, amount, attributes)
+
+  override fun gauge(
+    metric: GaugeType,
+    value: Double,
+    attributes: Attributes
+  ) = metrics.gauge(metric, value, attributes)
+
+  override fun record(
+    metric: DistributionType,
+    value: Double,
+    attributes: Attributes
+  ) = metrics.record(metric, value, attributes)
+
+  override fun registerGauge(
+    metric: GaugeType,
+    attributes: Attributes,
+    supplier: () -> Double?
+  ) = metrics.registerGauge(metric, attributes, supplier)
+
+  override fun event(type: EventType, attributes: Attributes, timestamp: Instant) =
+    metrics.event(type, attributes, timestamp)
+
+  override fun flush() = metrics.flush()
+
+  /* Metrics read side (optional; empty when the backend is write-only) */
+  override val supportsQueries: Boolean
+    get() = metrics.supportsQueries
+
+  override fun querySeries(query: MetricQuery): List<SeriesSnapshot> =
+    metrics.querySeries(query)
+
+  override fun queryEvents(query: EventQuery): List<RecordedEvent> =
+    metrics.queryEvents(query)
+
+  override fun listMetrics(): List<MetricType> =
+    metrics.listMetrics()
+
+
+  /** Shuts down both the plugin manager and the metrics backend (the signatures collide). */
+  override fun shutdown() {
+    try {
+      pluginManager.shutdown()
+    } finally {
+      metrics.shutdown()
+    }
+  }
 
   /* PluginInstaller */
 
@@ -448,10 +600,10 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     giftedCredits.getGiftStats(id)
 
   override fun claim(user: User, giftId: String, idempotencyKey: String?): ClaimResult =
-    giftedCredits.claim(user, giftId, idempotencyKey)
+    trackClaim(user) { giftedCredits.claim(user, giftId, idempotencyKey) }
 
   override fun claim(user: User, giftId: GiftId, idempotencyKey: String?): ClaimResult =
-    giftedCredits.claim(user, giftId, idempotencyKey)
+    trackClaim(user) { giftedCredits.claim(user, giftId, idempotencyKey) }
 
   override fun listGifts(): List<Gift> =
     giftedCredits.listGifts()
@@ -502,7 +654,7 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   override fun getSessionTimestamp(
     user: User,
     session: Session
-  ) : Instant? = ServiceMap[ServiceKey.METADATA_DB].getSessionTimestamp(user, session)
+  ): Instant? = ServiceMap[ServiceKey.METADATA_DB].getSessionTimestamp(user, session)
 
   override fun setSessionTimestamp(
     user: User,
@@ -543,42 +695,126 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     user: User,
     session: Session
   ) = ServiceMap[ServiceKey.METADATA_DB].deleteSession(user, session)
-   override fun getSessionPath(user: User, session: Session): String? =
-     metadata.getSessionPath(user, session)
-   override fun setSessionPath(user: User, session: Session, path: String?) =
-     metadata.setSessionPath(user, session, path)
-   override fun exists(user: User, session: Session): Boolean =
-     metadata.exists(user, session)
-   override fun deleteAllForUser(user: User): Int =
-     metadata.deleteAllForUser(user)
-   override fun getSessionMetadata(user: User, session: Session): SessionMetadata =
-     metadata.getSessionMetadata(user, session)
-   override fun updateSessionMetadata(user: User, session: Session, patch: SessionMetadataPatch) =
-     metadata.updateSessionMetadata(user, session, patch)
-   override fun listSessionMetadata(user: User): List<SessionMetadata> =
-     metadata.listSessionMetadata(user)
-   override fun listSessionMetadata(user: User, path: String): List<SessionMetadata> =
-     metadata.listSessionMetadata(user, path)
-   override fun getSessionMetadataMap(user: User, sessionIds: Collection<String>): Map<String, SessionMetadata> =
-     metadata.getSessionMetadataMap(user, sessionIds)
-   override fun listSessionEntries(user: User): List<SessionListEntry> =
-     metadata.listSessionEntries(user)
-   override fun listSessionEntries(user: User, path: String): List<SessionListEntry> =
-     metadata.listSessionEntries(user, path)
-   override fun listSessionEntries(user: User, page: Page): PageResult<SessionListEntry> =
-     metadata.listSessionEntries(user, page)
-   override fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
-     metadata.listSessionEntries(user, path, page)
-   override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
-     metadata.getSessionEntries(user, sessionIds)
-   override fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> =
-     metadata.querySessions(user, query)
-   override fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
-     metadata.querySessions(user, query, page)
-   override fun countSessions(user: User, query: SessionQuery): Int =
-     metadata.countSessions(user, query)
-   override fun listSessionPaths(user: User): List<String> =
-     metadata.listSessionPaths(user)
-   override fun getMessageCount(user: User, session: Session): Int =
-     metadata.getMessageCount(user, session)
+
+  override fun getSessionPath(user: User, session: Session): String? =
+    metadata.getSessionPath(user, session)
+
+  override fun setSessionPath(user: User, session: Session, path: String?) =
+    metadata.setSessionPath(user, session, path)
+
+  override fun exists(user: User, session: Session): Boolean =
+    metadata.exists(user, session)
+
+  override fun deleteAllForUser(user: User): Int =
+    metadata.deleteAllForUser(user)
+
+  override fun getSessionMetadata(user: User, session: Session): SessionMetadata =
+    metadata.getSessionMetadata(user, session)
+
+  override fun updateSessionMetadata(user: User, session: Session, patch: SessionMetadataPatch) =
+    metadata.updateSessionMetadata(user, session, patch)
+
+  override fun listSessionMetadata(user: User): List<SessionMetadata> =
+    metadata.listSessionMetadata(user)
+
+  override fun listSessionMetadata(user: User, path: String): List<SessionMetadata> =
+    metadata.listSessionMetadata(user, path)
+
+  override fun getSessionMetadataMap(user: User, sessionIds: Collection<String>): Map<String, SessionMetadata> =
+    metadata.getSessionMetadataMap(user, sessionIds)
+
+  override fun listSessionEntries(user: User): List<SessionListEntry> =
+    metadata.listSessionEntries(user)
+
+  override fun listSessionEntries(user: User, path: String): List<SessionListEntry> =
+    metadata.listSessionEntries(user, path)
+
+  override fun listSessionEntries(user: User, page: Page): PageResult<SessionListEntry> =
+    metadata.listSessionEntries(user, page)
+
+  override fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
+    metadata.listSessionEntries(user, path, page)
+
+  override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
+    metadata.getSessionEntries(user, sessionIds)
+
+  override fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> =
+    metadata.querySessions(user, query)
+
+  override fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
+    metadata.querySessions(user, query, page)
+
+  override fun countSessions(user: User, query: SessionQuery): Int =
+    metadata.countSessions(user, query)
+
+  override fun listSessionPaths(user: User): List<String> =
+    metadata.listSessionPaths(user)
+
+  override fun getMessageCount(user: User, session: Session): Int =
+    metadata.getMessageCount(user, session)
+  
+  class MeteredOutputStream(delegate: OutputStream, function: (bytes: Long, failed: Boolean) -> Unit) :
+    FilterOutputStream(delegate) {
+    private var bytesWritten: Long = 0
+    private val function: (bytes: Long, failed: Boolean) -> Unit = function
+    private val closed = AtomicBoolean(false)
+
+    override fun write(b: Int) {
+      super.write(b)
+      bytesWritten++
+    }
+
+    override fun write(b: ByteArray, off: Int, len: Int) {
+      super.write(b, off, len)
+      bytesWritten += len
+    }
+
+    @Throws(IOException::class)
+    override fun close() {
+      if (closed.compareAndSet(false, true)) {
+        try {
+          super.close()
+        } catch (e: IOException) {
+          function(bytesWritten, true)
+          throw e
+        }
+        function(bytesWritten, false)
+      }
+    }
+
+  }
+
+  class MeteredInputStream(delegate: InputStream, function: (bytes: Long, failed: Boolean) -> Unit) :
+    FilterInputStream(delegate) {
+    private var bytesRead: Long = 0
+    private val function: (bytes: Long, failed: Boolean) -> Unit = function
+    private val closed = AtomicBoolean(false)
+
+    override fun read(): Int {
+      val result = super.read()
+      if (result != -1) bytesRead++
+      return result
+    }
+
+    override fun read(b: ByteArray, off: Int, len: Int): Int {
+      val result = super.read(b, off, len)
+      if (result != -1) bytesRead += result
+      return result
+    }
+
+    @Throws(IOException::class)
+    override fun close() {
+      if (closed.compareAndSet(false, true)) {
+        try {
+          super.close()
+        } catch (e: IOException) {
+          function(bytesRead, true)
+          throw e
+        }
+        function(bytesRead, false)
+      }
+    }
+
+  }
 }
+
