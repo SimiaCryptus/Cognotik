@@ -112,6 +112,7 @@
   <h1>Usage</h1>
   <nav id="nav">
     <button data-tab="overview" class="active">Overview</button>
+    <button data-tab="traffic">Traffic</button>
     <button data-tab="sessions">Sessions</button>
     <button data-tab="session">Session</button>
     <button data-tab="bulk">Bulk</button>
@@ -201,6 +202,87 @@
       <div id="userCredits"></div>
     </div>
   </section>
+  <!-- ================= Traffic (time-based) ================= -->
+  <section class="tab" id="tab-traffic">
+    <div class="panel">
+      <div class="row">
+        <label>From (local time)<input type="datetime-local" id="trFrom"></label>
+        <label>To (local time)<input type="datetime-local" id="trTo"></label>
+        <span class="muted" style="margin-left:4px">Last:</span>
+        <button class="btn" data-trpreset="1">1h</button>
+        <button class="btn" data-trpreset="6">6h</button>
+        <button class="btn" data-trpreset="24">24h</button>
+        <button class="btn" data-trpreset="168">7d</button>
+        <button class="btn" data-trpreset="720">30d</button>
+      </div>
+      <div class="row" style="margin-top:8px">
+        <label>Scope
+          <select id="trScope">
+            <option value="ALL">All calls</option>
+            <option value="ADHOC">Ad-hoc only (no session)</option>
+            <option value="SESSION">Session calls only</option>
+          </select>
+        </label>
+        <label>Model<select id="trModel" style="max-width:220px"><option value="">All models</option></select></label>
+        <label>Session ID<input id="trSession" class="mono" size="18" placeholder="exact id"></label>
+        <label style="flex:1;min-width:180px">Text contains<input id="trText" placeholder="search input/output…"></label>
+        <label>Min cost ($)<input type="number" id="trMinCost" min="0" step="0.001" style="width:90px"></label>
+        <label>Sort
+          <select id="trSort">
+            <option value="TIME_DESC">Newest first</option>
+            <option value="TIME_ASC">Oldest first</option>
+            <option value="COST_DESC">Cost (high→low)</option>
+            <option value="TOKENS_DESC">Tokens (high→low)</option>
+          </select>
+        </label>
+        <label>Page size
+          <select id="trLimit"><option>25</option><option>50</option><option selected>100</option><option>250</option></select>
+        </label>
+        <button class="btn primary" id="btnLoadTraffic">Search</button>
+        <button class="btn" id="btnResetTraffic">Reset</button>
+      </div>
+      <div class="muted" id="trRangeNote" style="font-size:12px;margin-top:6px"></div>
+    </div>
+    <div class="cards" id="trCards"></div>
+    <div class="panel">
+      <h2>Traffic over time
+        <span class="right">
+          <label class="inline">Metric
+            <select id="trMetric">
+              <option value="calls">Calls</option>
+              <option value="cost">Cost</option>
+              <option value="totalTokens">Total tokens</option>
+            </select>
+          </label>
+          <label class="inline">Group by
+            <select id="trGroup">
+              <option value="MODEL">Model</option>
+              <option value="SCOPE">Ad-hoc vs session</option>
+              <option value="SESSION">Session</option>
+            </select>
+          </label>
+        </span>
+      </h2>
+      <div class="chart" id="trChart"><div class="empty">Not loaded.</div></div>
+      <div class="legend" id="trLegend"></div>
+      <div class="muted" style="font-size:12px;margin-top:4px">Click a bar to zoom into that time bucket.</div>
+    </div>
+    <div class="panel">
+      <h2>Calls
+        <span class="right">
+          <span id="trInfo" class="muted"></span>
+          <button class="btn small" id="trExpand">Expand all</button>
+          <button class="btn small" id="trCollapse">Collapse all</button>
+          <button class="btn small" data-csv="#trRows" data-name="traffic-page">CSV</button>
+          <button class="btn small" id="trJson" title="Download this page including input/output">JSON (page)</button>
+          <button class="btn" id="trPrev" disabled>&larr; Prev</button>
+          <button class="btn" id="trNext" disabled>Next &rarr;</button>
+        </span>
+      </h2>
+      <div id="trRows" class="empty">Not loaded.</div>
+    </div>
+  </section>
+
   <!-- ================= Sessions (list) ================= -->
   <section class="tab" id="tab-sessions">
     <div class="panel">
@@ -686,7 +768,7 @@ function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumula
 }
 
 // ---------------------------------------------------------------- tabs / routing
-const TABS = ['overview', 'sessions', 'session', 'bulk', 'console', 'schema'];
+const TABS = ['overview', 'traffic', 'sessions', 'session', 'bulk', 'console', 'schema'];
 const activeTab = () => $('#nav button.active')?.dataset.tab;
 
 function showTab(name) {
@@ -696,6 +778,10 @@ function showTab(name) {
   if (name === 'overview' && userData) requestAnimationFrame(renderDaily);
   if (name === 'session' && sessionState.light) requestAnimationFrame(renderSessionTimeline);
   if (name === 'sessions' && !listState.loaded) loadSessionList();
+  if (name === 'traffic') {
+    if (!trafficState.loaded) loadTraffic();
+    else requestAnimationFrame(renderTrafficTimeline);
+  }
 }
 function setHash(h) {
   history.replaceState(null, '', location.pathname + location.search + '#' + h);
@@ -716,6 +802,7 @@ function setHeaderStats(balance, budget) {
 function refreshActive() {
   switch (activeTab()) {
     case 'overview': return loadUser();
+    case 'traffic': return loadTraffic({ reset: false });
     case 'session': return sessionState.id ? openSession(sessionState.id, { keep: true }) : undefined;
     case 'sessions': return loadSessionList({ reset: false });
     case 'bulk': return $('#bulkIds').value.trim() ? loadBulk() : undefined;
@@ -929,7 +1016,7 @@ $('#dailyModel').addEventListener('change', renderDaily);
 let resizeTimer;
 window.addEventListener('resize', () => {
   clearTimeout(resizeTimer);
-  resizeTimer = setTimeout(() => { renderDaily(); renderSessionTimeline(); }, 150);
+  resizeTimer = setTimeout(() => { renderDaily(); renderSessionTimeline(); renderTrafficTimeline(); }, 150);
 });
 
 function renderTokenTypes(tokens, types) {
@@ -1385,8 +1472,8 @@ function applyRowFilter() {
   });
 }
 
-function setAllRows(open) {
-  $$('#sessionRows tr.clickable').forEach(tr => {
+function setAllRows(open, root = '#sessionRows') {
+  $$(`${root} tr.clickable`).forEach(tr => {
     if (tr.style.display === 'none') return;
     tr.dataset.open = open ? '1' : '';
     tr.nextElementSibling.style.display = open ? '' : 'none';
@@ -1411,6 +1498,43 @@ const textBlock = (labelText, text) => {
     <pre class="box">${esc(p ?? '(none)')}</pre>
   </div>`;
 };
+/** Calls table shared by the Session and Traffic tabs; each call row is followed by a hidden detail row. */
+function callsTableHtml(rows, { selfId = null } = {}) {
+  const sessionCell = sid => !sid
+    ? '<span class="chip">ad-hoc</span>'
+    : sid === selfId ? esc(sid) : `<a data-session="${esc(sid)}">${esc(sid)}</a>`;
+  return `<table>
+      <thead><tr><th>Time</th><th>Model</th><th>Session</th><th class="num">Cost</th><th class="num">Total</th><th class="num">Prompt</th><th class="num">Completion</th><th data-nosort>Breakdown</th></tr></thead>
+      <tbody>${rows.map(r => `
+        <tr class="clickable" title="Click to show input/output">
+          <td style="white-space:nowrap" data-v="${tsOf(r.datetime) ?? ''}" data-csv="${esc(r.datetime ?? '')}">${esc(fmtDateTime(r.datetime))}</td>
+          <td data-csv="${esc(r.model ?? '')}">${swatch(r.model)}${esc(r.model ?? '—')}</td>
+          <td class="mono" data-csv="${esc(r.sessionId ?? '')}">${sessionCell(r.sessionId)}</td>
+          ${numCell(r.cost, fmtCost)}
+          ${numCell(r.totalTokens)}
+          ${numCell(r.promptTokens)}
+          ${numCell(r.completionTokens)}
+          <td>${tokenChips(r.tokens)}</td>
+        </tr>
+        <tr class="detail" style="display:none"><td colspan="8">
+          <div class="muted mono" style="margin-bottom:6px">id: ${esc(r.id)}${r.userId ? ' · user: ' + esc(r.userId) : ''}</div>
+          <div class="detail-grid">
+            ${textBlock('Input', r.inputText)}
+            ${textBlock('Output', r.outputText)}
+          </div>
+        </td></tr>`).join('')}</tbody></table>`;
+}
+function wireCallRows(el) {
+  $$('tr.clickable', el).forEach(tr => tr.addEventListener('click', e => {
+    if (e.target.closest('a, button')) return;
+    const d = tr.nextElementSibling;
+    const open = tr.dataset.open !== '1';
+    tr.dataset.open = open ? '1' : '';
+    d.style.display = open ? '' : 'none';
+  }));
+  enhanceTables(el);
+}
+
 
 async function loadSessionRows() {
   const st = sessionState;
@@ -1430,34 +1554,8 @@ async function loadSessionRows() {
       ? `${st.offset + 1}–${st.offset + rows.length}${knownTotal != null ? ' of ' + fmtNum(knownTotal) : ''} · page ${page}${pages ? '/' + pages : ''}`
       : '0 rows';
     if (!rows.length) { el.innerHTML = '<div class="empty">No calls.</div>'; return; }
-    el.innerHTML = `<table>
-      <thead><tr><th>Time</th><th>Model</th><th>Session</th><th class="num">Cost</th><th class="num">Total</th><th class="num">Prompt</th><th class="num">Completion</th><th data-nosort>Breakdown</th></tr></thead>
-      <tbody>${rows.map(r => `
-        <tr class="clickable" title="Click to show input/output">
-          <td style="white-space:nowrap" data-v="${tsOf(r.datetime) ?? ''}" data-csv="${esc(r.datetime ?? '')}">${esc(fmtDateTime(r.datetime))}</td>
-          <td data-csv="${esc(r.model ?? '')}">${swatch(r.model)}${esc(r.model ?? '—')}</td>
-          <td class="mono">${r.sessionId && r.sessionId !== st.id ? `<a data-session="${esc(r.sessionId)}">${esc(r.sessionId)}</a>` : esc(r.sessionId ?? '')}</td>
-          ${numCell(r.cost, fmtCost)}
-          ${numCell(r.totalTokens)}
-          ${numCell(r.promptTokens)}
-          ${numCell(r.completionTokens)}
-          <td>${tokenChips(r.tokens)}</td>
-        </tr>
-        <tr class="detail" style="display:none"><td colspan="8">
-          <div class="muted mono" style="margin-bottom:6px">id: ${esc(r.id)}${r.userId ? ' · user: ' + esc(r.userId) : ''}</div>
-          <div class="detail-grid">
-            ${textBlock('Input', r.inputText)}
-            ${textBlock('Output', r.outputText)}
-          </div>
-        </td></tr>`).join('')}</tbody></table>`;
-    $$('tr.clickable', el).forEach(tr => tr.addEventListener('click', e => {
-      if (e.target.closest('a, button')) return;
-      const d = tr.nextElementSibling;
-      const open = tr.dataset.open !== '1';
-      tr.dataset.open = open ? '1' : '';
-      d.style.display = open ? '' : 'none';
-    }));
-    enhanceTables(el);
+    el.innerHTML = callsTableHtml(rows, { selfId: st.id });
+    wireCallRows(el);
     applyRowFilter();
   });
 }
@@ -1676,6 +1774,217 @@ async function loadBulk() {
     enhanceTables(mel);
   });
 }
+// ---------------------------------------------------------------- traffic (time-based, session-agnostic)
+const TRAFFIC_KEY = 'usageGraphQL.traffic';
+const trafficState = { loaded: false, cursors: [null], page: 0, rangeHours: 24, data: null, step: 3600e3, limit: 100, fromMs: 0, toMs: 0 };
+const TRAFFIC_QUERY = `
+query Traffic($filter: UsageTrafficFilter, $sort: UsageTrafficSort, $limit: Int, $cursor: String, $bucketSeconds: Int!, $groupBy: UsageTrafficGroup) {
+  usageTraffic(filter: $filter, sort: $sort, limit: $limit, cursor: $cursor) {
+    from to source total nextCursor adhocCalls sessionCount models
+    totals { ${USAGE_FIELDS} }
+    timeline(bucketSeconds: $bucketSeconds, groupBy: $groupBy) { startMs key calls cost totalTokens }
+    items {
+      id sessionId userId model datetime
+      ${USAGE_FIELDS}
+      inputText outputText
+    }
+  }
+}`;
+const TRAFFIC_UI = { scope: '#trScope', sort: '#trSort', limit: '#trLimit', metric: '#trMetric', group: '#trGroup' };
+const pad2 = n => String(n).padStart(2, '0');
+const toLocalInput = ms => {
+  const d = new Date(ms);
+  return `${d.getFullYear()}-${pad2(d.getMonth() + 1)}-${pad2(d.getDate())}T${pad2(d.getHours())}:${pad2(d.getMinutes())}`;
+};
+const fromLocalInput = s => {
+  if (!s) return null;
+  const t = new Date(s).getTime();
+  return isNaN(t) ? null : t;
+};
+function markTrafficPreset() {
+  $$('[data-trpreset]').forEach(b => b.classList.toggle('primary', Number(b.dataset.trpreset) === trafficState.rangeHours));
+}
+function setTrafficRange(hours) {
+  const to = Math.ceil((Date.now() + 1) / 60e3) * 60e3;
+  $('#trTo').value = toLocalInput(to);
+  $('#trFrom').value = toLocalInput(to - hours * 3600e3);
+}
+function saveTrafficUi() {
+  const v = { rangeHours: trafficState.rangeHours };
+  for (const [k, s] of Object.entries(TRAFFIC_UI)) v[k] = $(s).value;
+  store(TRAFFIC_KEY, v);
+}
+function restoreTrafficUi() {
+  const v = load(TRAFFIC_KEY, {});
+  for (const [k, s] of Object.entries(TRAFFIC_UI)) {
+    if (v[k] != null) $(s).value = v[k];
+    if (!$(s).value) $(s).selectedIndex = 0;
+  }
+  trafficState.rangeHours = v.rangeHours ?? 24;
+  setTrafficRange(trafficState.rangeHours || 24);
+  markTrafficPreset();
+}
+function trafficFilter() {
+  const f = { scope: $('#trScope').value || 'ALL' };
+  const from = fromLocalInput($('#trFrom').value), to = fromLocalInput($('#trTo').value);
+  if (from != null) f.from = new Date(from).toISOString();
+  if (to != null) f.to = new Date(to).toISOString();
+  if ($('#trModel').value) f.model = $('#trModel').value;
+  const sid = $('#trSession').value.trim();
+  if (sid) f.sessionId = sid;
+  const q = $('#trText').value.trim();
+  if (q) f.textContains = q;
+  const mc = parseFloat($('#trMinCost').value);
+  if (mc > 0) f.minCost = mc;
+  return f;
+}
+async function loadTraffic({ reset = true } = {}) {
+  if (trafficState.rangeHours) setTrafficRange(trafficState.rangeHours);
+  if (!$('#trFrom').value && !$('#trTo').value) setTrafficRange(24);
+  const from = fromLocalInput($('#trFrom').value), to = fromLocalInput($('#trTo').value);
+  if (from == null || to == null) { toast('Enter a valid time range'); return; }
+  if (from >= to) { toast('"From" must be before "To"'); return; }
+  if (reset) { trafficState.cursors = [null]; trafficState.page = 0; }
+  saveTrafficUi();
+  const step = STEPS.find(s => (to - from) / s <= 120) || STEPS[STEPS.length - 1];
+  const limit = Number($('#trLimit').value) || 100;
+  await busy($('#tab-traffic'), async () => {
+    const data = await gql(TRAFFIC_QUERY, {
+      filter: trafficFilter(),
+      sort: $('#trSort').value || 'TIME_DESC',
+      limit,
+      cursor: trafficState.cursors[trafficState.page] ?? null,
+      bucketSeconds: Math.round(step / 1000),
+      groupBy: $('#trGroup').value || 'MODEL'
+    });
+    const t = data.usageTraffic;
+    Object.assign(trafficState, { loaded: true, data: t, step, limit, fromMs: from, toMs: to });
+    trafficState.cursors.length = trafficState.page + 1;
+    trafficState.cursors.push(t.nextCursor ?? null);
+    renderTraffic();
+  });
+}
+function renderTraffic() {
+  const t = trafficState.data;
+  if (!t) return;
+  const { page, limit, step, rangeHours } = trafficState;
+  const hours = (trafficState.toMs - trafficState.fromMs) / 3600e3;
+  const tot = t.totals;
+  const perHour = hours > 0 ? t.total / hours : 0;
+  $('#trCards').innerHTML = [
+    card('Calls', fmtNum(t.total), '', hours > 0 ? `<div class="delta muted">${perHour.toFixed(perHour < 10 ? 2 : 0)} / hour</div>` : ''),
+    card('Ad-hoc calls', fmtNum(t.adhocCalls), '', t.total ? `<div class="delta muted">${fmtPct(t.adhocCalls / t.total)} of calls (no session)</div>` : ''),
+    card('Sessions', fmtNum(t.sessionCount)),
+    card('Cost', fmtCost(tot.cost), '', t.total ? `<div class="delta muted">${fmtCost(tot.cost / t.total)} / call</div>` : ''),
+    card('Total tokens', fmtNum(tot.totalTokens)),
+    card('Prompt tokens', fmtNum(tot.promptTokens)),
+    card('Completion tokens', fmtNum(tot.completionTokens))
+  ].join('');
+  const notes = [`${fmtDateTime(t.from)} → ${fmtDateTime(t.to)}`, `${fmtDuration(step)} buckets`];
+  if (rangeHours) notes.push(`live: last ${rangeHours}h, re-anchored to now on refresh`);
+  if (t.source === 'fallback') notes.push('⚠ backend cannot list calls by time; results were rebuilt by scanning your sessions and may be slow or miss ad-hoc calls');
+  $('#trRangeNote').textContent = notes.join(' · ');
+  const sel = $('#trModel');
+  const cur = sel.value;
+  const models = [...new Set([...(t.models || []), ...(cur ? [cur] : [])])].sort();
+  sel.innerHTML = '<option value="">All models</option>' + models.map(m => `<option>${esc(m)}</option>`).join('');
+  sel.value = cur;
+  renderTrafficTimeline();
+  const items = t.items || [];
+  $('#trPrev').disabled = page === 0;
+  $('#trNext').disabled = !trafficState.cursors[page + 1];
+  const start = page * limit;
+  $('#trInfo').textContent = items.length
+    ? `${fmtNum(start + 1)}–${fmtNum(start + items.length)} of ${fmtNum(t.total)} · page ${page + 1}/${Math.max(1, Math.ceil(t.total / limit))}`
+    : `0 of ${fmtNum(t.total)}`;
+  const el = $('#trRows');
+  if (!items.length) { el.className = 'empty'; el.innerHTML = 'No calls match.'; return; }
+  el.className = '';
+  el.innerHTML = callsTableHtml(items);
+  wireCallRows(el);
+}
+function renderTrafficTimeline() {
+  const el = $('#trChart');
+  const t = trafficState.data;
+  if (!el || !t) return;
+  const { step, fromMs, toMs } = trafficState;
+  const metric = $('#trMetric').value || 'calls';
+  if (!t.timeline?.length) {
+    el.innerHTML = '<div class="empty">No calls in this range.</div>';
+    el.onclick = null;
+    $('#trLegend').innerHTML = '';
+    return;
+  }
+  const start = Math.floor(fromMs / step) * step;
+  const n = Math.max(1, Math.ceil((toMs - start) / step));
+  const keys = Array.from({ length: n }, (_, i) => start + i * step);
+  const byKey = new Map(keys.map(k => [k, new Map()]));
+  const totals = new Map();
+  for (const b of t.timeline) {
+    const m = byKey.get(Number(b.startMs));
+    const v = Number(b[metric]) || 0;
+    if (m) m.set(b.key, (m.get(b.key) || 0) + v);
+    totals.set(b.key, (totals.get(b.key) || 0) + v);
+  }
+  const series = [...totals.keys()].sort((a, b) => totals.get(b) - totals.get(a));
+  const fmt = metric === 'cost' ? fmtCost : fmtNum;
+  const dayStep = step >= 86400e3;
+  stackedChart(el, keys, byKey, series, {
+    fmt,
+    axis: v => fmtAxis(v, metric),
+    label: k => dayStep ? isoDay(new Date(k)).slice(5) : new Date(k).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+    title: k => `${new Date(k).toLocaleString()} · ${fmtDuration(step)} bucket`,
+    avg: true
+  });
+  el.onclick = e => {
+    const r = e.target.closest?.('rect.hit');
+    if (!r) return;
+    const k = keys[Number(r.dataset.i)];
+    trafficState.rangeHours = 0;
+    markTrafficPreset();
+    $('#trFrom').value = toLocalInput(k);
+    $('#trTo').value = toLocalInput(k + step);
+    loadTraffic();
+  };
+  $('#trLegend').innerHTML = legendHtml(series, totals, fmt);
+}
+$$('[data-trpreset]').forEach(b => b.addEventListener('click', () => {
+  trafficState.rangeHours = Number(b.dataset.trpreset);
+  markTrafficPreset();
+  loadTraffic();
+}));
+['#trFrom', '#trTo'].forEach(s => {
+  $(s).addEventListener('change', () => { trafficState.rangeHours = 0; markTrafficPreset(); });
+  $(s).addEventListener('keydown', e => { if (e.key === 'Enter') { trafficState.rangeHours = 0; markTrafficPreset(); loadTraffic(); } });
+});
+['#trSession', '#trText', '#trMinCost'].forEach(s => $(s).addEventListener('keydown', e => { if (e.key === 'Enter') loadTraffic(); }));
+['#trScope', '#trModel', '#trSort', '#trLimit', '#trGroup'].forEach(s => $(s).addEventListener('change', () => loadTraffic()));
+$('#trMetric').addEventListener('change', () => { saveTrafficUi(); renderTrafficTimeline(); });
+$('#btnLoadTraffic').addEventListener('click', () => loadTraffic());
+$('#btnResetTraffic').addEventListener('click', () => {
+  ['#trSession', '#trText', '#trMinCost'].forEach(s => ($(s).value = ''));
+  $('#trScope').value = 'ALL';
+  $('#trModel').value = '';
+  $('#trSort').value = 'TIME_DESC';
+  $('#trLimit').value = '100';
+  trafficState.rangeHours = 24;
+  markTrafficPreset();
+  loadTraffic();
+});
+$('#trPrev').addEventListener('click', () => {
+  if (trafficState.page > 0) { trafficState.page--; loadTraffic({ reset: false }); }
+});
+$('#trNext').addEventListener('click', () => {
+  if (trafficState.cursors[trafficState.page + 1]) { trafficState.page++; loadTraffic({ reset: false }); }
+});
+$('#trExpand').addEventListener('click', () => setAllRows(true, '#trRows'));
+$('#trCollapse').addEventListener('click', () => setAllRows(false, '#trRows'));
+$('#trJson').addEventListener('click', () => {
+  const items = trafficState.data?.items;
+  if (!items?.length) { toast('Nothing to export'); return; }
+  download('traffic-page.json', JSON.stringify(items, null, 2), 'application/json');
+});
+
 
 // ---------------------------------------------------------------- console
 const EXAMPLES = {
@@ -1732,7 +2041,15 @@ const EXAMPLES = {
     totals { cost totalTokens }
     nodes { sessionId parentSessionId depth childCount name calls direct { cost } subtree { cost } }
   }
-}`, { id: '', maxDepth: null }]
+}`, { id: '', maxDepth: null }],
+  'Traffic (ad-hoc, last 24h)': [`query Traffic($filter: UsageTrafficFilter) {
+  usageTraffic(filter: $filter, limit: 20) {
+    from to source total adhocCalls
+    totals { cost totalTokens }
+    timeline(bucketSeconds: 3600) { start key calls cost }
+    items { id sessionId model datetime cost totalTokens }
+  }
+}`, { filter: { scope: 'ADHOC' } }]
 };
 const exSel = $('#exampleSel');
 exSel.innerHTML = '<option value="">— choose —</option>' + Object.keys(EXAMPLES).map(k => `<option>${esc(k)}</option>`).join('');
@@ -1909,6 +2226,7 @@ window.addEventListener('hashchange', initFromHash);
   if (to) $('#toDate').value = to;
   if (!from && !to) applyPreset('30', false);
   restoreListUi();
+  restoreTrafficUi();
   renderRecent();
   setupAuto();
   initFromHash();

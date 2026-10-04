@@ -5,6 +5,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.SessionMetadataPatch
+import com.simiacryptus.cognotik.platform.model.SessionQuery
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.ifSet
 import org.jetbrains.exposed.v1.core.*
@@ -14,6 +15,7 @@ import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.*
+import java.util.concurrent.atomic.AtomicBoolean
 
 class SessionMetadataDB : SessionMetadataInterface {
 
@@ -24,6 +26,10 @@ class SessionMetadataDB : SessionMetadataInterface {
     val value: Column<String?> = text("value").nullable()
     val timestamp: Column<Instant> = timestamp("timestamp")
     override val primaryKey = PrimaryKey(sessionId, userEmail, key)
+  }
+
+  init {
+    ensureIndexes()
   }
 
   override fun getSessionName(user: User, session: Session): String {
@@ -59,11 +65,7 @@ class SessionMetadataDB : SessionMetadataInterface {
               (MetadataTable.key eq "message_ids")
         }
         .limit(1)
-        .map { row ->
-          val raw = row[MetadataTable.value]
-          if (raw.isNullOrEmpty()) emptyList()
-          else raw.split(",").filter { it.isNotEmpty() }
-        }
+        .map { row -> parseMessageIds(row[MetadataTable.value]) }
         .firstOrNull() ?: emptyList()
     }
   }
@@ -99,25 +101,14 @@ class SessionMetadataDB : SessionMetadataInterface {
               (MetadataTable.key eq "session_time")
         }
         .limit(1)
-        .map { row ->
-          val time = row[MetadataTable.value]
-          try {
-            if (time != null) Date(time.toLong()).toInstant()
-            else Date.from(row[MetadataTable.timestamp]).toInstant()
-          } catch (e: NumberFormatException) {
-            log.warn(
-              "Invalid session time value '{}' for session: {}, user: {}; falling back to row timestamp",
-              time, session, user.email, e
-            )
-            Date.from(row[MetadataTable.timestamp]).toInstant()
-          }
-        }
+        .map { row -> parseSessionTime(row, session.sessionId).toInstant() }
         .firstOrNull()
     }
   }
 
   @Deprecated("Use getSessionTimestamp", ReplaceWith("getSessionTimestamp(user, session)"))
   fun getSessionTime(user: User, session: Session): Instant? = getSessionTimestamp(user, session)
+
   override fun getSessionPath(user: User, session: Session): String? {
     log.debug("Fetching session path for session: {}, user: {}", session, user.email)
     return tx {
@@ -150,14 +141,11 @@ class SessionMetadataDB : SessionMetadataInterface {
       .any()
   }
 
+  /** Sessions of [user] tagged with [path] (previously leaked other users' sessions). */
   override fun listSessionsByPath(user: User, path: String): List<String> {
-    log.debug("Listing sessions for path: {}", path)
+    log.debug("Listing sessions for path: {}, user: {}", path, user.email)
     return tx {
-      MetadataTable
-        .select(MetadataTable.sessionId)
-        .where {
-          (MetadataTable.value eq path) and (MetadataTable.key eq "path")
-        }
+      pathSessionIdQuery(user.email, path)
         .withDistinct()
         .map { it[MetadataTable.sessionId] }
     }.also { log.debug("Found {} sessions for path: {}", it.size, path) }
@@ -165,17 +153,12 @@ class SessionMetadataDB : SessionMetadataInterface {
 
   override fun listSessionsForUser(user: User): List<String> {
     log.debug("Listing sessions for user: {}", user.email)
-    return tx {
-      MetadataTable
-        .select(MetadataTable.sessionId)
-        .where { MetadataTable.userEmail eq user.email }
-        .withDistinct()
-        .map { it[MetadataTable.sessionId] }
-    }.also { log.debug("Found {} sessions for user: {}", it.size, user.email) }
+    return tx { sessionIdsForUser(user.email).toList() }
+      .also { log.debug("Found {} sessions for user: {}", it.size, user.email) }
   }
 
   @Deprecated("Use listSessionsByPath", ReplaceWith("listSessionsByPath(path)"))
-  fun listSessions(user: User, path: String): List<String> = listSessionsByPath(user=user,path = path)
+  fun listSessions(user: User, path: String): List<String> = listSessionsByPath(user = user, path = path)
 
   @Deprecated("Use listSessionsForUser", ReplaceWith("listSessionsForUser(user)"))
   fun listSessions(user: User): List<String> = listSessionsForUser(user)
@@ -219,7 +202,7 @@ class SessionMetadataDB : SessionMetadataInterface {
   }
 
   override fun setSessionWorker(session: Session, user: User, workerId: String?) {
-    log.info("setSessionWorker for session: ${session} to ${workerId}", /*RuntimeException("Stack Trace")*/)
+    log.info("setSessionWorker for session: {} to {}", session, workerId)
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)
   }
@@ -233,10 +216,7 @@ class SessionMetadataDB : SessionMetadataInterface {
               (MetadataTable.userEmail eq user.email)
         }
       }
-      log.info(
-        "Deleted {} metadata row(s) for session: {} user: {}",
-        deleted, session, user.email
-      )
+      log.info("Deleted {} metadata row(s) for session: {} user: {}", deleted, session, user.email)
     } catch (e: Exception) {
       log.error("Failed to delete session: {} for user: {}", session, user.email, e)
       throw e
@@ -246,19 +226,15 @@ class SessionMetadataDB : SessionMetadataInterface {
   override fun deleteAllForUser(user: User): Int {
     log.info("Deleting all sessions for user: {}", user.email)
     return tx {
-      val ids = sessionIdsForUser(user.email)
-      if (ids.isEmpty()) 0
-      else {
-        MetadataTable.deleteWhere {
-          (MetadataTable.sessionId inList ids) and (MetadataTable.userEmail eq user.email)
-        }
-        ids.size
-      }
+      val count = sessionIdsForUser(user.email).size
+      // "session in user's sessions AND user_email = user" is just "user_email = user".
+      if (count > 0) MetadataTable.deleteWhere { MetadataTable.userEmail eq user.email }
+      count
     }.also { log.info("Deleted {} session(s) for user: {}", it, user.email) }
   }
 
   /**
-   * Field-wise update. Unlike the snapshot-style writer below, `Patch.Set(null)`
+   * Field-wise update. Unlike the snapshot-style writer, `Patch.Set(null)`
    * clears a field rather than being indistinguishable from "unchanged"
    * (REVIEW.md §3.4).
    */
@@ -283,73 +259,39 @@ class SessionMetadataDB : SessionMetadataInterface {
 
   override fun getSessionMetadata(user: User, session: Session): SessionMetadata {
     log.debug("Fetching unified session metadata for session: {}, user: {}", session, user.email)
-    return tx {
-      val userEmail = user.email
-      val rows: List<ResultRow> = MetadataTable
+    val rows = tx {
+      MetadataTable
         .selectAll()
         .where {
           (MetadataTable.sessionId eq session.sessionId) and
-              ((MetadataTable.userEmail eq userEmail) or (MetadataTable.userEmail eq ""))
+              ((MetadataTable.userEmail eq user.email) or (MetadataTable.userEmail eq ""))
         }
         .toList()
-
-      var name: String? = null
-      var messageIds: List<String> = emptyList()
-      var sessionTime: Date? = null
-      var ownerId: String? = null
-      var workerId: String? = null
-      var path: String? = null
-      for (row in rows) {
-        val k = row[MetadataTable.key]
-        val v = row[MetadataTable.value]
-        when (k) {
-          "name" -> name = v
-          "message_ids" -> messageIds =
-            if (v.isNullOrEmpty()) emptyList()
-            else v.split(",").filter { it.isNotEmpty() }
-
-          "session_time" -> sessionTime = try {
-            if (v != null) Date(v.toLong())
-            else Date.from(row[MetadataTable.timestamp])
-          } catch (e: Exception) {
-            log.warn(
-              "Invalid session_time value '{}' for session: {}, user: {}; falling back to row timestamp",
-              v, session, user.email, e
-            )
-            Date.from(row[MetadataTable.timestamp])
-          }
-
-          "owner_id" -> ownerId = v
-          KEY_WORKER_ID -> workerId = v
-          "path" -> path = v
-        }
-      }
-      SessionMetadata(
-        id = session,
-        name = name,
-        messageIds = messageIds,
-        sessionTime = sessionTime,
-        ownerId = ownerId,
-        workerId = workerId,
-        path = path,
-      )
     }
+    return buildSessionMetadataMap(rows)[session.sessionId]?.copy(id = session)
+      ?: SessionMetadata(id = session, workerId = null)
   }
 
   override fun listSessionMetadata(user: User): List<SessionMetadata> {
     log.debug("Bulk listing session metadata for user: {}", user.email)
     return tx {
-      val userSessionIds = sessionIdsForUser(user.email)
-      if (userSessionIds.isEmpty()) return@tx emptyList()
+      val rows = MetadataTable.selectAll().where { userScope(user.email) }.toList()
+      buildSessionMetadataMap(rows).values.toList()
+    }.also { log.debug("Loaded metadata for {} session(s) for user: {}", it.size, user.email) }
+  }
+
+  override fun listSessionMetadata(user: User, path: String): List<SessionMetadata> {
+    log.debug("Bulk listing session metadata for path: {}, user: {}", path, user.email)
+    return tx {
       val rows = MetadataTable
         .selectAll()
         .where {
-          (MetadataTable.sessionId inList userSessionIds) and
-              ((MetadataTable.userEmail eq user.email) or (MetadataTable.userEmail eq ""))
+          userScope(user.email) and
+              (MetadataTable.sessionId inSubQuery pathSessionIdQuery(user.email, path))
         }
         .toList()
-      buildSessionMetadataList(rows, restrictToSessionIds = userSessionIds)
-    }.also { log.debug("Loaded metadata for {} session(s) for user: {}", it.size, user.email) }
+      buildSessionMetadataMap(rows).values.toList()
+    }.also { log.debug("Loaded metadata for {} session(s) on path: {}", it.size, path) }
   }
 
   /**
@@ -358,69 +300,60 @@ class SessionMetadataDB : SessionMetadataInterface {
    */
   override fun listSessionEntries(user: User): List<SessionListEntry> {
     log.debug("Listing session entries (projection) for user: {}", user.email)
-    return tx {
-      val userSessionIds = sessionIdsForUser(user.email)
-      if (userSessionIds.isEmpty()) return@tx emptyList()
-      val rows = MetadataTable
-        .select(
-          MetadataTable.sessionId,
-          MetadataTable.key,
-          MetadataTable.value,
-          MetadataTable.timestamp,
-        )
-        .where {
-          (MetadataTable.sessionId inList userSessionIds) and
-              ((MetadataTable.userEmail eq user.email) or (MetadataTable.userEmail eq "")) and
-              (MetadataTable.key inList LIST_PROJECTION_KEYS)
-        }
-        .toList()
-      buildSessionListEntries(rows, restrictToSessionIds = userSessionIds)
-    }.also { log.debug("Loaded {} session entries for user: {}", it.size, user.email) }
+    return tx { loadEntries(userScope(user.email)) }
+      .also { log.debug("Loaded {} session entries for user: {}", it.size, user.email) }
   }
 
   override fun listSessionEntries(user: User, path: String): List<SessionListEntry> {
-    log.debug("Listing session entries (projection) for path: {}", path)
+    log.debug("Listing session entries (projection) for path: {}, user: {}", path, user.email)
     return tx {
-      val sessionIds = MetadataTable
-        .select(MetadataTable.sessionId)
-        .where { (MetadataTable.value eq path) and (MetadataTable.key eq "path") }
-        .withDistinct()
-        .map { it[MetadataTable.sessionId] }
-        .toSet()
-      if (sessionIds.isEmpty()) return@tx emptyList()
-      val rows = MetadataTable
-        .select(
-          MetadataTable.sessionId,
-          MetadataTable.key,
-          MetadataTable.value,
-          MetadataTable.timestamp,
-        )
-        .where {
-          (MetadataTable.sessionId inList sessionIds) and
-              (MetadataTable.key inList LIST_PROJECTION_KEYS)
-        }
-        .toList()
-      buildSessionListEntries(rows, restrictToSessionIds = sessionIds)
+      loadEntries(
+        userScope(user.email) and
+            (MetadataTable.sessionId inSubQuery pathSessionIdQuery(user.email, path))
+      )
     }.also { log.debug("Loaded {} session entries for path: {}", it.size, path) }
   }
 
-  override fun listSessionMetadata(user: User, path: String): List<SessionMetadata> {
-    log.debug("Bulk listing session metadata for path: {}", path)
-    return tx {
-      val sessionIds = MetadataTable
-        .select(MetadataTable.sessionId)
-        .where { (MetadataTable.value eq path) and (MetadataTable.key eq "path") }
-        .withDistinct()
-        .map { it[MetadataTable.sessionId] }
-        .toSet()
-      if (sessionIds.isEmpty()) return@tx emptyList()
-      val rows = MetadataTable
-        .selectAll()
-        .where { MetadataTable.sessionId inList sessionIds }
-        .toList()
-      buildSessionMetadataList(rows, restrictToSessionIds = sessionIds)
-    }.also { log.debug("Loaded metadata for {} session(s) on path: {}", it.size, path) }
+  /**
+   * Single round trip: path / id restrictions are pushed into SQL; the
+   * remaining (cheap) predicates and the sort run over the projected rows.
+   */
+  override fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> {
+    val email = user.email
+    val ids = query.sessionIds
+    val path = query.path
+    val entries = if (ids != null) {
+      getSessionEntries(user, ids).values.toList()
+    } else tx {
+      var scope: Op<Boolean> = userScope(email)
+      if (path != null) {
+        scope = scope and (MetadataTable.sessionId inSubQuery pathSessionIdQuery(email, path))
+      }
+      loadEntries(scope)
+    }
+    return entries.filter { query.matches(it) }.sortedWith(query.sort.comparator)
   }
+
+  override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> {
+    val ids = sessionIds.toSet()
+    if (ids.isEmpty()) return emptyMap()
+    val email = user.email
+    return tx {
+      ids.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+        loadEntries(
+          (MetadataTable.sessionId inList chunk) and
+              ((MetadataTable.userEmail eq email) or (MetadataTable.userEmail eq ""))
+        )
+      }
+    }.associateBy { it.id.sessionId }
+  }
+
+  override fun listSessionPaths(user: User): List<String> = tx {
+    MetadataTable
+      .select(MetadataTable.value)
+      .where { (MetadataTable.userEmail eq user.email) and (MetadataTable.key eq "path") }
+      .mapNotNull { it[MetadataTable.value]?.takeIf { v -> v.isNotBlank() } }
+  }.distinct().sorted()
 
   /**
    * Single-round-trip override of the interface's N+1 default. Session IDs with
@@ -430,57 +363,84 @@ class SessionMetadataDB : SessionMetadataInterface {
     user: User,
     sessionIds: Collection<String>
   ): Map<String, SessionMetadata> {
-    if (sessionIds.isEmpty()) return emptyMap()
+    val ids = sessionIds.toSet()
+    if (ids.isEmpty()) return emptyMap()
     val userEmail = user.email
-    val sessionIdSet = sessionIds.toSet()
-    log.debug("Bulk fetching session metadata map for {} session(s), user: {}", sessionIdSet.size, userEmail)
+    log.debug("Bulk fetching session metadata map for {} session(s), user: {}", ids.size, userEmail)
     return tx {
-      val rows = MetadataTable
-        .selectAll()
-        .where {
-          (MetadataTable.sessionId inList sessionIdSet) and
-              ((MetadataTable.userEmail eq userEmail) or (MetadataTable.userEmail eq ""))
-        }
-        .toList()
+      val rows = ids.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+        MetadataTable
+          .selectAll()
+          .where {
+            (MetadataTable.sessionId inList chunk) and
+                ((MetadataTable.userEmail eq userEmail) or (MetadataTable.userEmail eq ""))
+          }
+          .toList()
+      }
       buildSessionMetadataMap(rows)
     }
   }
 
+  // ---- Query building blocks ----
+
+  /** Sub-select of the session ids [userEmail] has authored rows for. */
+  private fun userSessionIdQuery(userEmail: String) =
+    MetadataTable.select(MetadataTable.sessionId).where { MetadataTable.userEmail eq userEmail }
+
+  /** Sub-select of the user's session ids tagged with [path]. */
+  private fun pathSessionIdQuery(userEmail: String, path: String) =
+    MetadataTable.select(MetadataTable.sessionId).where {
+      (MetadataTable.userEmail eq userEmail) and
+          (MetadataTable.key eq "path") and
+          (MetadataTable.value eq path)
+    }
+
   /**
-   * Returns the set of session IDs that have at least one metadata row authored
-   * by the given user. Must be called inside a transaction.
+   * Rows visible to the user: their own rows, plus user-agnostic rows
+   * (owner/worker) of sessions they own. Uses a sub-select rather than
+   * materializing every id into an IN list (which also has a hard
+   * bind-parameter limit on PostgreSQL).
    */
-  private fun sessionIdsForUser(userEmail: String): Set<String> {
-    return MetadataTable
-      .select(MetadataTable.sessionId)
-      .where { MetadataTable.userEmail eq userEmail }
+  private fun userScope(userEmail: String): Op<Boolean> =
+    (MetadataTable.userEmail eq userEmail) or
+        ((MetadataTable.userEmail eq "") and (MetadataTable.sessionId inSubQuery userSessionIdQuery(userEmail)))
+
+  /** Load listing projections matching [scope]. Must be called inside a transaction. */
+  private fun loadEntries(scope: Op<Boolean>): List<SessionListEntry> {
+    val rows = MetadataTable
+      .select(
+        MetadataTable.sessionId,
+        MetadataTable.key,
+        MetadataTable.value,
+        MetadataTable.timestamp,
+      )
+      .where { scope and (MetadataTable.key inList LIST_PROJECTION_KEYS) }
+      .toList()
+    return buildSessionListEntries(rows)
+  }
+
+  /** Must be called inside a transaction. */
+  private fun sessionIdsForUser(userEmail: String): Set<String> =
+    userSessionIdQuery(userEmail)
       .withDistinct()
       .map { it[MetadataTable.sessionId] }
       .toSet()
-  }
 
-  /**
-   * Group raw metadata rows by session_id and reduce each group into a [SessionMetadata].
-   * If [restrictToSessionIds] is non-null, sessions not present in that set are dropped
-   * from the result (used to ensure user-scoped listings don't leak sessions for which
-   * the only matching rows were user-agnostic owner_id entries).
-   */
-  private fun buildSessionMetadataList(
-    rows: List<ResultRow>,
-    restrictToSessionIds: Set<String>? = null
-  ): List<SessionMetadata> {
-    val map = buildSessionMetadataMap(rows)
-    val filtered = if (restrictToSessionIds != null) {
-      restrictToSessionIds.mapNotNull { map[it] }
-    } else {
-      map.values.toList()
+  private fun parseMessageIds(v: String?): List<String> =
+    if (v.isNullOrEmpty()) emptyList() else v.split(",").filter { it.isNotEmpty() }
+
+  private fun parseSessionTime(row: ResultRow, sid: String): Date {
+    val v = row[MetadataTable.value]
+    return try {
+      if (v != null) Date(v.toLong()) else Date.from(row[MetadataTable.timestamp])
+    } catch (e: NumberFormatException) {
+      log.warn("Invalid session_time value '{}' for session: {}; falling back to row timestamp", v, sid)
+      Date.from(row[MetadataTable.timestamp])
     }
-    return filtered
   }
 
   private fun buildSessionMetadataMap(rows: List<ResultRow>): Map<String, SessionMetadata> {
     if (rows.isEmpty()) return emptyMap()
-    // Accumulator per session_id.
     data class Accum(
       var name: String? = null,
       var messageIds: List<String> = emptyList(),
@@ -494,33 +454,22 @@ class SessionMetadataDB : SessionMetadataInterface {
     for (row in rows) {
       val sid = row[MetadataTable.sessionId]
       val acc = grouped.getOrPut(sid) { Accum() }
-      val k = row[MetadataTable.key]
       val v = row[MetadataTable.value]
-      when (k) {
+      when (row[MetadataTable.key]) {
         "name" -> acc.name = v
-        "message_ids" -> acc.messageIds =
-          if (v.isNullOrEmpty()) emptyList()
-          else v.split(",").filter { it.isNotEmpty() }
-
-        "session_time" -> acc.sessionTime = try {
-          if (v != null) Date(v.toLong())
-          else Date.from(row[MetadataTable.timestamp])
-        } catch (e: Exception) {
-          log.warn(
-            "Invalid session_time value '{}' for session: {}; falling back to row timestamp",
-            v, sid, e
-          )
-          Date.from(row[MetadataTable.timestamp])
-        }
-
+        "message_ids" -> acc.messageIds = parseMessageIds(v)
+        "session_time" -> acc.sessionTime = parseSessionTime(row, sid)
         "owner_id" -> acc.ownerId = v
         KEY_WORKER_ID -> acc.workerId = v
         "path" -> acc.path = v
       }
     }
-    return grouped.mapValues { (sid, acc) ->
-      SessionMetadata(
-        id = Session(sid),
+    val out = LinkedHashMap<String, SessionMetadata>()
+    for ((sid, acc) in grouped) {
+      // A single malformed id must not break the whole listing.
+      val session = Session.tryParse(sid) ?: continue
+      out[sid] = SessionMetadata(
+        id = session,
         name = acc.name,
         messageIds = acc.messageIds,
         sessionTime = acc.sessionTime,
@@ -529,16 +478,11 @@ class SessionMetadataDB : SessionMetadataInterface {
         path = acc.path,
       )
     }
+    return out
   }
 
-  /**
-   * Lightweight equivalent of [buildSessionMetadataMap] for the listing
-   * projection. Skips message_ids parsing entirely.
-   */
-  private fun buildSessionListEntries(
-    rows: List<ResultRow>,
-    restrictToSessionIds: Set<String>? = null
-  ): List<SessionListEntry> {
+  /** Lightweight equivalent of [buildSessionMetadataMap]; skips message_ids entirely. */
+  private fun buildSessionListEntries(rows: List<ResultRow>): List<SessionListEntry> {
     if (rows.isEmpty()) return emptyList()
     data class Accum(
       var name: String? = null,
@@ -552,31 +496,19 @@ class SessionMetadataDB : SessionMetadataInterface {
     for (row in rows) {
       val sid = row[MetadataTable.sessionId]
       val acc = grouped.getOrPut(sid) { Accum() }
-      val k = row[MetadataTable.key]
       val v = row[MetadataTable.value]
-      when (k) {
+      when (row[MetadataTable.key]) {
         "name" -> acc.name = v
-        "session_time" -> acc.sessionTime = try {
-          if (v != null) Date(v.toLong())
-          else Date.from(row[MetadataTable.timestamp])
-        } catch (e: Exception) {
-          log.warn(
-            "Invalid session_time value '{}' for session: {}; falling back to row timestamp",
-            v, sid, e
-          )
-          Date.from(row[MetadataTable.timestamp])
-        }
-
+        "session_time" -> acc.sessionTime = parseSessionTime(row, sid)
         "owner_id" -> acc.ownerId = v
         KEY_WORKER_ID -> acc.workerId = v
         "path" -> acc.path = v
       }
     }
-    val ids = restrictToSessionIds ?: grouped.keys
-    return ids.mapNotNull { sid ->
-      val acc = grouped[sid] ?: return@mapNotNull null
+    return grouped.mapNotNull { (sid, acc) ->
+      val session = Session.tryParse(sid) ?: return@mapNotNull null
       SessionListEntry(
-        id = Session(sid),
+        id = session,
         name = acc.name,
         sessionTime = acc.sessionTime,
         ownerId = acc.ownerId,
@@ -588,8 +520,7 @@ class SessionMetadataDB : SessionMetadataInterface {
 
   /**
    * Upsert implemented with Exposed DSL: try UPDATE first, then INSERT if no
-   * row was affected. This works portably across HSQL and PostgreSQL without
-   * dialect-specific SQL.
+   * row was affected. Portable across H2 and PostgreSQL.
    */
   private fun upsertMetadata(
     sessionId: String,
@@ -618,7 +549,6 @@ class SessionMetadataDB : SessionMetadataInterface {
               it[MetadataTable.timestamp] = timestamp
             }
           } catch (e: Exception) {
-            // Race with a concurrent insert: retry the update.
             log.debug(
               "Insert race detected for metadata (session={}, user={}, key={}); retrying update: {}",
               sessionId, userEmail, keyName, e.message
@@ -658,21 +588,39 @@ class SessionMetadataDB : SessionMetadataInterface {
     /** Metadata key holding the worker/agent currently assigned to a session. */
     internal const val KEY_WORKER_ID = "worker_id"
 
+    /** Max ids per IN (...) list; keeps well below driver bind-parameter limits. */
+    private const val IN_LIST_CHUNK = 1000
+
     /** Keys required by the sessions-list projection (message_ids deliberately excluded). */
     private val LIST_PROJECTION_KEYS =
       listOf("name", "session_time", "owner_id", KEY_WORKER_ID, "path")
 
+    /**
+     * Secondary indexes. Created after the table exists (ExposedDatabase.get runs
+     * SchemaUtils.create) and each in its own transaction, so a failure can never
+     * abort schema creation on PostgreSQL. `value` is deliberately not indexed:
+     * it holds large message-id lists that exceed btree row limits.
+     */
+    private val INDEX_DDL = listOf(
+      "CREATE INDEX IF NOT EXISTS idx_metadata_user_session ON metadata(user_email, session_id)",
+      "CREATE INDEX IF NOT EXISTS idx_metadata_key_user ON metadata(meta_key, user_email)",
+    )
+    private val indexesEnsured = AtomicBoolean(false)
+
+    private fun ensureIndexes() {
+      if (!indexesEnsured.compareAndSet(false, true)) return
+      for (ddl in INDEX_DDL) {
+        try {
+          transaction(ExposedDatabase.get(facet)) { exec(ddl) }
+        } catch (e: Exception) {
+          log.warn("Failed to create metadata index [{}]: {}", ddl, e.message, e)
+        }
+      }
+    }
+
     internal val facet by lazy {
       DatabaseFacet(
         name = "metadata",
-        schema = { provider ->
-          listOf(
-//            "CREATE INDEX IF NOT EXISTS idx_metadata_user ON metadata(user_email)",
-//            "CREATE INDEX IF NOT EXISTS idx_metadata_key_value ON metadata(meta_key, value)",
-//            "CREATE INDEX IF NOT EXISTS idx_metadata_user_session ON metadata(user_email, session_id)",
-//            "CREATE INDEX IF NOT EXISTS idx_metadata_key ON metadata(meta_key)",
-          )
-        },
         tables = listOf(MetadataTable),
       )
     }

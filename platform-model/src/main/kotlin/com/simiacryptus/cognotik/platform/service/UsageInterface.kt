@@ -263,6 +263,20 @@ interface UsageInterface {
    * @return A list of [UsageRow] entries ordered by ascending datetime
    */
   fun getSessionUsageRows(session: Session, user: User): List<UsageRow>
+  /**
+   * Retrieves individual usage rows for [user] recorded within `[from, to)`, regardless of session.
+   *
+   * Unlike [getSessionUsageRows] this is purely time-based and MUST include rows that have no
+   * session (ad-hoc calls made under [Session.NULL]). It backs the "Traffic" view of the usage UI.
+   *
+   * @param includeText when false, implementations may omit input/output text for speed
+   * @return rows ordered by ascending datetime
+   * @throws UnsupportedOperationException if the implementation cannot list rows by time;
+   *         callers may fall back to scanning sessions
+   */
+  fun getUserUsageRows(user: User, from: Instant, to: Instant, includeText: Boolean = true): List<UsageRow> =
+    throw UnsupportedOperationException("getUserUsageRows is not implemented by ${this.javaClass.name}")
+
 
   /**
    * Represents a single usage row recorded for a session.

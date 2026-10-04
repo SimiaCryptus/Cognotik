@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Page
+import com.simiacryptus.cognotik.platform.model.PageResult
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionQuery
@@ -27,9 +28,12 @@ import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import java.time.Duration
 import java.time.Instant
 import java.time.LocalDate
+import java.time.LocalDateTime
 import java.time.ZoneOffset
+import java.time.format.DateTimeParseException
 import kotlin.math.abs
 import kotlin.math.floor
 
@@ -240,6 +244,46 @@ object UsageGraphQL {
       # Depth-first, pre-order (root first)
       nodes: [UsageSessionNode!]!
     }
+    enum UsageTrafficScope { ALL ADHOC SESSION }
+    enum UsageTrafficSort { TIME_DESC TIME_ASC COST_DESC TOKENS_DESC }
+    enum UsageTrafficGroup { MODEL SCOPE SESSION }
+    input UsageTrafficFilter {
+      # ISO instant (or yyyy-MM-dd, UTC); from inclusive / to exclusive. Defaults to the last 24 hours.
+      from: String
+      to: String
+      # ADHOC = calls without a session; SESSION = calls attributed to a session
+      scope: UsageTrafficScope
+      model: String
+      sessionId: String
+      # Case-insensitive match on input/output text, model or session id
+      textContains: String
+      minCost: Float
+    }
+    type TrafficBucket {
+      start: String!
+      startMs: Float!
+      key: String!
+      calls: Int!
+      cost: Float!
+      totalTokens: Float!
+    }
+    type UsageTraffic {
+      from: String!
+      to: String!
+      # "native" when the backend lists rows by time; "fallback" when rebuilt by scanning sessions
+      source: String!
+      total: Int!
+      nextCursor: String
+      adhocCalls: Int!
+      sessionCount: Int!
+      # Models seen in the time range (ignoring other filters)
+      models: [String!]!
+      totals: UsageTotals!
+      # Aggregated over all matching calls (not just the current page); buckets aligned to epoch multiples
+      timeline(bucketSeconds: Int!, groupBy: UsageTrafficGroup): [TrafficBucket!]!
+      items: [UsageRow!]!
+    }
+
 
     type Query {
       # Available budget (credits minus cost-to-date) for the authenticated user
@@ -259,6 +303,8 @@ object UsageGraphQL {
       usageSessions(filter: UsageSessionFilter, sort: UsageSessionSort, limit: Int, cursor: String): UsageSessionPage!
       # Transitive child-session tree with per-session and subtree usage
       usageSessionTree(sessionId: String!, maxDepth: Int): UsageSessionTree!
+      # Time-based call history, independent of sessions (includes ad-hoc calls)
+      usageTraffic(filter: UsageTrafficFilter, sort: UsageTrafficSort, limit: Int, cursor: String): UsageTraffic!
     }
   """.trimIndent() + "\n\n" + SessionGraphQL.sdl
 
@@ -607,6 +653,163 @@ object UsageGraphQL {
       "nodes" to nodes
     )
   }
+  // ---- Traffic (time-based, session-agnostic) ----
+  private const val ADHOC_KEY = "(ad-hoc)"
+  private const val MAX_TRAFFIC_BUCKETS = 10_000L
+  private fun isAdhoc(r: UsageInterface.UsageRow) = r.sessionId.isNullOrBlank()
+  private fun parseTime(s: String?): Instant? {
+    val t = s?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    if (t.length == 10) return LocalDate.parse(t).atStartOfDay(ZoneOffset.UTC).toInstant()
+    return try {
+      Instant.parse(t)
+    } catch (e: DateTimeParseException) {
+      LocalDateTime.parse(t).toInstant(ZoneOffset.UTC)
+    }
+  }
+  class TrafficSource(
+    val user: User,
+    val from: Instant,
+    val to: Instant,
+    val scope: String,
+    val model: String?,
+    val sessionId: String?,
+    val textContains: String?,
+    val minCost: Double?,
+    val sort: String,
+    val limit: Int,
+    val cursor: String?,
+    val includeText: Boolean,
+  ) {
+    private val loaded by lazy { loadTrafficRows(user, from, to, includeText) }
+    val source: String get() = loaded.second
+    /** All rows in the time range, before any other filter. */
+    val rangeRows: List<UsageInterface.UsageRow> get() = loaded.first
+    val rows: List<UsageInterface.UsageRow> by lazy {
+      val q = textContains
+      val filtered = rangeRows.filter { r ->
+        (when (scope) {
+          "ADHOC" -> isAdhoc(r)
+          "SESSION" -> !isAdhoc(r)
+          else -> true
+        }) &&
+            (model == null || r.model == model) &&
+            (sessionId == null || r.sessionId == sessionId) &&
+            (minCost == null || r.cost >= minCost) &&
+            (q == null || listOf(r.inputText, r.outputText, r.model, r.sessionId)
+              .any { it?.contains(q, ignoreCase = true) == true })
+      }
+      when (sort) {
+        "TIME_ASC" -> filtered.sortedWith(compareBy<UsageInterface.UsageRow> { it.datetime }.thenBy { it.id })
+        "COST_DESC" -> filtered.sortedByDescending { it.cost }
+        "TOKENS_DESC" -> filtered.sortedByDescending { UsageTokens.totalTokens(it.tokenCounts) }
+        else -> filtered.sortedWith(
+          compareByDescending<UsageInterface.UsageRow> { it.datetime }.thenByDescending { it.id }
+        )
+      }
+    }
+    val page: PageResult<UsageInterface.UsageRow> by lazy { rows.paginate(Page(limit, cursor)) }
+  }
+  /**
+   * Loads all usage rows in `[from, to)`. Uses the native time-based listing when available,
+   * otherwise scans the ad-hoc (null) session plus every session of the user.
+   */
+  @Suppress("DEPRECATION")
+  private fun loadTrafficRows(
+    user: User,
+    from: Instant,
+    to: Instant,
+    includeText: Boolean
+  ): Pair<List<UsageInterface.UsageRow>, String> {
+    val usage = usageManager()
+    try {
+      return usage.getUserUsageRows(user, from, to, includeText) to "native"
+    } catch (e: UnsupportedOperationException) {
+      log.debug("Time-based usage listing unsupported; scanning sessions", e)
+    }
+    val sessions = LinkedHashSet<Session>()
+    sessions += Session.NULL
+    try {
+      (ServiceRouter as? SessionMetadataInterface)?.listSessionsForUser(user)
+        ?.mapNotNullTo(sessions) { Session.tryParse(it) }
+    } catch (e: Exception) {
+      log.debug("Session listing failed", e)
+    }
+    val seen = HashSet<Long>()
+    val out = ArrayList<UsageInterface.UsageRow>()
+    for (s in sessions) {
+      val rows = try {
+        usage.getSessionUsageRows(s, user)
+      } catch (e: Exception) {
+        log.debug("Usage rows lookup failed for session '{}'", s.sessionId, e)
+        continue
+      }
+      for (r in rows) {
+        val t = r.datetime ?: continue
+        if (!t.isBefore(from) && t.isBefore(to) && seen.add(r.id)) out += r
+      }
+    }
+    return out.sortedBy { it.datetime } to "fallback"
+  }
+  @Suppress("UNCHECKED_CAST")
+  private fun trafficSource(env: DataFetchingEnvironment): TrafficSource {
+    val filter = (env.getArgument<Any?>("filter") as? Map<String, Any?>) ?: emptyMap()
+    val to = parseTime(filter["to"] as? String) ?: Instant.now()
+    val from = parseTime(filter["from"] as? String) ?: to.minus(Duration.ofHours(24))
+    require(from.isBefore(to)) { "'from' must be before 'to'" }
+    val q = (filter["textContains"] as? String)?.takeIf { it.isNotBlank() }
+    val sel = env.selectionSet
+    return TrafficSource(
+      user = env.user(),
+      from = from,
+      to = to,
+      scope = filter["scope"]?.toString() ?: "ALL",
+      model = (filter["model"] as? String)?.takeIf { it.isNotBlank() },
+      sessionId = (filter["sessionId"] as? String)?.trim()?.takeIf { it.isNotEmpty() },
+      textContains = q,
+      minCost = (filter["minCost"] as? Number)?.toDouble(),
+      sort = env.getArgument<Any?>("sort")?.toString() ?: "TIME_DESC",
+      limit = (env.getArgument<Int?>("limit") ?: 100).coerceIn(1, 1000),
+      cursor = env.getArgument<String?>("cursor")?.takeIf { it.isNotBlank() },
+      includeText = q != null || sel.contains("items/inputText") || sel.contains("items/outputText"),
+    )
+  }
+  private fun trafficTimeline(src: TrafficSource, bucketSeconds: Int, groupBy: String): List<Map<String, Any?>> {
+    val step = bucketSeconds.toLong().coerceAtLeast(1L) * 1000L
+    val span = src.to.toEpochMilli() - src.from.toEpochMilli()
+    require(span / step <= MAX_TRAFFIC_BUCKETS) { "bucketSeconds=$bucketSeconds yields too many buckets for this range" }
+    class Bucket {
+      var calls = 0
+      var cost = 0.0
+      var tokens = 0L
+    }
+    val acc = HashMap<Pair<Long, String>, Bucket>()
+    src.rows.forEach { r ->
+      val t = r.datetime?.toEpochMilli() ?: return@forEach
+      val start = Math.floorDiv(t, step) * step
+      val key = when (groupBy) {
+        "SCOPE" -> if (isAdhoc(r)) "ad-hoc" else "session"
+        "SESSION" -> r.sessionId?.takeIf { it.isNotBlank() } ?: ADHOC_KEY
+        else -> r.model ?: "(unknown)"
+      }
+      val b = acc.getOrPut(start to key) { Bucket() }
+      b.calls++
+      b.cost += r.cost
+      b.tokens += UsageTokens.totalTokens(r.tokenCounts)
+    }
+    return acc.entries
+      .sortedWith(compareBy({ it.key.first }, { it.key.second }))
+      .map { (k, b) ->
+        mapOf(
+          "start" to Instant.ofEpochMilli(k.first).toString(),
+          "startMs" to k.first.toDouble(),
+          "key" to k.second,
+          "calls" to b.calls,
+          "cost" to b.cost,
+          "totalTokens" to b.tokens
+        )
+      }
+  }
+
 
   // ---- Schema ----
 
@@ -646,6 +849,34 @@ object UsageGraphQL {
           })
           .dataFetcher("usageSessions", DataFetcher { env -> listUsageSessions(env) })
           .dataFetcher("usageSessionTree", DataFetcher { env -> buildSessionTree(env) })
+          .dataFetcher("usageTraffic", DataFetcher { env -> trafficSource(env) })
+      }
+      .type("UsageTraffic") { b ->
+        b.dataFetcher("from", DataFetcher { env -> env.getSource<TrafficSource>()!!.from.toString() })
+          .dataFetcher("to", DataFetcher { env -> env.getSource<TrafficSource>()!!.to.toString() })
+          .dataFetcher("source", DataFetcher { env -> env.getSource<TrafficSource>()!!.source })
+          .dataFetcher("total", DataFetcher { env -> env.getSource<TrafficSource>()!!.rows.size })
+          .dataFetcher("nextCursor", DataFetcher { env -> env.getSource<TrafficSource>()!!.page.nextCursor })
+          .dataFetcher("adhocCalls", DataFetcher { env -> env.getSource<TrafficSource>()!!.rows.count { isAdhoc(it) } })
+          .dataFetcher("sessionCount", DataFetcher { env ->
+            env.getSource<TrafficSource>()!!.rows.mapNotNull { it.sessionId?.takeIf { s -> s.isNotBlank() } }.distinct().size
+          })
+          .dataFetcher("models", DataFetcher { env ->
+            env.getSource<TrafficSource>()!!.rangeRows.mapNotNull { it.model }.distinct().sorted()
+          })
+          .dataFetcher("totals", DataFetcher { env ->
+            val acc = UsageAcc()
+            env.getSource<TrafficSource>()!!.rows.forEach { acc.addRow(it) }
+            accFields(acc)
+          })
+          .dataFetcher("timeline", DataFetcher { env ->
+            trafficTimeline(
+              env.getSource<TrafficSource>()!!,
+              env.getArgument<Int?>("bucketSeconds") ?: 3600,
+              env.getArgument<Any?>("groupBy")?.toString() ?: "MODEL"
+            )
+          })
+          .dataFetcher("items", DataFetcher { env -> env.getSource<TrafficSource>()!!.page.items.map { rowMap(it) } })
       }
       .type("UserUsage") { b ->
         b.dataFetcher("models", DataFetcher { env -> modelList(env.getSource<UserUsageSource>()!!.summary) })
