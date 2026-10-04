@@ -79,14 +79,17 @@ class ThreadPoolManagerTest {
     val done = CountDownLatch(1)
     pool.schedule({ thread.set(Thread.currentThread()); done.countDown() }, 10, TimeUnit.MILLISECONDS)
     assertTrue(done.await(5, TimeUnit.SECONDS))
-    assertTrue(thread.get().name.startsWith("Session $sessionA; User $alice; #"), thread.get().name)
+     val name = thread.get().name
+     assertTrue(name.startsWith(defaultThreadNamePrefix(sessionA, alice) + "-"), name)
+     assertFalse(name.contains("alice@example.com"), "thread name must not leak PII: $name")
     assertTrue(thread.get().isDaemon)
   }
 
   @Test
   fun `fixed pool threads use default naming with null user`() {
     val worker = blockOn(manager.newFixedThreadPool(2, sessionA))
-    assertTrue(worker.name.startsWith("Session $sessionA; User null; #"), worker.name)
+     assertTrue(worker.name.startsWith(defaultThreadNamePrefix(sessionA, null) + "-"), worker.name)
+     assertTrue(worker.name.contains("-anon-"), worker.name)
     assertTrue(worker.isDaemon)
   }
 
@@ -217,11 +220,17 @@ class ThreadPoolManagerTest {
 
     assertTrue(sched.isShutdown)
     assertTrue(fixed.isShutdown)
-    assertNotSame(pAlice, manager.getPool(sessionA, alice))
-    assertNotSame(pBob, manager.getPool(sessionA, bob))
-    assertNotSame(pNone, manager.getPool(sessionA))
     assertSame(other, manager.getPool(sessionB))
     assertFalse(other.isShutdown)
+     // The whole session is tombstoned: no scope may be silently resurrected.
+     assertThrows(ThreadPoolManager.SessionClosedException::class.java) { manager.getPool(sessionA, alice) }
+     assertThrows(ThreadPoolManager.SessionClosedException::class.java) { manager.getPool(sessionA, bob) }
+     assertThrows(ThreadPoolManager.SessionClosedException::class.java) { manager.getPool(sessionA) }
+     // After an explicit reopen, fresh pools are created.
+     manager.reopen(sessionA)
+     assertNotSame(pAlice, manager.getPool(sessionA, alice))
+     assertNotSame(pBob, manager.getPool(sessionA, bob))
+     assertNotSame(pNone, manager.getPool(sessionA))
   }
 
   @Test
@@ -234,7 +243,13 @@ class ThreadPoolManagerTest {
     assertTrue(schedAlice.isShutdown)
     assertFalse(schedBob.isShutdown)
     assertSame(schedBob, manager.getScheduledPool(sessionA, bob))
+     // Only alice's scope is tombstoned.
+     assertThrows(ThreadPoolManager.SessionClosedException::class.java) {
+       manager.getScheduledPool(sessionA, alice)
+     }
+     manager.reopen(sessionA)
     assertNotSame(schedAlice, manager.getScheduledPool(sessionA, alice))
+     assertSame(schedBob, manager.getScheduledPool(sessionA, bob))
   }
 
   @Test
