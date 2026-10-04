@@ -19,6 +19,7 @@ import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.SessionListEntry
 import com.simiacryptus.cognotik.platform.model.SessionMetadata
 import com.simiacryptus.cognotik.platform.model.SessionMetadataPatch
+import com.simiacryptus.cognotik.platform.model.SessionQuery
 import com.simiacryptus.cognotik.platform.model.Topic
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
@@ -26,6 +27,7 @@ import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
 import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
+import com.simiacryptus.cognotik.platform.service.SessionContentStore
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.service.UsageInterface
@@ -113,6 +115,9 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun delete(user: User?, session: Session, path: String): Boolean =
     storage.delete(user, session, path)
+   override fun listEntries(user: User?, session: Session, prefix: String): List<SessionContentStore.ContentEntry> =
+     storage.listEntries(user, session, prefix)
+
 
   /* SessionFileStore (deprecated) */
 
@@ -139,6 +144,9 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun getMessage(user: User?, session: Session, messageId: String): String? =
     storage.getMessage(user, session, messageId)
+   override fun getMessages(user: User?, session: Session, messageIds: Collection<String>): Map<String, String> =
+     storage.getMessages(user, session, messageIds)
+
 
   override fun updateMessage(user: User?, session: Session, messageId: String, value: String) =
     storage.updateMessage(user, session, messageId, value)
@@ -235,6 +243,18 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
     override fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
       metadata.listSessionEntries(user, path, page)
+     override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
+       metadata.getSessionEntries(user, sessionIds)
+     override fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> =
+       metadata.querySessions(user, query)
+     override fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
+       metadata.querySessions(user, query, page)
+     override fun countSessions(user: User, query: SessionQuery): Int =
+       metadata.countSessions(user, query)
+     override fun listSessionPaths(user: User): List<String> =
+       metadata.listSessionPaths(user)
+     override fun getMessageCount(user: User, session: Session): Int =
+       metadata.getMessageCount(user, session)
   }
 
   override fun getUserUsageSummary(user: User, from: LocalDate, to: LocalDate): Map<String, ModelSchema.Usage> =
@@ -282,6 +302,21 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> =
     usage.getSessionUsageRows(session, user)
+   override fun getUserUsageRows(user: User, from: Instant, to: Instant, includeText: Boolean): List<UsageInterface.UsageRow> =
+     usage.getUserUsageRows(user, from, to, includeText)
+   override fun listChildSessions(user: User, parent: Session): List<Session> =
+     usage.listChildSessions(user, parent)
+   override fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> =
+     usage.getParentSessions(user, children)
+   override fun listChildSessionsBulk(user: User, parents: Collection<Session>): Map<Session, List<Session>> =
+     usage.listChildSessionsBulk(user, parents)
+   override fun listDescendantSessions(
+     user: User,
+     root: Session,
+     maxDepth: Int,
+     maxSessions: Int
+   ): UsageInterface.SessionTree = usage.listDescendantSessions(user, root, maxDepth, maxSessions)
+
 
   /* ---------------------------------------------------------------- PluginManagerInterface */
 
@@ -508,4 +543,42 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     user: User,
     session: Session
   ) = ServiceMap[ServiceKey.METADATA_DB].deleteSession(user, session)
+   override fun getSessionPath(user: User, session: Session): String? =
+     metadata.getSessionPath(user, session)
+   override fun setSessionPath(user: User, session: Session, path: String?) =
+     metadata.setSessionPath(user, session, path)
+   override fun exists(user: User, session: Session): Boolean =
+     metadata.exists(user, session)
+   override fun deleteAllForUser(user: User): Int =
+     metadata.deleteAllForUser(user)
+   override fun getSessionMetadata(user: User, session: Session): SessionMetadata =
+     metadata.getSessionMetadata(user, session)
+   override fun updateSessionMetadata(user: User, session: Session, patch: SessionMetadataPatch) =
+     metadata.updateSessionMetadata(user, session, patch)
+   override fun listSessionMetadata(user: User): List<SessionMetadata> =
+     metadata.listSessionMetadata(user)
+   override fun listSessionMetadata(user: User, path: String): List<SessionMetadata> =
+     metadata.listSessionMetadata(user, path)
+   override fun getSessionMetadataMap(user: User, sessionIds: Collection<String>): Map<String, SessionMetadata> =
+     metadata.getSessionMetadataMap(user, sessionIds)
+   override fun listSessionEntries(user: User): List<SessionListEntry> =
+     metadata.listSessionEntries(user)
+   override fun listSessionEntries(user: User, path: String): List<SessionListEntry> =
+     metadata.listSessionEntries(user, path)
+   override fun listSessionEntries(user: User, page: Page): PageResult<SessionListEntry> =
+     metadata.listSessionEntries(user, page)
+   override fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
+     metadata.listSessionEntries(user, path, page)
+   override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
+     metadata.getSessionEntries(user, sessionIds)
+   override fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> =
+     metadata.querySessions(user, query)
+   override fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
+     metadata.querySessions(user, query, page)
+   override fun countSessions(user: User, query: SessionQuery): Int =
+     metadata.countSessions(user, query)
+   override fun listSessionPaths(user: User): List<String> =
+     metadata.listSessionPaths(user)
+   override fun getMessageCount(user: User, session: Session): Int =
+     metadata.getMessageCount(user, session)
 }

@@ -333,6 +333,23 @@ class SessionMetadataDB : SessionMetadataInterface {
     }
     return entries.filter { query.matches(it) }.sortedWith(query.sort.comparator)
   }
+   /** Counts matches without paying for a sort of the full result set. */
+   override fun countSessions(user: User, query: SessionQuery): Int {
+     val email = user.email
+     val ids = query.sessionIds
+     val path = query.path
+     val entries = if (ids != null) {
+       getSessionEntries(user, ids).values.toList()
+     } else tx {
+       var scope: Op<Boolean> = userScope(email)
+       if (path != null) {
+         scope = scope and (MetadataTable.sessionId inSubQuery pathSessionIdQuery(email, path))
+       }
+       loadEntries(scope)
+     }
+     return entries.count { query.matches(it) }
+   }
+
 
   override fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> {
     val ids = sessionIds.toSet()
