@@ -88,6 +88,11 @@ class MetricAttribute<T : Any>(
      // --- Errors ---
      val ERROR_TYPE = of<String>("error_type")
      val FATAL = of<Boolean>("fatal")
+    // --- Authentication ---
+    /** Login method name (e.g. password, github, google, qr). Bounded by the registered methods. */
+    val LOGIN_METHOD = of<String>("login_method")
+    /** Bounded failure reason; use the constants in [AuthReasons]. */
+    val REASON = of<String>("reason")
 
 
     // --- High-cardinality identifiers (events only, by convention) ---
@@ -166,6 +171,18 @@ interface MetricType {
   fun sanitize(attrs: Attributes): Attributes = attrs.restrictTo(attributes).withoutHighCardinality()
 
   companion object {
+    val AUTH_CALLBACKS: CounterType = CounterType.of(
+      "cognotik.auth.callbacks", MetricUnit.COUNT, "Authentication callbacks received",
+      MetricAttribute.LOGIN_METHOD, MetricAttribute.OUTCOME, MetricAttribute.REASON,
+    )
+    val AUTH_SESSION_VERIFICATIONS: CounterType = CounterType.of(
+      "cognotik.auth.session_verifications", MetricUnit.COUNT, "Session token verifications",
+      MetricAttribute.OUTCOME, MetricAttribute.REASON,
+    )
+    val AUTH_FLOW_DURATION: DistributionType = DistributionType.of(
+      "cognotik.auth.flow_duration", MetricUnit.MILLISECONDS, "Duration of interactive authentication flows",
+      MetricAttribute.LOGIN_METHOD, MetricAttribute.OUTCOME, MetricAttribute.REASON,
+    )
     val NAME_REGEX = Regex("[a-z][a-z0-9_]*(\\.[a-z0-9_]+)*")
 
     // ---------------- Token spend ----------------
@@ -371,6 +388,18 @@ interface EventType {
       vararg attributes: MetricAttribute<*>,
     ): EventType = SimpleEvent(name, description, attributes.toSet(), counter)
 
+    val USER_REGISTERED: EventType = of(
+      "cognotik.event.user_registered", "A new user registered", null,
+      MetricAttribute.LOGIN_METHOD, MetricAttribute.USER,
+    )
+    val LOGGED_OUT: EventType = of(
+      "cognotik.event.logged_out", "A user logged out", null,
+      MetricAttribute.USER, MetricAttribute.SESSION,
+    )
+    val LOGIN_ATTEMPTED: EventType = of(
+      "cognotik.event.login_attempted", "A user attempted to log in", null,
+      MetricAttribute.LOGIN_METHOD, MetricAttribute.OUTCOME, MetricAttribute.REASON,
+    )
     val AI_ERROR = of(
       "cognotik.event.ai_error", "An AI service call raised an error", MetricType.AI_ERRORS,
       MetricAttribute.PROVIDER, MetricAttribute.MODEL, MetricAttribute.ERROR_TYPE, MetricAttribute.FATAL,
@@ -463,4 +492,28 @@ object Outcomes {
   const val SUCCESS = "success"
   const val FAILURE = "failure"
   const val CANCELLED = "cancelled"
+}
+/** Conventional (bounded) values for [MetricAttribute.REASON] in authentication metrics. */
+object AuthReasons {
+  const val MISSING_CREDENTIALS = "missing_credentials"
+  const val INVALID_CREDENTIALS = "invalid_credentials"
+  const val UNKNOWN_USER = "unknown_user"
+  const val DISABLED = "disabled"
+  const val INTERNAL_ERROR = "internal_error"
+  const val PROVIDER_ERROR = "provider_error"
+  const val MISSING_TOKEN = "missing_token"
+  const val INVALID_TOKEN = "invalid_token"
+  const val NOT_SPONSOR = "not_sponsor"
+  const val INSUFFICIENT_TIER = "insufficient_tier"
+  const val NOT_CONFIGURED = "not_configured"
+  const val DENIED = "denied"
+  const val NOT_APPROVED = "not_approved"
+  const val EXPIRED = "expired"
+  const val THROTTLED = "throttled"
+  const val VALIDATION = "validation"
+  const val ALREADY_EXISTS = "already_exists"
+  const val NO_SESSION = "no_session"
+  const val MISSING_SESSION = "missing_session"
+  const val UNKNOWN_SESSION = "unknown_session"
+  const val EXCHANGE_FAILED = "exchange_failed"
 }

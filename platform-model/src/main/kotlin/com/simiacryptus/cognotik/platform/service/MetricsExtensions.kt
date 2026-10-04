@@ -13,12 +13,25 @@ import com.simiacryptus.cognotik.platform.model.ServiceStatus
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.TransferDirection
 import com.simiacryptus.cognotik.platform.model.User
+import org.slf4j.LoggerFactory
 import java.time.Duration
 
 /*
  * Domain helpers covering the dashboard checklist. They only compose the typed
  * vocabulary in Metrics.kt, so backends never need to know about them.
  */
+private val extLog = LoggerFactory.getLogger("com.simiacryptus.cognotik.platform.service.MetricsExtensions")
+/** Runs [block], logging and swallowing any non-fatal throwable (including LinkageErrors). */
+internal inline fun guardMetrics(op: String, block: () -> Unit) {
+   try {
+     block()
+   } catch (e: VirtualMachineError) {
+     throw e
+   } catch (e: Throwable) {
+     extLog.warn("Metrics recording failed: $op", e)
+   }
+}
+
 
 // ---------------- Token spend ----------------
 
@@ -27,29 +40,53 @@ import java.time.Duration
   *
   * Cost is computed with [AIModel.pricing]. If pricing is unavailable (non-positive,
   * non-finite, or throws), it falls back to [ModelSchema.Usage.cost].
+   * Token counts and cost are recorded independently: a failure computing or recording
+   * the cost never prevents token counts from being reported (and vice versa).
   */
 fun MetricsInterface.recordTokenUsage(
   model: AIModel,
   usage: ModelSchema.Usage,
   app: String? = null,
 ) {
-  val base = Attributes.of(
-    MetricAttribute.MODEL(model.modelId ?: "unknown"),
-    model.provider?.let { MetricAttribute.PROVIDER(it.name) },
-    app?.let { MetricAttribute.APP(it) },
-  )
-  usage.counts.forEach { (type, count) ->
-    if (count > 0) increment(MetricType.TOKENS_USED, count.toDouble(), base + MetricAttribute.TOKEN_TYPE(type))
-  }
-   val cost = usageCost(model, usage)
-   if (cost > 0) increment(MetricType.TOKEN_SPEND, cost, base)
+   val modelId = runCatching { model.modelId }.getOrNull() ?: "unknown"
+   val providerName = runCatching { model.provider?.name }.getOrNull()
+   val base = Attributes.of(
+     MetricAttribute.MODEL(modelId),
+     providerName?.let { MetricAttribute.PROVIDER(it) },
+     app?.let { MetricAttribute.APP(it) },
+   )
+   // Token counts first, each type isolated so one bad entry cannot drop the others.
+   guardMetrics("recordTokenUsage(tokens, $modelId)") {
+     usage.counts.forEach { (type, count) ->
+       guardMetrics("recordTokenUsage(tokens, $modelId, $type)") {
+         if (count > 0) increment(MetricType.TOKENS_USED, count.toDouble(), base + MetricAttribute.TOKEN_TYPE(type))
+       }
+     }
+   }
+   // Cost in its own failure domain.
+   guardMetrics("recordTokenUsage(cost, $modelId)") {
+     val cost = usageCost(model, usage)
+     if (cost > 0) increment(MetricType.TOKEN_SPEND, cost, base)
+   }
 }
 /** Cost of [usage] per [AIModel.pricing], falling back to [ModelSchema.Usage.cost]. Never throws. */
 internal fun usageCost(model: AIModel, usage: ModelSchema.Usage): Double {
-   val priced = runCatching { model.pricing(usage) }.getOrNull()
+   val priced = try {
+     model.pricing(usage)
+   } catch (e: VirtualMachineError) {
+     throw e
+   } catch (e: Throwable) {
+     null
+   }
    if (priced != null && priced.isFinite() && priced > 0) return priced
-   val reported = usage.cost
-   return if (reported.isFinite() && reported > 0) reported else 0.0
+   val reported = try {
+     usage.cost
+   } catch (e: VirtualMachineError) {
+     throw e
+   } catch (e: Throwable) {
+     null
+   }
+   return if (reported != null && reported.isFinite() && reported > 0) reported else 0.0
 }
 
 // ---------------- Input cash / credits ----------------
@@ -190,3 +227,62 @@ fun MetricsInterface.reportEcsService(
     event(EventType.ECS_SERVICE_STATUS_CHANGED, base + MetricAttribute.STATUS(status))
   }
 }
+// ---------------- Authentication ----------------
+/**
+* Records a login attempt. Use [Outcomes.STARTED] when an interactive flow is initiated,
+* [Outcomes.SUCCESS] when a session is issued and [Outcomes.FAILURE] (with a bounded
+* [reason] from `AuthReasons`) otherwise.
+*
+* @param duration time since the interactive flow was initiated, if known
+*/
+fun MetricsInterface.recordLogin(
+  method: String,
+  outcome: String,
+  reason: String? = null,
+  user: User? = null,
+  duration: Duration? = null,
+) {
+  val attrs = Attributes.of(
+    MetricAttribute.LOGIN_METHOD(method),
+    MetricAttribute.OUTCOME(outcome),
+    reason?.let { MetricAttribute.REASON(it) },
+    user?.let { MetricAttribute.USER(it.id) },
+  )
+  duration?.let { record(MetricType.AUTH_FLOW_DURATION, it.toMillis().toDouble(), attrs) }
+  event(EventType.LOGIN_ATTEMPTED, attrs)
+}
+/** Records a logout request. */
+fun MetricsInterface.recordLogout(outcome: String, reason: String? = null, user: User? = null) =
+  event(
+    EventType.LOGGED_OUT, Attributes.of(
+      MetricAttribute.OUTCOME(outcome),
+      reason?.let { MetricAttribute.REASON(it) },
+      user?.let { MetricAttribute.USER(it.id) },
+    )
+  )
+/** Records a local account registration attempt. */
+fun MetricsInterface.recordRegistration(outcome: String, reason: String? = null, user: User? = null) =
+  event(
+    EventType.USER_REGISTERED, Attributes.of(
+      MetricAttribute.OUTCOME(outcome),
+      reason?.let { MetricAttribute.REASON(it) },
+      user?.let { MetricAttribute.USER(it.id) },
+    )
+  )
+/** Records a session token verification (hot path: counter only, no event). */
+fun MetricsInterface.recordSessionVerification(outcome: String, reason: String? = null) =
+  increment(
+    MetricType.AUTH_SESSION_VERIFICATIONS, 1.0, Attributes.of(
+      MetricAttribute.OUTCOME(outcome),
+      reason?.let { MetricAttribute.REASON(it) },
+    )
+  )
+/** Records an OAuth callback received by the callback servlet. */
+fun MetricsInterface.recordAuthCallback(method: String, outcome: String, reason: String? = null) =
+  increment(
+    MetricType.AUTH_CALLBACKS, 1.0, Attributes.of(
+      MetricAttribute.LOGIN_METHOD(method),
+      MetricAttribute.OUTCOME(outcome),
+      reason?.let { MetricAttribute.REASON(it) },
+    )
+  )

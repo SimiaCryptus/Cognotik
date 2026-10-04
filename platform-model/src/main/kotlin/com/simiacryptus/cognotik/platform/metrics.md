@@ -137,6 +137,12 @@ Tests then pass an `InMemoryMetrics` (section 11).
 | ECS             | `ECS_SERVICE_DESIRED_TASKS`  | gauge        | Count        | cluster, service                 |
 | ECS             | `ECS_SERVICE_STATUS`         | gauge        | None         | cluster, service, status         |
 | ECS             | `ECS_SERVICE_STATUS_CHANGES` | counter      | Count        | cluster, service, status         |
+| Auth            | `AUTH_LOGINS`                | counter      | Count        | login_method, outcome, reason    |
+| Auth            | `AUTH_LOGOUTS`               | counter      | Count        | outcome, reason                  |
+| Auth            | `AUTH_REGISTRATIONS`         | counter      | Count        | outcome, reason                  |
+| Auth            | `AUTH_SESSION_VERIFICATIONS` | counter      | Count        | outcome, reason                  |
+| Auth            | `AUTH_CALLBACKS`             | counter      | Count        | login_method, outcome, reason    |
+| Auth            | `AUTH_FLOW_DURATION`         | distribution | Milliseconds | login_method, outcome            |
 
 ### 4.3 Built-in events (`EventType` companion)
 
@@ -149,6 +155,9 @@ Tests then pass an `InMemoryMetrics` (section 11).
 | `CREDITS_GRANTED`                   | none                         | payment_type, user                            |
 | `FARGATE_NODE_STARTED` / `_STOPPED` | `FARGATE_NODE_LIFECYCLE`     | cluster, service, worker, outcome             |
 | `ECS_SERVICE_STATUS_CHANGED`        | `ECS_SERVICE_STATUS_CHANGES` | cluster, service, status                      |
+| `LOGIN_ATTEMPTED`                   | `AUTH_LOGINS`                | login_method, outcome, reason, user           |
+| `LOGGED_OUT`                        | `AUTH_LOGOUTS`               | outcome, reason, user                         |
+| `USER_REGISTERED`                   | `AUTH_REGISTRATIONS`         | outcome, reason, user                         |
 
 ### 4.4 Attributes
 
@@ -166,7 +175,6 @@ val more = attrs + MetricAttribute.WORKER("node-7")          // immutable; retur
 Known attributes:
 
 - **Low cardinality:** `MODEL`, `PROVIDER`, `TOKEN_TYPE`, `PAYMENT_TYPE`, `CURRENCY`, `APP`, `OUTCOME`,
-  `DIRECTION`, `CLUSTER`, `SERVICE`, `STATUS`, `WORKER`.
 - **High cardinality:** `USER`, `SESSION`. These are stripped from series and kept on events.
 
 For `OUTCOME`, use the constants in `Outcomes`: `STARTED`, `SUCCESS`, `FAILURE`, `CANCELLED`.
@@ -192,6 +200,7 @@ instrument them again.
 | **File transfer**        | **Automatic** for `ServiceRouter.openRead`/`openWrite`. Instrument manually only for transfers that bypass it | (`recordFileTransfer(...)`)                                   |
 | **Fargate nodes**        | The worker manager or autoscaler that launches/stops tasks                                                   | `setFargateNodes`, `fargateNodeStarted`, `fargateNodeStopped` |
 | **ECS service status**   | A scheduled poller calling ECS `DescribeServices`                                                            | `reportEcsService(...)`                                       |
+| **Login / auth**         | `LoginServlet`, `LogoutServlet`, `AuthCallbackServlet` and each `LoginMethod` (OAuth, QR)                     | `recordLogin`, `recordLogout`, `recordRegistration`, ...      |
 
 Choose the hook location carefully:
 
@@ -548,3 +557,20 @@ Use this when adding metrics to a module or reviewing a PR:
 - [ ] A backend (or `NoOpMetrics`) is registered at startup, and `ServiceRouter.shutdown()` is invoked on exit.
 - [ ] Query/alerting code checks `supportsQueries` / `supportsAlerting` first.
 - [ ] A test using `InMemoryMetrics` asserts the expected series and events.
+  `DIRECTION`, `CLUSTER`, `SERVICE`, `STATUS`, `WORKER`, `LOGIN_METHOD`, `REASON`.
+### 7.8 Login and authentication
+```kotlin
+metrics.recordLogin(method.name, Outcomes.STARTED)                                   // interactive flow begun
+metrics.recordLogin(method.name, Outcomes.SUCCESS, user = user, duration = elapsed)  // session issued
+metrics.recordLogin(method.name, Outcomes.FAILURE, AuthReasons.INVALID_TOKEN)
+metrics.recordLogout(Outcomes.SUCCESS, user = user)
+metrics.recordRegistration(Outcomes.FAILURE, AuthReasons.THROTTLED)
+metrics.recordSessionVerification(Outcomes.FAILURE, "expired")  // counter only (hot path)
+metrics.recordAuthCallback("github", Outcomes.SUCCESS)
+```
+Rules:
+- `login_method` must be a registered method name (or a fixed derived label such as `qr_cli`).
+  Never use raw request input.
+- `reason` must come from `AuthReasons` (or another bounded set). Never use exception messages.
+- Record each attempt once, at the site that decides the outcome. Login methods record their own
+  outcomes; `LoginServlet` only records failures it decides itself (disabled, dispatch errors).

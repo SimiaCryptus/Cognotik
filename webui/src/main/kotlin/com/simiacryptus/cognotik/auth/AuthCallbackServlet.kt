@@ -1,4 +1,8 @@
 package com.simiacryptus.cognotik.auth
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.model.AuthReasons
+import com.simiacryptus.cognotik.platform.model.Outcomes
+import com.simiacryptus.cognotik.platform.service.recordAuthCallback
 
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -43,6 +47,7 @@ class AuthCallbackServlet : HttpServlet() {
 
       if (sessionId.isNullOrBlank()) {
         log.warn("Auth callback received without session id")
+        ServiceRouter.recordAuthCallback("unknown", Outcomes.FAILURE, AuthReasons.MISSING_SESSION)
         writeResponse(
           resp,
           HttpServletResponse.SC_BAD_REQUEST,
@@ -57,8 +62,11 @@ class AuthCallbackServlet : HttpServlet() {
       val pending = pendingRequests.remove(sessionId)
       val webFlow = webFlowSessions.remove(sessionId)
       val webMethodName = webFlow?.loginMethodName
+      // Bounded label: registered login method names, or "desktop" for non-web (headless) flows
+      val methodLabel = webMethodName ?: "desktop"
       if (pending == null && webFlow == null) {
         log.warn("Auth callback received for unknown or expired session: {}", sanitizeForLog(sessionId))
+        ServiceRouter.recordAuthCallback("unknown", Outcomes.FAILURE, AuthReasons.UNKNOWN_SESSION)
         writeResponse(
           resp,
           HttpServletResponse.SC_BAD_REQUEST,
@@ -86,6 +94,7 @@ class AuthCallbackServlet : HttpServlet() {
           "Auth callback received token for session={} (length={}, hasPending={}, webFlow={})",
           sessionId, token.length, pending != null, webMethodName != null
         )
+        ServiceRouter.recordAuthCallback(methodLabel, Outcomes.SUCCESS)
         pending?.complete(token)
         if (webMethodName != null) {
           val finalizationUrl = try {
@@ -117,6 +126,10 @@ class AuthCallbackServlet : HttpServlet() {
         log.warn(
           "Auth callback received error for session={}: {} - {}",
           sessionId, sanitizeForLog(error), sanitizeForLog(errorDescription)
+        )
+        ServiceRouter.recordAuthCallback(
+          methodLabel, Outcomes.FAILURE,
+          if (params.containsKey("code")) AuthReasons.EXCHANGE_FAILED else AuthReasons.PROVIDER_ERROR
         )
         pending?.complete(null)
         if (webMethodName != null) {

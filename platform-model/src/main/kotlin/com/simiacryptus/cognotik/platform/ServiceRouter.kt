@@ -72,7 +72,11 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   private inline fun safely(op: String, block: () -> Unit) {
     try {
       block()
-    } catch (e: Exception) {
+     } catch (e: VirtualMachineError) {
+       throw e
+     } catch (e: Throwable) {
+       // Errors (e.g. AbstractMethodError from an old AIModel without pricing, or a failed
+       // MetricType initialisation) must not escape into the intercepted call.
       log.warn("Metrics recording failed: $op", e)
     }
   }

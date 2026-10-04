@@ -233,7 +233,10 @@ class CompositeMetrics(private val delegates: List<MetricsInterface>) : MetricsI
     delegates.forEach {
       try {
         block(it)
-      } catch (e: Exception) {
+       } catch (e: VirtualMachineError) {
+         throw e
+       } catch (e: Throwable) {
+         // Includes LinkageErrors so one broken backend/metric cannot starve the other delegates.
         log.warn("Metrics backend ${it.javaClass.simpleName} failed on $op", e)
       }
     }
