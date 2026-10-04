@@ -12,18 +12,20 @@ other platform services.
 | `service/MetricsInterface.kt`  | The port, plus `NoOpMetrics`, `CompositeMetrics`, `InMemoryMetrics`                                                                                                                            |
 | `service/MetricsExtensions.kt` | Domain helpers (`recordTokenUsage`, `appStarted`, ...) that compose the vocabulary                                                                                                             |
 | `ServiceKey.METRICS`           | Registration point for the backend (CloudWatch, Prometheus, or a `CompositeMetrics` of both)                                                                                                   |
-| `ServiceRouter.kt`             | Static facade; implements `MetricsInterface` and forwards to the registered backend                                                                                                            |
+| `ServiceRouter.kt`             | Static facade. It implements `MetricsInterface` and forwards every member to the registered backend. It also **automatically records** metrics for the platform calls it forwards (section 6).  |
 
 ---
 
 ## 1. Architecture
 
 ```
- call sites (apps, servlets, billing, usage, infra pollers)
-        │  domain helpers:  recordTokenUsage / appStarted / recordPayment ...
+ call sites (apps, servlets, billing, infra pollers)
+        │  domain helpers:  appStarted / recordPayment / reportEcsService ...
         ▼
  MetricsInterface  ◄── ServiceRouter (static facade)  ◄── ServiceKey.METRICS
-        │
+        │                 │  (falls back to NoOpMetrics when unregistered)
+        │                 └─ auto-records: token usage, credit grants,
+        │                    gift claims, session file transfers
         ├── CloudWatch backend ┐
         ├── Prometheus backend ├─ optionally combined by CompositeMetrics
         └── InMemoryMetrics (tests) / NoOpMetrics (default)
@@ -39,12 +41,12 @@ They never know which backend is configured.
 Everything you write must respect the contract of `MetricsInterface`:
 
 - **Never throws on the recording path.** A metrics failure must never break a user request.
-  Backends log and drop. Do not add `try/catch` around every call; do keep metric-related
-  computations (lookups, string building) cheap and side-effect free.
+  Backends log and drop. Do not add `try/catch` around every call. Do keep metric-related
+  computations (lookups, string building) cheap and free of side effects.
 - **Thread-safe and non-blocking.** Backends buffer and export asynchronously. Call freely from
   request threads, but never block on `flush()` in a hot path.
 - **Attributes are sanitized by the backend.** `MetricType.sanitize` drops attributes the metric
-  does not declare and strips high-cardinality ones. Passing extra attributes is harmless, and passing
+  does not declare and strips high-cardinality ones. Passing extra attributes is harmless. Passing
   too few simply loses a dimension.
 - **Counters are monotonic.** Amounts must be `>= 0` and not `NaN`. Invalid increments are dropped.
 
@@ -52,15 +54,23 @@ Everything you write must respect the contract of `MetricsInterface`:
 
 ## 3. Getting a metrics handle
 
-### 3.1 Through `ServiceRouter`
+### 3.1 Through `ServiceRouter` (default)
 
-`ServiceRouter` implements `MetricsInterface`, so every domain helper works on it directly:
+`ServiceRouter` implements `MetricsInterface` and forwards **every** member to the backend:
+
+- recording: `increment`, `gauge`, `record`, `registerGauge`, `event`
+- lifecycle: `flush`, `shutdown`
+- queries: `supportsQueries`, `querySeries`, `queryEvents`, `listMetrics`
+- alerting: `supportsAlerting`, `putAlertPolicy`, `removeAlertPolicy`, `getAlertPolicy`,
+  `listAlertPolicies`, `evaluateAlerts`, `listAlerts`, `triggeredAlerts`
+
+All domain helpers, including the event-emitting ones, therefore work on the router directly:
 
 ```kotlin
 import com.simiacryptus.cognotik.platform.ServiceRouter
-import com.simiacryptus.cognotik.platform.service.recordTokenUsage
+import com.simiacryptus.cognotik.platform.service.appStarted
 
-ServiceRouter.recordTokenUsage(model, usage, app = "chat")
+ServiceRouter.appStarted(app = "chat", session = session, user = user, worker = workerId)
 ServiceRouter.increment(MetricType.TOKEN_SPEND, 0.03)
 ```
 
@@ -69,36 +79,28 @@ factory registrations are honoured.
 
 ### 3.2 When no backend is registered
 
-`ServiceKey.create()` throws `UnsupportedOperationException` when neither `factory` nor
-`defaultFactory` is set. If `ServiceMap` surfaces that, a deployment without a metrics backend
-would throw from `ServiceRouter.increment(...)`, which violates the "must not throw" rule.
-Until the router falls back to `NoOpMetrics` itself, do one of the following:
+The router's `metrics` accessor catches the `UnsupportedOperationException` that
+`ServiceKey.create()` throws when neither `factory` nor `defaultFactory` is set. In that case it uses
+`NoOpMetrics`. Calls through `ServiceRouter` are therefore safe in minimal deployments.
 
-1. **Make sure a backend (or `NoOpMetrics`) is always registered at startup** (preferred; see section 8), or
-2. Use a guarded accessor in code that may run in minimal deployments:
+Resolving `ServiceMap[ServiceKey.METRICS]` **directly** has no such fallback. If you must bypass the
+router, guard the lookup:
 
 ```kotlin
-object AppMetrics {
-  /** Resolved once; call after service registration at startup. */
-  val metrics: MetricsInterface by lazy {
-    runCatching { ServiceMap[ServiceKey.METRICS] }.getOrElse { NoOpMetrics }
-  }
-}
+val metrics: MetricsInterface =
+  runCatching { ServiceMap[ServiceKey.METRICS] }.getOrElse { NoOpMetrics }
 ```
-
-`ServiceKey.METRICS` documents the intent: callers should create the instance once, cache it,
-and fall back to `NoOpMetrics` when unregistered.
 
 ### 3.3 Constructor injection (recommended for new, testable classes)
 
-Because every helper is an extension on `MetricsInterface`, classes can take the interface as a
+Every helper is an extension on `MetricsInterface`, so classes can take the interface as a
 parameter, defaulting to the router:
 
 ```kotlin
 class ChatApp(private val metrics: MetricsInterface = ServiceRouter) { /* ... */ }
 ```
 
-Tests then pass an `InMemoryMetrics` (section 9).
+Tests then pass an `InMemoryMetrics` (section 11).
 
 ---
 
@@ -150,7 +152,7 @@ Tests then pass an `InMemoryMetrics` (section 9).
 
 ### 4.4 Attributes
 
-Build attributes by binding values; `null` values are skipped, so optional attributes can be inline:
+Build attributes by binding values. `null` values are skipped, so optional attributes can be written inline:
 
 ```kotlin
 val attrs = Attributes.of(
@@ -161,9 +163,11 @@ val attrs = Attributes.of(
 val more = attrs + MetricAttribute.WORKER("node-7")          // immutable; returns a new set
 ```
 
-Known attributes: `MODEL`, `PROVIDER`, `TOKEN_TYPE`, `PAYMENT_TYPE`, `CURRENCY`, `APP`, `OUTCOME`,
-`DIRECTION`, `CLUSTER`, `SERVICE`, `STATUS`, `WORKER` (low cardinality), and `USER`, `SESSION`
-(**high cardinality**; stripped from series, kept on events).
+Known attributes:
+
+- **Low cardinality:** `MODEL`, `PROVIDER`, `TOKEN_TYPE`, `PAYMENT_TYPE`, `CURRENCY`, `APP`, `OUTCOME`,
+  `DIRECTION`, `CLUSTER`, `SERVICE`, `STATUS`, `WORKER`.
+- **High cardinality:** `USER`, `SESSION`. These are stripped from series and kept on events.
 
 For `OUTCOME`, use the constants in `Outcomes`: `STARTED`, `SUCCESS`, `FAILURE`, `CANCELLED`.
 
@@ -174,43 +178,99 @@ For `OUTCOME`, use the constants in `Outcomes`: `STARTED`, `SUCCESS`, `FAILURE`,
 Use the domain helpers from `MetricsExtensions.kt` wherever one exists. They already pick the right
 metric, attributes and event.
 
-| Dashboard checklist item | Hook location (look for...)                                                                                                                                                                   | Call                                                          |
-|--------------------------|-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
-| **Token spend**          | Wherever a model call completes and a `ModelSchema.Usage` is available, typically the same place `UsageInterface.incrementUsage(session, user, model, usage, data)` is invoked or implemented | `recordTokenUsage(model, usage, app)`                         |
-| **Input cash**           | Payment webhooks / checkout completion handlers (card, crypto, invoice)                                                                                                                       | `recordPayment(PaymentType.CARD, amount, "USD", user)`        |
-| **Credits granted**      | `UsageInterface.creditUser(...)`, gift claim (`GiftedCreditsInterface.claim`), admin adjustments                                                                                              | `recordCreditsGranted(source, credits, user)`                 |
-| **Banked credits**       | A periodic job summing outstanding balances (or after each credit/spend if cheap)                                                                                                             | `setBankedCredits(total)`                                     |
-| **Apps**                 | App/session lifecycle: where a session starts and where it ends (success, failure, cancel)                                                                                                    | `appStarted(...)`, `appCompleted(...)`                        |
-| **Active apps**          | The registry/counter of live sessions per worker                                                                                                                                              | `registerGauge(MetricType.APP_ACTIVE_SESSIONS, ...)`          |
-| **File transfer**        | Upload and download servlets / `SessionContentStore` `openRead`/`openWrite` callers at the web layer                                                                                          | `recordFileTransfer(...)`                                     |
-| **Fargate nodes**        | The worker manager or autoscaler that launches/stops tasks                                                                                                                                    | `setFargateNodes`, `fargateNodeStarted`, `fargateNodeStopped` |
-| **ECS service status**   | A scheduled poller calling ECS `DescribeServices`                                                                                                                                             | `reportEcsService(...)`                                       |
+Several dashboard items are **recorded automatically by `ServiceRouter`** (section 6). Do not
+instrument them again.
+
+| Dashboard checklist item | Hook location (look for...)                                                                                  | Call                                                          |
+|--------------------------|--------------------------------------------------------------------------------------------------------------|---------------------------------------------------------------|
+| **Token spend**          | **Automatic** via `ServiceRouter.incrementUsage(...)`. Only instrument manually if usage bypasses the router  | (`recordTokenUsage(model, usage, app)`)                       |
+| **Input cash**           | Payment webhooks / checkout completion handlers (card, crypto, invoice)                                      | `recordPayment(PaymentType.CARD, amount, "USD", user)`        |
+| **Credits granted**      | **Automatic** via `ServiceRouter.creditUser(...)` and `ServiceRouter.claim(...)`                             | (pass `payment_type` in `creditUser` metadata, see 6.2)       |
+| **Banked credits**       | A periodic job summing outstanding balances (or after each credit/spend if cheap)                            | `setBankedCredits(total)`                                     |
+| **Apps**                 | App/session lifecycle: where a session starts and where it ends (success, failure, cancel)                   | `appStarted(...)`, `appCompleted(...)`                        |
+| **Active apps**          | The registry/counter of live sessions per worker                                                             | `registerGauge(MetricType.APP_ACTIVE_SESSIONS, ...)`          |
+| **File transfer**        | **Automatic** for `ServiceRouter.openRead`/`openWrite`. Instrument manually only for transfers that bypass it | (`recordFileTransfer(...)`)                                   |
+| **Fargate nodes**        | The worker manager or autoscaler that launches/stops tasks                                                   | `setFargateNodes`, `fargateNodeStarted`, `fargateNodeStopped` |
+| **ECS service status**   | A scheduled poller calling ECS `DescribeServices`                                                            | `reportEcsService(...)`                                       |
 
 Choose the hook location carefully:
 
 - **Instrument where the facts are known**, i.e. where you have the model, usage, outcome and
-  duration in hand. Avoid re-deriving them in the facade layer.
-- **Instrument once per fact.** If `ServiceRouter.incrementUsage` and the real usage
-  implementation both record tokens, spend will be double counted. Pick one site.
+  duration in hand.
+- **Instrument once per fact.** The router already records token usage, credit grants and session
+  file transfers. Neither backends (`UsageInterface`, `StorageInterface`, `GiftedCreditsInterface`
+  implementations) nor callers of the router may record these again, or they will be double counted.
 - **Record in `finally` / completion paths**, not only on the happy path, so failures and cancellations
   are visible.
 
 ---
 
-## 6. Recipes
+## 6. Automatic interception in `ServiceRouter`
 
-### 6.1 Token usage and spend
+The router records the following facts for calls it forwards. Each recording runs inside a `safely`
+block: it never throws and never affects the result of the intercepted call. Failures are logged
+at `WARN` as `Metrics recording failed: <op>`.
+
+| Router call                                      | Recorded                                                                                                  |
+|--------------------------------------------------|-----------------------------------------------------------------------------------------------------------|
+| `incrementUsage(session, user, model, usage, …)` | `recordTokenUsage(model, usage)` (cost from `model.pricing(usage)`), after the usage backend succeeds. Note: **no `app` attribute** |
+| `creditUser(user, amount, comment, metadata)`    | `recordCreditsGranted(source, amount, user)` when `amount > 0` and not inside a gift claim                 |
+| `claim(user, giftId, …)` (both overloads)        | One `recordCreditsGranted(PaymentType.GIFT, total, user)` for all credits granted during the claim         |
+| `openRead(user, session, path)`                  | `recordFileTransfer(DOWNLOAD, …)` when the stream is closed, or immediately (0 bytes, failure) if open fails |
+| `openWrite(user, session, path)`                 | `recordFileTransfer(UPLOAD, …)` when the stream is closed, or immediately (0 bytes, failure) if open fails   |
+
+### 6.1 Token usage
+
+The router does not know the app name, so router-recorded `TOKENS_USED` / `TOKEN_SPEND` series carry no
+`app` dimension. If you need per-app spend, record it at a site that knows the app. Do not also call
+the router's `incrementUsage` for the same usage, or spend is double counted.
+
+### 6.2 Credit grants
+
+`creditUser` derives the source from `metadata["payment_type"]` and falls back to
+`PaymentType.ADJUSTMENT` when the key is missing or blank. Pass it so grants are attributed correctly:
 
 ```kotlin
-val usage: ModelSchema.Usage = completion.usage
-ServiceRouter.recordTokenUsage(model = model, usage = usage, app = appName)
+ServiceRouter.creditUser(user, 25.0, "Stripe checkout", mapOf("payment_type" to PaymentType.CARD.toString()))
 ```
 
-Emits one `TOKENS_USED` increment per token type with a non-zero count (labelled `token_type`), and one
-`TOKEN_SPEND` increment if `usage.cost > 0`. `MODEL` falls back to `"unknown"`, and `PROVIDER` is omitted
-if the model has none.
+(Use the string value of your `PaymentType`.)
 
-### 6.2 App session lifecycle with duration and outcome
+During `claim(...)`, a thread-local flag suppresses per-call `creditUser` recording. Credits granted on the
+same thread are summed and reported once as `PaymentType.GIFT` after the claim returns (or throws). The
+claim's implementation must therefore credit through `ServiceRouter.creditUser` **on the calling thread**.
+Credits granted on another thread are reported as `ADJUSTMENT`. Credits granted directly on the usage backend
+are not reported at all.
+
+### 6.3 Session file transfers
+
+`openRead`/`openWrite` return a `MeteredInputStream`/`MeteredOutputStream` that counts bytes and records
+the transfer **once, on `close()`**. Duration is measured from the `open*` call. The consequences:
+
+- **Always close the stream** (`use { }`). An unclosed stream records nothing.
+- The outcome is `FAILURE` only if `open*` throws or `close()` throws an `IOException`. An exception during
+  `read`/`write` that is followed by a normal close is recorded as `SUCCESS` with the bytes moved so far.
+- Set `ServiceRouter.trackFileTransfers = false` to disable wrapping, e.g. when a web-layer servlet records
+  transfers itself.
+
+---
+
+## 7. Recipes
+
+### 7.1 Token usage outside the router
+
+Only needed when usage is not reported through `ServiceRouter.incrementUsage`:
+
+```kotlin
+metrics.recordTokenUsage(model = model, usage = completion.usage, app = appName)
+```
+
+This emits one `TOKENS_USED` increment per token type with a non-zero count (labelled `token_type`). It emits
+one `TOKEN_SPEND` increment with the cost computed by `model.pricing(usage)`. If pricing yields no positive
+value (or throws), it falls back to `usage.cost`. Nothing is emitted when the cost is zero. `MODEL` falls back
+to `"unknown"`, and `PROVIDER` is omitted if the model has none.
+
+### 7.2 App session lifecycle with duration and outcome
 
 ```kotlin
 val started = Instant.now()
@@ -233,7 +293,7 @@ try {
 
 `appCompleted` records `APP_SESSION_DURATION` only when a `duration` is supplied.
 
-### 6.3 Pulled (live) gauges
+### 7.3 Pulled (live) gauges
 
 ```kotlin
 private val active = AtomicInteger()
@@ -250,7 +310,9 @@ handle.close()
 Prefer `registerGauge` over repeated `gauge(...)` for values that already live in memory. Return `null`
 from the supplier when there is no meaningful sample. Always close the handle when the owner goes away.
 
-### 6.4 File transfers
+### 7.4 File transfers outside the router
+
+Only for transfers that do not go through `ServiceRouter.openRead`/`openWrite`:
 
 ```kotlin
 val t0 = System.nanoTime()
@@ -268,17 +330,18 @@ metrics.recordFileTransfer(
 )
 ```
 
-### 6.5 Payments and credits
+### 7.5 Payments and banked credits
 
 ```kotlin
 metrics.recordPayment(PaymentType.CARD, amount = 25.0, currency = "USD", user = user)
-metrics.recordCreditsGranted(source = PaymentType.GIFT, amount = gift.amountGranted, user = claimant)
 metrics.setBankedCredits(totalOutstanding)
 ```
 
-`recordCreditsGranted` always emits the event, but only increments the counter when the amount is positive.
+Credit grants are recorded by the router (section 6.2). Call `recordCreditsGranted` yourself only for
+grants that bypass `ServiceRouter.creditUser`. It always emits the event, but only increments the counter
+when the amount is positive.
 
-### 6.6 Fargate and ECS
+### 7.6 Fargate and ECS
 
 ```kotlin
 metrics.setFargateNodes(cluster, service, runningCount)
@@ -297,9 +360,30 @@ metrics.reportEcsService(
 `reportEcsService` publishes the status gauge as `1` for the current status and `0` for every other
 known status, so a stacked graph works.
 
+### 7.7 Queries and alerts
+
+Read and alerting calls are optional backend capabilities. Check the flag first:
+
+```kotlin
+if (ServiceRouter.supportsQueries) {
+  val series = ServiceRouter.querySeries(query)
+}
+if (ServiceRouter.supportsAlerting) {
+  ServiceRouter.putAlertPolicy(policy)
+  ServiceRouter.evaluateAlerts()           // never throws through the router
+  ServiceRouter.triggeredAlerts().forEach(ServiceRouter::notifyAlert)
+}
+```
+
+How these calls are routed:
+
+- `evaluateAlerts` goes to the metrics backend and is wrapped so it never throws.
+- `notifyAlert` goes to the `NotificationsInterface` from `NotificationsInterface.resolve()` and is also wrapped.
+- Read calls return empty results on write-only backends.
+
 ---
 
-## 7. Extending the vocabulary
+## 8. Extending the vocabulary
 
 Nothing in `Metrics.kt` is a closed enum. Modules and plugins add their own definitions as constants.
 Declare each once (top-level or in a companion), never inline per call.
@@ -326,19 +410,19 @@ object MyPluginMetrics {
 
 Rules:
 
-- **Metric names**: dotted, lowercase: `[a-z][a-z0-9_]*(\.[a-z0-9_]+)*`. Prefix with `cognotik.` for
-  core, or your plugin id. Invalid names fail at construction.
-- **Attribute names**: snake_case `[a-z][a-z0-9_]*`. They must be valid as CloudWatch dimensions and
+- **Metric names**: dotted and lowercase, matching `[a-z][a-z0-9_]*(\.[a-z0-9_]+)*`. Prefix with `cognotik.` for
+  core, or with your plugin id. Invalid names fail at construction.
+- **Attribute names**: snake_case, matching `[a-z][a-z0-9_]*`. They must be valid as CloudWatch dimensions and
   Prometheus labels. Attribute identity is the name.
 - **Declare every attribute you want to keep** on the metric. Undeclared attributes are dropped.
-- **Pick the right unit** from `MetricUnit` (or add one: `MetricUnit("Requests")`).
-- **Open value types** (`PaymentType`, `TransferDirection`, `ServiceStatus`) take new constants:
+- **Pick the right unit** from `MetricUnit`, or add one: `MetricUnit("Requests")`.
+- **Open value types** (`PaymentType`, `TransferDirection`, `ServiceStatus`) take new constants, e.g.
   `val WIRE = PaymentType("wire")`. Keep the set small and bounded.
 - An attribute whose value type isn't `String` renders with `toString()` unless you pass a `renderer`.
 
 ---
 
-## 8. Cardinality rules
+## 9. Cardinality rules
 
 Each unique attribute combination is a separate time series. CloudWatch bills per series, and
 Prometheus degrades under many.
@@ -348,11 +432,11 @@ Prometheus degrades under many.
    events.
 2. **Attributes are for bounded sets**: model ids, app names, outcomes, directions, clusters, services.
 3. **Use events for "who/which"**, metrics for "how much".
-4. Keep `app`, `model` and `worker` values stable. Avoid embedding versions, hashes or timestamps.
+4. **Keep `app`, `model` and `worker` values stable.** Avoid embedding versions, hashes or timestamps.
 
 ---
 
-## 9. Backend registration and lifecycle
+## 10. Backend registration and lifecycle
 
 Backends register a factory against `ServiceKey.METRICS`:
 
@@ -363,7 +447,7 @@ ServiceKey.METRICS.defaultFactory = { CloudWatchMetrics(config) }
 // Both backends at once
 ServiceKey.METRICS.defaultFactory = { CompositeMetrics(CloudWatchMetrics(cfg), PrometheusMetrics(cfg)) }
 
-// Disable explicitly (safe default)
+// Disable explicitly
 ServiceKey.METRICS.defaultFactory = { NoOpMetrics }
 ```
 
@@ -371,28 +455,36 @@ Notes:
 
 - `factory` is the global user override and `defaultFactory` is the module's default. `create()` prefers
   `factory`.
-- Both setters accept a single registration. `factory` ignores duplicates with a log line, while
-  `defaultFactory` rejects duplicates (throws only if the key was built with `failFast = true`, otherwise logs
-  a warning).
-- Register during startup, **before any code records a metric**.
-- **Flush on shutdown** so buffered data isn't lost. See the `shutdown()` caveat in section 11.
+- Both setters accept a single registration:
+  - `factory` ignores duplicates with a log line.
+  - `defaultFactory` rejects duplicates. It throws only if the key was built with `failFast = true`, and
+    otherwise logs a warning.
+- Register during startup, **before any code records a metric**. Until then, router calls go to `NoOpMetrics`
+  and are lost.
+- **Flush on shutdown.** `ServiceRouter.shutdown()` shuts down the plugin manager and then, in a `finally`,
+  the metrics backend. A single `ServiceRouter.shutdown()` in the application shutdown path is enough.
+  `ServiceRouter.flush()` forces an export without shutting down.
 
 ### Implementing a new backend
 
 - Implement `MetricsInterface` and apply `metric.sanitize(attributes)` to every counter/gauge/distribution
   series.
 - Dispatch on the sub-markers `CounterType`, `GaugeType`, `DistributionType`.
-- Map dotted names to your target (`.` becomes `_` for Prometheus) and `MetricUnit.name` to the target
+- Map dotted names to your target (`.` becomes `_` for Prometheus). Map `MetricUnit.name` to the target
   unit vocabulary (CloudWatch units match by design).
 - Override `event(...)` if you have an event or log sink. Emit the event with its **full** attributes (restricted to
   `type.attributes`), then call `super.event(...)` so the backing counter still increments.
+- Optionally implement the query side (`supportsQueries`, `querySeries`, `queryEvents`, `listMetrics`) and
+  alerting (`supportsAlerting`, policy management, `evaluateAlerts`, `listAlerts`, `triggeredAlerts`).
 - Buffer and export asynchronously. Never throw from recording methods. Make `flush()` and `shutdown()`
   drain the buffer.
 - `CompositeMetrics` isolates failures per delegate, so a throwing backend does not affect the others.
+- Service backends (usage, storage, gifted credits) must **not** record token usage, credit grants or
+  session file transfers. The router does (section 6).
 
 ---
 
-## 10. Testing
+## 11. Testing
 
 `InMemoryMetrics` is the reference implementation and the test double. Because the helpers are
 extensions on `MetricsInterface`, no registration is needed. Pass it directly:
@@ -421,59 +513,22 @@ fun `chat reports token spend`() {
 }
 ```
 
-Read side: `counter`, `counterTotal`, `gaugeValue` (explicit value, or the registered supplier),
-`distribution` (count/sum/min/max/mean), `events(type?)`, `snapshot()`, `reset()`.
+Read-side methods:
+
+- `counter`, `counterTotal`
+- `gaugeValue` (explicit value, or the registered supplier)
+- `distribution` (count/sum/min/max/mean)
+- `events(type?)`, `snapshot()`, `reset()`
 
 Tips:
 
 - Reads apply the same sanitization as writes. Query a counter using only attributes the metric declares.
 - Call `reset()` between tests if the instance is shared.
-- Test failure paths too: assert `Outcomes.FAILURE` / `CANCELLED` events fire.
+- Test failure paths too: assert that `Outcomes.FAILURE` / `CANCELLED` events fire.
 - `ServiceKey.factory` accepts only the first registration, so prefer injecting `InMemoryMetrics` over
-  registering it globally in tests.
-
----
-
-## 11. Known gaps in `ServiceRouter` (read before relying on it)
-
-`ServiceRouter` forwards `increment`, `gauge`, `record` and `registerGauge` to the registered backend,
-but:
-
-| Member       | Current behaviour via `ServiceRouter`                                            | Consequence                                                                                                                                                                                                      |
-|--------------|----------------------------------------------------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| `event(...)` | Not overridden, so the interface default runs: it only increments `type.counter` | Events never reach a backend's event sink; high-cardinality attributes (user/session) are lost. All the event-emitting helpers (`appStarted`, `recordPayment`, ...) are affected when called on `ServiceRouter`. |
-| `flush()`    | Not overridden (default no-op)                                                   | Cannot force an export through the router                                                                                                                                                                        |
-| `shutdown()` | Resolves to `PluginManagerInterface.shutdown()` only (the signatures collide)    | Metrics backend is never flushed/released on router shutdown                                                                                                                                                     |
-
-**Until fixed**, for event-emitting helpers, resolve the backend directly:
-
-```kotlin
-val metrics = ServiceMap[ServiceKey.METRICS]    // or the guarded AppMetrics.metrics from section 3.2
-metrics.appStarted("chat", session, user, worker)
-```
-
-and call `ServiceMap[ServiceKey.METRICS].shutdown()` explicitly in your application shutdown path.
-
-**Proposed fix** in `ServiceRouter` (forwards the missing members and shuts down both services):
-
-```kotlin
-override fun event(type: EventType, attributes: Attributes, timestamp: Instant) =
-  metrics.event(type, attributes, timestamp)
-
-override fun flush() = metrics.flush()
-
-override fun shutdown() {
-  try {
-    pluginManager.shutdown()
-  } finally {
-    metrics.shutdown()
-  }
-}
-```
-
-(Add imports for `EventType`; `Instant` is already imported.) A secondary improvement is to have the
-`metrics` accessor fall back to `NoOpMetrics` when no factory is registered, to honour the
-"never throw" contract.
+  registering it globally.
+- To test the router's automatic interception, register `InMemoryMetrics` (and stub service backends) once
+  for the test JVM. Call `reset()` between tests.
 
 ---
 
@@ -482,12 +537,14 @@ override fun shutdown() {
 Use this when adding metrics to a module or reviewing a PR:
 
 - [ ] Uses an existing domain helper, or declares new metric/attribute/event constants once (not inline).
-- [ ] Each fact is recorded at exactly one site (no double counting between facade and implementation).
+- [ ] Each fact is recorded at exactly one site. Token usage, credit grants, gift claims and session file
+  transfers are already recorded by `ServiceRouter`, so neither the backend nor the caller records them again.
+- [ ] `creditUser` calls pass `metadata["payment_type"]` when the source is not an adjustment.
+- [ ] Streams from `ServiceRouter.openRead`/`openWrite` are always closed (`use { }`).
 - [ ] Failure and cancellation paths record an outcome (`finally`, not only on success).
 - [ ] No high-cardinality value (user, session, ids, paths) on a non-event metric.
-- [ ] Event-emitting calls go to the real backend (`ServiceMap[ServiceKey.METRICS]`), not the router, until section 11
-  is resolved.
 - [ ] Pulled gauges return `null` when there is no sample, and their `AutoCloseable` is closed on teardown.
 - [ ] Counter amounts are non-negative; durations are in milliseconds (`MetricUnit.MILLISECONDS`).
-- [ ] A backend or `NoOpMetrics` is registered at startup, and `shutdown()` is invoked on exit.
+- [ ] A backend (or `NoOpMetrics`) is registered at startup, and `ServiceRouter.shutdown()` is invoked on exit.
+- [ ] Query/alerting code checks `supportsQueries` / `supportsAlerting` first.
 - [ ] A test using `InMemoryMetrics` asserts the expected series and events.

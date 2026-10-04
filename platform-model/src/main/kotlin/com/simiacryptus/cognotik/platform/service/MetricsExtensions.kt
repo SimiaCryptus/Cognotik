@@ -22,7 +22,12 @@ import java.time.Duration
 
 // ---------------- Token spend ----------------
 
-/** Records token counts (per token type) and cost for one model invocation. */
+/**
+  * Records token counts (per token type) and cost for one model invocation.
+  *
+  * Cost is computed with [AIModel.pricing]. If pricing is unavailable (non-positive,
+  * non-finite, or throws), it falls back to [ModelSchema.Usage.cost].
+  */
 fun MetricsInterface.recordTokenUsage(
   model: AIModel,
   usage: ModelSchema.Usage,
@@ -36,7 +41,15 @@ fun MetricsInterface.recordTokenUsage(
   usage.counts.forEach { (type, count) ->
     if (count > 0) increment(MetricType.TOKENS_USED, count.toDouble(), base + MetricAttribute.TOKEN_TYPE(type))
   }
-  if (usage.cost > 0) increment(MetricType.TOKEN_SPEND, usage.cost, base)
+   val cost = usageCost(model, usage)
+   if (cost > 0) increment(MetricType.TOKEN_SPEND, cost, base)
+}
+/** Cost of [usage] per [AIModel.pricing], falling back to [ModelSchema.Usage.cost]. Never throws. */
+internal fun usageCost(model: AIModel, usage: ModelSchema.Usage): Double {
+   val priced = runCatching { model.pricing(usage) }.getOrNull()
+   if (priced != null && priced.isFinite() && priced > 0) return priced
+   val reported = usage.cost
+   return if (reported.isFinite() && reported > 0) reported else 0.0
 }
 
 // ---------------- Input cash / credits ----------------
