@@ -256,4 +256,37 @@ interface SessionMetadataInterface {
   /** Paged variant of [listSessionEntries]; default pages in memory. */
   fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
     listSessionEntries(user = user, path = path).paginate(page)
+  /**
+   * Bulk-fetch listing entries for an explicit set of session IDs, without
+   * loading heavyweight fields such as message ids.
+   *
+   * @return a map keyed by session id; ids with no recorded metadata are omitted
+   */
+  fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
+    getSessionMetadataMap(user, sessionIds).mapValues { it.value.toEntry() }
+  /**
+   * Filtered, sorted session listing.
+   *
+   * The default filters [listSessionEntries] in memory using [SessionQuery.matches];
+   * DB-backed implementations should push the filter and sort down.
+   */
+  fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> {
+    val base = when {
+      query.sessionIds != null -> getSessionEntries(user, query.sessionIds).values.toList()
+      query.path != null -> listSessionEntries(user = user, path = query.path)
+      else -> listSessionEntries(user)
+    }
+    return base.filter { query.matches(it) }.sortedWith(query.sort.comparator)
+  }
+  /** Paged variant of [querySessions]; default pages in memory. */
+  fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
+    querySessions(user, query).paginate(page)
+  /** Number of sessions matching [query]; DB-backed implementations should use a COUNT. */
+  fun countSessions(user: User, query: SessionQuery = SessionQuery()): Int =
+    querySessions(user, query).size
+  /** Distinct, sorted application paths that the user has sessions under. */
+  fun listSessionPaths(user: User): List<String> =
+    listSessionEntries(user).mapNotNull { it.path }.distinct().sorted()
+  /** Number of messages recorded for a session, without materialising the id list where possible. */
+  fun getMessageCount(user: User, session: Session): Int = getMessageIds(user, session).size
 }

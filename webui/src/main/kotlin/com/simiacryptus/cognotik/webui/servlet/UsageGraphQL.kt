@@ -35,18 +35,21 @@ class UsageGraphQLServlet : HttpServlet() {
 }
 
 /**
- * GraphQL API for usage data.
+  * GraphQL API for usage data, sessions and session metadata (see [SessionGraphQL]).
  *
  * - POST with JSON body `{"query": "...", "variables": {...}, "operationName": "..."}`
  * - POST with `Content-Type: application/graphql` and the raw query as body
  * - GET with `?query=...&variables=...&operationName=...`
  * - GET with no query returns the schema SDL as text/plain
  *
+  * Mutations are only executed for POST requests.
+  *
  * Token counts are exposed as `Float` since GraphQL `Int` is 32-bit.
  */
 object UsageGraphQL {
   private val log = LoggerFactory.getLogger(UsageGraphQL::class.java)
-  private const val USER_KEY = "user"
+  internal const val USER_KEY = "user"
+  internal const val MUTATIONS_ALLOWED_KEY = "mutationsAllowed"
 
   private val gsonIn: Gson = Gson()
 
@@ -61,7 +64,7 @@ object UsageGraphQL {
     .create()
 
   val sdl: String = """
-    schema { query: Query }
+    schema { query: Query mutation: Mutation }
 
     enum TokenType { ${TokenTypes.values().joinToString(" ") { it.name }} }
 
@@ -170,7 +173,7 @@ object UsageGraphQL {
       # Known token types
       tokenTypes: [TokenTypeInfo!]!
     }
-  """.trimIndent()
+  """.trimIndent() + "\n\n" + SessionGraphQL.sdl
 
   // ---- Source objects (resolved lazily so only requested data is loaded) ----
 
@@ -329,6 +332,7 @@ object UsageGraphQL {
               .toList()
           })
       }
+      .also { SessionGraphQL.wire(it) }
       .build()
     val schema = SchemaGenerator().makeExecutableSchema(registry, wiring)
     return GraphQL.newGraphQL(schema).build()
@@ -382,7 +386,7 @@ object UsageGraphQL {
       .query(gql.query)
       .operationName(gql.operationName)
       .variables(gql.variables)
-      .graphQLContext(mapOf(USER_KEY to user))
+      .graphQLContext(mapOf(USER_KEY to user, MUTATIONS_ALLOWED_KEY to !isGet))
       .build()
 
     val result = try {

@@ -96,6 +96,20 @@ interface UsageInterface {
   fun clear()
   fun setParentSession(user: User, child: Session, parent: Session)
   fun getParentSession(user: User, child: Session): Session?
+  /**
+   * Lists the direct children of [parent] (sessions registered via [setParentSession]).
+   *
+   * @throws UnsupportedOperationException if the implementation cannot enumerate children
+   */
+  fun listChildSessions(user: User, parent: Session): List<Session> =
+    throw UnsupportedOperationException("listChildSessions is not implemented by ${this.javaClass.name}")
+  /**
+   * Bulk variant of [getParentSession]; DB-backed implementations should override.
+   *
+   * @return a map containing every requested child, with null for sessions that have no parent
+   */
+  fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> =
+    children.associateWith { getParentSession(user, it) }
 
   /**
    * Returns the available budget (in cost units, e.g. USD) for a user.
