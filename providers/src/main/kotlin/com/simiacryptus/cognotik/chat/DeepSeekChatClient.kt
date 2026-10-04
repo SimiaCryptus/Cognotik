@@ -98,7 +98,7 @@ class DeepSeekChatClient(
     val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
       .writeValueAsString(deepSeekRequest)
     // Pass the model so AI_ERROR metrics can be broken down by model
-    val result = post("$apiBase/chat/completions", json, model = model.modelName)
+    val result = post("$apiBase/chat/completions", json, model = model.name)
     // post() only reports embedded API errors; checkError throws the typed exception
     checkError(result, model)
     val response = JsonUtil.objectMapper().readValue(result, ModelSchema.ChatResponse::class.java)
