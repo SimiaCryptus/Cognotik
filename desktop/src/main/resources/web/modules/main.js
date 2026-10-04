@@ -247,7 +247,7 @@ function setupUserMenu(btn, label) {
         if (btn) btn.click();
     });
     menuInner.appendChild(usageGraphItem);
-    const workersItem = makeItem('🖥️', 'Manage Nodes', () => {
+    const workersItem = makeItem('🖥️', 'Workers', () => {
         const btn = document.getElementById('workers-manage-btn');
         if (btn) btn.click();
     });
@@ -432,7 +432,7 @@ function ensureWorkersManageModal() {
         modalId: 'workers-manage-modal',
         iframeId: 'workers-manage-iframe',
         closeBtnId: 'close-workers-manage-modal',
-        title: 'Manage Nodes'
+        title: 'Workers'
     });
 }
 

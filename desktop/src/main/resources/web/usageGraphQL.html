@@ -108,9 +108,146 @@
   .note { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
   .note:empty { display: none; }
 </style>
+<style id="future-theme">
+   /* ================= futuristic theme (overrides the base styles above) ================= */
+   :root {
+     color-scheme: dark;
+     --bg: #04060d; --panel: rgba(12, 18, 34, .62); --fg: #e6f1ff; --muted: #7f8fb0; --border: rgba(0, 229, 255, .16);
+     --accent: #00e5ff; --accent2: #ff2bd6; --accent3: #7c4dff; --accent-fg: #fff; --danger: #ff4d6d; --ok: #2bffa3; --hover: rgba(0, 229, 255, .07);
+     --glow: 0 0 0 1px rgba(0,229,255,.10), 0 0 28px rgba(0,229,255,.06), inset 0 0 40px rgba(0,229,255,.025);
+     --display: 'Orbitron', 'Rajdhani', 'Eurostile', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+   }
+   html { background: var(--bg); }
+   body {
+     min-height: 100vh;
+     background:
+       radial-gradient(1200px 600px at 10% -10%, rgba(124,77,255,.20), transparent 60%),
+       radial-gradient(900px 500px at 110% 10%, rgba(0,229,255,.12), transparent 60%),
+       var(--bg);
+     background-attachment: fixed;
+   }
+   #bg3d { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; opacity: .75; }
+   /* CSS fallback grid when WebGL is not available */
+   body::before {
+     content: ''; position: fixed; left: -50%; right: -50%; bottom: -10%; height: 60vh; z-index: 0; pointer-events: none;
+     background-image: linear-gradient(rgba(0,229,255,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,.18) 1px, transparent 1px);
+     background-size: 48px 48px; transform: perspective(400px) rotateX(62deg); transform-origin: bottom;
+     -webkit-mask-image: linear-gradient(to top, #000, transparent); mask-image: linear-gradient(to top, #000, transparent);
+     animation: gridmove 2.5s linear infinite;
+   }
+   body.webgl::before { display: none; }
+   body::after {
+     content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
+     background: repeating-linear-gradient(to bottom, rgba(255,255,255,.022) 0 1px, transparent 1px 3px);
+   }
+   main { position: relative; z-index: 2; }
+   header { background: rgba(5, 9, 20, .72); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); border-bottom: 1px solid var(--border); }
+   header::after {
+     content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
+     background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent); background-size: 200% 100%;
+     animation: sweep 6s linear infinite;
+   }
+   .brand { display: flex; align-items: center; gap: 10px; margin-right: 10px; }
+   .brand .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); animation: pulse 1.8s ease-in-out infinite; }
+   .brand .brand-text {
+     font-family: var(--display); font-weight: 700; letter-spacing: .22em; font-size: 13px; text-transform: uppercase;
+     background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent)); background-size: 200% 100%;
+     -webkit-background-clip: text; background-clip: text; color: transparent; animation: sweep 8s linear infinite;
+   }
+   header .stat { font-family: var(--display); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+   header .stat b { font-family: var(--mono); font-size: 13px; letter-spacing: 0; color: var(--accent); text-shadow: 0 0 10px rgba(0,229,255,.5); }
+   nav button { font-family: var(--display); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; position: relative; transition: color .2s, background .2s, border-color .2s; }
+   nav button::after {
+     content: ''; position: absolute; left: 12px; right: 12px; bottom: 2px; height: 2px;
+     background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 0 8px var(--accent);
+     transform: scaleX(0); transition: transform .3s cubic-bezier(.2,.8,.2,1);
+   }
+   nav button:hover { color: var(--fg); }
+   nav button.active { color: var(--accent); background: rgba(0,229,255,.06); border-color: rgba(0,229,255,.25); text-shadow: 0 0 10px rgba(0,229,255,.6); }
+   nav button.active::after, nav button:hover::after { transform: scaleX(1); }
+   .panel, .card {
+     position: relative; background: linear-gradient(180deg, rgba(16,24,46,.74), rgba(8,12,26,.74));
+     backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border); box-shadow: var(--glow);
+   }
+   .panel { border-radius: 12px; animation: rise .55s cubic-bezier(.2,.8,.2,1) both; }
+   .panel::before, .card::before, .panel::after, .card::after { content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none; opacity: .85; }
+   .panel::before, .card::before { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); border-top-left-radius: inherit; }
+   .panel::after, .card::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent2); border-right: 2px solid var(--accent2); border-bottom-right-radius: inherit; }
+   .panel h2 { font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--accent); text-shadow: 0 0 12px rgba(0,229,255,.35); }
+   .panel h2 .right, .panel h2 .muted { font: 13px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; text-transform: none; letter-spacing: 0; text-shadow: none; }
+   .panel h2 .right { color: var(--fg); }
+   .card { border-radius: 10px; animation: rise .55s cubic-bezier(.2,.8,.2,1) both; transition: transform .25s, box-shadow .25s, border-color .25s; }
+   .card:hover { transform: translateY(-3px); border-color: rgba(0,229,255,.45); box-shadow: 0 0 0 1px rgba(0,229,255,.3), 0 12px 32px rgba(0,229,255,.14); }
+   .cards .card:nth-child(2) { animation-delay: .04s; } .cards .card:nth-child(3) { animation-delay: .08s; }
+   .cards .card:nth-child(4) { animation-delay: .12s; } .cards .card:nth-child(5) { animation-delay: .16s; }
+   .cards .card:nth-child(6) { animation-delay: .20s; } .cards .card:nth-child(7) { animation-delay: .24s; }
+   .cards .card:nth-child(8) { animation-delay: .28s; } .cards .card:nth-child(9) { animation-delay: .32s; }
+   .cards .card:nth-child(10) { animation-delay: .36s; } .cards .card:nth-child(n+11) { animation-delay: .40s; }
+   .card .k { font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; font-size: 10px; }
+   .card .v {
+     font-family: var(--mono); font-weight: 600; background: linear-gradient(90deg, #ffffff, var(--accent));
+     -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 8px rgba(0,229,255,.25));
+   }
+   .card .v.neg { background: none; color: var(--danger); filter: drop-shadow(0 0 8px rgba(255,77,109,.45)); }
+   .delta.up { color: var(--danger); } .delta.down { color: var(--ok); }
+   input, select, textarea { background: rgba(2,6,16,.7); border-color: rgba(0,229,255,.2); transition: border-color .2s, box-shadow .2s; }
+   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,.15), 0 0 14px rgba(0,229,255,.2); }
+   option { background: #0a1020; color: var(--fg); }
+   button.btn { background: rgba(0,229,255,.04); border-color: rgba(0,229,255,.22); transition: color .2s, border-color .2s, box-shadow .2s, filter .2s; }
+   button.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px rgba(0,229,255,.3); }
+   button.btn.primary { background: linear-gradient(135deg, var(--accent3), var(--accent)); color: #fff; border-color: transparent; font-weight: 600; box-shadow: 0 0 18px rgba(0,229,255,.3); }
+   button.btn.primary:hover:not(:disabled) { color: #fff; filter: brightness(1.15); }
+   th, td { border-bottom-color: rgba(0,229,255,.08); }
+   th { font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 10px; }
+   tfoot td { border-top-color: rgba(0,229,255,.3); color: var(--accent); }
+   tbody tr { animation: fadeRow .4s ease-out both; }
+   tbody tr.clickable:hover { background: linear-gradient(90deg, rgba(0,229,255,.10), transparent 70%); box-shadow: inset 2px 0 0 var(--accent); }
+   tbody tr.detail > td { background: rgba(2,6,16,.55); }
+   .chip { background: rgba(0,229,255,.06); border-color: rgba(0,229,255,.2); }
+   .sharebar { background: rgba(2,6,16,.8); border-color: rgba(0,229,255,.2); }
+   .sharebar > span { background: linear-gradient(90deg, var(--accent3), var(--accent)); box-shadow: 0 0 8px var(--accent); transform-origin: left; animation: fillbar .9s cubic-bezier(.2,.8,.2,1) both; }
+   .swatch { box-shadow: 0 0 6px currentColor; }
+   pre.box, .sdl-block { background: rgba(2,6,16,.75); border-color: rgba(0,229,255,.16); }
+   .chart { border-radius: 10px; }
+   .chart svg text { font-family: var(--mono); }
+   .chart svg .grid { stroke: rgba(0,229,255,.13); }
+   .chart svg rect.bar { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .7s cubic-bezier(.2,.8,.2,1) both; }
+   .chart.pickable svg rect.hit { cursor: pointer; }
+   .chart.is3d { overflow: hidden; background: radial-gradient(ellipse at 50% 100%, rgba(0,229,255,.10), transparent 70%); }
+   .chart canvas.gl3d { display: block; cursor: grab; }
+   .chart canvas.gl3d:active { cursor: grabbing; }
+   .ax3d { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+   .lbl3d { position: absolute; left: 0; top: 0; font: 10px var(--mono); color: var(--muted); white-space: nowrap; text-shadow: 0 0 6px #000; }
+   .lbl3d.avg { color: var(--fg); opacity: .8; }
+   .tip {
+     background: rgba(6,10,22,.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+     border-color: rgba(0,229,255,.4); box-shadow: 0 0 20px rgba(0,229,255,.2), 0 8px 24px rgba(0,0,0,.5);
+   }
+   #toast { background: rgba(40,6,16,.92); border: 1px solid var(--danger); box-shadow: 0 0 22px rgba(255,77,109,.4); backdrop-filter: blur(8px); }
+   #toast.info { background: rgba(4,30,20,.92); border-color: var(--ok); box-shadow: 0 0 22px rgba(43,255,163,.35); }
+   .loading { position: relative; }
+   .loading::after {
+     content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 10;
+     background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent); background-size: 40% 100%; background-repeat: no-repeat;
+     animation: loadbar 1s linear infinite;
+   }
+   @keyframes rise { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+   @keyframes fadeRow { from { opacity: 0; transform: translateX(-6px); } to { opacity: 1; transform: none; } }
+   @keyframes grow { from { transform: scaleY(0); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }
+   @keyframes fillbar { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+   @keyframes sweep { from { background-position: 0% 0; } to { background-position: 200% 0; } }
+   @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
+   @keyframes gridmove { to { background-position: 0 48px; } }
+   @keyframes loadbar { from { background-position: -40% 0; } to { background-position: 140% 0; } }
+   @media (prefers-reduced-motion: reduce) {
+     *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+   }
+</style>
 </head>
 <body>
+<canvas id="bg3d" aria-hidden="true"></canvas>
 <header>
+   <div class="brand"><span class="pulse"></span><span class="brand-text">Usage//Core</span></div>
   <nav id="nav">
      <button data-tab="usage" class="active">Usage</button>
     <button data-tab="traffic">Traffic</button>
@@ -120,6 +257,7 @@
   <div class="spacer"></div>
   <span class="stat">Balance: <b id="hdrBalance">—</b></span>
   <span class="stat">Available: <b id="hdrBudget">—</b></span>
+   <button class="btn small" id="btn3d" title="Toggle WebGL 3D charts" disabled>◈ 3D</button>
   <button class="btn small" id="btnRefresh" title="Reload the active tab">⟳ Refresh</button>
   <label class="inline">Auto
     <select id="autoRefresh">
@@ -427,6 +565,23 @@ const addDays = (d, n) => { const r = new Date(d); r.setUTCDate(r.getUTCDate() +
 const parseDay = s => new Date(s + 'T00:00:00Z');
 const daysBetween = (a, b) => Math.round((parseDay(b) - parseDay(a)) / 86400e3);
 const tsOf = s => { const t = s ? Date.parse(s) : NaN; return isNaN(t) ? null : t; };
+// ---------------------------------------------------------------- three.js (optional, loaded lazily)
+// If the CDN is unreachable (e.g. offline) everything falls back to 2D SVG charts and a CSS background.
+const THREE_URL = 'https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js';
+let THREE = null;
+const threeReady = import(THREE_URL)
+   .then(m => (THREE = m))
+   .catch(e => { console.warn('three.js unavailable, using 2D charts', e); return null; });
+const reducedMotion = window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false;
+const MODE3D_KEY = 'usageGraphQL.3d';
+let mode3d = load(MODE3D_KEY, true);
+let webglSupport;
+const webglOk = () => webglSupport ??= (() => {
+   try { const c = document.createElement('canvas'); return !!(c.getContext('webgl2') || c.getContext('webgl')); }
+   catch { return false; }
+})();
+const use3d = () => !!(mode3d && THREE && webglOk());
+
 
 function colorFor(name) {
   let h = 0;
@@ -662,7 +817,7 @@ function fmtAxis(v, metric) {
  * Stacked bar chart.
  * keys: ordered bucket keys; byKey: Map<key, Map<series, value>>; series: ordered series names.
  */
-function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumulative = false, avg = false }) {
+function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumulative = false, avg = false, onPick = null }) {
   let data = byKey;
   if (cumulative) {
     const acc = new Map();
@@ -673,6 +828,25 @@ function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumula
     }
   }
   const sums = keys.map(k => { let t = 0; for (const v of (data.get(k) || new Map()).values()) t += v; return t; });
+   const mean = avg && keys.length ? sums.reduce((a, b) => a + b, 0) / keys.length : 0;
+   const tipHtml = i => {
+     const k = keys[i];
+     const entries = [...(data.get(k) || new Map())].filter(([, v]) => v).sort((a, b) => b[1] - a[1]);
+     return `<div><b>${esc(title(k))}</b>${cumulative ? ' <span class="muted">(cumulative)</span>' : ''}</div>` +
+       (entries.length
+         ? entries.map(([s, v]) => `<div class="r"><span>${swatch(s)}${esc(s)}</span><span>${esc(fmt(v))}</span></div>`).join('')
+         : '<div class="muted">No usage</div>') +
+       (entries.length > 1 ? `<div class="r tot"><span>Total</span><span>${esc(fmt(sums[i]))}</span></div>` : '');
+   };
+   disposeChart3D(el);
+   el.classList.toggle('pickable', !!onPick);
+   el.onmousedown = el.ondblclick = null;
+   if (use3d()) {
+     el.classList.add('is3d');
+     chart3D(el, keys, data, series, sums, { fmt, axis, label, mean, tipHtml, onPick });
+     return;
+   }
+   el.classList.remove('is3d');
   const W = Math.max(el.clientWidth || 800, keys.length * 6 + 80);
   const H = 260, padL = 70, padR = 10, padT = 10, padB = 34;
   const plotW = W - padL - padR, plotH = H - padT - padB;
@@ -697,21 +871,18 @@ function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumula
       const v = m.get(s) || 0;
       if (!v) continue;
       const y1 = y(acc + v), y0 = y(acc);
-      svg += `<rect x="${x.toFixed(2)}" y="${y1.toFixed(2)}" width="${barW.toFixed(2)}" height="${Math.max(0.5, y0 - y1).toFixed(2)}" fill="${colorFor(s)}"/>`;
+       svg += `<rect class="bar" style="animation-delay:${Math.min(i * 12, 700)}ms" x="${x.toFixed(2)}" y="${y1.toFixed(2)}" width="${barW.toFixed(2)}" height="${Math.max(0.5, y0 - y1).toFixed(2)}" fill="${colorFor(s)}"/>`;
       acc += v;
     }
     if (i % labelEvery === 0) {
       svg += `<text x="${(padL + i * slot + slot / 2).toFixed(2)}" y="${H - padB + 14}" text-anchor="middle">${esc(label(k))}</text>`;
     }
   });
-  if (avg && keys.length) {
-    const mean = sums.reduce((a, b) => a + b, 0) / keys.length;
-    if (mean > 0) {
-      const yy = y(mean).toFixed(2);
-      svg += `<line class="avg" x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}" />`;
-      svg += `<text x="${W - padR - 4}" y="${yy - 4}" text-anchor="end">avg ${esc(fmt(mean))}</text>`;
-    }
-  }
+   if (mean > 0) {
+     const yy = y(mean).toFixed(2);
+     svg += `<line class="avg" x1="${padL}" x2="${W - padR}" y1="${yy}" y2="${yy}" />`;
+     svg += `<text x="${W - padR - 4}" y="${yy - 4}" text-anchor="end">avg ${esc(fmt(mean))}</text>`;
+   }
   keys.forEach((k, i) => {
     svg += `<rect class="hit" data-i="${i}" x="${(padL + i * slot).toFixed(2)}" y="${padT}" width="${slot.toFixed(2)}" height="${plotH}"/>`;
   });
@@ -723,21 +894,233 @@ function stackedChart(el, keys, byKey, series, { fmt, axis, label, title, cumula
   el.onmousemove = e => {
     const r = e.target.closest?.('rect.hit');
     if (!r) { tip.style.display = 'none'; return; }
-    const i = Number(r.dataset.i), k = keys[i];
-    const entries = [...(data.get(k) || new Map())].filter(([, v]) => v).sort((a, b) => b[1] - a[1]);
-    tip.innerHTML = `<div><b>${esc(title(k))}</b>${cumulative ? ' <span class="muted">(cumulative)</span>' : ''}</div>` +
-      (entries.length
-        ? entries.map(([s, v]) => `<div class="r"><span>${swatch(s)}${esc(s)}</span><span>${esc(fmt(v))}</span></div>`).join('')
-        : '<div class="muted">No usage</div>') +
-      (entries.length > 1 ? `<div class="r tot"><span>Total</span><span>${esc(fmt(sums[i]))}</span></div>` : '');
-    tip.style.display = 'block';
-    const box = el.getBoundingClientRect();
-    let left = e.clientX - box.left + el.scrollLeft + 14;
-    if (left + tip.offsetWidth > el.scrollLeft + el.clientWidth) left = e.clientX - box.left + el.scrollLeft - tip.offsetWidth - 14;
-    tip.style.left = Math.max(0, left) + 'px';
-    tip.style.top = Math.max(0, e.clientY - box.top - 10) + 'px';
+     tip.innerHTML = tipHtml(Number(r.dataset.i));
+     showTip(el, tip, e);
   };
   el.onmouseleave = () => (tip.style.display = 'none');
+   el.onclick = onPick ? e => {
+     const r = e.target.closest?.('rect.hit');
+     if (r) onPick(Number(r.dataset.i));
+   } : null;
+}
+function showTip(el, tip, e) {
+   tip.style.display = 'block';
+   const box = el.getBoundingClientRect();
+   let left = e.clientX - box.left + el.scrollLeft + 14;
+   if (left + tip.offsetWidth > el.scrollLeft + el.clientWidth) left = e.clientX - box.left + el.scrollLeft - tip.offsetWidth - 14;
+   tip.style.left = Math.max(0, left) + 'px';
+   tip.style.top = Math.max(0, e.clientY - box.top - 10) + 'px';
+}
+// ---------------------------------------------------------------- 3D charts (three.js / WebGL)
+const charts3d = new WeakMap();
+function disposeChart3D(el) {
+   const c = charts3d.get(el);
+   if (!c) return;
+   charts3d.delete(el);
+   cancelAnimationFrame(c.raf);
+   window.removeEventListener('mouseup', c.onUp);
+   c.scene.traverse(o => {
+     o.geometry?.dispose();
+     [].concat(o.material || []).forEach(m => m.dispose());
+   });
+   c.renderer.dispose();
+   c.renderer.forceContextLoss();
+}
+/** 3D stacked bars: animated growth, hover highlight + tooltip, drag to orbit, double-click to reset, click to pick. */
+function chart3D(el, keys, data, series, sums, o) {
+   const W = el.clientWidth || 800, H = 320;
+   el.innerHTML = '<div class="ax3d"></div><div class="tip"></div>';
+   const tip = $('.tip', el), ax = $('.ax3d', el);
+   const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 2));
+   renderer.setSize(W, H);
+   renderer.domElement.className = 'gl3d';
+   el.prepend(renderer.domElement);
+   const scene = new THREE.Scene();
+   const camera = new THREE.PerspectiveCamera(38, W / H, 0.1, 2000);
+   const n = Math.max(1, keys.length), HEIGHT = 10, BAR = 0.72;
+   const width = n, x0 = -width / 2 + 0.5;
+   const left = -width / 2 - 0.4, right = width / 2 + 0.4, back = -0.8;
+   const yMax = niceMax(sums.reduce((a, b) => Math.max(a, b), 0));
+   const yOf = v => (v / yMax) * HEIGHT;
+   // lights
+   scene.add(new THREE.AmbientLight(0x8090ff, 0.6));
+   const sun = new THREE.DirectionalLight(0xffffff, 1.2);
+   sun.position.set(width * 0.3, 30, 25);
+   scene.add(sun);
+   const magenta = new THREE.PointLight(0xff2bd6, 1.4, 0, 0);
+   magenta.position.set(-width / 2 - 4, 8, 6);
+   scene.add(magenta);
+   const cyan = new THREE.PointLight(0x00e5ff, 1.4, 0, 0);
+   cyan.position.set(width / 2 + 4, 8, 6);
+   scene.add(cyan);
+   // floor grid
+   const floorSize = Math.max(width + 6, 20);
+   const grid = new THREE.GridHelper(floorSize, Math.round(floorSize), 0x00e5ff, 0x16304f);
+   grid.material.transparent = true;
+   grid.material.opacity = 0.35;
+   grid.material.depthWrite = false;
+   scene.add(grid);
+   // projected HTML labels
+   const labels = [];
+   const addLabel = (text, x, y, z, cls = '') => {
+     const d = document.createElement('div');
+     d.className = 'lbl3d ' + cls;
+     d.textContent = text;
+     ax.appendChild(d);
+     labels.push({ d, p: new THREE.Vector3(x, y, z) });
+   };
+   // y ticks on the back wall
+   const tickMat = new THREE.LineBasicMaterial({ color: 0x2a4a7a, transparent: true, opacity: 0.7 });
+   for (let i = 1; i <= 4; i++) {
+     const yy = HEIGHT * i / 4;
+     scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+       new THREE.Vector3(left, yy, back), new THREE.Vector3(right, yy, back)]), tickMat));
+     addLabel(o.axis(yMax * i / 4), left - 1.2, yy, back, 'y');
+   }
+   // bars
+   const box = new THREE.BoxGeometry(BAR, 1, BAR).translate(0, 0.5, 0);
+   const edges = new THREE.EdgesGeometry(box);
+   const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 });
+   const mats = new Map(series.map(s => {
+     const c = new THREE.Color(colorFor(s));
+     return [s, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.28, metalness: 0.35, roughness: 0.3, transparent: true, opacity: 0.92 })];
+   }));
+   const hitGeo = new THREE.BoxGeometry(1, HEIGHT, BAR * 1.6).translate(0, HEIGHT / 2, 0);
+   const hitMat = new THREE.MeshBasicMaterial({ visible: false });
+   const cols = [], hits = [];
+   const labelEvery = Math.max(1, Math.ceil(n / Math.max(1, Math.floor(W / 70))));
+   keys.forEach((k, i) => {
+     const x = x0 + i;
+     const col = new THREE.Group();
+     col.position.x = x;
+     let acc = 0;
+     const m = data.get(k) || new Map();
+     for (const s of series) {
+       const v = m.get(s) || 0;
+       if (!v) continue;
+       const h = Math.max(0.02, yOf(v));
+       const mesh = new THREE.Mesh(box, mats.get(s));
+       mesh.position.y = acc;
+       mesh.scale.y = h;
+       mesh.add(new THREE.LineSegments(edges, edgeMat));
+       col.add(mesh);
+       acc += h;
+     }
+     col.scale.y = reducedMotion ? 1 : 0.001;
+     scene.add(col);
+     cols.push({ col, h: acc, delay: Math.min(i * 0.015, 0.8) });
+     const hit = new THREE.Mesh(hitGeo, hitMat);
+     hit.position.x = x;
+     hit.userData.i = i;
+     scene.add(hit);
+     hits.push(hit);
+     if (i % labelEvery === 0) addLabel(o.label(k), x, 0, BAR / 2 + 1, 'x');
+   });
+   // average line
+   if (o.mean > 0) {
+     const ay = yOf(o.mean), z = BAR / 2 + 0.2;
+     const avgLine = new THREE.Line(
+       new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(left, ay, z), new THREE.Vector3(right, ay, z)]),
+       new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.35, gapSize: 0.25, transparent: true, opacity: 0.6 }));
+     avgLine.computeLineDistances();
+     scene.add(avgLine);
+     addLabel('avg ' + o.fmt(o.mean), right - 1.5, ay + 0.6, z, 'avg');
+   }
+   // hover highlight
+   const hl = new THREE.LineSegments(
+     new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, BAR * 1.35).translate(0, 0.5, 0)),
+     new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true }));
+   hl.visible = false;
+   scene.add(hl);
+   // camera framing
+   const fovT = Math.tan(THREE.MathUtils.degToRad(19));
+   const dist = Math.max((width / 2 + 1.5) / (fovT * (W / H)), (HEIGHT * 0.8) / fovT) * 1.05;
+   const target = new THREE.Vector3(0, HEIGHT * 0.38, 0);
+   const view = { az: 0, el: 0.28, userAz: 0, userEl: 0, touched: false };
+   // interaction
+   let hover = -1, drag = null, dragged = false;
+   const ray = new THREE.Raycaster(), ndc = new THREE.Vector2(), v3 = new THREE.Vector3();
+   const pick = e => {
+     const r = renderer.domElement.getBoundingClientRect();
+     ndc.set(((e.clientX - r.left) / r.width) * 2 - 1, -((e.clientY - r.top) / r.height) * 2 + 1);
+     ray.setFromCamera(ndc, camera);
+     const hit = ray.intersectObjects(hits, false)[0];
+     return hit ? hit.object.userData.i : -1;
+   };
+   const onUp = () => { drag = null; };
+   const st = { renderer, scene, raf: 0, onUp };
+   charts3d.set(el, st);
+   window.addEventListener('mouseup', onUp);
+   el.onmousemove = e => {
+     if (charts3d.get(el) !== st) return;
+     if (drag) {
+       const dx = e.clientX - drag.x, dy = e.clientY - drag.y;
+       if (Math.abs(dx) + Math.abs(dy) > 4) dragged = true;
+       view.userAz = drag.az - dx * 0.006;
+       view.userEl = Math.max(-0.2, Math.min(0.9, drag.el + dy * 0.004));
+       view.touched = true;
+       tip.style.display = 'none';
+       return;
+     }
+     hover = pick(e);
+     renderer.domElement.style.cursor = hover >= 0 && o.onPick ? 'pointer' : '';
+     if (hover < 0) { tip.style.display = 'none'; return; }
+     tip.innerHTML = o.tipHtml(hover);
+     showTip(el, tip, e);
+   };
+   el.onmouseleave = () => { hover = -1; tip.style.display = 'none'; };
+   el.onmousedown = e => {
+     if (e.button !== 0) return;
+     drag = { x: e.clientX, y: e.clientY, az: view.userAz, el: view.userEl };
+     dragged = false;
+   };
+   el.ondblclick = () => { view.userAz = 0; view.userEl = 0; view.touched = false; };
+   el.onclick = e => {
+     if (dragged) { dragged = false; return; }
+     const i = pick(e);
+     if (i >= 0 && o.onPick) o.onPick(i);
+   };
+   // render loop
+   const t0 = performance.now();
+   const loop = now => {
+     if (!renderer.domElement.isConnected) { disposeChart3D(el); return; }
+     st.raf = requestAnimationFrame(loop);
+     if (document.hidden || el.offsetParent === null) return;
+     const t = (now - t0) / 1000;
+     for (const c of cols) {
+       if (c.col.scale.y >= 1) continue;
+       const p = Math.min(1, Math.max(0, (t - c.delay) / 0.9));
+       c.col.scale.y = Math.max(0.001, 1 - Math.pow(1 - p, 3));
+     }
+     const sway = view.touched || reducedMotion ? 0 : Math.sin(t * 0.22) * 0.14;
+     view.az += (view.userAz + sway - view.az) * 0.08;
+     view.el += (0.28 + view.userEl - view.el) * 0.08;
+     camera.position.set(
+       target.x + Math.sin(view.az) * Math.cos(view.el) * dist,
+       target.y + Math.sin(view.el) * dist,
+       target.z + Math.cos(view.az) * Math.cos(view.el) * dist);
+     camera.lookAt(target);
+     if (!reducedMotion) {
+       magenta.position.x = Math.sin(t * 0.4) * (width / 2 + 4);
+       cyan.position.x = -Math.sin(t * 0.4) * (width / 2 + 4);
+     }
+     const hc = hover >= 0 ? cols[hover] : null;
+     if (hc) {
+       hl.visible = true;
+       hl.position.x = hc.col.position.x;
+       hl.scale.y = Math.max(0.15, hc.h * hc.col.scale.y) + 0.15;
+       hl.material.opacity = 0.65 + Math.sin(t * 6) * 0.3;
+     } else hl.visible = false;
+     renderer.render(scene, camera);
+     for (const { d, p } of labels) {
+       v3.copy(p).project(camera);
+       const vis = v3.z < 1 && Math.abs(v3.x) <= 1.05 && Math.abs(v3.y) <= 1.05;
+       d.style.display = vis ? '' : 'none';
+       if (vis) d.style.transform = `translate(${((v3.x + 1) / 2 * W).toFixed(1)}px, ${((1 - v3.y) / 2 * H).toFixed(1)}px) translate(-50%, -50%)`;
+     }
+   };
+   st.raf = requestAnimationFrame(loop);
 }
 
 // ---------------------------------------------------------------- tabs / routing
@@ -931,6 +1314,7 @@ function renderUser() {
     card('Available budget', fmtCost(budget), budget < 0 ? 'neg' : ''),
     card('Runway at avg rate', esc(runway), budget != null && budget <= 0 ? 'neg' : '')
   ].join('');
+   animateCounters($('#userCards'));
 
   $('#userModels').innerHTML = usageTable(u.models, u.totals, {
     modelLink: m => `<a data-filter-model="${esc(m)}" title="Show in daily chart">${esc(m)}</a>`
@@ -1252,6 +1636,7 @@ function renderSessionSummary() {
       <div id="sessionRows"></div>
     </div>`;
   enhanceTables($('#sessionModels'));
+   animateCounters($('#sessionOut'));
   $('#tlMetric').value = st.tlMetric;
   $('#tlMode').value = st.tlMode;
   $('#tlGroup').value = st.tlGroup;
@@ -1791,6 +2176,7 @@ function renderTraffic() {
     card('Prompt tokens', fmtNum(tot.promptTokens)),
     card('Completion tokens', fmtNum(tot.completionTokens))
   ].join('');
+   animateCounters($('#trCards'));
   const notes = [`${fmtDateTime(t.from)} → ${fmtDateTime(t.to)}`, `${fmtDuration(step)} buckets`];
   if (rangeHours) notes.push(`live: last ${rangeHours}h, re-anchored to now on refresh`);
   if (t.source === 'fallback') notes.push('⚠ backend cannot list calls by time; results were rebuilt by scanning your sessions and may be slow or miss ad-hoc calls');
@@ -1845,18 +2231,16 @@ function renderTrafficTimeline() {
     axis: v => fmtAxis(v, metric),
     label: k => dayStep ? isoDay(new Date(k)).slice(5) : new Date(k).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
     title: k => `${new Date(k).toLocaleString()} · ${fmtDuration(step)} bucket`,
-    avg: true
-  });
-  el.onclick = e => {
-    const r = e.target.closest?.('rect.hit');
-    if (!r) return;
-    const k = keys[Number(r.dataset.i)];
-    trafficState.rangeHours = 0;
-    markTrafficPreset();
-    $('#trFrom').value = toLocalInput(k);
-    $('#trTo').value = toLocalInput(k + step);
-    loadTraffic();
-  };
+     avg: true,
+     onPick: i => {
+       const k = keys[i];
+       trafficState.rangeHours = 0;
+       markTrafficPreset();
+       $('#trFrom').value = toLocalInput(k);
+       $('#trTo').value = toLocalInput(k + step);
+       loadTraffic();
+     }
+   });
   $('#trLegend').innerHTML = legendHtml(series, totals, fmt);
 }
 $$('[data-trpreset]').forEach(b => b.addEventListener('click', () => {
@@ -2115,6 +2499,131 @@ $('#schemaOut').addEventListener('click', e => {
 $('#btnSchemaReload').addEventListener('click', () => loadSchema());
 $('#btnSchemaCopy').addEventListener('click', () => schemaText ? copyText(schemaText) : toast('Schema not loaded'));
 $('#btnSchemaDownload').addEventListener('click', () => schemaText ? download('usage-schema.graphql', schemaText, 'text/plain') : toast('Schema not loaded'));
+// ---------------------------------------------------------------- fx: counters, 3D toggle, animated background
+/** Count card numbers up from zero; only touches plain-text values whose format round-trips exactly. */
+function animateCounters(root) {
+   if (reducedMotion || !root) return;
+   $$('.card .v', root).forEach(el => {
+     if (el.children.length) return;
+     const final = el.textContent.trim();
+     const m = final.match(/^(-?\$?)([\d,]*\.?\d+)(.*)$/);
+     if (!m) return;
+     const target = Number(m[2].replace(/,/g, ''));
+     if (!isFinite(target) || target === 0) return;
+     const dec = (m[2].split('.')[1] || '').length;
+     const f = v => m[1] + v.toLocaleString(undefined, { minimumFractionDigits: dec, maximumFractionDigits: dec }) + m[3];
+     if (f(target) !== final) return; // locale/format mismatch: leave it alone
+     const t0 = performance.now(), dur = 900;
+     const step = now => {
+       if (!el.isConnected) return;
+       const p = Math.min(1, (now - t0) / dur);
+       el.textContent = p >= 1 ? final : f(target * (1 - Math.pow(1 - p, 3)));
+       if (p < 1) requestAnimationFrame(step);
+     };
+     el.textContent = f(0);
+     requestAnimationFrame(step);
+   });
+}
+function update3dBtn() {
+   const b = $('#btn3d');
+   const ok = !!THREE && webglOk();
+   b.disabled = !ok;
+   b.classList.toggle('primary', ok && mode3d);
+   b.title = ok ? (mode3d ? 'Switch charts to 2D' : 'Switch charts to WebGL 3D') : 'WebGL / three.js not available';
+}
+function rerenderCharts() {
+   renderDaily();
+   renderSessionTimeline();
+   renderTrafficTimeline();
+}
+$('#btn3d').addEventListener('click', () => {
+   mode3d = !mode3d;
+   store(MODE3D_KEY, mode3d);
+   update3dBtn();
+   rerenderCharts();
+});
+/** Full-screen synthwave-style backdrop: flowing wireframe terrain, particle fields and rings. */
+function initBackground() {
+   const canvas = $('#bg3d');
+   if (!THREE || !canvas || !webglOk()) return;
+   let renderer;
+   try {
+     renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'low-power' });
+   } catch (e) { console.warn('background WebGL failed', e); return; }
+   document.body.classList.add('webgl');
+   renderer.setPixelRatio(Math.min(window.devicePixelRatio || 1, 1.5));
+   const scene = new THREE.Scene();
+   scene.fog = new THREE.FogExp2(0x04060d, 0.018);
+   const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 400);
+   camera.position.set(0, 4, 14);
+   const geo = new THREE.PlaneGeometry(160, 110, 80, 55);
+   geo.rotateX(-Math.PI / 2);
+   const posAttr = geo.attributes.position;
+   const terrain = new THREE.Mesh(geo, new THREE.MeshBasicMaterial({ color: 0x00e5ff, wireframe: true, transparent: true, opacity: 0.16 }));
+   terrain.position.set(0, -6, -30);
+   scene.add(terrain);
+   const makeStars = (count, color, size) => {
+     const arr = new Float32Array(count * 3);
+     for (let i = 0; i < count; i++) {
+       arr[i * 3] = (Math.random() - 0.5) * 160;
+       arr[i * 3 + 1] = Math.random() * 50 - 4;
+       arr[i * 3 + 2] = -Math.random() * 120 + 10;
+     }
+     const g = new THREE.BufferGeometry();
+     g.setAttribute('position', new THREE.BufferAttribute(arr, 3));
+     const p = new THREE.Points(g, new THREE.PointsMaterial({ color, size, transparent: true, opacity: 0.85, depthWrite: false, blending: THREE.AdditiveBlending }));
+     scene.add(p);
+     return p;
+   };
+   const starsA = makeStars(700, 0x00e5ff, 0.18);
+   const starsB = makeStars(400, 0xff2bd6, 0.22);
+   const ringGeo = new THREE.TorusGeometry(14, 0.08, 8, 160);
+   const ring = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0xff2bd6, transparent: true, opacity: 0.35, fog: false }));
+   ring.position.set(0, 12, -90);
+   scene.add(ring);
+   const ring2 = new THREE.Mesh(ringGeo, new THREE.MeshBasicMaterial({ color: 0x00e5ff, transparent: true, opacity: 0.25, fog: false }));
+   ring2.position.copy(ring.position);
+   ring2.scale.setScalar(1.25);
+   scene.add(ring2);
+   const mouse = { x: 0, y: 0 };
+   window.addEventListener('pointermove', e => {
+     mouse.x = e.clientX / window.innerWidth - 0.5;
+     mouse.y = e.clientY / window.innerHeight - 0.5;
+   }, { passive: true });
+   const t0 = performance.now();
+   const frame = now => {
+     const t = (now - t0) / 1000;
+     for (let i = 0; i < posAttr.count; i++) {
+       const x = posAttr.getX(i), zz = posAttr.getZ(i) - t * 6;
+       const canyon = Math.abs(x) > 30 ? (Math.abs(x) - 30) * 0.18 : 0;
+       posAttr.setY(i, Math.sin(x * 0.09 + zz * 0.05) * 1.6 + Math.cos(zz * 0.11 + x * 0.03) * 1.2 + canyon);
+     }
+     posAttr.needsUpdate = true;
+     starsA.rotation.y = t * 0.01;
+     starsB.rotation.y = -t * 0.015;
+     ring.rotation.z = t * 0.1;
+     ring2.rotation.z = -t * 0.07;
+     camera.position.x += (mouse.x * 6 - camera.position.x) * 0.04;
+     camera.position.y += (4 - mouse.y * 3 - camera.position.y) * 0.04;
+     camera.lookAt(0, 2, -40);
+     renderer.render(scene, camera);
+   };
+   const resize = () => {
+     renderer.setSize(window.innerWidth, window.innerHeight, false);
+     camera.aspect = window.innerWidth / window.innerHeight;
+     camera.updateProjectionMatrix();
+     if (reducedMotion) frame(t0);
+   };
+   resize();
+   window.addEventListener('resize', resize);
+   if (reducedMotion) return;
+   const loop = now => {
+     requestAnimationFrame(loop);
+     if (!document.hidden) frame(now);
+   };
+   requestAnimationFrame(loop);
+}
+
 
 // ---------------------------------------------------------------- init
 function initFromHash() {
@@ -2148,6 +2657,13 @@ window.addEventListener('hashchange', initFromHash);
   setupAuto();
   initFromHash();
   loadUser();
+   update3dBtn();
+   threeReady.then(m => {
+     update3dBtn();
+     if (!m) return;
+     initBackground();
+     if (use3d()) rerenderCharts();
+   });
 })();
 </script>
 </body>
