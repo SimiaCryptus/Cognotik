@@ -184,7 +184,7 @@ class DiscussionTask(
           ).call()
         }
 
-        log.info("DiscussionTask completed successfully.")
+        log.debug("DiscussionTask completed successfully.")
         task.complete()
         resultFn(inquiryResult ?: "(no response)")
       } catch (e: Exception) {

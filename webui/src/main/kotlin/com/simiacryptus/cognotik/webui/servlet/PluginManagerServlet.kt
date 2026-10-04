@@ -422,7 +422,7 @@ class PluginManagerServlet(
         if (pendingAuthId != null) {
           val pending = PendingAuthorization.get(pendingAuthId)
           if (pending != null && pending.status == PendingAuthorization.Status.IN_PROGRESS) {
-            log.info("Web auth flow completed successfully, triggering pending authorization: {}", pendingAuthId)
+            log.debug("Web auth flow completed successfully, triggering pending authorization: {}", pendingAuthId)
             pending.status = PendingAuthorization.Status.COMPLETED
             try {
               pending.onSuccess()

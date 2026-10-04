@@ -130,7 +130,7 @@ object UpdateManager {
             val tempFile = downloadAsset(assetToDownload, progressBar, canceled)
 
 
-            log.info("Download completed successfully to: ${tempFile.absolutePath}")
+            log.debug("Download completed successfully to: ${tempFile.absolutePath}")
             // Close the progress dialog as download is done
             progressDialog?.dispose()
             progressDialog = null // Nullify to avoid disposing again in finally
@@ -337,7 +337,7 @@ object UpdateManager {
                 }
             }
         } // Input stream is closed automatically by 'use'
-        log.info("Download completed successfully: ${tempFile.absolutePath} (${tempFile.length()} bytes)")
+        log.debug("Download completed successfully: ${tempFile.absolutePath} (${tempFile.length()} bytes)")
         return tempFile
     }
 

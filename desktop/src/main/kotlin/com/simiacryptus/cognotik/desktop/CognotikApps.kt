@@ -438,7 +438,7 @@ open class CognotikApps(
                 }
             }
             contextCollection.handlers = updatedHandlers.toTypedArray()
-            log.info("App reload completed successfully. Total contexts: ${updatedHandlers.size}")
+            log.debug("App reload completed successfully. Total contexts: ${updatedHandlers.size}")
         } catch (e: Exception) {
             log.error("Error during app reload: ${e.message}", e)
             throw e

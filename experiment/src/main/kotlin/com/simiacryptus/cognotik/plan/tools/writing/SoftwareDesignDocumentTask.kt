@@ -1164,7 +1164,7 @@ class SoftwareDesignDocumentTask(
 
         // Final summary
         val duration = System.currentTimeMillis() - startTime
-        log.info("SoftwareDesignDocumentTask completed: project='$projectName', duration=${duration}ms")
+        log.debug("SoftwareDesignDocumentTask completed: project='$projectName', duration=${duration}ms")
 
         statusBuffer?.setLength(0)
         statusBuffer?.append(

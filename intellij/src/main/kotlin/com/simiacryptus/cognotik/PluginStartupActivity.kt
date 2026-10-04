@@ -125,7 +125,7 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 currentThread.contextClassLoader = PluginStartupActivity::class.java.classLoader
                 init(project)
-                log.info("Plugin initialization completed successfully")
+                log.debug("Plugin initialization completed successfully")
             } catch (e: Exception) {
                 log.error("Error during plugin startup", e)
             } finally {

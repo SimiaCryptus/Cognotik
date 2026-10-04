@@ -1613,7 +1613,7 @@ Provide the complete revised proposal.
         appendLine("- Generation Time: ${totalTime / 1000.0}s")
       }
 
-      log.info("BusinessProposalTask completed: words=$cumulativeWordCount, sections=${proposalSections.size}, time=${totalTime}ms")
+      log.debug("BusinessProposalTask completed: words=$cumulativeWordCount, sections=${proposalSections.size}, time=${totalTime}ms")
 
       task.safeComplete(
         "Business proposal generation complete: $cumulativeWordCount words in ${totalTime / 1000}s",

@@ -27,8 +27,8 @@ class DocPlanner<K : DocTaskKind>(
     val contributions = resolvers.flatMap { resolver ->
       val produced = resolver.contributions(specs, ctx)
       val label = resolver.javaClass.simpleName.ifEmpty { resolver.javaClass.name }
-      if (produced.isEmpty()) log.info("$label produced 0 contribution(s)")
-      else log.info("$label produced ${produced.size} contribution(s)")
+      if (produced.isEmpty()) log.debug("$label produced 0 contribution(s)")
+      else log.debug("$label produced ${produced.size} contribution(s)")
       produced
     }
     var index = TargetIndex.of(contributions)

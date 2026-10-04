@@ -244,7 +244,7 @@ open class UnifiedHarness(
       override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
       override fun onTaskComplete(result: String, task: ISessionTask) {
-        log.info("Task completed successfully")
+        log.debug("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
         val usageManager =
           ServiceRouter as UsageInterface

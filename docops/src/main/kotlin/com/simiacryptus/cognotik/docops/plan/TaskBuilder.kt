@@ -30,7 +30,7 @@ class TaskBuilder<K : DocTaskKind>(
       return BuildOutcome.Skipped(target, "outside root ${root.absolutePath}")
     }
     return try {
-      log.info(
+      log.debug(
         "Planning ${target.relativeToOrAbsolute(root)} from ${contributions.size} contribution(s): " +
             contributions.joinToString(", ") { "${it.spec.docFile.name}/${it.kind}" }
       )

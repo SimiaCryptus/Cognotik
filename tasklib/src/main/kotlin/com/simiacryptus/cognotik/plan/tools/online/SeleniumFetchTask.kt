@@ -354,7 +354,7 @@ class SeleniumFetchTask(
         }
         transcript?.write("\n$summary\n".toByteArray())
         task.safeComplete("SeleniumFetch completed in ${totalTime / 1000}s", log)
-        log.info("SeleniumFetchTask completed for target='$targetUrl' in ${totalTime}ms")
+        log.debug("SeleniumFetchTask completed for target='$targetUrl' in ${totalTime}ms")
         resultFn(summary)
       } catch (e: IllegalArgumentException) {
         val duration = System.currentTimeMillis() - startTime

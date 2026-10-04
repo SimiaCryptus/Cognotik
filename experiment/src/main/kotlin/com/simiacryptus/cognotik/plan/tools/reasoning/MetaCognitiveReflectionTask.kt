@@ -324,7 +324,7 @@ MetaCognitiveReflection - Reflect on and critique reasoning processes
       task.safeComplete("Meta-cognitive reflection completed for task: $subjectTaskId", log)
 
       val duration = System.currentTimeMillis() - startTime
-      log.info("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")
+      log.debug("MetaCognitiveReflection task completed successfully for subject_task_id: $subjectTaskId in ${duration}ms. Summary length: ${summary.length}")
       resultFn(summary)
       transcript?.close()
     } catch (e: Exception) {

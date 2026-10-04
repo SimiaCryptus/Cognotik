@@ -224,7 +224,7 @@ class ConstraintSatisfactionTask(
           )
 
           val duration = System.currentTimeMillis() - startTime
-          log.info("Constraint Satisfaction Task completed in ${duration}ms")
+          log.debug("Constraint Satisfaction Task completed in ${duration}ms")
           transcript?.write("\n\n---\n**Completed in ${duration}ms**\n".toByteArray())
 
           if (orchestrationConfig.autoFix) {

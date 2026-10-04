@@ -987,7 +987,7 @@ Provide the complete revised email body only.
             appendLine("> The complete campaign with all subject line variants and implementation notes is available in the Complete Campaign tab.")
           }
 
-          log.info("EmailCampaignTask completed: emails=${generatedEmails.size}, words=$totalWords, time=${totalTime}ms")
+          log.debug("EmailCampaignTask completed: emails=${generatedEmails.size}, words=$totalWords, time=${totalTime}ms")
 
           task.complete()
           resultFn(finalResult)

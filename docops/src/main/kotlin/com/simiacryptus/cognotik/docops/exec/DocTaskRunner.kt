@@ -205,7 +205,7 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
           }
 
           override fun onCompleted(sessionId: String) {
-            log.info("Task completed for target '$targetKey' in session $sessionId")
+            log.debug("Task completed for target '$targetKey' in session $sessionId")
             status.set(targetKey, TaskStatus.COMPLETED, sessionId = sessionId)
           }
 

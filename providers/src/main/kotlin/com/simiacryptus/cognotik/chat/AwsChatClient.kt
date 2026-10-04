@@ -367,7 +367,7 @@ class AwsChatClient(
         )
       }
 
-      log.info("AWS Bedrock chat completed successfully for model: ${model.modelId}, choices=${response.choices.size ?: 0}")
+      log.debug("AWS Bedrock chat completed successfully for model: ${model.modelId}, choices=${response.choices.size ?: 0}")
       response
     }
   }

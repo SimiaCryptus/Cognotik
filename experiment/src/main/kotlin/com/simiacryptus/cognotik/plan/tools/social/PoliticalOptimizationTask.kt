@@ -942,7 +942,7 @@ PoliticalOptimization - Optimize text using multi-perspective political consensu
       transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
       transcript?.close()
 
-      log.info("PoliticalOptimizationTask completed: time=${totalTime}ms, consensus_improvement=${bestConsensusVariant.evaluation.consensus_score - initialEvaluation.consensus_score}")
+      log.debug("PoliticalOptimizationTask completed: time=${totalTime}ms, consensus_improvement=${bestConsensusVariant.evaluation.consensus_score - initialEvaluation.consensus_score}")
       task.complete(
         "Optimization complete: found consensus variant (${
           String.format(

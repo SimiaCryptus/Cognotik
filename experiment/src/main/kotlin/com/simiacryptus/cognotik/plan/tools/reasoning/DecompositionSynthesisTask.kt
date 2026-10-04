@@ -630,7 +630,7 @@ class DecompositionSynthesisTask(
 
         // Final summary in overview
         val totalTime = System.currentTimeMillis() - startTime
-        log.info("DecompositionSynthesisTask completed successfully in ${totalTime}ms")
+        log.debug("DecompositionSynthesisTask completed successfully in ${totalTime}ms")
 
         overviewTask.add(buildString {
           appendLine("---")

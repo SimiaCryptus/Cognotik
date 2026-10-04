@@ -120,7 +120,7 @@ class ChatModel(
 
         val totalCost = (accountedCost + estimatedUnaccountedCost) / 1000.0
         // TODO: Downgrade this to debug once we have more confidence in the accuracy of the cost estimation
-        log.info(
+        log.debug(
             "Calculating cost for model ${modelId}: " +
                     perTypeCosts.entries.joinToString(", ") { (type, cost) ->
                         val count = counts.getOrDefault(type, 0)

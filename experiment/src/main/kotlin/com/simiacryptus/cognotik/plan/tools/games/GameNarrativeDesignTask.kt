@@ -1287,7 +1287,7 @@ Provide specific examples and recommendations for improvement.
           appendLine("> Full details and interactive elements are available in the UI tabs.")
         }
 
-        log.info("GameNarrativeDesignTask completed: characters=${gameNarrative.characters.size}, branching_points=${gameNarrative.branching_points.size}, endings=${gameNarrative.endings.size}, time=${totalTime}ms")
+        log.debug("GameNarrativeDesignTask completed: characters=${gameNarrative.characters.size}, branching_points=${gameNarrative.branching_points.size}, endings=${gameNarrative.endings.size}, time=${totalTime}ms")
 
         task.safeComplete(
           "Game narrative design complete: ${gameNarrative.characters.size} characters, ${gameNarrative.branching_points.size} branching points, ${gameNarrative.endings.size} endings in ${totalTime / 1000}s",

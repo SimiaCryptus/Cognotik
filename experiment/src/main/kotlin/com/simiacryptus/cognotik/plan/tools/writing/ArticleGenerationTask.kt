@@ -669,7 +669,7 @@ Make each snippet:
         appendLine("- Target Accuracy: $targetAccuracy%")
       }
 
-      log.info("ArticleGenerationTask completed: words=${article.word_count}, sources=${article.sources_cited.size}, time=${totalTime}ms")
+      log.debug("ArticleGenerationTask completed: words=${article.word_count}, sources=${article.sources_cited.size}, time=${totalTime}ms")
       transcript?.close()
 
       task.safeComplete("Article generation complete: ${article.word_count} words in ${totalTime / 1000}s", log)

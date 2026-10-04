@@ -417,7 +417,7 @@ If a region looks like it contains smaller details (text, faces, objects) that a
         task.safeComplete("### Analysis Complete\nFound **${allNodes.size - 1}** regions.".renderMarkdown(), log)
         root.resolve("final_analysis_${WaterfallMode.Companion.now()}.md").toFile().writeText(finalResult)
 
-        log.info("ImageDecompositionTask completed successfully for $imagePath")
+        log.debug("ImageDecompositionTask completed successfully for $imagePath")
         resultFn(
           """
             ## Image Analysis Complete

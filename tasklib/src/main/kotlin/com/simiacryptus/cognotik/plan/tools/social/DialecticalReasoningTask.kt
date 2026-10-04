@@ -552,7 +552,7 @@ class DialecticalReasoningTask(
         integrationTask.complete()
 
         val totalTime = System.currentTimeMillis() - startTime
-        log.info("DialecticalReasoningTask completed in ${totalTime}ms")
+        log.debug("DialecticalReasoningTask completed in ${totalTime}ms")
 
         overviewTask.add(buildString {
           appendLine()

@@ -1205,7 +1205,7 @@ TutorialGeneration - Create complete, step-by-step tutorials for processes and p
             appendLine("**Generation Time:** ${totalTime / 1000.0}s")
           }
 
-          log.info("TutorialGenerationTask completed: steps=${tutorialSteps.size}, time=${totalTime}ms")
+          log.debug("TutorialGenerationTask completed: steps=${tutorialSteps.size}, time=${totalTime}ms")
 
           task.safeComplete("Tutorial generation complete: ${tutorialSteps.size} steps in ${totalTime / 1000}s", log)
           resultFn(finalResult)

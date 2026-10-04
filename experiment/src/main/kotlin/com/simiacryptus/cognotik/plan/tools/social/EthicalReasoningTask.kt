@@ -391,7 +391,7 @@ Provide a detailed synthesis and a clear final recommendation.
 
         val duration = System.currentTimeMillis() - startTime
 
-        log.info("EthicalReasoning task completed in ${duration}ms")
+        log.debug("EthicalReasoning task completed in ${duration}ms")
         task.safeComplete("Analysis complete.", log)
         resultFn("$finalResult\n\n---\n\nFull report saved to: `$reportFile`")
 

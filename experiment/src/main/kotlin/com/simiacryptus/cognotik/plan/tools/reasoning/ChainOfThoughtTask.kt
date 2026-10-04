@@ -354,7 +354,7 @@ class ChainOfThoughtTask(
         val finalResult = formatReasoningChain(reasoningChain, summary)
         val totalTime = System.currentTimeMillis() - startTime
         val avgStepTime = if (stepTimes.isNotEmpty()) stepTimes.average() else 0.0
-        log.info("ChainOfThoughtTask completed: total_time=${totalTime}ms, steps=${reasoningChain.size}, avg_step_time=${avgStepTime}ms, output_size=${finalResult.length} chars")
+        log.debug("ChainOfThoughtTask completed: total_time=${totalTime}ms, steps=${reasoningChain.size}, avg_step_time=${avgStepTime}ms, output_size=${finalResult.length} chars")
 
         // Update overview with completion stats
         overviewTask.append("<hr/>")
@@ -376,7 +376,7 @@ class ChainOfThoughtTask(
           }
             """.trimIndent()
         )
-        log.info("ChainOfThoughtTask completed successfully in ${totalTime}ms")
+        log.debug("ChainOfThoughtTask completed successfully in ${totalTime}ms")
         task.update()
 
         task.complete("Completed ${reasoningChain.size} reasoning steps in ${totalTime / 1000}s.")

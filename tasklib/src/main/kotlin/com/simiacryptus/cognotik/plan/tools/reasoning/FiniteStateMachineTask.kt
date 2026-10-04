@@ -551,7 +551,7 @@ Keep the summary concise but informative.
           if (executionConfig.generate_test_scenarios) appendLine("- Test scenarios generated")
         }
 
-        log.info("FiniteStateMachineTask completed: concept='$conceptToModel', duration=${totalTime}ms, output_size=${conciseResult.length} chars")
+        log.debug("FiniteStateMachineTask completed: concept='$conceptToModel', duration=${totalTime}ms, output_size=${conciseResult.length} chars")
 
         transcript?.write("## Completion\n\n**Status:** ✅ Analysis complete\n".toByteArray())
         transcript?.write("**Duration:** ${totalTime / 1000.0}s\n".toByteArray())

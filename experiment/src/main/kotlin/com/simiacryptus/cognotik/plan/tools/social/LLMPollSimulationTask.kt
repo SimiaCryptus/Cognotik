@@ -633,7 +633,7 @@ Be specific and reference the data provided.
         }.renderMarkdown()
       )
 
-      log.info("LLMPollSimulationTask completed: responses=${successfulResponses.size}/$totalRespondents, time=${totalTime}ms")
+      log.debug("LLMPollSimulationTask completed: responses=${successfulResponses.size}/$totalRespondents, time=${totalTime}ms")
 
       task.complete("Completed poll simulation with ${successfulResponses.size} responses in ${totalTime / 1000}s".renderMarkdown())
 

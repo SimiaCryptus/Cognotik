@@ -93,7 +93,7 @@ class PendingAuthorization(
         pending.chain.execute(
           onSuccess = {
             pending.status = Status.COMPLETED
-            log.info("Authorization '{}' for plugin '{}' completed successfully", id, pending.pluginName)
+            log.debug("Authorization '{}' for plugin '{}' completed successfully", id, pending.pluginName)
             try {
               pending.onSuccess()
             } catch (e: Exception) {

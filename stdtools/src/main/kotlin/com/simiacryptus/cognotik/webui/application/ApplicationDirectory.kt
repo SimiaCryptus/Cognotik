@@ -295,7 +295,7 @@ abstract class ApplicationDirectory(
     server.start()
     if (!server.isStarted) throw IllegalStateException("Server failed to start")
     log.info("Jetty server started successfully and is ready to accept connections")
-    log.info("Server initialization completed successfully.")
+    log.debug("Server initialization completed successfully.")
     return server
   }
 

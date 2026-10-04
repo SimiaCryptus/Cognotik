@@ -6,7 +6,6 @@ import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.service.UsageInterface
-import org.jdesktop.swingx.JXTable
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Font
@@ -14,9 +13,11 @@ import java.awt.event.ActionEvent
 import java.util.*
 import java.util.concurrent.TimeUnit
 import javax.swing.AbstractAction
+import javax.swing.DefaultCellEditor
 import javax.swing.JButton
 import javax.swing.JPanel
 import javax.swing.JTable
+import javax.swing.JTextField
 import javax.swing.table.AbstractTableModel
 import javax.swing.table.DefaultTableCellRenderer
 
@@ -137,7 +138,7 @@ class UsageTable(
             column.cellRenderer = totalRowRenderer
         }
 
-        val editor = object : JXTable.GenericEditor() {
+         val editor = object : DefaultCellEditor(JTextField()) {
             override fun isCellEditable(anEvent: EventObject?) = false
         }
         jtable.columnModel.getColumn(0).cellEditor = editor

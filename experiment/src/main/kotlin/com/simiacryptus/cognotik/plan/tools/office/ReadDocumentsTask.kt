@@ -149,7 +149,7 @@ class ReadDocumentsTask(
           ).call()
 
           analysisTask.complete()
-          log.info("ReadDocumentsTask completed successfully")
+          log.debug("ReadDocumentsTask completed successfully")
           resultFn(inquiryResult!!)
         } catch (e: Exception) {
           task.error(e)

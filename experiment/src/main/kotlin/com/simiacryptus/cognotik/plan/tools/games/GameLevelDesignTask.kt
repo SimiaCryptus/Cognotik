@@ -1357,7 +1357,7 @@ Ensure variants maintain the core level design while adjusting challenge.
         appendLine("> The complete level design with layout, encounters, pacing analysis, and player guidance is available in the Complete Design tab.")
       }
 
-      log.info("GameLevelDesignTask completed: zones=${level.layout.zones.size}, encounters=${level.encounters.size}, time=${totalTime}ms")
+      log.debug("GameLevelDesignTask completed: zones=${level.layout.zones.size}, encounters=${level.encounters.size}, time=${totalTime}ms")
 
       task.safeComplete(
         "Level design complete: ${level.layout.zones.size} zones, ${level.encounters.size} encounters in ${totalTime / 1000}s",

@@ -633,7 +633,7 @@ class ChatApiProxyServlet(
       ?: throw AuthenticationException("Authentication failed for proxy models request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, false, null)
-    log.info("Retrieving chat models for provider(s) '{}'", providerLabel)
+    log.debug("Retrieving chat models for provider(s) '{}'", providerLabel)
     val models = mutableListOf<ChatModel>()
     val seenModelIds = mutableSetOf<String>()
     val failures = mutableListOf<Exception>()
@@ -751,7 +751,7 @@ class ChatApiProxyServlet(
           job.retrievedAt = System.currentTimeMillis()
         }
         val elapsed = System.currentTimeMillis() - startTime
-        log.info(
+        log.debug(
           "Poll for token={} returned COMPLETED in {}ms (job duration {}ms)",
           token, elapsed, (job.completedAt ?: 0L) - job.createdAt
         )
@@ -771,7 +771,7 @@ class ChatApiProxyServlet(
           job.retrievedAt = System.currentTimeMillis()
         }
         val elapsed = System.currentTimeMillis() - startTime
-        log.info("Poll for token={} returned FAILED in {}ms", token, elapsed)
+        log.debug("Poll for token={} returned FAILED in {}ms", token, elapsed)
       }
     }
     return false

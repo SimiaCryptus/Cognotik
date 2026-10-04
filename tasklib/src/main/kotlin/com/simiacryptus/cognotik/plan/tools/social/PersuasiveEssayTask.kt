@@ -1041,7 +1041,7 @@ Provide the complete revised essay.
             appendLine("  - <a href='${transcriptLink.removeSuffix(".md")}.pdf' target='_blank'>PDF</a>")
           }
 
-          log.info("PersuasiveEssayTask completed: words=$cumulativeWordCount, arguments=${argumentSections.size}, time=${totalTime}ms")
+          log.debug("PersuasiveEssayTask completed: words=$cumulativeWordCount, arguments=${argumentSections.size}, time=${totalTime}ms")
 
           task.safeComplete(
             "Persuasive essay generation complete: $cumulativeWordCount words in ${totalTime / 1000}s",
