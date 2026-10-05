@@ -624,6 +624,7 @@ function renderMenubar() {
         },
         showLayoutSelector: true,
         showThemeSelector: true,
+         showPaletteSelector: true,
         onLayoutChange: function (layout) {
             if (appGridSection) appGridSection.setAttribute('data-layout', layout);
         },

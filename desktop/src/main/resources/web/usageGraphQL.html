@@ -4,19 +4,27 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="color-scheme" content="light dark">
 <title>Usage Dashboard</title>
+<!-- Central Cognotik theme system (see /themes.md). Order matters: tokens, manifest, manager. -->
+<link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+<script src="/themes.js"></script>
+<script src="/modules/theme.js"></script>
+<!-- Apply the optional FX look before first paint to avoid a flash. -->
+<script>try { if (JSON.parse(localStorage.getItem('usageGraphQL.fx'))) document.documentElement.classList.add('fx'); } catch (e) { /* ignore */ }</script>
 <style>
+   /* Page-local aliases mapped onto the central Cognotik theme tokens. Fallbacks apply if /themes.css fails to load. */
   :root {
-    --bg: #f6f7f9; --panel: #ffffff; --fg: #1d2330; --muted: #6b7385; --border: #dde1e8;
-    --accent: #3b6fd8; --accent-fg: #fff; --danger: #c0392b; --ok: #1e8e4e; --hover: #eef2fa;
+     --bg: var(--color-canvas, #f6f7f9); --panel: var(--color-surface, #ffffff); --panel-alt: var(--color-surface-alt, #f0f2f5);
+     --fg: var(--color-text, #1d2330); --heading: var(--color-heading, #1d2330); --muted: var(--color-text-muted, #6b7385);
+     --border: var(--color-border, #dde1e8); --border-strong: var(--color-border-strong, #c4cad4);
+     --accent: var(--color-brand, #3b6fd8); --accent-hover: var(--color-brand-hover, #2f5bb5);
+     --accent2: var(--color-accent, #8e44ad); --accent3: var(--color-brand-hover, #2f5bb5);
+     --accent-fg: #fff; --danger: var(--color-danger, #c0392b); --ok: var(--color-success, #1e8e4e);
+     --hover: color-mix(in srgb, var(--accent) 8%, transparent);
     --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #14171d; --panel: #1c2028; --fg: #e3e7ef; --muted: #8d95a7; --border: #2e3440;
-      --accent: #5b8cf0; --accent-fg: #fff; --danger: #e5675a; --ok: #3fbf77; --hover: #232936;
-    }
-  }
+   html { background: var(--bg); }
   * { box-sizing: border-box; }
   body { margin: 0; font: 14px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background: var(--bg); color: var(--fg); }
   header { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; padding: 10px 18px; background: var(--panel); border-bottom: 1px solid var(--border); position: sticky; top: 0; z-index: 5; }
@@ -33,17 +41,20 @@
   section.tab { display: none; }
   section.tab.active { display: block; }
   .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 16px; min-width: 0; }
-  .panel h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+   .panel h2 { font-size: 15px; margin: 0 0 10px; display: flex; align-items: center; gap: 10px; flex-wrap: wrap; color: var(--heading); }
   .panel h2 .right { margin-left: auto; font-weight: normal; font-size: 13px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
   label { display: flex; flex-direction: column; font-size: 12px; color: var(--muted); gap: 3px; }
   label.inline { flex-direction: row; align-items: center; gap: 6px; }
   input, select, textarea { font: inherit; color: var(--fg); background: var(--bg); border: 1px solid var(--border); border-radius: 6px; padding: 6px 8px; }
+   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); }
   input[type=checkbox] { padding: 0; }
   textarea { font-family: var(--mono); font-size: 12.5px; width: 100%; resize: vertical; }
   button.btn { font: inherit; padding: 6px 14px; border-radius: 6px; border: 1px solid var(--border); background: var(--panel); color: var(--fg); cursor: pointer; }
   button.btn.small { padding: 2px 8px; font-size: 12px; }
   button.btn.primary { background: var(--accent); color: var(--accent-fg); border-color: var(--accent); }
+   button.btn:hover:not(:disabled) { border-color: var(--border-strong); }
+   button.btn.primary:hover:not(:disabled) { background: var(--accent-hover); border-color: var(--accent-hover); }
   button.btn:disabled { opacity: .5; cursor: default; }
   .cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px; }
   .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; min-width: 0; }
@@ -107,18 +118,42 @@
   .tree-name { font-size: 12px; color: var(--muted); overflow-wrap: anywhere; }
   .note { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
   .note:empty { display: none; }
+   /* brand + header theme controls */
+   .brand { display: flex; align-items: center; gap: 10px; margin-right: 10px; }
+   .brand .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); }
+   .brand .brand-text { font-weight: 700; letter-spacing: .12em; font-size: 13px; text-transform: uppercase; color: var(--heading); }
+   header .theme-ctl select { padding: 3px 6px; font-size: 12px; }
+   /* background canvas is only shown in the FX look */
+   #bg3d { display: none; position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; }
+   /* 3D chart scaffolding (all themes) */
+   .chart.pickable svg rect.hit { cursor: pointer; }
+   .chart.is3d { overflow: hidden; }
+   .chart canvas.gl3d { display: block; cursor: grab; }
+   .chart canvas.gl3d:active { cursor: grabbing; }
+   .ax3d { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
+   .lbl3d { position: absolute; left: 0; top: 0; font: 10px var(--mono); color: var(--muted); white-space: nowrap; text-shadow: 0 0 4px var(--bg); }
+   .lbl3d.avg { color: var(--fg); opacity: .8; }
+   /* dark-scheme tweaks (follow the user's choice, not the OS) */
+   html[data-scheme="dark"] .tip { box-shadow: 0 4px 14px rgba(0,0,0,.45); }
+   html[data-scheme="dark"] .panel, html[data-scheme="dark"] .card { box-shadow: 0 1px 3px rgba(0,0,0,.3); }
+   @media (prefers-reduced-motion: reduce) {
+     *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; }
+   }
 </style>
-<style id="future-theme">
-   /* ================= futuristic theme (overrides the base styles above) ================= */
-   :root {
-     color-scheme: dark;
-     --bg: #04060d; --panel: rgba(12, 18, 34, .62); --fg: #e6f1ff; --muted: #7f8fb0; --border: rgba(0, 229, 255, .16);
-     --accent: #00e5ff; --accent2: #ff2bd6; --accent3: #7c4dff; --accent-fg: #fff; --danger: #ff4d6d; --ok: #2bffa3; --hover: rgba(0, 229, 255, .07);
+<style id="fx-theme">
+   /* ================= Optional "FX" look (neon synthwave) =================
+      Opt-in via the ✦ FX header button. Everything is scoped to html.fx; otherwise the page
+      follows the central Cognotik theme (/themes.css + ThemeManager). */
+   html.fx {
+     color-scheme: dark !important; /* beats ThemeManager's inline style.colorScheme */
+     --bg: #04060d; --panel: rgba(12, 18, 34, .62); --panel-alt: rgba(2, 6, 16, .7); --fg: #e6f1ff; --heading: #00e5ff; --muted: #7f8fb0;
+     --border: rgba(0, 229, 255, .16); --border-strong: rgba(0, 229, 255, .3);
+     --accent: #00e5ff; --accent-hover: #5ff0ff; --accent2: #ff2bd6; --accent3: #7c4dff; --accent-fg: #fff;
+     --danger: #ff4d6d; --ok: #2bffa3; --hover: rgba(0, 229, 255, .07);
      --glow: 0 0 0 1px rgba(0,229,255,.10), 0 0 28px rgba(0,229,255,.06), inset 0 0 40px rgba(0,229,255,.025);
      --display: 'Orbitron', 'Rajdhani', 'Eurostile', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
    }
-   html { background: var(--bg); }
-   body {
+   html.fx body {
      min-height: 100vh;
      background:
        radial-gradient(1200px 600px at 10% -10%, rgba(124,77,255,.20), transparent 60%),
@@ -126,107 +161,100 @@
        var(--bg);
      background-attachment: fixed;
    }
-   #bg3d { position: fixed; inset: 0; width: 100vw; height: 100vh; z-index: 0; pointer-events: none; opacity: .75; }
+   html.fx #bg3d { display: block; opacity: .75; }
    /* CSS fallback grid when WebGL is not available */
-   body::before {
+   html.fx body::before {
      content: ''; position: fixed; left: -50%; right: -50%; bottom: -10%; height: 60vh; z-index: 0; pointer-events: none;
      background-image: linear-gradient(rgba(0,229,255,.18) 1px, transparent 1px), linear-gradient(90deg, rgba(0,229,255,.18) 1px, transparent 1px);
      background-size: 48px 48px; transform: perspective(400px) rotateX(62deg); transform-origin: bottom;
      -webkit-mask-image: linear-gradient(to top, #000, transparent); mask-image: linear-gradient(to top, #000, transparent);
      animation: gridmove 2.5s linear infinite;
    }
-   body.webgl::before { display: none; }
-   body::after {
+   html.fx body.webgl::before { display: none; }
+   html.fx body::after {
      content: ''; position: fixed; inset: 0; z-index: 1; pointer-events: none;
      background: repeating-linear-gradient(to bottom, rgba(255,255,255,.022) 0 1px, transparent 1px 3px);
    }
-   main { position: relative; z-index: 2; }
-   header { background: rgba(5, 9, 20, .72); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); border-bottom: 1px solid var(--border); }
-   header::after {
+   html.fx main { position: relative; z-index: 2; }
+   html.fx header { background: rgba(5, 9, 20, .72); backdrop-filter: blur(14px) saturate(140%); -webkit-backdrop-filter: blur(14px) saturate(140%); border-bottom: 1px solid var(--border); }
+   html.fx header::after {
      content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 1px;
      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent); background-size: 200% 100%;
      animation: sweep 6s linear infinite;
    }
-   .brand { display: flex; align-items: center; gap: 10px; margin-right: 10px; }
-   .brand .pulse { width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 10px var(--ok); animation: pulse 1.8s ease-in-out infinite; }
-   .brand .brand-text {
-     font-family: var(--display); font-weight: 700; letter-spacing: .22em; font-size: 13px; text-transform: uppercase;
+   html.fx .brand .pulse { box-shadow: 0 0 10px var(--ok); animation: pulse 1.8s ease-in-out infinite; }
+   html.fx .brand .brand-text {
+     font-family: var(--display); letter-spacing: .22em;
      background: linear-gradient(90deg, var(--accent), var(--accent2), var(--accent)); background-size: 200% 100%;
      -webkit-background-clip: text; background-clip: text; color: transparent; animation: sweep 8s linear infinite;
    }
-   header .stat { font-family: var(--display); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
-   header .stat b { font-family: var(--mono); font-size: 13px; letter-spacing: 0; color: var(--accent); text-shadow: 0 0 10px rgba(0,229,255,.5); }
-   nav button { font-family: var(--display); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; position: relative; transition: color .2s, background .2s, border-color .2s; }
-   nav button::after {
+   html.fx header .stat { font-family: var(--display); font-size: 10.5px; letter-spacing: .12em; text-transform: uppercase; }
+   html.fx header .stat b { font-family: var(--mono); font-size: 13px; letter-spacing: 0; color: var(--accent); text-shadow: 0 0 10px rgba(0,229,255,.5); }
+   html.fx nav button { font-family: var(--display); font-size: 11px; letter-spacing: .16em; text-transform: uppercase; position: relative; transition: color .2s, background .2s, border-color .2s; }
+   html.fx nav button::after {
      content: ''; position: absolute; left: 12px; right: 12px; bottom: 2px; height: 2px;
      background: linear-gradient(90deg, var(--accent), var(--accent2)); box-shadow: 0 0 8px var(--accent);
      transform: scaleX(0); transition: transform .3s cubic-bezier(.2,.8,.2,1);
    }
-   nav button:hover { color: var(--fg); }
-   nav button.active { color: var(--accent); background: rgba(0,229,255,.06); border-color: rgba(0,229,255,.25); text-shadow: 0 0 10px rgba(0,229,255,.6); }
-   nav button.active::after, nav button:hover::after { transform: scaleX(1); }
-   .panel, .card {
+   html.fx nav button:hover { color: var(--fg); }
+   html.fx nav button.active { color: var(--accent); background: rgba(0,229,255,.06); border-color: rgba(0,229,255,.25); text-shadow: 0 0 10px rgba(0,229,255,.6); }
+   html.fx nav button.active::after, html.fx nav button:hover::after { transform: scaleX(1); }
+   html.fx .panel, html.fx .card {
      position: relative; background: linear-gradient(180deg, rgba(16,24,46,.74), rgba(8,12,26,.74));
      backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid var(--border); box-shadow: var(--glow);
    }
-   .panel { border-radius: 12px; animation: rise .55s cubic-bezier(.2,.8,.2,1) both; }
-   .panel::before, .card::before, .panel::after, .card::after { content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none; opacity: .85; }
-   .panel::before, .card::before { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); border-top-left-radius: inherit; }
-   .panel::after, .card::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent2); border-right: 2px solid var(--accent2); border-bottom-right-radius: inherit; }
-   .panel h2 { font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--accent); text-shadow: 0 0 12px rgba(0,229,255,.35); }
-   .panel h2 .right, .panel h2 .muted { font: 13px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; text-transform: none; letter-spacing: 0; text-shadow: none; }
-   .panel h2 .right { color: var(--fg); }
-   .card { border-radius: 10px; animation: rise .55s cubic-bezier(.2,.8,.2,1) both; transition: transform .25s, box-shadow .25s, border-color .25s; }
-   .card:hover { transform: translateY(-3px); border-color: rgba(0,229,255,.45); box-shadow: 0 0 0 1px rgba(0,229,255,.3), 0 12px 32px rgba(0,229,255,.14); }
-   .cards .card:nth-child(2) { animation-delay: .04s; } .cards .card:nth-child(3) { animation-delay: .08s; }
-   .cards .card:nth-child(4) { animation-delay: .12s; } .cards .card:nth-child(5) { animation-delay: .16s; }
-   .cards .card:nth-child(6) { animation-delay: .20s; } .cards .card:nth-child(7) { animation-delay: .24s; }
-   .cards .card:nth-child(8) { animation-delay: .28s; } .cards .card:nth-child(9) { animation-delay: .32s; }
-   .cards .card:nth-child(10) { animation-delay: .36s; } .cards .card:nth-child(n+11) { animation-delay: .40s; }
-   .card .k { font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; font-size: 10px; }
-   .card .v {
+   html.fx .panel { border-radius: 12px; animation: rise .55s cubic-bezier(.2,.8,.2,1) both; }
+   html.fx .panel::before, html.fx .card::before, html.fx .panel::after, html.fx .card::after { content: ''; position: absolute; width: 14px; height: 14px; pointer-events: none; opacity: .85; }
+   html.fx .panel::before, html.fx .card::before { top: -1px; left: -1px; border-top: 2px solid var(--accent); border-left: 2px solid var(--accent); border-top-left-radius: inherit; }
+   html.fx .panel::after, html.fx .card::after { bottom: -1px; right: -1px; border-bottom: 2px solid var(--accent2); border-right: 2px solid var(--accent2); border-bottom-right-radius: inherit; }
+   html.fx .panel h2 { font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; font-size: 12px; color: var(--accent); text-shadow: 0 0 12px rgba(0,229,255,.35); }
+   html.fx .panel h2 .right, html.fx .panel h2 .muted { font: 13px/1.45 system-ui, -apple-system, Segoe UI, Roboto, sans-serif; text-transform: none; letter-spacing: 0; text-shadow: none; }
+   html.fx .panel h2 .right { color: var(--fg); }
+   html.fx .card { border-radius: 10px; animation: rise .55s cubic-bezier(.2,.8,.2,1) both; transition: transform .25s, box-shadow .25s, border-color .25s; }
+   html.fx .card:hover { transform: translateY(-3px); border-color: rgba(0,229,255,.45); box-shadow: 0 0 0 1px rgba(0,229,255,.3), 0 12px 32px rgba(0,229,255,.14); }
+   html.fx .cards .card:nth-child(2) { animation-delay: .04s; } html.fx .cards .card:nth-child(3) { animation-delay: .08s; }
+   html.fx .cards .card:nth-child(4) { animation-delay: .12s; } html.fx .cards .card:nth-child(5) { animation-delay: .16s; }
+   html.fx .cards .card:nth-child(6) { animation-delay: .20s; } html.fx .cards .card:nth-child(7) { animation-delay: .24s; }
+   html.fx .cards .card:nth-child(8) { animation-delay: .28s; } html.fx .cards .card:nth-child(9) { animation-delay: .32s; }
+   html.fx .cards .card:nth-child(10) { animation-delay: .36s; } html.fx .cards .card:nth-child(n+11) { animation-delay: .40s; }
+   html.fx .card .k { font-family: var(--display); text-transform: uppercase; letter-spacing: .14em; font-size: 10px; }
+   html.fx .card .v {
      font-family: var(--mono); font-weight: 600; background: linear-gradient(90deg, #ffffff, var(--accent));
      -webkit-background-clip: text; background-clip: text; color: transparent; filter: drop-shadow(0 0 8px rgba(0,229,255,.25));
    }
-   .card .v.neg { background: none; color: var(--danger); filter: drop-shadow(0 0 8px rgba(255,77,109,.45)); }
-   .delta.up { color: var(--danger); } .delta.down { color: var(--ok); }
-   input, select, textarea { background: rgba(2,6,16,.7); border-color: rgba(0,229,255,.2); transition: border-color .2s, box-shadow .2s; }
-   input:focus, select:focus, textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,.15), 0 0 14px rgba(0,229,255,.2); }
-   option { background: #0a1020; color: var(--fg); }
-   button.btn { background: rgba(0,229,255,.04); border-color: rgba(0,229,255,.22); transition: color .2s, border-color .2s, box-shadow .2s, filter .2s; }
-   button.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px rgba(0,229,255,.3); }
-   button.btn.primary { background: linear-gradient(135deg, var(--accent3), var(--accent)); color: #fff; border-color: transparent; font-weight: 600; box-shadow: 0 0 18px rgba(0,229,255,.3); }
-   button.btn.primary:hover:not(:disabled) { color: #fff; filter: brightness(1.15); }
-   th, td { border-bottom-color: rgba(0,229,255,.08); }
-   th { font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 10px; }
-   tfoot td { border-top-color: rgba(0,229,255,.3); color: var(--accent); }
-   tbody tr { animation: fadeRow .4s ease-out both; }
-   tbody tr.clickable:hover { background: linear-gradient(90deg, rgba(0,229,255,.10), transparent 70%); box-shadow: inset 2px 0 0 var(--accent); }
-   tbody tr.detail > td { background: rgba(2,6,16,.55); }
-   .chip { background: rgba(0,229,255,.06); border-color: rgba(0,229,255,.2); }
-   .sharebar { background: rgba(2,6,16,.8); border-color: rgba(0,229,255,.2); }
-   .sharebar > span { background: linear-gradient(90deg, var(--accent3), var(--accent)); box-shadow: 0 0 8px var(--accent); transform-origin: left; animation: fillbar .9s cubic-bezier(.2,.8,.2,1) both; }
-   .swatch { box-shadow: 0 0 6px currentColor; }
-   pre.box, .sdl-block { background: rgba(2,6,16,.75); border-color: rgba(0,229,255,.16); }
-   .chart { border-radius: 10px; }
-   .chart svg text { font-family: var(--mono); }
-   .chart svg .grid { stroke: rgba(0,229,255,.13); }
-   .chart svg rect.bar { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .7s cubic-bezier(.2,.8,.2,1) both; }
-   .chart.pickable svg rect.hit { cursor: pointer; }
-   .chart.is3d { overflow: hidden; background: radial-gradient(ellipse at 50% 100%, rgba(0,229,255,.10), transparent 70%); }
-   .chart canvas.gl3d { display: block; cursor: grab; }
-   .chart canvas.gl3d:active { cursor: grabbing; }
-   .ax3d { position: absolute; inset: 0; pointer-events: none; overflow: hidden; z-index: 1; }
-   .lbl3d { position: absolute; left: 0; top: 0; font: 10px var(--mono); color: var(--muted); white-space: nowrap; text-shadow: 0 0 6px #000; }
-   .lbl3d.avg { color: var(--fg); opacity: .8; }
-   .tip {
+   html.fx .card .v.neg { background: none; color: var(--danger); filter: drop-shadow(0 0 8px rgba(255,77,109,.45)); }
+   html.fx input, html.fx select, html.fx textarea { background: rgba(2,6,16,.7); border-color: rgba(0,229,255,.2); transition: border-color .2s, box-shadow .2s; }
+   html.fx input:focus, html.fx select:focus, html.fx textarea:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px rgba(0,229,255,.15), 0 0 14px rgba(0,229,255,.2); }
+   html.fx option { background: #0a1020; color: var(--fg); }
+   html.fx button.btn { background: rgba(0,229,255,.04); border-color: rgba(0,229,255,.22); transition: color .2s, border-color .2s, box-shadow .2s, filter .2s; }
+   html.fx button.btn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); box-shadow: 0 0 14px rgba(0,229,255,.3); }
+   html.fx button.btn.primary { background: linear-gradient(135deg, var(--accent3), var(--accent)); color: #fff; border-color: transparent; font-weight: 600; box-shadow: 0 0 18px rgba(0,229,255,.3); }
+   html.fx button.btn.primary:hover:not(:disabled) { background: linear-gradient(135deg, var(--accent3), var(--accent)); border-color: transparent; color: #fff; filter: brightness(1.15); }
+   html.fx th, html.fx td { border-bottom-color: rgba(0,229,255,.08); }
+   html.fx th { font-family: var(--display); text-transform: uppercase; letter-spacing: .1em; font-size: 10px; }
+   html.fx tfoot td { border-top-color: rgba(0,229,255,.3); color: var(--accent); }
+   html.fx tbody tr { animation: fadeRow .4s ease-out both; }
+   html.fx tbody tr.clickable:hover { background: linear-gradient(90deg, rgba(0,229,255,.10), transparent 70%); box-shadow: inset 2px 0 0 var(--accent); }
+   html.fx tbody tr.detail > td { background: rgba(2,6,16,.55); }
+   html.fx .chip { background: rgba(0,229,255,.06); border-color: rgba(0,229,255,.2); }
+   html.fx .sharebar { background: rgba(2,6,16,.8); border-color: rgba(0,229,255,.2); }
+   html.fx .sharebar > span { background: linear-gradient(90deg, var(--accent3), var(--accent)); box-shadow: 0 0 8px var(--accent); transform-origin: left; animation: fillbar .9s cubic-bezier(.2,.8,.2,1) both; }
+   html.fx .swatch { box-shadow: 0 0 6px currentColor; }
+   html.fx pre.box, html.fx .sdl-block { background: rgba(2,6,16,.75); border-color: rgba(0,229,255,.16); }
+   html.fx .chart { border-radius: 10px; }
+   html.fx .chart svg text { font-family: var(--mono); }
+   html.fx .chart svg .grid { stroke: rgba(0,229,255,.13); }
+   html.fx .chart svg rect.bar { transform-box: fill-box; transform-origin: 50% 100%; animation: grow .7s cubic-bezier(.2,.8,.2,1) both; }
+   html.fx .chart.is3d { background: radial-gradient(ellipse at 50% 100%, rgba(0,229,255,.10), transparent 70%); }
+   html.fx .lbl3d { text-shadow: 0 0 6px #000; }
+   html.fx .tip {
      background: rgba(6,10,22,.88); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
      border-color: rgba(0,229,255,.4); box-shadow: 0 0 20px rgba(0,229,255,.2), 0 8px 24px rgba(0,0,0,.5);
    }
-   #toast { background: rgba(40,6,16,.92); border: 1px solid var(--danger); box-shadow: 0 0 22px rgba(255,77,109,.4); backdrop-filter: blur(8px); }
-   #toast.info { background: rgba(4,30,20,.92); border-color: var(--ok); box-shadow: 0 0 22px rgba(43,255,163,.35); }
-   .loading { position: relative; }
-   .loading::after {
+   html.fx #toast { background: rgba(40,6,16,.92); border: 1px solid var(--danger); box-shadow: 0 0 22px rgba(255,77,109,.4); backdrop-filter: blur(8px); }
+   html.fx #toast.info { background: rgba(4,30,20,.92); border-color: var(--ok); box-shadow: 0 0 22px rgba(43,255,163,.35); }
+   html.fx .loading { position: relative; }
+   html.fx .loading::after {
      content: ''; position: absolute; left: 0; right: 0; top: 0; height: 2px; z-index: 10;
      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent); background-size: 40% 100%; background-repeat: no-repeat;
      animation: loadbar 1s linear infinite;
@@ -239,9 +267,6 @@
    @keyframes pulse { 0%, 100% { opacity: 1; transform: scale(1); } 50% { opacity: .4; transform: scale(.7); } }
    @keyframes gridmove { to { background-position: 0 48px; } }
    @keyframes loadbar { from { background-position: -40% 0; } to { background-position: 140% 0; } }
-   @media (prefers-reduced-motion: reduce) {
-     *, *::before, *::after { animation-duration: .001ms !important; animation-iteration-count: 1 !important; transition: none !important; }
-   }
 </style>
 </head>
 <body>
@@ -257,6 +282,9 @@
   <div class="spacer"></div>
   <span class="stat">Balance: <b id="hdrBalance">—</b></span>
   <span class="stat">Available: <b id="hdrBudget">—</b></span>
+   <label class="inline theme-ctl" title="Colour palette (shared with the rest of Cognotik)">Palette<select id="paletteSel" class="theme-selector"></select></label>
+   <label class="inline theme-ctl" title="Light / dark mode (shared with the rest of Cognotik)">Theme<select id="modeSel" class="theme-selector"></select></label>
+   <button class="btn small" id="btnFx" title="Toggle the neon FX look">✦ FX</button>
    <button class="btn small" id="btn3d" title="Toggle WebGL 3D charts" disabled>◈ 3D</button>
   <button class="btn small" id="btnRefresh" title="Reload the active tab">⟳ Refresh</button>
   <label class="inline">Auto
@@ -581,6 +609,35 @@ const webglOk = () => webglSupport ??= (() => {
    catch { return false; }
 })();
 const use3d = () => !!(mode3d && THREE && webglOk());
+// ---------------------------------------------------------------- theme integration
+// Colours come from the central Cognotik theme (/themes.css via ThemeManager). The optional "FX" look
+// is a page-local overlay scoped to html.fx.
+const FX_KEY = 'usageGraphQL.fx';
+let fxMode = !!load(FX_KEY, false);
+document.documentElement.classList.toggle('fx', fxMode);
+const isFx = () => document.documentElement.classList.contains('fx');
+const cssVar = name => getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+/** Resolve theme tokens into three.js colours for the 3D charts (re-read on every render). */
+function chart3dPalette() {
+   const fx = isFx();
+   const col = (name, fallback) => {
+     const c = new THREE.Color(fallback);
+     const v = cssVar(name);
+     if (v && /^(#[0-9a-f]{3}|#[0-9a-f]{6}|rgba?\(|hsla?\(|[a-z]+$)/i.test(v)) {
+       try { c.setStyle(v); } catch { /* keep fallback */ }
+     }
+     return c;
+   };
+   return {
+     fx,
+     accent: col('--accent', '#3b6fd8'),
+     accent2: col('--accent2', '#8e44ad'),
+     fg: col('--fg', '#1d2330'),
+     grid: fx ? new THREE.Color(0x16304f) : col('--border-strong', '#c4cad4'),
+     edge: fx ? new THREE.Color(0xffffff) : col('--fg', '#1d2330'),
+     ambient: new THREE.Color(fx ? 0x8090ff : 0xffffff)
+   };
+}
 
 
 function colorFor(name) {
@@ -944,21 +1001,22 @@ function chart3D(el, keys, data, series, sums, o) {
    const yMax = niceMax(sums.reduce((a, b) => Math.max(a, b), 0));
    const yOf = v => (v / yMax) * HEIGHT;
    // lights
-   scene.add(new THREE.AmbientLight(0x8090ff, 0.6));
+    const pal = chart3dPalette();
+    scene.add(new THREE.AmbientLight(pal.ambient, pal.fx ? 0.6 : 1.1));
    const sun = new THREE.DirectionalLight(0xffffff, 1.2);
    sun.position.set(width * 0.3, 30, 25);
    scene.add(sun);
-   const magenta = new THREE.PointLight(0xff2bd6, 1.4, 0, 0);
+    const magenta = new THREE.PointLight(pal.accent2, pal.fx ? 1.4 : 0.6, 0, 0);
    magenta.position.set(-width / 2 - 4, 8, 6);
    scene.add(magenta);
-   const cyan = new THREE.PointLight(0x00e5ff, 1.4, 0, 0);
+    const cyan = new THREE.PointLight(pal.accent, pal.fx ? 1.4 : 0.6, 0, 0);
    cyan.position.set(width / 2 + 4, 8, 6);
    scene.add(cyan);
    // floor grid
    const floorSize = Math.max(width + 6, 20);
-   const grid = new THREE.GridHelper(floorSize, Math.round(floorSize), 0x00e5ff, 0x16304f);
+    const grid = new THREE.GridHelper(floorSize, Math.round(floorSize), pal.accent, pal.grid);
    grid.material.transparent = true;
-   grid.material.opacity = 0.35;
+    grid.material.opacity = pal.fx ? 0.35 : 0.55;
    grid.material.depthWrite = false;
    scene.add(grid);
    // projected HTML labels
@@ -971,7 +1029,7 @@ function chart3D(el, keys, data, series, sums, o) {
      labels.push({ d, p: new THREE.Vector3(x, y, z) });
    };
    // y ticks on the back wall
-   const tickMat = new THREE.LineBasicMaterial({ color: 0x2a4a7a, transparent: true, opacity: 0.7 });
+    const tickMat = new THREE.LineBasicMaterial({ color: pal.grid, transparent: true, opacity: 0.7 });
    for (let i = 1; i <= 4; i++) {
      const yy = HEIGHT * i / 4;
      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([
@@ -981,7 +1039,7 @@ function chart3D(el, keys, data, series, sums, o) {
    // bars
    const box = new THREE.BoxGeometry(BAR, 1, BAR).translate(0, 0.5, 0);
    const edges = new THREE.EdgesGeometry(box);
-   const edgeMat = new THREE.LineBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.22 });
+    const edgeMat = new THREE.LineBasicMaterial({ color: pal.edge, transparent: true, opacity: pal.fx ? 0.22 : 0.18 });
    const mats = new Map(series.map(s => {
      const c = new THREE.Color(colorFor(s));
      return [s, new THREE.MeshStandardMaterial({ color: c, emissive: c, emissiveIntensity: 0.28, metalness: 0.35, roughness: 0.3, transparent: true, opacity: 0.92 })];
@@ -1022,7 +1080,7 @@ function chart3D(el, keys, data, series, sums, o) {
      const ay = yOf(o.mean), z = BAR / 2 + 0.2;
      const avgLine = new THREE.Line(
        new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(left, ay, z), new THREE.Vector3(right, ay, z)]),
-       new THREE.LineDashedMaterial({ color: 0xffffff, dashSize: 0.35, gapSize: 0.25, transparent: true, opacity: 0.6 }));
+        new THREE.LineDashedMaterial({ color: pal.fg, dashSize: 0.35, gapSize: 0.25, transparent: true, opacity: 0.6 }));
      avgLine.computeLineDistances();
      scene.add(avgLine);
      addLabel('avg ' + o.fmt(o.mean), right - 1.5, ay + 0.6, z, 'avg');
@@ -1030,7 +1088,7 @@ function chart3D(el, keys, data, series, sums, o) {
    // hover highlight
    const hl = new THREE.LineSegments(
      new THREE.EdgesGeometry(new THREE.BoxGeometry(1, 1, BAR * 1.35).translate(0, 0.5, 0)),
-     new THREE.LineBasicMaterial({ color: 0x00e5ff, transparent: true }));
+      new THREE.LineBasicMaterial({ color: pal.accent, transparent: true }));
    hl.visible = false;
    scene.add(hl);
    // camera framing
@@ -2542,10 +2600,51 @@ $('#btn3d').addEventListener('click', () => {
    update3dBtn();
    rerenderCharts();
 });
+function updateFxBtn() {
+   const b = $('#btnFx');
+   b.classList.toggle('primary', fxMode);
+   b.title = fxMode ? 'Switch back to the Cognotik theme look' : 'Switch to the neon FX look';
+}
+function setFx(on) {
+   fxMode = !!on;
+   store(FX_KEY, fxMode);
+   document.documentElement.classList.toggle('fx', fxMode);
+   updateFxBtn();
+   if (fxMode) initBackground();
+}
+$('#btnFx').addEventListener('click', () => setFx(!fxMode));
+/** Bind header selectors to the central ThemeManager and keep WebGL charts in sync with theme changes. */
+function initThemeControls() {
+   const TM = window.ThemeManager;
+   const palSel = $('#paletteSel'), modeSel = $('#modeSel');
+   const hide = sel => (sel.closest('label').style.display = 'none');
+   if (!TM) {
+     console.warn('ThemeManager not loaded; theme selectors hidden');
+     hide(palSel); hide(modeSel);
+   } else {
+     if (TM.getManifest()) TM.bindPaletteSelector(palSel); else hide(palSel);
+     TM.bindSelector(modeSel);
+   }
+   // Follow changes made in other windows (e.g. parent page when shown in an iframe).
+   window.addEventListener('storage', e => {
+     if (!e.newValue) return;
+     if (TM && e.key === TM.PALETTE_STORAGE_KEY) TM.setPalette(e.newValue);
+     if (TM && e.key === TM.STORAGE_KEY) TM.setTheme(e.newValue);
+     if (e.key === FX_KEY) { try { setFx(JSON.parse(e.newValue)); } catch { /* ignore */ } }
+   });
+   // SVG charts follow CSS variables automatically; WebGL charts bake colours in, so re-render them.
+   let pending = 0;
+   new MutationObserver(() => {
+     if (pending || !use3d()) return;
+     pending = requestAnimationFrame(() => { pending = 0; rerenderCharts(); });
+   }).observe(document.documentElement, { attributes: true, attributeFilter: ['data-theme', 'data-scheme', 'data-palette', 'class'] });
+}
 /** Full-screen synthwave-style backdrop: flowing wireframe terrain, particle fields and rings. */
+let bgStarted = false;
 function initBackground() {
    const canvas = $('#bg3d');
-   if (!THREE || !canvas || !webglOk()) return;
+    if (bgStarted || !THREE || !canvas || !webglOk()) return;
+    bgStarted = true;
    let renderer;
    try {
      renderer = new THREE.WebGLRenderer({ canvas, alpha: true, antialias: false, powerPreference: 'low-power' });
@@ -2619,7 +2718,7 @@ function initBackground() {
    if (reducedMotion) return;
    const loop = now => {
      requestAnimationFrame(loop);
-     if (!document.hidden) frame(now);
+      if (!document.hidden && isFx()) frame(now);
    };
    requestAnimationFrame(loop);
 }
@@ -2651,6 +2750,8 @@ window.addEventListener('hashchange', initFromHash);
   if (from) $('#fromDate').value = from;
   if (to) $('#toDate').value = to;
   if (!from && !to) applyPreset('30', false);
+   initThemeControls();
+   updateFxBtn();
   restoreListUi();
   restoreTrafficUi();
   renderRecent();
@@ -2661,7 +2762,7 @@ window.addEventListener('hashchange', initFromHash);
    threeReady.then(m => {
      update3dBtn();
      if (!m) return;
-     initBackground();
+      if (fxMode) initBackground();
      if (use3d()) rerenderCharts();
    });
 })();

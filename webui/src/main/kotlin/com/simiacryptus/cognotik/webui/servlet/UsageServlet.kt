@@ -276,104 +276,43 @@ class UsageServlet : HttpServlet() {
                 <html>
                 <head>
                     <title>Usage</title>
+                    <meta name="color-scheme" content="light dark">
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+                    <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+                    <script src="/themes.js"></script>
                     <script src="/modules/theme.js"></script>
                     <style>
-                        :root,
-                        html[data-theme="light"] {
-                            --bg: #ffffff;
-                            --fg: #333333;
-                            --muted-fg: #555555;
-                            --border: #dddddd;
-                            --row-alt-bg: #f2f2f2;
-                            --header-bg: #4a6fa5;
+                        /* Page-local variables derived from the central theme tokens (see /themes.css). */
+                        :root {
+                            --bg: var(--color-canvas);
+                            --fg: var(--color-text);
+                            --muted-fg: var(--color-text-muted);
+                            --border: var(--color-border);
+                            --row-alt-bg: var(--color-surface-alt);
+                            --header-bg: var(--color-brand);
                             --header-fg: #ffffff;
-                            --total-row-bg: #e8eef7;
-                            --budget-bg: #eef7ee;
-                            --budget-border: #4a8;
-                            --nav-bg: #f0f3f8;
-                            --nav-link: #4a6fa5;
-                            --nav-link-hover-bg: #e1e7f1;
-                            --nav-active-bg: #4a6fa5;
+                            --total-row-bg: color-mix(in srgb, var(--color-brand) 15%, var(--color-surface));
+                            --budget-bg: color-mix(in srgb, var(--color-success) 15%, var(--color-surface));
+                            --budget-border: var(--color-success);
+                            --nav-bg: var(--color-surface-alt);
+                            --nav-link: var(--color-link);
+                            --nav-link-hover-bg: color-mix(in srgb, var(--color-brand) 15%, transparent);
+                            --nav-active-bg: var(--color-brand);
                             --nav-active-fg: #ffffff;
-                            --btn-primary-bg: #4a6fa5;
+                            --btn-primary-bg: var(--color-brand);
                             --btn-primary-fg: #ffffff;
-                            --btn-primary-hover-bg: #3a5a8c;
-                            --btn-secondary-bg: #ffffff;
-                            --btn-secondary-fg: #4a6fa5;
-                            --btn-secondary-border: #4a6fa5;
-                            --btn-secondary-hover-bg: #eef2f9;
-                            --credit-positive: #2a7a2a;
-                            --credit-negative: #a02020;
-                            --credit-meta-fg: #666666;
-                            --input-bg: #ffffff;
-                            --input-fg: #333333;
-                            --input-border: #cccccc;
-                            --pre-bg: #f7f7f7;
-                        }
-                        html[data-theme="dark"] {
-                            --bg: #1e1e1e;
-                            --fg: #e6e6e6;
-                            --muted-fg: #bbbbbb;
-                            --border: #444444;
-                            --row-alt-bg: #2a2a2a;
-                            --header-bg: #2c4a78;
-                            --header-fg: #ffffff;
-                            --total-row-bg: #2f3b50;
-                            --budget-bg: #1f3a1f;
-                            --budget-border: #4a8;
-                            --nav-bg: #2a2a2a;
-                            --nav-link: #8ab0e0;
-                            --nav-link-hover-bg: #3a3a3a;
-                            --nav-active-bg: #2c4a78;
-                            --nav-active-fg: #ffffff;
-                            --btn-primary-bg: #2c4a78;
-                            --btn-primary-fg: #ffffff;
-                            --btn-primary-hover-bg: #3a5a8c;
-                            --btn-secondary-bg: #2a2a2a;
-                            --btn-secondary-fg: #8ab0e0;
-                            --btn-secondary-border: #8ab0e0;
-                            --btn-secondary-hover-bg: #3a3a3a;
-                            --credit-positive: #5fcf5f;
-                            --credit-negative: #ff7070;
-                            --credit-meta-fg: #aaaaaa;
-                            --input-bg: #2a2a2a;
-                            --input-fg: #e6e6e6;
-                            --input-border: #555555;
-                            --pre-bg: #252525;
-                        }
-                        @media (prefers-color-scheme: dark) {
-                            html[data-theme="auto"] {
-                                --bg: #1e1e1e;
-                                --fg: #e6e6e6;
-                                --muted-fg: #bbbbbb;
-                                --border: #444444;
-                                --row-alt-bg: #2a2a2a;
-                                --header-bg: #2c4a78;
-                                --header-fg: #ffffff;
-                                --total-row-bg: #2f3b50;
-                                --budget-bg: #1f3a1f;
-                                --budget-border: #4a8;
-                                --nav-bg: #2a2a2a;
-                                --nav-link: #8ab0e0;
-                                --nav-link-hover-bg: #3a3a3a;
-                                --nav-active-bg: #2c4a78;
-                                --nav-active-fg: #ffffff;
-                                --btn-primary-bg: #2c4a78;
-                                --btn-primary-fg: #ffffff;
-                                --btn-primary-hover-bg: #3a5a8c;
-                                --btn-secondary-bg: #2a2a2a;
-                                --btn-secondary-fg: #8ab0e0;
-                                --btn-secondary-border: #8ab0e0;
-                                --btn-secondary-hover-bg: #3a3a3a;
-                                --credit-positive: #5fcf5f;
-                                --credit-negative: #ff7070;
-                                --credit-meta-fg: #aaaaaa;
-                                --input-bg: #2a2a2a;
-                                --input-fg: #e6e6e6;
-                                --input-border: #555555;
-                                --pre-bg: #252525;
-                            }
+                            --btn-primary-hover-bg: var(--color-brand-hover);
+                            --btn-secondary-bg: var(--color-surface);
+                            --btn-secondary-fg: var(--color-brand);
+                            --btn-secondary-border: var(--color-brand);
+                            --btn-secondary-hover-bg: var(--color-surface-alt);
+                            --credit-positive: var(--color-success);
+                            --credit-negative: var(--color-danger);
+                            --credit-meta-fg: var(--color-text-muted);
+                            --input-bg: var(--color-surface);
+                            --input-fg: var(--color-text);
+                            --input-border: var(--color-border-strong);
+                            --pre-bg: var(--color-surface-alt);
                         }
                         html, body { background-color: var(--bg); color: var(--fg); }
                         body { font-family: Arial, sans-serif; margin: 20px; }
@@ -398,7 +337,7 @@ class UsageServlet : HttpServlet() {
                             border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;
                         }
                         .range-form button:hover { background: var(--btn-primary-hover-bg); }
-                        #theme-selector {
+                        #theme-selector, #palette-selector {
                             background: var(--input-bg); color: var(--input-fg);
                             border: 1px solid var(--input-border); padding: 4px 6px; border-radius: 3px;
                         }
@@ -425,12 +364,10 @@ class UsageServlet : HttpServlet() {
                 </head>
                 <body>
                 <div class="theme-switcher" style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:10px;">
+                    <label for="palette-selector" style="margin-right:8px; font-size:0.95em;">Palette:</label>
+                    <select id="palette-selector" aria-label="Palette selector" style="margin-right:16px;"></select>
                     <label for="theme-selector" style="margin-right:8px; font-size:0.95em;">Theme:</label>
-                    <select id="theme-selector" aria-label="Theme selector">
-                        <option value="auto">Auto</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                    </select>
+                    <select id="theme-selector" aria-label="Theme selector"></select>
                 </div>
                 <h1>Usage Summary</h1>
                 $scopeHtml
@@ -446,9 +383,17 @@ class UsageServlet : HttpServlet() {
                     (function() {
                         function initTheme() {
                             if (typeof ThemeManager !== 'undefined') {
-                                ThemeManager.init();
+                                // ThemeManager.init() runs automatically when theme.js loads.
+                                var pal = document.getElementById('palette-selector');
+                                if (pal) ThemeManager.bindPaletteSelector(pal);
                                 var sel = document.getElementById('theme-selector');
                                 if (sel) ThemeManager.bindSelector(sel);
+                                // Follow theme changes made in other windows/frames live.
+                                window.addEventListener('storage', function (e) {
+                                    if (!e.newValue) return;
+                                    if (e.key === ThemeManager.PALETTE_STORAGE_KEY) ThemeManager.setPalette(e.newValue);
+                                    if (e.key === ThemeManager.STORAGE_KEY) ThemeManager.setTheme(e.newValue);
+                                });
                             } else {
                                 console.warn('ThemeManager not loaded from /modules/theme.js');
                             }

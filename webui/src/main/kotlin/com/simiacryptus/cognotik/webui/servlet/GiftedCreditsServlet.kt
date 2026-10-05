@@ -477,10 +477,7 @@ class GiftedCreditsServlet : HttpServlet() {
                 <head>
                     <title>${theme.emoji} Gifted Credits ${theme.emoji}</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-                    <script src="/modules/theme.js"></script>
-                    <script>
-                        try { ThemeManager.init(); } catch (e) { console.warn('ThemeManager init failed', e); }
-                    </script>
+                    ${themeHeadTags()}
                     <style>
                         ${buildThemeStyles(theme)}
                         .theme-selector {
@@ -603,6 +600,7 @@ class GiftedCreditsServlet : HttpServlet() {
                             font-size: 0.95em;
                             line-height: 1.5;
                         }
+                        ${buildCentralThemeStyles(theme)}
                     </style>
                 </head>
                 <body>
@@ -613,19 +611,7 @@ class GiftedCreditsServlet : HttpServlet() {
     
 
                 $themeSelector
-                <div class="site-theme-selector">
-                    <label for="site-theme-selector">🌓 Site Mode:</label>
-                    <select id="site-theme-selector">
-                        <option value="auto">🌗 Auto (System)</option>
-                        <option value="light">☀️ Light</option>
-                        <option value="dark">🌙 Dark</option>
-                    </select>
-                </div>
-                <script>
-                    try {
-                        ThemeManager.bindSelector(document.getElementById('site-theme-selector'));
-                    } catch (e) { console.warn('ThemeManager bindSelector failed', e); }
-                </script>
+                ${appearanceSelectorHtml()}
     
                  $createGiftSection
     
@@ -721,6 +707,170 @@ class GiftedCreditsServlet : HttpServlet() {
     }
 
 
+
+    /**
+     * Tags that wire a page into the central Cognotik theme system (see themes.md).
+     * Order matters: tokens (themes.css), manifest (themes.js), then the manager (modules/theme.js).
+     * ThemeManager.init() runs automatically when theme.js loads.
+     */
+    private fun themeHeadTags(): String = """
+        <meta name="color-scheme" content="light dark">
+        <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+        <script src="/themes.js"></script>
+        <script src="/modules/theme.js"></script>
+    """.trimIndent()
+
+    /**
+     * Palette + mode selectors bound to the central ThemeManager.
+     */
+    private fun appearanceSelectorHtml(): String = """
+        <div class="site-theme-selector">
+            <span id="site-palette-group">
+                <label for="site-palette-selector">🎨 Palette:</label>
+                <select id="site-palette-selector"></select>
+            </span>
+            <span>
+                <label for="site-theme-selector">🌓 Site Mode:</label>
+                <select id="site-theme-selector">
+                    <option value="auto">🌗 Auto (System)</option>
+                    <option value="light">☀️ Light</option>
+                    <option value="dark">🌙 Dark</option>
+                </select>
+            </span>
+        </div>
+        <script>
+            (function () {
+                try {
+                    var palette = document.getElementById('site-palette-selector');
+                    if (window.ThemeManager && window.CognotikThemes) {
+                        ThemeManager.bindPaletteSelector(palette);
+                    } else {
+                        document.getElementById('site-palette-group').style.display = 'none';
+                    }
+                    ThemeManager.bindSelector(document.getElementById('site-theme-selector'));
+                } catch (e) { console.warn('ThemeManager selector binding failed', e); }
+            })();
+        </script>
+    """.trimIndent()
+
+    /**
+     * Styles that connect the festive gift themes to the central theme tokens.
+     * The gift theme supplies accents (gradients, emoji, headings, buttons); in dark schemes
+     * surfaces and text follow the central --color-* tokens. Keyed on data-scheme, per themes.md.
+     */
+    private fun buildCentralThemeStyles(theme: GiftTheme): String = """
+        .site-theme-selector {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px 18px;
+            align-items: center;
+            justify-content: center;
+            margin: 20px 0;
+            padding: 10px 15px;
+            border-radius: 12px;
+            text-align: center;
+            background: rgba(255, 255, 255, 0.85);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+        }
+        .site-theme-selector > span {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .site-theme-selector label {
+            font-weight: 700;
+            margin: 0;
+            color: ${theme.primaryDark};
+        }
+        .site-theme-selector select {
+            padding: 6px 12px;
+            border-radius: 8px;
+            border: 2px solid ${theme.accentColor};
+            background: ${theme.cardAccent};
+            color: ${theme.primaryDark};
+            font-family: ${theme.fontFamily};
+            font-weight: 600;
+            cursor: pointer;
+        }
+        html[data-scheme="dark"] .main-container,
+        html[data-scheme="dark"] .gift-container,
+        html[data-scheme="dark"] .welcome-container,
+        html[data-scheme="dark"] .confirm-container,
+        html[data-scheme="dark"] .success-container {
+            background: color-mix(in srgb, var(--color-surface) 97%, transparent);
+            color: var(--color-text);
+        }
+        html[data-scheme="dark"] p,
+        html[data-scheme="dark"] h2,
+        html[data-scheme="dark"] td,
+        html[data-scheme="dark"] label,
+        html[data-scheme="dark"] .theme-label {
+            color: var(--color-text);
+        }
+        html[data-scheme="dark"] p.note,
+        html[data-scheme="dark"] p.hint,
+        html[data-scheme="dark"] p.redirect-note,
+        html[data-scheme="dark"] p[style*="color:#888"],
+        html[data-scheme="dark"] p[style*="color:#666"] {
+            color: var(--color-text-muted) !important;
+        }
+        html[data-scheme="dark"] .nav-bar,
+        html[data-scheme="dark"] .theme-selector,
+        html[data-scheme="dark"] .site-theme-selector {
+            background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+        }
+        html[data-scheme="dark"] .nav-bar a:not(.active),
+        html[data-scheme="dark"] .theme-btn:not(.active) {
+            background: var(--color-surface-alt);
+            color: var(--color-text);
+        }
+        html[data-scheme="dark"] .nav-bar a:not(.active):hover,
+        html[data-scheme="dark"] .theme-btn:not(.active):hover {
+            background: color-mix(in srgb, var(--color-brand) 25%, var(--color-surface-alt));
+        }
+        html[data-scheme="dark"] .site-theme-selector select,
+        html[data-scheme="dark"] .form-container input,
+        html[data-scheme="dark"] .form-container select {
+            background: var(--color-surface);
+            color: var(--color-text);
+            border-color: var(--color-border-strong);
+        }
+        html[data-scheme="dark"] .form-container input:focus,
+        html[data-scheme="dark"] .form-container select:focus {
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 30%, transparent);
+        }
+        html[data-scheme="dark"] .form-container,
+        html[data-scheme="dark"] .details,
+        html[data-scheme="dark"] .license-notice,
+        html[data-scheme="dark"] .license-footer {
+            background: var(--color-surface-alt);
+        }
+        html[data-scheme="dark"] .form-container::before {
+            background: var(--color-surface);
+        }
+        html[data-scheme="dark"] tr:nth-child(even) {
+            background-color: var(--color-surface-alt);
+        }
+        html[data-scheme="dark"] tr:nth-child(odd) {
+            background-color: var(--color-surface);
+        }
+        html[data-scheme="dark"] td {
+            border-bottom-color: var(--color-border);
+        }
+        html[data-scheme="dark"] tr:hover td {
+            background-color: color-mix(in srgb, var(--color-brand) 20%, var(--color-surface));
+        }
+        html[data-scheme="dark"] a.claim-link,
+        html[data-scheme="dark"] a.license-link {
+            color: var(--color-link);
+        }
+        html[data-scheme="dark"] .theme-badge {
+            background: color-mix(in srgb, var(--color-brand) 25%, var(--color-surface));
+            color: var(--color-text);
+        }
+    """.trimIndent()
+
     /**
      * Builds the full path (URI + query string) that should be returned to after login.
      */
@@ -781,10 +931,7 @@ class GiftedCreditsServlet : HttpServlet() {
              <head>
                  <title>${theme.emoji} You've Received a Gift! ${theme.emoji}</title>
                  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-                 <script src="/modules/theme.js"></script>
-                 <script>
-                     try { ThemeManager.init(); } catch (e) { console.warn('ThemeManager init failed', e); }
-                 </script>
+                 ${themeHeadTags()}
                  <style>
                      @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap');
                      * { box-sizing: border-box; }
@@ -895,6 +1042,7 @@ class GiftedCreditsServlet : HttpServlet() {
                          margin-top: 20px;
                          font-style: italic;
                      }
+                     ${buildCentralThemeStyles(theme)}
                  </style>
              </head>
              <body>
@@ -911,19 +1059,7 @@ class GiftedCreditsServlet : HttpServlet() {
                          <a href="/LICENSE.html" target="_blank" rel="noopener" style="color:${theme.primaryColor};font-weight:600;">Cognotik License Agreement</a>.
                      </p>
                      <div class="festive-banner">${theme.bannerContent}</div>
-                     <div style="margin-top:20px;">
-                         <label for="site-theme-selector" style="font-weight:700;color:${theme.primaryDark};margin-right:8px;">🌓 Site Mode:</label>
-                         <select id="site-theme-selector" style="padding:6px 12px;border-radius:8px;border:2px solid ${theme.accentColor};background:${theme.cardAccent};color:${theme.primaryDark};font-family:${theme.fontFamily};font-weight:600;cursor:pointer;">
-                             <option value="auto">🌗 Auto (System)</option>
-                             <option value="light">☀️ Light</option>
-                             <option value="dark">🌙 Dark</option>
-                         </select>
-                     </div>
-                     <script>
-                         try {
-                             ThemeManager.bindSelector(document.getElementById('site-theme-selector'));
-                         } catch (e) { console.warn('ThemeManager bindSelector failed', e); }
-                     </script>
+                     ${appearanceSelectorHtml()}
                  </div>
              </body>
              </html>
@@ -950,10 +1086,7 @@ class GiftedCreditsServlet : HttpServlet() {
              <head>
                  <title>${theme.emoji} Cognotik Gifted Credits ${theme.emoji}</title>
                  <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-                 <script src="/modules/theme.js"></script>
-                 <script>
-                     try { ThemeManager.init(); } catch (e) { console.warn('ThemeManager init failed', e); }
-                 </script>
+                 ${themeHeadTags()}
                  <style>
                      @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap');
                      * { box-sizing: border-box; }
@@ -1044,6 +1177,7 @@ class GiftedCreditsServlet : HttpServlet() {
                          margin-top: 20px;
                          font-style: italic;
                      }
+                     ${buildCentralThemeStyles(theme)}
                  </style>
              </head>
              <body>
@@ -1060,19 +1194,7 @@ class GiftedCreditsServlet : HttpServlet() {
                          <a href="/LICENSE.html" target="_blank" rel="noopener" style="color:${theme.primaryColor};font-weight:600;">Cognotik Software License Agreement</a>.
                      </p>
                      <div class="festive-banner">${theme.bannerContent}</div>
-                     <div style="margin-top:20px;">
-                         <label for="site-theme-selector" style="font-weight:700;color:${theme.primaryDark};margin-right:8px;">🌓 Site Mode:</label>
-                         <select id="site-theme-selector" style="padding:6px 12px;border-radius:8px;border:2px solid ${theme.accentColor};background:${theme.cardAccent};color:${theme.primaryDark};font-family:${theme.fontFamily};font-weight:600;cursor:pointer;">
-                             <option value="auto">🌗 Auto (System)</option>
-                             <option value="light">☀️ Light</option>
-                             <option value="dark">🌙 Dark</option>
-                         </select>
-                     </div>
-                     <script>
-                         try {
-                             ThemeManager.bindSelector(document.getElementById('site-theme-selector'));
-                         } catch (e) { console.warn('ThemeManager bindSelector failed', e); }
-                     </script>
+                     ${appearanceSelectorHtml()}
                  </div>
              </body>
              </html>
@@ -1269,10 +1391,7 @@ class GiftedCreditsServlet : HttpServlet() {
             <head>
                 <title>${theme.emoji} Confirm Gift Claim ${theme.emoji}</title>
                 <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
-                <script src="/modules/theme.js"></script>
-                <script>
-                    try { ThemeManager.init(); } catch (e) { console.warn('ThemeManager init failed', e); }
-                </script>
+                ${themeHeadTags()}
                 <style>
                     @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap');
                     * { box-sizing: border-box; }
@@ -1393,6 +1512,7 @@ class GiftedCreditsServlet : HttpServlet() {
                         font-weight: 600;
                         margin-top: 10px;
                     }
+                    ${buildCentralThemeStyles(theme)}
                 </style>
             </head>
             <body>
@@ -1418,19 +1538,7 @@ class GiftedCreditsServlet : HttpServlet() {
                         <a class="button secondary" href="$cancelUrl">✖ Cancel</a>
                     </div>
                     <div class="festive-banner">${theme.bannerContent}</div>
-                    <div style="margin-top:20px;">
-                        <label for="site-theme-selector" style="font-weight:700;color:${theme.primaryDark};margin-right:8px;">🌓 Site Mode:</label>
-                        <select id="site-theme-selector" style="padding:6px 12px;border-radius:8px;border:2px solid ${theme.accentColor};background:${theme.cardAccent};color:${theme.primaryDark};font-family:${theme.fontFamily};font-weight:600;cursor:pointer;">
-                            <option value="auto">🌗 Auto (System)</option>
-                            <option value="light">☀️ Light</option>
-                            <option value="dark">🌙 Dark</option>
-                        </select>
-                    </div>
-                    <script>
-                        try {
-                            ThemeManager.bindSelector(document.getElementById('site-theme-selector'));
-                        } catch (e) { console.warn('ThemeManager bindSelector failed', e); }
-                    </script>
+                    ${appearanceSelectorHtml()}
                 </div>
             </body>
             </html>
@@ -1466,10 +1574,7 @@ class GiftedCreditsServlet : HttpServlet() {
                                          <title>${theme.emoji} Gift Claimed Successfully! ${theme.emoji}</title>
                                          <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                                          <meta http-equiv="refresh" content="5;url=$redirectUri"/>
-                                         <script src="/modules/theme.js"></script>
-                                         <script>
-                                             try { ThemeManager.init(); } catch (e) { console.warn('ThemeManager init failed', e); }
-                                         </script>
+                                         ${themeHeadTags()}
                                          <style>
                                              @import url('https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap');
                                              * { box-sizing: border-box; }
@@ -1623,6 +1728,7 @@ class GiftedCreditsServlet : HttpServlet() {
                                                  font-weight: 600;
                                                  margin-top: 10px;
                                              }
+                                             ${buildCentralThemeStyles(theme)}
                                          </style>
                                      </head>
                                      <body>
@@ -1647,19 +1753,7 @@ class GiftedCreditsServlet : HttpServlet() {
                                                  <a href="/LICENSE.html" target="_blank" rel="noopener" style="color:${theme.primaryColor};font-weight:600;">Cognotik License Agreement</a>.
                                              </p>
                                              <div class="festive-banner">${theme.bannerContent}</div>
-                                             <div style="margin-top:20px;">
-                                                 <label for="site-theme-selector" style="font-weight:700;color:${theme.primaryDark};margin-right:8px;">🌓 Site Mode:</label>
-                                                 <select id="site-theme-selector" style="padding:6px 12px;border-radius:8px;border:2px solid ${theme.accentColor};background:${theme.cardAccent};color:${theme.primaryDark};font-family:${theme.fontFamily};font-weight:600;cursor:pointer;">
-                                                     <option value="auto">🌗 Auto (System)</option>
-                                                     <option value="light">☀️ Light</option>
-                                                     <option value="dark">🌙 Dark</option>
-                                                 </select>
-                                             </div>
-                                             <script>
-                                                 try {
-                                                     ThemeManager.bindSelector(document.getElementById('site-theme-selector'));
-                                                 } catch (e) { console.warn('ThemeManager bindSelector failed', e); }
-                                             </script>
+                                             ${appearanceSelectorHtml()}
                                          </div>
                                      </body>
                                      </html>

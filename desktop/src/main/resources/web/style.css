@@ -5,21 +5,38 @@
     box-sizing: border-box;
 }
 
+/*
+  * Colour tokens are supplied by the active theme stylesheet (themes.css,
+  * registered in themes.js). This :where() block has zero specificity, so it
+  * only acts as a fallback if no theme stylesheet is loaded.
+  */
+:where(:root) {
+     --color-canvas: #f4f6f9;
+     --color-surface: #ffffff;
+     --color-surface-alt: #f8f9fa;
+     --color-border: #e1e4e8;
+     --color-border-strong: #d0d7de;
+     --color-text: #333;
+     --color-text-muted: #7f8c8d;
+     --color-heading: #2c3e50;
+     --color-brand: #3498db;
+     --color-brand-hover: #2980b9;
+     --color-link: #3498db;
+     --color-accent: #8e44ad;
+     --color-secondary: #95a5a6;
+     --color-secondary-hover: #7f8c8d;
+     --color-success: #27ae60;
+     --color-warning: #e67e22;
+     --color-danger: #e74c3c;
+     --color-danger-hover: #c0392b;
+}
+
 :root {
-    --color-primary: #3498db;
-    --color-primary-hover: #2980b9;
-    --color-secondary: #95a5a6;
-    --color-secondary-hover: #7f8c8d;
-    --color-danger: #e74c3c;
-    --color-danger-hover: #c0392b;
-    --color-text: #333;
-    --color-heading: #2c3e50;
-    --color-muted: #7f8c8d;
-    --color-bg: #f4f6f9;
-    --color-surface: #ffffff;
-    --color-surface-alt: #f8f9fa;
-    --color-border: #e1e4e8;
-    --color-border-strong: #d0d7de;
+     /* Semantic aliases onto theme tokens */
+     --color-primary: var(--color-brand);
+     --color-primary-hover: var(--color-brand-hover);
+     --color-bg: var(--color-canvas);
+     --color-muted: var(--color-text-muted);
     --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06);
     --shadow-md: 0 2px 8px rgba(0, 0, 0, 0.08);
     --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
@@ -52,7 +69,7 @@ h4 {
 }
 
 a {
-    color: var(--color-primary);
+     color: var(--color-link);
     text-decoration: none;
 }
 
@@ -73,6 +90,8 @@ a:hover {
     padding: 8px 20px;
     height: var(--top-bar-height);
     background-color: rgba(255, 255, 255, 0.95);
+    /* Follow the active palette's surface colour (works for every theme). */
+    background-color: color-mix(in srgb, var(--color-surface) 95%, transparent);
     backdrop-filter: blur(8px);
     -webkit-backdrop-filter: blur(8px);
     box-shadow: var(--shadow-md);
@@ -407,7 +426,7 @@ a:hover {
 }
 
 .app-card-badge.accent {
-    background: #8e44ad;
+     background: var(--color-accent);
 }
 
 .app-card-badge.muted {
@@ -1156,16 +1175,7 @@ textarea:focus-visible,
 
 /* ===== Dark Mode ===== */
 @media (prefers-color-scheme: dark) {
-    :root {
-        --color-text: #e0e0e0;
-        --color-heading: #e0e0e0;
-        --color-muted: #999;
-        --color-bg: #121620;
-        --color-surface: #1e222e;
-        --color-surface-alt: #262a36;
-        --color-border: #333;
-        --color-border-strong: #444;
-    }
+     /* Colour tokens for dark mode come from themes.css; only component tweaks here. */
 
     #plugin-manager-modal table thead tr {
         background: #262a36 !important;
@@ -1512,133 +1522,173 @@ textarea:focus-visible,
     border-color: var(--color-primary);
     box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
 }
-
-/* Light theme override (when user explicitly chooses light) */
-html[data-theme="light"] {
-    --color-text: #333;
-    --color-heading: #2c3e50;
-    --color-muted: #7f8c8d;
-    --color-bg: #f4f6f9;
-    --color-surface: #ffffff;
-    --color-surface-alt: #f8f9fa;
-    --color-border: #e1e4e8;
-    --color-border-strong: #d0d7de;
+/* ===== Appearance (Look & Feel) Popup ===== */
+.appearance-menu {
+    position: relative;
+    display: inline-flex;
+}
+.appearance-popup {
+    position: absolute;
+    top: calc(100% + 8px);
+    right: 0;
+    min-width: 240px;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 14px 16px 16px;
+    background: var(--color-surface);
+    color: var(--color-text);
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-lg);
+    box-shadow: var(--shadow-lg);
+    z-index: 300;
+    animation: fadeIn 0.15s ease;
+}
+.appearance-popup[hidden] {
+    display: none;
+}
+.appearance-popup-header {
+    font-weight: 700;
+    font-size: 0.95em;
+    color: var(--color-heading);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--color-border);
+}
+.appearance-field {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+.appearance-field-label {
+    font-size: 0.8em;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    color: var(--color-text-muted);
+}
+.appearance-field .theme-selector {
+    width: 100%;
+}
+.appearance-field .theme-selector:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+}
+@media (max-width: 480px) {
+    .appearance-btn-label {
+        display: none;
+    }
+    .appearance-popup {
+        min-width: 0;
+        width: calc(100vw - 24px);
+        max-width: 300px;
+    }
 }
 
-/* Dark theme override (when user explicitly chooses dark) */
-html[data-theme="dark"] {
-    --color-text: #e0e0e0;
-    --color-heading: #e0e0e0;
-    --color-muted: #999;
-    --color-bg: #121620;
-    --color-surface: #1e222e;
-    --color-surface-alt: #262a36;
-    --color-border: #333;
-    --color-border-strong: #444;
-}
 
-html[data-theme="dark"] .top-bar {
-    background-color: rgba(30, 34, 46, 0.95);
+/* Explicit light/dark colour tokens live in themes.css ([data-theme="…"]).
+    Only component-level dark tweaks remain below. They key on data-scheme
+    (set by ThemeManager) so every dark palette receives them. */
+
+html[data-scheme="dark"] .top-bar {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-    border-bottom-color: #333;
 }
 
-html[data-theme="dark"] .app-card-body p {
-    color: #aaa;
+html[data-scheme="dark"] .app-card-body p {
+    color: var(--color-text-muted);
 }
 
-html[data-theme="dark"] .app-card-muted {
-    border-color: #444;
+html[data-scheme="dark"] .app-card-muted {
+    border-color: var(--color-border-strong);
 }
 
-html[data-theme="dark"] .modal {
+html[data-scheme="dark"] .modal {
     background-color: rgba(0, 0, 0, 0.6);
 }
 
-html[data-theme="dark"] .close {
+html[data-scheme="dark"] .close {
     color: #888;
 }
 
-html[data-theme="dark"] .close:hover {
+html[data-scheme="dark"] .close:hover {
     color: white;
 }
 
-html[data-theme="dark"] .step-number {
-    background-color: #444;
-    color: #ddd;
+html[data-scheme="dark"] .step-number {
+    background-color: var(--color-secondary);
+    color: var(--color-text);
 }
 
-html[data-theme="dark"] .form-group input[type="text"],
-html[data-theme="dark"] .form-group input[type="number"],
-html[data-theme="dark"] .form-group input[type="password"],
-html[data-theme="dark"] .form-group input[type="file"],
-html[data-theme="dark"] .form-group textarea,
-html[data-theme="dark"] .form-group select,
-html[data-theme="dark"] .tool-actions input,
-html[data-theme="dark"] .custom-provider-group input {
-    background-color: #2a2e3a;
-    color: #e0e0e0;
-    border-color: #444;
+html[data-scheme="dark"] .form-group input[type="text"],
+html[data-scheme="dark"] .form-group input[type="number"],
+html[data-scheme="dark"] .form-group input[type="password"],
+html[data-scheme="dark"] .form-group input[type="file"],
+html[data-scheme="dark"] .form-group textarea,
+html[data-scheme="dark"] .form-group select,
+html[data-scheme="dark"] .tool-actions input,
+html[data-scheme="dark"] .custom-provider-group input {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
 }
 
-html[data-theme="dark"] .task-toggle {
-    background-color: #2a2e3a;
-    border-color: #444;
+html[data-scheme="dark"] .task-toggle {
+    background-color: var(--color-surface-alt);
+    border-color: var(--color-border-strong);
 }
 
-html[data-theme="dark"] .task-toggle:hover {
-    background-color: #333;
+html[data-scheme="dark"] .task-toggle:hover {
+    background-color: var(--color-surface);
 }
 
-html[data-theme="dark"] .button.secondary {
-    background-color: #555;
+html[data-scheme="dark"] .button.secondary {
+    background-color: var(--color-secondary);
 }
 
-html[data-theme="dark"] .button.secondary:hover:not(:disabled) {
-    background-color: #666;
+html[data-scheme="dark"] .button.secondary:hover:not(:disabled) {
+    background-color: var(--color-secondary-hover);
 }
 
-html[data-theme="dark"] .tab-button {
-    color: #aaa;
+html[data-scheme="dark"] .tab-button {
+    color: var(--color-text-muted);
 }
 
-html[data-theme="dark"] .tab-button:hover {
-    background-color: #2a2e3a;
-    color: #e0e0e0;
+html[data-scheme="dark"] .tab-button:hover {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
 }
 
-html[data-theme="dark"] .tab-button.active {
-    color: #5dade2;
-    border-bottom-color: #5dade2;
+html[data-scheme="dark"] .tab-button.active {
+    color: var(--color-link);
+    border-bottom-color: var(--color-link);
 }
 
-html[data-theme="dark"] .form-group label {
-    color: #ccc;
+html[data-scheme="dark"] .form-group label {
+    color: var(--color-text);
 }
 
-html[data-theme="dark"] .settings-subtitle {
-    color: #888;
+html[data-scheme="dark"] .settings-subtitle {
+    color: var(--color-text-muted);
 }
 
-html[data-theme="dark"] .app-search-input,
-html[data-theme="dark"] .theme-selector {
-    background-color: #2a2e3a;
-    color: #e0e0e0;
-    border-color: #444;
+html[data-scheme="dark"] .app-search-input,
+html[data-scheme="dark"] .theme-selector {
+    background-color: var(--color-surface-alt);
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
 }
 
-html[data-theme="dark"] .app-search-clear {
+html[data-scheme="dark"] .app-search-clear {
     background-color: transparent;
-    color: #aaa;
-    border-color: #444;
+    color: var(--color-text-muted);
+    border-color: var(--color-border-strong);
 }
 
-html[data-theme="dark"] .app-search-clear:hover {
-    background-color: #2a2e3a;
+html[data-scheme="dark"] .app-search-clear:hover {
+    background-color: var(--color-surface-alt);
 }
 
-html[data-theme="dark"] footer {
-    border-top-color: #333;
+html[data-scheme="dark"] footer {
+    border-top-color: var(--color-border);
 }
 
 .app-search-no-results {
@@ -1834,13 +1884,13 @@ html[data-theme="dark"] footer {
     }
 }
 
-html[data-theme="dark"] .app-readme-example-link {
+html[data-scheme="dark"] .app-readme-example-link {
     background: var(--color-surface-alt);
-    border-color: #444;
-    color: #5dade2;
+    border-color: var(--color-border-strong);
+    color: var(--color-link);
 }
 
-html[data-theme="dark"] .app-readme-example-link:hover {
+html[data-scheme="dark"] .app-readme-example-link:hover {
     background: var(--color-primary);
     border-color: var(--color-primary);
     color: #fff;
@@ -1874,7 +1924,7 @@ html[data-theme="dark"] .app-readme-example-link:hover {
 /* ===== Budget Warning States ===== */
 /* Top-bar budget button: low balance warning */
 #budget-btn.budget-warning {
-     background-color: #e67e22;
+      background-color: var(--color-warning);
      animation: budget-pulse-warning 3s ease-in-out infinite;
 }
 #budget-btn.budget-warning:hover {
@@ -1898,7 +1948,7 @@ html[data-theme="dark"] .app-readme-example-link:hover {
 }
 /* Low-credits launch button: orange tint, warning tooltip indicator */
 .app-card-launch-btn--low-credits {
-     background-color: #e67e22 !important;
+      background-color: var(--color-warning) !important;
      position: relative;
 }
 .app-card-launch-btn--low-credits:hover {

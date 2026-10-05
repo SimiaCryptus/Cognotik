@@ -4,21 +4,23 @@
         <meta charset="utf-8"/>
         <link href="/favicon.svg" rel="icon"/>
         <meta content="width=device-width, initial-scale=1.0" name="viewport">
-        <link href="style.css" rel="stylesheet">
+        <meta content="light dark" name="color-scheme">
         <title>About Cognotik</title>
-     <script src="/modules/theme.js"></script>
-     <script>
-         // Initialize theme as early as possible to avoid flash of unstyled content
-         if (typeof ThemeManager !== 'undefined') {
-             ThemeManager.init();
-         } else {
-             document.addEventListener('DOMContentLoaded', function () {
-                 if (typeof ThemeManager !== 'undefined') {
-                     ThemeManager.init();
-                 }
-             });
-         }
-     </script>
+        <!-- 1. Theme tokens (id is required: ThemeManager manages this <link>) -->
+        <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+        <!-- 2. Shared styles, then page styles (below) -->
+        <link href="/style.css" rel="stylesheet">
+        <!-- 3. Manifest first, then manager (which self-initializes on load) -->
+        <script src="/themes.js"></script>
+        <script src="/modules/theme.js"></script>
+        <script>
+            // Follow theme changes made in the parent window while this page is open
+            window.addEventListener('storage', function (e) {
+                if (!window.ThemeManager || !e.newValue) return;
+                if (e.key === ThemeManager.PALETTE_STORAGE_KEY) ThemeManager.setPalette(e.newValue);
+                if (e.key === ThemeManager.STORAGE_KEY) ThemeManager.setTheme(e.newValue);
+            });
+        </script>
         <style>
             body {
                 max-width: 960px;
@@ -133,7 +135,7 @@
 
             .why-card:hover {
                 border-color: var(--color-primary);
-                box-shadow: 0 4px 14px rgba(52, 152, 219, 0.12);
+                box-shadow: 0 4px 14px color-mix(in srgb, var(--color-brand) 15%, transparent);
                 transform: translateY(-2px);
             }
 
@@ -154,14 +156,14 @@
                 color: var(--color-muted);
                 margin-bottom: 10px;
                 padding: 6px 10px;
-                background: rgba(231, 76, 60, 0.06);
-                border-left: 3px solid #e74c3c;
+                background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+                border-left: 3px solid var(--color-danger);
                 border-radius: 4px;
                 line-height: 1.45;
             }
 
             .why-card-vs strong {
-                color: #c0392b;
+                color: var(--color-danger);
                 display: block;
                 font-size: 0.78em;
                 text-transform: uppercase;
@@ -192,9 +194,9 @@
                 border-top: 4px solid var(--color-primary);
             }
 
-            .audience-card.power { border-top-color: #8e44ad; }
-            .audience-card.consumer { border-top-color: #27ae60; }
-            .audience-card.enterprise { border-top-color: #e67e22; }
+            .audience-card.power { border-top-color: var(--color-accent); }
+            .audience-card.consumer { border-top-color: var(--color-success); }
+            .audience-card.enterprise { border-top-color: var(--color-warning); }
 
             .audience-card-title {
                 font-weight: 700;
@@ -246,7 +248,7 @@
 
             .about-link-card:hover {
                 border-color: var(--color-primary);
-                box-shadow: 0 4px 14px rgba(52, 152, 219, 0.15);
+                box-shadow: 0 4px 14px color-mix(in srgb, var(--color-brand) 18%, transparent);
                 transform: translateY(-2px);
                 text-decoration: none;
             }
@@ -295,10 +297,10 @@
                 color: var(--color-text);
             }
 
-            .about-badge.green  { border-color: #27ae60; color: #27ae60; }
+            .about-badge.green  { border-color: var(--color-success); color: var(--color-success); }
             .about-badge.blue   { border-color: var(--color-primary); color: var(--color-primary); }
-            .about-badge.purple { border-color: #8e44ad; color: #8e44ad; }
-            .about-badge.orange { border-color: #e67e22; color: #e67e22; }
+            .about-badge.purple { border-color: var(--color-accent); color: var(--color-accent); }
+            .about-badge.orange { border-color: var(--color-warning); color: var(--color-warning); }
 
             .about-version-block {
                 background: var(--color-surface-alt);
@@ -315,7 +317,9 @@
             }
 
             .cta-banner {
-                background: linear-gradient(135deg, rgba(52, 152, 219, 0.10), rgba(142, 68, 173, 0.10));
+                background: linear-gradient(135deg,
+                    color-mix(in srgb, var(--color-brand) 12%, transparent),
+                    color-mix(in srgb, var(--color-accent) 12%, transparent));
                 border: 1px solid var(--color-border);
                 border-radius: var(--radius-lg);
                 padding: 22px 24px;
@@ -378,6 +382,13 @@
                 .audience-grid {
                     grid-template-columns: 1fr;
                 }
+            }
+            /* Dark-scheme tweaks (applies to every dark palette variant) */
+            html[data-scheme="dark"] .demo-video-wrapper {
+                box-shadow: 0 6px 24px rgba(0, 0, 0, 0.5);
+            }
+            html[data-scheme="dark"] .cta-btn:hover {
+                box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
             }
         </style>
     </head>
@@ -740,3 +751,6 @@
 
     </body>
     </html>
+            .audience-card.power { border-top-color: var(--color-accent); }
+            .audience-card.consumer { border-top-color: var(--color-success); }
+            .audience-card.enterprise { border-top-color: var(--color-warning); }

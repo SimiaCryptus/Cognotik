@@ -247,7 +247,6 @@ open class CreditsServlet(
                     <title>Buy Credits</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                     ${commonStyles()}
-                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -282,7 +281,6 @@ open class CreditsServlet(
                         </div>
                     </form>
                 </div>
-               <script>ThemeManager.init();</script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -352,7 +350,6 @@ open class CreditsServlet(
                     <title>Review Purchase</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                     ${commonStyles()}
-                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -379,7 +376,6 @@ open class CreditsServlet(
                         </div>
                     </form>
                 </div>
-               <script>ThemeManager.init();</script>
                 <script>
                     (function() {
                         var checkbox = document.getElementById('accept_license');
@@ -412,7 +408,6 @@ open class CreditsServlet(
                     <title>Receipt</title>
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
                     ${commonStyles()}
-                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -442,7 +437,6 @@ open class CreditsServlet(
                         <a href="/gifts/" class="btn-link">Gifts</a>
                     </div>
                 </div>
-               <script>ThemeManager.init();</script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -457,7 +451,6 @@ open class CreditsServlet(
                 <head>
                     <title>Error</title>
                     ${commonStyles()}
-                   <script src="/modules/theme.js"></script>
                 </head>
                 <body>
                 <div class="container">
@@ -465,7 +458,6 @@ open class CreditsServlet(
                     <div class="warning">$message</div>
                     <div class="actions"><a href="?" class="btn-primary">Try again</a></div>
                 </div>
-               <script>ThemeManager.init();</script>
                 </body>
                 </html>
                 """.trimIndent()
@@ -473,57 +465,42 @@ open class CreditsServlet(
     }
 
     private fun commonStyles(): String = """
+            <meta name="color-scheme" content="light dark">
+            <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+            <script src="/themes.js"></script>
+            <script src="/modules/theme.js"></script>
             <style>
+               /* Page-local aliases mapped onto the central theme tokens (see themes.md). */
                :root {
-                   --bg-page: #f7f8fa;
-                   --bg-container: #ffffff;
-                   --bg-muted: #f4f6f9;
-                   --bg-nav: #f0f3f8;
-                   --bg-nav-hover: #e1e7f1;
-                   --text-primary: #333333;
-                   --text-secondary: #666666;
-                   --text-muted: #777777;
-                   --text-hint: #888888;
-                   --border-color: #dddddd;
-                   --border-table: #e1e4e8;
-                   --accent: #4a6fa5;
-                   --accent-hover: #3a5a8c;
-                   --accent-bg: #f4f7fc;
-                   --success-bg: #eef7ee;
-                   --success-border: #4a8;
-                   --notice-bg: #fffbe6;
-                   --notice-border: #e0b500;
-                   --warning-bg: #fdecea;
-                   --warning-border: #c0392b;
+                   --bg-page: var(--color-canvas);
+                   --bg-container: var(--color-surface);
+                   --bg-muted: var(--color-surface-alt);
+                   --bg-nav: var(--color-surface-alt);
+                   --bg-nav-hover: color-mix(in srgb, var(--color-brand) 15%, var(--color-surface-alt));
+                   --text-primary: var(--color-text);
+                   --text-secondary: var(--color-text-muted);
+                   --text-muted: var(--color-text-muted);
+                   --text-hint: var(--color-text-muted);
+                   --border-color: var(--color-border-strong);
+                   --border-table: var(--color-border);
+                   --accent: var(--color-brand);
+                   --accent-hover: var(--color-brand-hover);
+                   --accent-bg: color-mix(in srgb, var(--color-brand) 8%, var(--color-surface));
+                   --success-bg: color-mix(in srgb, var(--color-success) 15%, var(--color-surface));
+                   --success-border: var(--color-success);
+                   --notice-bg: color-mix(in srgb, var(--color-warning) 15%, var(--color-surface));
+                   --notice-border: var(--color-warning);
+                   --warning-bg: color-mix(in srgb, var(--color-danger) 15%, var(--color-surface));
+                   --warning-border: var(--color-danger);
                    --shadow: 0 1px 4px rgba(0,0,0,0.08);
                }
-               html[data-theme="dark"] {
-                   --bg-page: #1a1d23;
-                   --bg-container: #252932;
-                   --bg-muted: #2f3440;
-                   --bg-nav: #2a2e38;
-                   --bg-nav-hover: #353a47;
-                   --text-primary: #e4e6eb;
-                   --text-secondary: #b0b3b8;
-                   --text-muted: #9a9da3;
-                   --text-hint: #8a8d93;
-                   --border-color: #3a3f4b;
-                   --border-table: #3a3f4b;
-                   --accent: #6b8fc7;
-                   --accent-hover: #8aa8db;
-                   --accent-bg: #2d3340;
-                   --success-bg: #2a3a2e;
-                   --success-border: #5ab;
-                   --notice-bg: #3a3520;
-                   --notice-border: #d4a818;
-                   --warning-bg: #3a2624;
-                   --warning-border: #d4544a;
+               html[data-scheme="dark"] {
                    --shadow: 0 1px 4px rgba(0,0,0,0.4);
                }
                body { font-family: Arial, sans-serif; margin: 0; background: var(--bg-page); color: var(--text-primary); }
                .container { max-width: 760px; margin: 30px auto; padding: 24px; background: var(--bg-container);
                             border-radius: 8px; box-shadow: var(--shadow); }
-               h1, h2 { color: var(--text-primary); }
+               h1, h2 { color: var(--color-heading); }
                 h2 { margin-top: 24px; font-size: 1.1em; }
                .scope { color: var(--text-secondary); margin-bottom: 12px; }
                .nav-bar { display: flex; gap: 8px; padding: 10px 12px; background: var(--bg-nav);
@@ -597,20 +574,26 @@ open class CreditsServlet(
                 <a href="/credits" class="${cls("credits")}">💳 Buy Credits</a>
                 <a href="/gifts/" class="${cls("gifts")}">🎁 Gifts</a>
                  <a href="/LICENSE.html" target="_blank" rel="noopener" class="${cls("license")}">📄 License</a>
-               <span class="theme-selector-wrap">
+               <span class="theme-selector-wrap" id="palette-selector-wrap">
+                   <label for="palette-selector" style="font-size: 0.9em;">Palette:</label>
+                   <select id="palette-selector" class="theme-selector"></select>
+               </span>
+               <span class="theme-selector-wrap" style="margin-left: 0;">
                    <label for="theme-selector" style="font-size: 0.9em;">Theme:</label>
-                   <select id="theme-selector">
-                       <option value="auto">Auto</option>
-                       <option value="light">Light</option>
-                       <option value="dark">Dark</option>
-                   </select>
+                   <select id="theme-selector" class="theme-selector"></select>
                </span>
             </nav>
            <script>
                (function() {
-                   if (typeof ThemeManager !== 'undefined') {
-                       var sel = document.getElementById('theme-selector');
-                       if (sel) ThemeManager.bindSelector(sel);
+                   if (typeof ThemeManager === 'undefined') return;
+                   var modeSel = document.getElementById('theme-selector');
+                   if (modeSel) ThemeManager.bindSelector(modeSel);
+                   var palSel = document.getElementById('palette-selector');
+                   var palWrap = document.getElementById('palette-selector-wrap');
+                   if (palSel && ThemeManager.getManifest()) {
+                       ThemeManager.bindPaletteSelector(palSel);
+                   } else if (palWrap) {
+                       palWrap.style.display = 'none';
                    }
                })();
            </script>

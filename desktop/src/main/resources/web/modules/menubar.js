@@ -1,8 +1,9 @@
 /**
  * Site-wide Menubar Component
  *
- * Renders a reusable top-bar with logo, optional layout selector,
- * theme selector, and configurable action buttons.
+* Renders a reusable top-bar with logo, a consolidated "Appearance"
+* (look & feel) popup containing the palette, theme and layout selectors,
+* and configurable action buttons.
  *
  * Usage:
  *   <div id="menubar-container"></div>
@@ -44,6 +45,15 @@
             { value: 'masonry', label: '▤ Masonry' }
         ],
         showThemeSelector: true,
+         // Palette selector (Point-CAD, Sepia, Solarized, Nord, …).
+         // Only rendered when the themes.js manifest is available.
+         showPaletteSelector: true,
+        // Group layout / palette / theme selectors into a single
+        // "Appearance" popup. Set to false to render them inline.
+        appearanceMenu: true,
+        appearanceLabel: 'Appearance',
+        appearanceIcon: '🎨',
+        appearanceTitle: 'Look & Feel',
         buttons: []
     };
 
@@ -78,6 +88,72 @@
             '<option value="dark">🌙 Dark</option>' +
             '</select>';
     }
+     function hasPaletteManifest() {
+         return !!(global.ThemeManager &&
+             typeof global.ThemeManager.getManifest === 'function' &&
+             global.ThemeManager.getManifest());
+     }
+     function renderPaletteSelector() {
+         // Options are populated by ThemeManager.bindPaletteSelector from the manifest.
+         return '<select class="theme-selector" id="palette-selector" aria-label="Select colour palette"' +
+             ' title="Select colour palette"></select>';
+     }
+    function renderAppearanceField(labelText, controlHtml) {
+        if (!controlHtml) return '';
+        return '<label class="appearance-field">' +
+            '<span class="appearance-field-label">' + escapeHtml(labelText) + '</span>' +
+            controlHtml +
+            '</label>';
+    }
+    function renderAppearanceMenu(options, paletteHtml, themeHtml, layoutHtml) {
+        return '<div class="appearance-menu">' +
+            '<button class="top-bar-btn appearance-btn" type="button" id="appearance-btn"' +
+                ' aria-haspopup="dialog" aria-expanded="false" aria-controls="appearance-popup"' +
+                ' title="' + escapeHtml(options.appearanceTitle) + '">' +
+                '<span class="btn-icon" aria-hidden="true">' + escapeHtml(options.appearanceIcon) + '</span> ' +
+                '<span class="appearance-btn-label">' + escapeHtml(options.appearanceLabel) + '</span>' +
+            '</button>' +
+            '<div class="appearance-popup" id="appearance-popup" role="dialog"' +
+                ' aria-label="' + escapeHtml(options.appearanceTitle) + '" hidden>' +
+                '<div class="appearance-popup-header">' + escapeHtml(options.appearanceTitle) + '</div>' +
+                renderAppearanceField('Colour palette', paletteHtml) +
+                renderAppearanceField('Theme', themeHtml) +
+                renderAppearanceField('Layout', layoutHtml) +
+            '</div>' +
+            '</div>';
+    }
+    function bindAppearanceMenu(target) {
+        const btn = target.querySelector('#appearance-btn');
+        const popup = target.querySelector('#appearance-popup');
+        if (!btn || !popup) return null;
+        const open = function () {
+            popup.hidden = false;
+            btn.setAttribute('aria-expanded', 'true');
+            const first = popup.querySelector('select:not([disabled])');
+            if (first) first.focus();
+        };
+        const close = function (returnFocus) {
+            if (popup.hidden) return;
+            popup.hidden = true;
+            btn.setAttribute('aria-expanded', 'false');
+            if (returnFocus) btn.focus();
+        };
+        btn.addEventListener('click', function () {
+            if (popup.hidden) open(); else close(false);
+        });
+        const onDocClick = function (e) {
+            if (!popup.contains(e.target) && !btn.contains(e.target)) close(false);
+        };
+        const onKeyDown = function (e) {
+            if (e.key === 'Escape' && !popup.hidden) close(true);
+        };
+        document.addEventListener('click', onDocClick);
+        document.addEventListener('keydown', onKeyDown);
+        return function cleanup() {
+            document.removeEventListener('click', onDocClick);
+            document.removeEventListener('keydown', onKeyDown);
+        };
+    }
 
     function renderLogo(options) {
         const titleHtml = options.titleClickable
@@ -102,19 +178,34 @@
             console.warn('[Menubar] Container not found:', container);
             return null;
         }
+        // Remove document-level listeners from any previous render.
+        if (typeof target.__menubarCleanup === 'function') {
+            target.__menubarCleanup();
+            target.__menubarCleanup = null;
+        }
 
         const buttonsHtml = (options.buttons || []).map(renderButton).join('');
         const layoutHtml = options.showLayoutSelector ? renderLayoutSelector(options) : '';
         const themeHtml = options.showThemeSelector ? renderThemeSelector() : '';
+         const showPalette = options.showPaletteSelector && hasPaletteManifest();
+         const paletteHtml = showPalette ? renderPaletteSelector() : '';
+        const useAppearanceMenu = options.appearanceMenu !== false &&
+            !!(layoutHtml || themeHtml || paletteHtml);
+        const appearanceHtml = useAppearanceMenu
+            ? renderAppearanceMenu(options, paletteHtml, themeHtml, layoutHtml)
+            : layoutHtml + paletteHtml + themeHtml;
 
         target.innerHTML =
             '<div class="top-bar">' +
                 renderLogo(options) +
                 '<div class="top-bar-spacer"></div>' +
-                layoutHtml +
-                themeHtml +
+                appearanceHtml +
                 buttonsHtml +
             '</div>';
+        // Wire up the appearance popup (open/close behaviour)
+        if (useAppearanceMenu) {
+            target.__menubarCleanup = bindAppearanceMenu(target);
+        }
 
         // Wire up button click handlers
         (options.buttons || []).forEach(function (btn) {
@@ -129,6 +220,11 @@
             const sel = target.querySelector('#theme-selector');
             global.ThemeManager.bindSelector(sel);
         }
+         // Wire up palette selector
+         if (showPalette) {
+             const psel = target.querySelector('#palette-selector');
+             global.ThemeManager.bindPaletteSelector(psel);
+         }
 
         // Wire up layout selector (uses localStorage 'cognotik-layout')
         if (options.showLayoutSelector) {

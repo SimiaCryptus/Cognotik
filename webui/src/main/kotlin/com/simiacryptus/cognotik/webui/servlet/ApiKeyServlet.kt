@@ -304,22 +304,63 @@ class ApiKeyServlet : HttpServlet() {
       <head>
         <meta charset="utf-8"/>
         <meta name="viewport" content="width=device-width, initial-scale=1"/>
+        <meta name="color-scheme" content="light dark"/>
         <title>Access Tokens</title>
+        <!-- Central theme system: tokens, manifest, then runtime manager (order matters). -->
+        <link href="/themes.css" id="theme-stylesheet" rel="stylesheet"/>
+        <script src="/themes.js"></script>
+        <script src="/modules/theme.js"></script>
+        <script>
+          // Follow palette/mode changes made in other windows (e.g. the parent of an iframe).
+          window.addEventListener('storage', function (e) {
+            if (!window.ThemeManager || !e.newValue) return;
+            if (e.key === ThemeManager.PALETTE_STORAGE_KEY) ThemeManager.setPalette(e.newValue);
+            if (e.key === ThemeManager.STORAGE_KEY) ThemeManager.setTheme(e.newValue);
+          });
+        </script>
         <style>
-          body { font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; }
+          body {
+            font-family: system-ui, sans-serif; margin: 2rem auto; max-width: 60rem; padding: 0 1rem;
+            background: var(--color-canvas, #fff); color: var(--color-text, #222);
+          }
+          h1 { color: var(--color-heading, var(--color-text, #222)); }
           table { border-collapse: collapse; width: 100%; margin-top: 1rem; }
-          th, td { border-bottom: 1px solid #ddd; padding: .5rem; text-align: left; font-size: .9rem; }
+          th, td { border-bottom: 1px solid var(--color-border, #ddd); padding: .5rem; text-align: left; font-size: .9rem; }
+          th { color: var(--color-heading, var(--color-text, #222)); }
           tr.expired { opacity: .5; }
-          td.empty { text-align: center; color: #666; }
-          code { background: #f4f4f4; padding: .15rem .35rem; border-radius: 3px; }
+          td.empty { text-align: center; color: var(--color-text-muted, #666); }
+          code { background: var(--color-surface-alt, #f4f4f4); color: var(--color-text, #222); padding: .15rem .35rem; border-radius: 3px; }
           .banner { padding: .75rem 1rem; border-radius: 4px; margin: .5rem 0; }
-          .banner.error { background: #fdecea; color: #8a1c12; }
-          .banner.notice { background: #eaf4fd; color: #11527d; }
-          .banner.token { background: #edf7ed; color: #17501b; display: flex; gap: .75rem; align-items: center; flex-wrap: wrap; }
+          .banner { color: var(--color-text, #222); border-left: 4px solid var(--color-border-strong, #999); }
+          .banner.error {
+            background: color-mix(in srgb, var(--color-danger, #c0392b) 15%, var(--color-surface, #fff));
+            border-left-color: var(--color-danger, #c0392b);
+          }
+          .banner.notice {
+            background: color-mix(in srgb, var(--color-brand, #2980b9) 15%, var(--color-surface, #fff));
+            border-left-color: var(--color-brand, #2980b9);
+          }
+          .banner.token {
+            background: color-mix(in srgb, var(--color-success, #27ae60) 15%, var(--color-surface, #fff));
+            border-left-color: var(--color-success, #27ae60);
+            display: flex; gap: .75rem; align-items: center; flex-wrap: wrap;
+          }
           .toolbar { display: flex; gap: 1rem; align-items: flex-end; margin-top: 1rem; flex-wrap: wrap; }
-          button { cursor: pointer; padding: .4rem .8rem; }
-          button.danger { color: #8a1c12; }
+          button, select {
+            padding: .4rem .8rem; border-radius: 4px; font: inherit;
+            background: var(--color-surface, #fff); color: var(--color-text, #222);
+            border: 1px solid var(--color-border-strong, #aaa);
+          }
+          button { cursor: pointer; }
+          button:hover { border-color: var(--color-brand, #2980b9); }
+          button:focus-visible, select:focus-visible {
+            outline: none; border-color: var(--color-brand, #2980b9);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand, #2980b9) 30%, transparent);
+          }
+          button.danger { color: var(--color-danger, #c0392b); border-color: var(--color-danger, #c0392b); }
+          button.danger:hover { color: var(--color-danger-hover, #a93226); border-color: var(--color-danger-hover, #a93226); }
           form.inline { display: inline; }
+          html[data-scheme="dark"] .banner { box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4); }
         </style>
       </head>
       <body>
