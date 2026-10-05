@@ -1,5 +1,5 @@
-/* Theme tokens first: base.css consumes the --theme-* custom properties. */
-import './styles/themes.css';
+/* Theme tokens first: base.css derives everything from the --color-* custom properties. */
+import './styles/theme-data.css';
 import './styles/base.css';
 
 /* Renderers must be initialised before any content is mounted (§1.2 step 2). */

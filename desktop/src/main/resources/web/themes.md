@@ -192,7 +192,13 @@ var isDark = document.documentElement.getAttribute('data-scheme') === 'dark';
 
 ### 4.1 Option A: use the shared Menubar (recommended)
 
-The Menubar renders an "🎨 Appearance" button. Its popup contains the palette, theme (mode) and layout selectors, already bound to ThemeManager.
+The Menubar renders an "🎨 Appearance" button. Its popup contains the palette, theme (mode) and layout selectors, already bound to ThemeManager. The button also shows a swatch of the active palette, and its tooltip names the current palette and mode.
+
+The Menubar is integrated with the central theme system:
+
+- If `themes.js` or `modules/theme.js` have not been loaded, the Menubar loads them itself and binds the selectors once they are ready. Including them in `<head>` is still recommended, because it avoids a flash of the wrong theme.
+- Selectors that cannot work are removed automatically. For example, the palette selector is removed if the manifest is unavailable.
+- Theme changes made in other windows or iframes are followed live through a single `storage` listener. Pages that use the Menubar do not need the manual listener from section 2.2.
 
 ```html
 <div id="menubar-container"></div>
@@ -225,6 +231,12 @@ The Menubar options that relate to theming are:
 | `appearanceLabel`     | `Appearance`   | The button text. |
 | `appearanceIcon`      | `🎨`           | The button icon. |
 | `appearanceTitle`     | `Look & Feel`  | The popup heading and tooltip. |
+| `showPaletteSwatch`   | `true`         | Shows a swatch of the active palette on the Appearance button. |
+| `autoLoadTheme`       | `true`         | Loads the manifest and ThemeManager if they are missing. |
+| `themeManifestSrc`    | `/themes.js`   | The manifest URL used when auto-loading. |
+| `themeManagerSrc`     | `/modules/theme.js` | The ThemeManager URL used when auto-loading. |
+| `syncThemeAcrossWindows` | `true`      | Follows palette and mode changes made in other windows or iframes. |
+`Menubar.ensureTheme()` returns a promise that resolves with `ThemeManager` (or `null`) once the theme system is available.
 
 ### 4.2 Option B: build your own selector
 

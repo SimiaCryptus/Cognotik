@@ -1,14 +1,14 @@
 import {createLogger} from '../util/logger.js';
     import {bus, Events} from '../core/bus.js';
+     import {DARK_FALLBACK, DEFAULT_THEME, LIGHT_FALLBACK, THEMES} from '../styles/theme-data.js';
 
     /**
      * Theme support (groundwork for reverse-spec §19.1).
      *
-     * A theme is NOTHING but a set of `--theme-*` custom properties declared under
-     * `html[data-theme="<id>"]` in `styles/themes.css`. Adding a theme is therefore:
-     *   1. add the CSS block in styles/themes.css
-     *   2. register it in THEMES below
-     * No other module changes — nothing here hard-codes a colour.
+      * A theme is NOTHING but the 14 `--color-*` custom properties declared under
+      * `[data-theme="<id>"]` in `styles/theme-data.css`; the registry lives in
+      * `styles/theme-data.js`. This module only resolves, applies and persists the
+      * preference — nothing here hard-codes a colour.
      */
 
     const log = createLogger('Theme');
@@ -20,19 +20,9 @@ import {createLogger} from '../util/logger.js';
     export const QUERY_PARAM = 'theme';
     /** Pseudo-theme: follow the OS `prefers-color-scheme`. */
     export const AUTO_THEME = 'auto';
-     export const DEFAULT_THEME = 'nexus';
-     /** What 'auto' resolves to on each side of `prefers-color-scheme`. */
-     export const DARK_FALLBACK = 'nexus';
-     export const LIGHT_FALLBACK = 'light';
 
-    /** Registry. `dark: true` drives `color-scheme` and the mermaid/Prism variants. */
-    export const THEMES = Object.freeze({
-         nexus: Object.freeze({id: 'nexus', label: 'Nexus', dark: true}),
-         synthwave: Object.freeze({id: 'synthwave', label: 'Synthwave', dark: true}),
-         matrix: Object.freeze({id: 'matrix', label: 'Matrix', dark: true}),
-         dark: Object.freeze({id: 'dark', label: 'Slate', dark: true}),
-         light: Object.freeze({id: 'light', label: 'Photon', dark: false})
-    });
+     /** Re-exported so existing importers (ui/shell.js, main.js) keep working. */
+     export {THEMES, DEFAULT_THEME, DARK_FALLBACK, LIGHT_FALLBACK};
 
     export function listThemes() {
         return Object.values(THEMES);
