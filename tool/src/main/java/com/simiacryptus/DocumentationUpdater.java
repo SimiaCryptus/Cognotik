@@ -1,8 +1,10 @@
 package com.simiacryptus;
 
-import com.simiacryptus.cognotik.platform.model.ChatModel;
 import com.simiacryptus.cognotik.docops.DocProcessor;
 import com.simiacryptus.cognotik.docops.UpdateModes;
+import com.simiacryptus.cognotik.platform.ThreadPoolManager;
+import com.simiacryptus.cognotik.platform.model.ChatModel;
+import com.simiacryptus.cognotik.platform.model.Session;
 import com.simiacryptus.cognotik.util.PlanHarness;
 import com.simiacryptus.cognotik.util.UnifiedHarness;
 
@@ -59,6 +61,6 @@ public record DocumentationUpdater(
                 null,
                 Collections.emptyMap(),
                 false
-        ).run();
+        ).run(ThreadPoolManager.Companion.getPool(Session.newUserID()));
     }
 }

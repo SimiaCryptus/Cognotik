@@ -3,9 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <link href="/favicon.svg" rel="icon"/>
     <title>Login — Cognotik</title>
-     <script src="/lib/marked.min.js"></script>
+    <!-- Central theme system: tokens, manifest, then manager (order matters) -->
+    <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+    <script src="/themes.js"></script>
+    <script src="/modules/theme.js"></script>
+    <script src="/lib/marked.min.js"></script>
     <style>
         /* ===== Reset & Base ===== */
         *, *::before, *::after { box-sizing: border-box; }
@@ -18,8 +23,11 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #f4f6f9 0%, #e8edf5 50%, #dce3ed 100%);
-            color: #333;
+            background: linear-gradient(135deg,
+                var(--color-canvas) 0%,
+                color-mix(in srgb, var(--color-canvas) 94%, var(--color-brand)) 60%,
+                color-mix(in srgb, var(--color-canvas) 88%, var(--color-brand)) 100%);
+            color: var(--color-text);
             line-height: 1.6;
             position: relative;
             overflow: hidden;
@@ -36,17 +44,19 @@
         body::before {
             width: 600px;
             height: 600px;
-            background: #3498db;
+            background: var(--color-brand);
             top: -200px;
             right: -150px;
         }
         body::after {
             width: 500px;
             height: 500px;
-            background: #8e44ad;
+            background: var(--color-accent);
             bottom: -180px;
             left: -120px;
         }
+        html[data-scheme="dark"] body::before,
+        html[data-scheme="dark"] body::after { opacity: 0.04; }
 
         /* ===== Logo Area ===== */
         .brand {
@@ -65,17 +75,17 @@
         .brand img {
             width: 48px;
             height: 48px;
-            filter: drop-shadow(0 2px 8px rgba(52,152,219,0.25));
+            filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--color-brand) 25%, transparent));
         }
         .brand-name {
             font-size: 1.8em;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--color-heading);
             letter-spacing: -0.5px;
         }
         .brand-tagline {
             font-size: 0.92em;
-            color: #7f8c8d;
+            color: var(--color-text-muted);
             margin: 0;
         }
 
@@ -83,12 +93,12 @@
         .login-container {
             position: relative;
             z-index: 1;
-            background: rgba(255, 255, 255, 0.97);
+            background: color-mix(in srgb, var(--color-surface) 97%, transparent);
             backdrop-filter: blur(12px);
             padding: 36px 32px 28px;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(255,255,255,0.6);
+            border: 1px solid var(--color-border);
             width: 100%;
             max-width: 420px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -97,17 +107,23 @@
             transform: translateY(-2px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
         }
+        html[data-scheme="dark"] .login-container {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        html[data-scheme="dark"] .login-container:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
 
         h2 {
             text-align: center;
-            color: #2c3e50;
+            color: var(--color-heading);
             margin: 0 0 6px;
             font-size: 1.5em;
             font-weight: 700;
         }
         .subtitle {
             text-align: center;
-            color: #95a5a6;
+            color: var(--color-text-muted);
             font-size: 0.9em;
             margin: 0 0 24px;
         }
@@ -118,7 +134,7 @@
         label {
             display: block;
             margin-bottom: 6px;
-            color: #444;
+            color: var(--color-text);
             font-weight: 600;
             font-size: 0.9em;
         }
@@ -127,33 +143,34 @@
         input[type="password"] {
             width: 100%;
             padding: 11px 14px;
-            border: 1.5px solid #dde1e7;
+            border: 1.5px solid var(--color-border-strong);
             border-radius: 8px;
             font-size: 0.98em;
             font-family: inherit;
             box-sizing: border-box;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            background: #fafbfc;
-            color: #333;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            background: var(--color-surface-alt);
+            color: var(--color-text);
         }
         input[type="text"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
-            background: #fff;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 15%, transparent);
+            background: var(--color-surface);
         }
         input[type="text"]::placeholder,
         input[type="password"]::placeholder {
-            color: #b0b8c1;
+            color: var(--color-text-muted);
+            opacity: 0.7;
         }
 
         /* ===== Button ===== */
         button[type="submit"] {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #3498db 0%, #2980b9 100%);
-            color: white;
+            background: var(--color-brand);
+            color: #fff;
             border: none;
             border-radius: 8px;
             font-size: 1em;
@@ -161,33 +178,33 @@
             font-family: inherit;
             cursor: pointer;
             transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 12px rgba(52, 152, 219, 0.25);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--color-brand) 25%, transparent);
             margin-top: 4px;
         }
         button[type="submit"]:hover {
-            background: linear-gradient(135deg, #2980b9 0%, #2471a3 100%);
+            background: var(--color-brand-hover);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(52, 152, 219, 0.35);
+            box-shadow: 0 6px 20px color-mix(in srgb, var(--color-brand) 35%, transparent);
         }
         button[type="submit"]:active {
             transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(52, 152, 219, 0.2);
+            box-shadow: 0 2px 8px color-mix(in srgb, var(--color-brand) 20%, transparent);
         }
         button[type="submit"]:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.4);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 40%, transparent);
         }
 
         /* ===== Error ===== */
         .error {
-            color: #c0392b;
-            background: linear-gradient(135deg, #fdf2f2 0%, #fce8e8 100%);
+            color: var(--color-danger);
+            background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
             padding: 12px 16px;
             border-radius: 8px;
             margin-bottom: 16px;
             text-align: center;
             font-size: 0.9em;
-            border: 1px solid #f5c6cb;
+            border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
             font-weight: 500;
         }
 
@@ -196,17 +213,16 @@
             text-align: center;
             margin-top: 18px;
             padding-top: 16px;
-            border-top: 1px solid #eef0f3;
+            border-top: 1px solid var(--color-border);
         }
         .links a {
-            color: #3498db;
+            color: var(--color-link);
             text-decoration: none;
             font-size: 0.92em;
             font-weight: 500;
             transition: color 0.2s ease;
         }
         .links a:hover {
-            color: #2471a3;
             text-decoration: underline;
         }
 
@@ -221,64 +237,65 @@
             content: '';
             flex: 1;
             height: 1px;
-            background: #e0e3e8;
+            background: var(--color-border);
         }
         .divider span {
             font-size: 0.8em;
-            color: #aab0b8;
+            color: var(--color-text-muted);
             text-transform: uppercase;
             letter-spacing: 1px;
             font-weight: 600;
         }
-         /* ===== License Agreement ===== */
-         .license-agreement {
-             margin-top: 18px;
-             padding-top: 16px;
-             border-top: 1px solid #eef0f3;
-             font-size: 0.85em;
-             color: #6c757d;
-         }
-         .license-notice {
-             text-align: center;
-             margin-bottom: 10px;
-             font-style: italic;
-         }
-         .license-details {
-             border: 1px solid #e0e3e8;
-             border-radius: 8px;
-             background: #fafbfc;
-             overflow: hidden;
-             transition: border-color 0.2s ease;
-         }
-         .license-details[open] {
-             border-color: #c8cdd4;
-         }
-         .license-details summary {
-             padding: 10px 14px;
-             cursor: pointer;
-             font-weight: 600;
-             color: #3498db;
-             font-size: 0.9em;
-             user-select: none;
-             list-style: none;
-             display: flex;
-             align-items: center;
-             justify-content: space-between;
-             transition: background 0.2s ease;
-         }
-         .license-details summary::-webkit-details-marker { display: none; }
-         .license-details summary::after {
-             content: '▼';
-             font-size: 0.7em;
-             transition: transform 0.2s ease;
-             color: #95a5a6;
-         }
-         .license-details[open] summary::after {
-             transform: rotate(180deg);
-         }
-         .license-details summary:hover {
-             background: #f0f3f7;
-         }
+
+        /* ===== License Agreement ===== */
+        .license-agreement {
+            margin-top: 18px;
+            padding-top: 16px;
+            border-top: 1px solid var(--color-border);
+            font-size: 0.85em;
+            color: var(--color-text-muted);
+        }
+        .license-notice {
+            text-align: center;
+            margin-bottom: 10px;
+            font-style: italic;
+        }
+        .license-details {
+            border: 1px solid var(--color-border);
+            border-radius: 8px;
+            background: var(--color-surface-alt);
+            overflow: hidden;
+            transition: border-color 0.2s ease;
+        }
+        .license-details[open] {
+            border-color: var(--color-border-strong);
+        }
+        .license-details summary {
+            padding: 10px 14px;
+            cursor: pointer;
+            font-weight: 600;
+            color: var(--color-link);
+            font-size: 0.9em;
+            user-select: none;
+            list-style: none;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background 0.2s ease;
+        }
+        .license-details summary::-webkit-details-marker { display: none; }
+        .license-details summary::after {
+            content: '▼';
+            font-size: 0.7em;
+            transition: transform 0.2s ease;
+            color: var(--color-text-muted);
+        }
+        .license-details[open] summary::after {
+            transform: rotate(180deg);
+        }
+        .license-details summary:hover {
+            background: color-mix(in srgb, var(--color-brand) 8%, var(--color-surface-alt));
+        }
         .license-summary-actions {
             display: flex;
             align-items: center;
@@ -286,8 +303,8 @@
         }
         .license-maximize-btn {
             background: transparent;
-            border: 1px solid #c8cdd4;
-            color: #3498db;
+            border: 1px solid var(--color-border-strong);
+            color: var(--color-link);
             border-radius: 6px;
             padding: 3px 8px;
             cursor: pointer;
@@ -300,68 +317,70 @@
             justify-content: center;
         }
         .license-maximize-btn:hover {
-            background: #3498db;
+            background: var(--color-brand);
             color: #fff;
-            border-color: #3498db;
+            border-color: var(--color-brand);
         }
         .license-maximize-btn:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 30%, transparent);
         }
         .license-maximize-btn svg {
             width: 14px;
             height: 14px;
             display: block;
         }
-         .license-content {
-             padding: 12px 16px 16px;
-             max-height: 320px;
-             overflow-y: auto;
-             font-size: 0.85em;
-             line-height: 1.5;
-             color: #444;
-             border-top: 1px solid #e0e3e8;
-             background: #fff;
-         }
-         .license-content h1 { font-size: 1.15em; margin: 0 0 8px; color: #2c3e50; }
-         .license-content h2 { font-size: 1.05em; margin: 14px 0 6px; color: #2c3e50; }
-         .license-content h3 { font-size: 0.98em; margin: 12px 0 6px; color: #34495e; }
-         .license-content p { margin: 6px 0; }
-         .license-content ul, .license-content ol { padding-left: 20px; margin: 6px 0; }
-         .license-content li { margin: 3px 0; }
-         .license-content strong { color: #2c3e50; }
-         .license-content blockquote {
-             margin: 8px 0;
-             padding: 8px 12px;
-             border-left: 3px solid #3498db;
-             background: #f4f8fb;
-             color: #555;
-         }
-         .license-content code {
-             background: #eef0f3;
-             padding: 1px 5px;
-             border-radius: 3px;
-             font-size: 0.9em;
-         }
-         .license-content table {
-             border-collapse: collapse;
-             width: 100%;
-             margin: 8px 0;
-             font-size: 0.9em;
-         }
-         .license-content th, .license-content td {
-             border: 1px solid #e0e3e8;
-             padding: 6px 8px;
-             text-align: left;
-         }
-         .license-content th { background: #f4f6f9; font-weight: 600; }
-         .license-content hr { border: none; border-top: 1px solid #e0e3e8; margin: 12px 0; }
-         .license-loading {
-             text-align: center;
-             color: #95a5a6;
-             font-style: italic;
-             padding: 12px;
-         }
+        .license-content {
+            padding: 12px 16px 16px;
+            max-height: 320px;
+            overflow-y: auto;
+            font-size: 0.85em;
+            line-height: 1.5;
+            color: var(--color-text);
+            border-top: 1px solid var(--color-border);
+            background: var(--color-surface);
+        }
+        .license-content h1 { font-size: 1.15em; margin: 0 0 8px; color: var(--color-heading); }
+        .license-content h2 { font-size: 1.05em; margin: 14px 0 6px; color: var(--color-heading); text-align: left; }
+        .license-content h3 { font-size: 0.98em; margin: 12px 0 6px; color: var(--color-heading); }
+        .license-content p { margin: 6px 0; }
+        .license-content ul, .license-content ol { padding-left: 20px; margin: 6px 0; }
+        .license-content li { margin: 3px 0; }
+        .license-content strong { color: var(--color-heading); }
+        .license-content blockquote {
+            margin: 8px 0;
+            padding: 8px 12px;
+            border-left: 3px solid var(--color-brand);
+            background: var(--color-surface-alt);
+            color: var(--color-text-muted);
+        }
+        .license-content code {
+            background: var(--color-surface-alt);
+            color: var(--color-text);
+            padding: 1px 5px;
+            border-radius: 3px;
+            font-size: 0.9em;
+        }
+        .license-content table {
+            border-collapse: collapse;
+            width: 100%;
+            margin: 8px 0;
+            font-size: 0.9em;
+        }
+        .license-content th, .license-content td {
+            border: 1px solid var(--color-border);
+            padding: 6px 8px;
+            text-align: left;
+        }
+        .license-content th { background: var(--color-surface-alt); font-weight: 600; }
+        .license-content hr { border: none; border-top: 1px solid var(--color-border); margin: 12px 0; }
+        .license-loading {
+            text-align: center;
+            color: var(--color-text-muted);
+            font-style: italic;
+            padding: 12px;
+        }
+
         /* ===== License Modal ===== */
         .license-modal {
             position: fixed;
@@ -375,11 +394,14 @@
             padding: 24px;
             animation: fadeInUp 0.2s ease-out;
         }
+        html[data-scheme="dark"] .license-modal { background: rgba(0, 0, 0, 0.7); }
         .license-modal.open {
             display: flex;
         }
         .license-modal-dialog {
-            background: #fff;
+            background: var(--color-surface);
+            color: var(--color-text);
+            border: 1px solid var(--color-border);
             border-radius: 14px;
             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.35);
             width: 100%;
@@ -389,18 +411,19 @@
             flex-direction: column;
             overflow: hidden;
         }
+        html[data-scheme="dark"] .license-modal-dialog { box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6); }
         .license-modal-header {
             display: flex;
             align-items: center;
             justify-content: space-between;
             padding: 14px 20px;
-            border-bottom: 1px solid #e0e3e8;
-            background: #fafbfc;
+            border-bottom: 1px solid var(--color-border);
+            background: var(--color-surface-alt);
         }
         .license-modal-title {
             font-size: 1.05em;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--color-heading);
             margin: 0;
         }
         .license-modal-close {
@@ -409,44 +432,45 @@
             font-size: 1.4em;
             line-height: 1;
             cursor: pointer;
-            color: #7f8c8d;
+            color: var(--color-text-muted);
             padding: 4px 8px;
             border-radius: 6px;
             transition: background 0.2s ease, color 0.2s ease;
             font-family: inherit;
         }
         .license-modal-close:hover {
-            background: #eef0f3;
-            color: #2c3e50;
+            background: var(--color-border);
+            color: var(--color-heading);
         }
         .license-modal-close:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.3);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 30%, transparent);
         }
         .license-modal-body {
             padding: 20px 24px;
             overflow-y: auto;
             font-size: 0.95em;
             line-height: 1.6;
-            color: #333;
+            color: var(--color-text);
             flex: 1;
         }
-        .license-modal-body h1 { font-size: 1.4em; margin: 0 0 10px; color: #2c3e50; }
-        .license-modal-body h2 { font-size: 1.2em; margin: 16px 0 8px; color: #2c3e50; }
-        .license-modal-body h3 { font-size: 1.05em; margin: 14px 0 6px; color: #34495e; }
+        .license-modal-body h1 { font-size: 1.4em; margin: 0 0 10px; color: var(--color-heading); }
+        .license-modal-body h2 { font-size: 1.2em; margin: 16px 0 8px; color: var(--color-heading); text-align: left; }
+        .license-modal-body h3 { font-size: 1.05em; margin: 14px 0 6px; color: var(--color-heading); }
         .license-modal-body p { margin: 8px 0; }
         .license-modal-body ul, .license-modal-body ol { padding-left: 22px; margin: 8px 0; }
         .license-modal-body li { margin: 4px 0; }
-        .license-modal-body strong { color: #2c3e50; }
+        .license-modal-body strong { color: var(--color-heading); }
         .license-modal-body blockquote {
             margin: 10px 0;
             padding: 10px 14px;
-            border-left: 3px solid #3498db;
-            background: #f4f8fb;
-            color: #555;
+            border-left: 3px solid var(--color-brand);
+            background: var(--color-surface-alt);
+            color: var(--color-text-muted);
         }
         .license-modal-body code {
-            background: #eef0f3;
+            background: var(--color-surface-alt);
+            color: var(--color-text);
             padding: 1px 5px;
             border-radius: 3px;
             font-size: 0.9em;
@@ -457,12 +481,12 @@
             margin: 10px 0;
         }
         .license-modal-body th, .license-modal-body td {
-            border: 1px solid #e0e3e8;
+            border: 1px solid var(--color-border);
             padding: 8px 10px;
             text-align: left;
         }
-        .license-modal-body th { background: #f4f6f9; font-weight: 600; }
-        .license-modal-body hr { border: none; border-top: 1px solid #e0e3e8; margin: 14px 0; }
+        .license-modal-body th { background: var(--color-surface-alt); font-weight: 600; }
+        .license-modal-body hr { border: none; border-top: 1px solid var(--color-border); margin: 14px 0; }
         body.license-modal-open { overflow: hidden; }
 
         /* ===== Footer ===== */
@@ -470,7 +494,7 @@
             margin-top: 24px;
             text-align: center;
             font-size: 0.78em;
-            color: #95a5a6;
+            color: var(--color-text-muted);
             z-index: 1;
         }
         .footer-content {
@@ -484,383 +508,49 @@
             height: 16px;
             opacity: 0.5;
         }
-         /* ===== Theme Selector ===== */
-         .theme-selector-container {
-             position: fixed;
-             top: 16px;
-             right: 16px;
-             z-index: 10;
-             display: flex;
-             align-items: center;
-             gap: 8px;
-             background: rgba(255, 255, 255, 0.85);
-             backdrop-filter: blur(8px);
-             padding: 6px 10px;
-             border-radius: 8px;
-             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-             border: 1px solid rgba(255, 255, 255, 0.6);
-         }
-         .theme-selector-container label {
-             margin: 0;
-             font-size: 0.78em;
-             color: #7f8c8d;
-             font-weight: 600;
-         }
-         #theme-selector {
-             padding: 4px 8px;
-             border: 1px solid #dde1e7;
-             border-radius: 6px;
-             font-size: 0.85em;
-             font-family: inherit;
-             background: #fff;
-             color: #333;
-             cursor: pointer;
-         }
-         #theme-selector:focus {
-             outline: none;
-             border-color: #3498db;
-             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.2);
-         }
+        html[data-scheme="dark"] .footer img { opacity: 0.3; }
 
-         /* ===== Dark Mode (explicit data-theme="dark") ===== */
-         [data-theme="dark"] body {
-             background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] body::before { opacity: 0.04; }
-         [data-theme="dark"] body::after { opacity: 0.04; }
-
-         [data-theme="dark"] .brand-name { color: #e0e0e0; }
-         [data-theme="dark"] .brand-tagline { color: #777; }
-
-         [data-theme="dark"] .login-container {
-             background: rgba(30, 34, 46, 0.95);
-             border-color: rgba(255,255,255,0.06);
-             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-         }
-         [data-theme="dark"] .login-container:hover {
-             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
-         }
-
-         [data-theme="dark"] h2 { color: #e0e0e0; }
-         [data-theme="dark"] .subtitle { color: #666; }
-
-         [data-theme="dark"] label { color: #ccc; }
-
-         [data-theme="dark"] input[type="text"],
-         [data-theme="dark"] input[type="password"] {
-             background: #2a2e3a;
-             border-color: #3a3f4c;
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] input[type="text"]:focus,
-         [data-theme="dark"] input[type="password"]:focus {
-             border-color: #3498db;
-             background: #2e3340;
-             box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-         }
-         [data-theme="dark"] input[type="text"]::placeholder,
-         [data-theme="dark"] input[type="password"]::placeholder {
-             color: #555;
-         }
-
-         [data-theme="dark"] .error {
-             background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
-             color: #e74c3c;
-             border-color: #5a2a2a;
-         }
-
-         [data-theme="dark"] .links { border-top-color: #2a2e3a; }
-         [data-theme="dark"] .links a { color: #5dade2; }
-         [data-theme="dark"] .links a:hover { color: #85c1e9; }
-
-         [data-theme="dark"] .divider::before,
-         [data-theme="dark"] .divider::after { background: #333; }
-         [data-theme="dark"] .divider span { color: #555; }
-
-         [data-theme="dark"] .license-agreement {
-             border-top-color: #2a2e3a;
-             color: #888;
-         }
-         [data-theme="dark"] .license-details {
-             border-color: #3a3f4c;
-             background: #1f232d;
-         }
-         [data-theme="dark"] .license-details[open] {
-             border-color: #4a4f5c;
-         }
-         [data-theme="dark"] .license-details summary {
-             color: #5dade2;
-         }
-         [data-theme="dark"] .license-details summary:hover {
-             background: #262a35;
-         }
-         [data-theme="dark"] .license-details summary::after {
-             color: #666;
-         }
-         [data-theme="dark"] .license-content {
-             background: #1a1e28;
-             color: #c0c0c0;
-             border-top-color: #3a3f4c;
-         }
-         [data-theme="dark"] .license-content h1,
-         [data-theme="dark"] .license-content h2,
-         [data-theme="dark"] .license-content h3 { color: #e0e0e0; }
-         [data-theme="dark"] .license-content strong { color: #e0e0e0; }
-         [data-theme="dark"] .license-content blockquote {
-             background: #1f2937;
-             border-left-color: #5dade2;
-             color: #aaa;
-         }
-         [data-theme="dark"] .license-content code {
-             background: #2a2e3a;
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] .license-content th,
-         [data-theme="dark"] .license-content td {
-             border-color: #3a3f4c;
-         }
-         [data-theme="dark"] .license-content th { background: #2a2e3a; }
-         [data-theme="dark"] .license-content hr { border-top-color: #3a3f4c; }
-         [data-theme="dark"] .license-maximize-btn {
-             border-color: #3a3f4c;
-             color: #5dade2;
-         }
-         [data-theme="dark"] .license-maximize-btn:hover {
-             background: #5dade2;
-             color: #1a1e28;
-             border-color: #5dade2;
-         }
-         [data-theme="dark"] .license-modal {
-             background: rgba(0, 0, 0, 0.7);
-         }
-         [data-theme="dark"] .license-modal-dialog {
-             background: #1f232d;
-             box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-         }
-         [data-theme="dark"] .license-modal-header {
-             background: #262a35;
-             border-bottom-color: #3a3f4c;
-         }
-         [data-theme="dark"] .license-modal-title { color: #e0e0e0; }
-         [data-theme="dark"] .license-modal-close { color: #888; }
-         [data-theme="dark"] .license-modal-close:hover {
-             background: #2a2e3a;
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] .license-modal-body { color: #c0c0c0; }
-         [data-theme="dark"] .license-modal-body h1,
-         [data-theme="dark"] .license-modal-body h2,
-         [data-theme="dark"] .license-modal-body h3 { color: #e0e0e0; }
-         [data-theme="dark"] .license-modal-body strong { color: #e0e0e0; }
-         [data-theme="dark"] .license-modal-body blockquote {
-             background: #1f2937;
-             border-left-color: #5dade2;
-             color: #aaa;
-         }
-         [data-theme="dark"] .license-modal-body code {
-             background: #2a2e3a;
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] .license-modal-body th,
-         [data-theme="dark"] .license-modal-body td { border-color: #3a3f4c; }
-         [data-theme="dark"] .license-modal-body th { background: #2a2e3a; }
-         [data-theme="dark"] .license-modal-body hr { border-top-color: #3a3f4c; }
-
-         [data-theme="dark"] .footer { color: #555; }
-         [data-theme="dark"] .footer img { opacity: 0.3; }
-
-         [data-theme="dark"] button[type="submit"] {
-             box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
-         }
-         [data-theme="dark"] button[type="submit"]:hover {
-             box-shadow: 0 6px 20px rgba(52, 152, 219, 0.25);
-         }
-
-         [data-theme="dark"] .theme-selector-container {
-             background: rgba(30, 34, 46, 0.85);
-             border-color: rgba(255, 255, 255, 0.06);
-             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-         }
-         [data-theme="dark"] .theme-selector-container label {
-             color: #888;
-         }
-         [data-theme="dark"] #theme-selector {
-             background: #2a2e3a;
-             border-color: #3a3f4c;
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] #theme-selector:focus {
-             border-color: #3498db;
-             box-shadow: 0 0 0 2px rgba(52, 152, 219, 0.3);
-         }
-
-         /* ===== Dark Mode (auto via prefers-color-scheme when no explicit theme set) ===== */
-         @media (prefers-color-scheme: dark) {
-             :root:not([data-theme="light"]) body {
-            body {
-                background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
-                color: #e0e0e0;
-            }
-             :root:not([data-theme="light"]) body::before { opacity: 0.04; }
-             :root:not([data-theme="light"]) body::after { opacity: 0.04; }
-
-             :root:not([data-theme="light"]) .brand-name { color: #e0e0e0; }
-             :root:not([data-theme="light"]) .brand-tagline { color: #777; }
-
-             :root:not([data-theme="light"]) .login-container {
-                background: rgba(30, 34, 46, 0.95);
-                border-color: rgba(255,255,255,0.06);
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-            }
-             :root:not([data-theme="light"]) .login-container:hover {
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
-            }
-
-             :root:not([data-theme="light"]) h2 { color: #e0e0e0; }
-             :root:not([data-theme="light"]) .subtitle { color: #666; }
-
-             :root:not([data-theme="light"]) label { color: #ccc; }
-
-             :root:not([data-theme="light"]) input[type="text"],
-             :root:not([data-theme="light"]) input[type="password"] {
-                background: #2a2e3a;
-                border-color: #3a3f4c;
-                color: #e0e0e0;
-            }
-             :root:not([data-theme="light"]) input[type="text"]:focus,
-             :root:not([data-theme="light"]) input[type="password"]:focus {
-                border-color: #3498db;
-                background: #2e3340;
-                box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
-            }
-             :root:not([data-theme="light"]) input[type="text"]::placeholder,
-             :root:not([data-theme="light"]) input[type="password"]::placeholder {
-                color: #555;
-            }
-
-             :root:not([data-theme="light"]) .error {
-                background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
-                color: #e74c3c;
-                border-color: #5a2a2a;
-            }
-
-             :root:not([data-theme="light"]) .links { border-top-color: #2a2e3a; }
-             :root:not([data-theme="light"]) .links a { color: #5dade2; }
-             :root:not([data-theme="light"]) .links a:hover { color: #85c1e9; }
-
-             :root:not([data-theme="light"]) .divider::before,
-             :root:not([data-theme="light"]) .divider::after { background: #333; }
-             :root:not([data-theme="light"]) .divider span { color: #555; }
-              :root:not([data-theme="light"]) .license-agreement {
-                 border-top-color: #2a2e3a;
-                 color: #888;
-             }
-              :root:not([data-theme="light"]) .license-details {
-                 border-color: #3a3f4c;
-                 background: #1f232d;
-             }
-              :root:not([data-theme="light"]) .license-details[open] {
-                 border-color: #4a4f5c;
-             }
-              :root:not([data-theme="light"]) .license-details summary {
-                 color: #5dade2;
-             }
-              :root:not([data-theme="light"]) .license-details summary:hover {
-                 background: #262a35;
-             }
-              :root:not([data-theme="light"]) .license-details summary::after {
-                 color: #666;
-             }
-              :root:not([data-theme="light"]) .license-content {
-                 background: #1a1e28;
-                 color: #c0c0c0;
-                 border-top-color: #3a3f4c;
-             }
-              :root:not([data-theme="light"]) .license-content h1,
-              :root:not([data-theme="light"]) .license-content h2,
-              :root:not([data-theme="light"]) .license-content h3 { color: #e0e0e0; }
-              :root:not([data-theme="light"]) .license-content strong { color: #e0e0e0; }
-              :root:not([data-theme="light"]) .license-content blockquote {
-                 background: #1f2937;
-                 border-left-color: #5dade2;
-                 color: #aaa;
-             }
-              :root:not([data-theme="light"]) .license-content code {
-                 background: #2a2e3a;
-                 color: #e0e0e0;
-             }
-              :root:not([data-theme="light"]) .license-content th,
-              :root:not([data-theme="light"]) .license-content td {
-                 border-color: #3a3f4c;
-             }
-              :root:not([data-theme="light"]) .license-content th { background: #2a2e3a; }
-              :root:not([data-theme="light"]) .license-content hr { border-top-color: #3a3f4c; }
-             :root:not([data-theme="light"]) .license-maximize-btn {
-                border-color: #3a3f4c;
-                color: #5dade2;
-            }
-             :root:not([data-theme="light"]) .license-maximize-btn:hover {
-                background: #5dade2;
-                color: #1a1e28;
-                border-color: #5dade2;
-            }
-             :root:not([data-theme="light"]) .license-modal {
-                background: rgba(0, 0, 0, 0.7);
-            }
-             :root:not([data-theme="light"]) .license-modal-dialog {
-                background: #1f232d;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
-            }
-             :root:not([data-theme="light"]) .license-modal-header {
-                background: #262a35;
-                border-bottom-color: #3a3f4c;
-            }
-             :root:not([data-theme="light"]) .license-modal-title { color: #e0e0e0; }
-             :root:not([data-theme="light"]) .license-modal-close { color: #888; }
-             :root:not([data-theme="light"]) .license-modal-close:hover {
-                background: #2a2e3a;
-                color: #e0e0e0;
-            }
-             :root:not([data-theme="light"]) .license-modal-body { color: #c0c0c0; }
-             :root:not([data-theme="light"]) .license-modal-body h1,
-             :root:not([data-theme="light"]) .license-modal-body h2,
-             :root:not([data-theme="light"]) .license-modal-body h3 { color: #e0e0e0; }
-             :root:not([data-theme="light"]) .license-modal-body strong { color: #e0e0e0; }
-             :root:not([data-theme="light"]) .license-modal-body blockquote {
-                background: #1f2937;
-                border-left-color: #5dade2;
-                color: #aaa;
-            }
-             :root:not([data-theme="light"]) .license-modal-body code {
-                background: #2a2e3a;
-                color: #e0e0e0;
-            }
-             :root:not([data-theme="light"]) .license-modal-body th,
-             :root:not([data-theme="light"]) .license-modal-body td { border-color: #3a3f4c; }
-             :root:not([data-theme="light"]) .license-modal-body th { background: #2a2e3a; }
-             :root:not([data-theme="light"]) .license-modal-body hr { border-top-color: #3a3f4c; }
-
-             :root:not([data-theme="light"]) .footer { color: #555; }
-             :root:not([data-theme="light"]) .footer img { opacity: 0.3; }
-
-             :root:not([data-theme="light"]) button[type="submit"] {
-                box-shadow: 0 4px 12px rgba(52, 152, 219, 0.15);
-            }
-             :root:not([data-theme="light"]) button[type="submit"]:hover {
-                box-shadow: 0 6px 20px rgba(52, 152, 219, 0.25);
-            }
-             :root:not([data-theme="light"]) .theme-selector-container {
-                 background: rgba(30, 34, 46, 0.85);
-                 border-color: rgba(255, 255, 255, 0.06);
-             }
-             :root:not([data-theme="light"]) .theme-selector-container label { color: #888; }
-             :root:not([data-theme="light"]) #theme-selector {
-                 background: #2a2e3a;
-                 border-color: #3a3f4c;
-                 color: #e0e0e0;
-             }
+        /* ===== Theme Selector ===== */
+        .theme-selector-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+            backdrop-filter: blur(8px);
+            padding: 6px 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--color-border);
         }
+        html[data-scheme="dark"] .theme-selector-container { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+        .theme-selector-container label {
+            margin: 0;
+            font-size: 0.78em;
+            color: var(--color-text-muted);
+            font-weight: 600;
+        }
+        .theme-selector-container select {
+            padding: 4px 8px;
+            border: 1px solid var(--color-border-strong);
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-family: inherit;
+            background: var(--color-surface);
+            color: var(--color-text);
+            cursor: pointer;
+        }
+        .theme-selector-container select:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand) 25%, transparent);
+        }
+        .theme-selector-container select:disabled { opacity: 0.6; cursor: not-allowed; }
 
         /* ===== Responsive ===== */
         @media (max-width: 480px) {
@@ -868,12 +558,12 @@
             .login-container { padding: 28px 22px 22px; }
             .brand img { width: 40px; height: 40px; }
             .brand-name { font-size: 1.5em; }
-             .theme-selector-container {
-                 top: 8px;
-                 right: 8px;
-                 padding: 4px 8px;
-             }
-             .theme-selector-container label { display: none; }
+            .theme-selector-container {
+                top: 8px;
+                right: 8px;
+                padding: 4px 8px;
+            }
+            .theme-selector-container label { display: none; }
         }
 
         /* ===== Animations ===== */
@@ -887,14 +577,16 @@
     </style>
 </head>
 <body>
-     <div class="theme-selector-container">
-         <label for="theme-selector">Theme:</label>
-         <select id="theme-selector" aria-label="Select theme">
-             <option value="auto">Auto</option>
-             <option value="light">Light</option>
-             <option value="dark">Dark</option>
-         </select>
-     </div>
+    <div class="theme-selector-container">
+        <label for="palette-selector" id="palette-selector-label">Palette:</label>
+        <select id="palette-selector" aria-label="Select color palette"></select>
+        <label for="theme-selector">Theme:</label>
+        <select id="theme-selector" aria-label="Select theme">
+            <option value="auto">Auto</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+        </select>
+    </div>
     <div class="brand">
         <div class="brand-logo-row">
             <img alt="Cognotik Logo" src="/logo.svg">
@@ -911,27 +603,27 @@
         <div class="links">
             <a href="<!--REGISTER_LINK-->">Don't have an account? <strong>Create one</strong></a>
         </div>
-         <div class="license-agreement">
-             <p class="license-notice">By logging in, you agree to the terms of the license below.</p>
-             <details class="license-details">
-                 <summary>
-                     <span>View License Agreement</span>
-                     <span class="license-summary-actions">
-                         <button type="button" class="license-maximize-btn" id="license-maximize-btn" title="Maximize" aria-label="Maximize license view">
-                             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-                                 <polyline points="15 3 21 3 21 9"></polyline>
-                                 <polyline points="9 21 3 21 3 15"></polyline>
-                                 <line x1="21" y1="3" x2="14" y2="10"></line>
-                                 <line x1="3" y1="21" x2="10" y2="14"></line>
-                             </svg>
-                         </button>
-                     </span>
-                 </summary>
-                 <div class="license-content" id="license-content">
-                     <div class="license-loading">Loading license…</div>
-                 </div>
-             </details>
-         </div>
+        <div class="license-agreement">
+            <p class="license-notice">By logging in, you agree to the terms of the license below.</p>
+            <details class="license-details">
+                <summary>
+                    <span>View License Agreement</span>
+                    <span class="license-summary-actions">
+                        <button type="button" class="license-maximize-btn" id="license-maximize-btn" title="Maximize" aria-label="Maximize license view">
+                            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <polyline points="9 21 3 21 3 15"></polyline>
+                                <line x1="21" y1="3" x2="14" y2="10"></line>
+                                <line x1="3" y1="21" x2="10" y2="14"></line>
+                            </svg>
+                        </button>
+                    </span>
+                </summary>
+                <div class="license-content" id="license-content">
+                    <div class="license-loading">Loading license…</div>
+                </div>
+            </details>
+        </div>
     </div>
     <div class="license-modal" id="license-modal" role="dialog" aria-modal="true" aria-labelledby="license-modal-title">
         <div class="license-modal-dialog">
@@ -952,95 +644,124 @@
             <span>Cognotik &copy; 2026 SimiaCryptus Software</span>
         </div>
     </div>
-     <script>
-         (function() {
-             var loaded = false;
-             var cachedHtml = null;
-             var details = document.querySelector('.license-details');
-             var target = document.getElementById('license-content');
-             var maximizeBtn = document.getElementById('license-maximize-btn');
-             var modal = document.getElementById('license-modal');
-             var modalBody = document.getElementById('license-modal-body');
-             var modalClose = document.getElementById('license-modal-close');
-             function renderInto(el, md) {
-                 if (typeof marked !== 'undefined' && marked.parse) {
-                     el.innerHTML = marked.parse(md);
-                 } else {
-                     var pre = document.createElement('pre');
-                     pre.textContent = md;
-                     el.innerHTML = '';
-                     el.appendChild(pre);
-                 }
-             }
+    <script>
+        // Bind the page's selectors to the central ThemeManager.
+        (function() {
+            document.addEventListener('DOMContentLoaded', function() {
+                var paletteSel = document.getElementById('palette-selector');
+                var paletteLbl = document.getElementById('palette-selector-label');
+                var modeSel = document.getElementById('theme-selector');
+                if (!window.ThemeManager) {
+                    // Theme scripts unavailable: hide the (non-functional) controls.
+                    var box = document.querySelector('.theme-selector-container');
+                    if (box) box.style.display = 'none';
+                    return;
+                }
+                if (ThemeManager.getManifest && ThemeManager.getManifest()) {
+                    ThemeManager.bindPaletteSelector(paletteSel);
+                } else {
+                    if (paletteSel) paletteSel.style.display = 'none';
+                    if (paletteLbl) paletteLbl.style.display = 'none';
+                }
+                ThemeManager.bindSelector(modeSel);
+            });
+            // Follow theme changes made in other tabs/windows while this page is open.
+            window.addEventListener('storage', function(e) {
+                if (!window.ThemeManager || !e.newValue) return;
+                if (e.key === ThemeManager.PALETTE_STORAGE_KEY) ThemeManager.setPalette(e.newValue);
+                if (e.key === ThemeManager.STORAGE_KEY) ThemeManager.setTheme(e.newValue);
+            });
+        })();
+    </script>
+    <script>
+        (function() {
+            var loaded = false;
+            var cachedHtml = null;
+            var details = document.querySelector('.license-details');
+            var target = document.getElementById('license-content');
+            var maximizeBtn = document.getElementById('license-maximize-btn');
+            var modal = document.getElementById('license-modal');
+            var modalBody = document.getElementById('license-modal-body');
+            var modalClose = document.getElementById('license-modal-close');
+            function renderInto(el, md) {
+                if (typeof marked !== 'undefined' && marked.parse) {
+                    el.innerHTML = marked.parse(md);
+                } else {
+                    var pre = document.createElement('pre');
+                    pre.textContent = md;
+                    el.innerHTML = '';
+                    el.appendChild(pre);
+                }
+            }
 
-             function loadLicense() {
-                 if (loaded) return Promise.resolve(cachedHtml);
-                 loaded = true;
-                 return fetch('/LICENSE.md', { credentials: 'same-origin' })
-                     .then(function(resp) {
-                         if (!resp.ok) throw new Error('HTTP ' + resp.status);
-                         return resp.text();
-                     })
-                     .then(function(md) {
-                         renderInto(target, md);
-                         cachedHtml = target.innerHTML;
-                         return cachedHtml;
-                     })
-                     .catch(function(err) {
-                         var msg = '<div class="license-loading">Unable to load license: ' +
-                             (err && err.message ? err.message : 'unknown error') + '</div>';
-                         target.innerHTML = msg;
-                         loaded = false;
-                         throw err;
-                     });
-             }
-             function openModal() {
-                 modal.classList.add('open');
-                 document.body.classList.add('license-modal-open');
-                 if (cachedHtml) {
-                     modalBody.innerHTML = cachedHtml;
-                 } else {
-                     modalBody.innerHTML = '<div class="license-loading">Loading license…</div>';
-                     loadLicense().then(function(html) {
-                         if (html) modalBody.innerHTML = html;
-                     }).catch(function(err) {
-                         modalBody.innerHTML = '<div class="license-loading">Unable to load license: ' +
-                             (err && err.message ? err.message : 'unknown error') + '</div>';
-                     });
-                 }
-                 if (modalClose) modalClose.focus();
-             }
-             function closeModal() {
-                 modal.classList.remove('open');
-                 document.body.classList.remove('license-modal-open');
-             }
+            function loadLicense() {
+                if (loaded) return Promise.resolve(cachedHtml);
+                loaded = true;
+                return fetch('/LICENSE.md', { credentials: 'same-origin' })
+                    .then(function(resp) {
+                        if (!resp.ok) throw new Error('HTTP ' + resp.status);
+                        return resp.text();
+                    })
+                    .then(function(md) {
+                        renderInto(target, md);
+                        cachedHtml = target.innerHTML;
+                        return cachedHtml;
+                    })
+                    .catch(function(err) {
+                        var msg = '<div class="license-loading">Unable to load license: ' +
+                            (err && err.message ? err.message : 'unknown error') + '</div>';
+                        target.innerHTML = msg;
+                        loaded = false;
+                        throw err;
+                    });
+            }
+            function openModal() {
+                modal.classList.add('open');
+                document.body.classList.add('license-modal-open');
+                if (cachedHtml) {
+                    modalBody.innerHTML = cachedHtml;
+                } else {
+                    modalBody.innerHTML = '<div class="license-loading">Loading license…</div>';
+                    loadLicense().then(function(html) {
+                        if (html) modalBody.innerHTML = html;
+                    }).catch(function(err) {
+                        modalBody.innerHTML = '<div class="license-loading">Unable to load license: ' +
+                            (err && err.message ? err.message : 'unknown error') + '</div>';
+                    });
+                }
+                if (modalClose) modalClose.focus();
+            }
+            function closeModal() {
+                modal.classList.remove('open');
+                document.body.classList.remove('license-modal-open');
+            }
 
-             if (details) {
-                 details.addEventListener('toggle', function() {
-                     if (details.open) loadLicense();
-                 });
-             }
-             if (maximizeBtn) {
-                 maximizeBtn.addEventListener('click', function(e) {
-                     e.preventDefault();
-                     e.stopPropagation();
-                     openModal();
-                 });
-             }
-             if (modalClose) {
-                 modalClose.addEventListener('click', closeModal);
-             }
-             if (modal) {
-                 modal.addEventListener('click', function(e) {
-                     if (e.target === modal) closeModal();
-                 });
-             }
-             document.addEventListener('keydown', function(e) {
-                 if (e.key === 'Escape' && modal.classList.contains('open')) {
-                     closeModal();
-                 }
-             });
-         })();
-     </script>
+            if (details) {
+                details.addEventListener('toggle', function() {
+                    if (details.open) loadLicense();
+                });
+            }
+            if (maximizeBtn) {
+                maximizeBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    openModal();
+                });
+            }
+            if (modalClose) {
+                modalClose.addEventListener('click', closeModal);
+            }
+            if (modal) {
+                modal.addEventListener('click', function(e) {
+                    if (e.target === modal) closeModal();
+                });
+            }
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape' && modal.classList.contains('open')) {
+                    closeModal();
+                }
+            });
+        })();
+    </script>
 </body>
 </html>

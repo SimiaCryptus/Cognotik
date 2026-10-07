@@ -12,10 +12,10 @@ The chat clients are built upon a hierarchical structure that ensures consistenc
   sending chat requests (`chat`), retrieving available models (`getModels`), and performing content moderation (
   `moderate`).
 * **`ChatClientBase`**: An abstract base class that integrates with `HttpClientManager`. it provides:
-  * **Usage Tracking**: Automatically records token usage and calculates costs.
-  * **Budget Management**: Monitors and enforces session or user-level budgets.
-  * **Logging**: Detailed logging of requests and responses, including formatted JSON and caller stack traces.
-  * **Reliability**: Hooks for performance logging and reliability wrappers.
+    * **Usage Tracking**: Automatically records token usage and calculates costs.
+    * **Budget Management**: Monitors and enforces session or user-level budgets.
+    * **Logging**: Detailed logging of requests and responses, including formatted JSON and caller stack traces.
+    * **Reliability**: Hooks for performance logging and reliability wrappers.
 * **`SingleProviderChatClient`**: A specialized base class for providers that follow standard HTTP patterns, simplifying
   the implementation of `GET` and `POST` operations with provider-specific authorization.
 

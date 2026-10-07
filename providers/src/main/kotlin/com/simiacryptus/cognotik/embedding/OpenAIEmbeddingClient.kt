@@ -1,30 +1,32 @@
 package com.simiacryptus.cognotik.embedding
 
+import com.google.common.util.concurrent.ListeningExecutorService
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.MoreExecutors.listeningDecorator
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.encrypt
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
 
 class OpenAIEmbeddingClient(
   apiKey: SecureString = "".encrypt,
   apiBase: String = "https://api.openai.com/v1",
-  workPool: ExecutorService = Executors.newCachedThreadPool(),
+  workPool: ExecutorService = ThreadPoolManager.newCachedThreadPool(null as Session)
+    .let<ExecutorService, ListeningExecutorService> { listeningDecorator(it) },
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-  scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(
-    Executors.newScheduledThreadPool(
-      1
-    )
-  )
+  scheduledPool: ListeningScheduledExecutorService = ThreadPoolManager.newScheduledThreadPool(1, null as Session)
+    .let<ScheduledExecutorService, ListeningScheduledExecutorService> { MoreExecutors.listeningDecorator(it) }
 ) : SingleProviderEmbeddingClient(
   provider = APIProvider.valueOf("OpenAI"),
   apiKey = apiKey,

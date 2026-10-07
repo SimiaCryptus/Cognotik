@@ -1020,7 +1020,7 @@ class TechnicalExplanationTask(
           appendLine("*Full content is available in the task UI.*")
         }
 
-        log.info("TechnicalExplanationTask completed: sections=${sections.size}, words=$wordCount, time=${totalTime}ms")
+        log.debug("TechnicalExplanationTask completed: sections=${sections.size}, words=$wordCount, time=${totalTime}ms")
 
         task.complete(
           "Technical explanation generation complete: $wordCount words in ${totalTime / 1000}s".renderMarkdown(

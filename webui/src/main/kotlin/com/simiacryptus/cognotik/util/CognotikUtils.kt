@@ -1,22 +1,15 @@
 package com.simiacryptus.cognotik.util
 
-import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.model.ApiChatModel
-import com.simiacryptus.cognotik.platform.model.ApiData
-import com.simiacryptus.cognotik.platform.model.UserSettings
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.File
-import java.util.concurrent.Executors
 
 object CognotikUtils {
 
@@ -66,11 +59,8 @@ object CognotikUtils {
       apiKey,
       api?.apiBase ?: throw IllegalArgumentException("No API found for provider: ${model.provider?.name}"),
       Level.INFO,
-      mutableListOf(),
-      Executors.newCachedThreadPool(),
-      1.0,
-      MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(1)),
       session = session,
+      workPool = ThreadPoolManager.newCachedThreadPool(session),
       user = user(),
     )
   }

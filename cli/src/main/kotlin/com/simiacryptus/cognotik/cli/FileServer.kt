@@ -1,10 +1,18 @@
 package com.simiacryptus.cognotik.cli
 
+import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.cli.CliSupport.defaultUser
 import com.simiacryptus.cognotik.fileserver.StaticZipServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
+import com.simiacryptus.cognotik.platform.CognotikPlatform
+import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
+import com.simiacryptus.cognotik.platform.service.UserProvider
+import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
@@ -23,6 +31,13 @@ import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerI
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
+import java.net.URLEncoder
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.file.Files
+import java.nio.file.attribute.PosixFilePermissions
+import java.time.Duration
 import java.util.*
 
 open class FileServer {
@@ -61,6 +76,8 @@ open class FileServer {
     val utilDir: String = ExtractUtilsFsAction.DEFAULT_DIR,
     /** null = "whatever is enabled", see landingPathFor(). */
     val landing: String? = null,
+    /** false (default) = hosted: authenticate against the hosted proxy (device login). true = local, no hosted login. */
+    val local: Boolean = false,
   ) {
     val baseDir: File get() = File(dir ?: ".").canonicalFile
     val taskRootDir: File get() = (taskRoot?.let { File(it) } ?: baseDir).canonicalFile
@@ -180,6 +197,8 @@ open class FileServer {
                   -p, --port <n>     Port to listen on (default 8081, 0 = random free port)
                   -h, --host <addr>  Interface to bind (default 127.0.0.1, 0.0.0.0 for all)
                      --email <addr> Login email for the local CLI user (default: anonymous)
+                      --hosted       Use the hosted backend: sign in via device login and proxy API calls (default)
+                      --local        Run locally: skip the hosted login and use locally configured API keys
                       --no-git       Disable Git UI/API features
                       --read-only    Disable uploads, edits and deletes
                       --no-terminal  Disable interactive terminal sessions
@@ -251,15 +270,40 @@ open class FileServer {
   // ---------------------------------------------------------------------------------
   // Entry point
   // ---------------------------------------------------------------------------------
+  data class SessionKeyFile(
+    val userId: String = "",
+    val sessionKey: String = ""
+  )
 
   fun run(args: Array<String>) {
-    DatabaseFacet.root = File(".").absolutePath
-
     val parsed = parseArgs(args) ?: run {
       println(usage())
       return
     }
+    ServiceKey.AUTHORIZATION_MANAGER.factory = {
+      object : AuthorizationInterface {
+        override fun isAuthorized(
+          resource: ResourceRef?,
+          principal: Principal,
+          operationType: OperationType
+        ): Boolean = true
+      }
+    }
+    ServiceKey.USER_RESOLVER.factory = {
+      object : UserProvider {
+        override fun authenticate(
+          request: HttpServletRequest
+        ) = defaultUser
+      }
+    }
+    CognotikPlatform.init()
+    val globalRoot = DatabaseFacet.root.let { File(it) }
+    DatabaseFacet.root = File(".").absolutePath
+    if (!parsed.local) {
+      initHostedEnv(globalRoot)
+    }
     initializeUser(parsed)
+
     val validated = validate(parsed)
     val config = installActions(validated)
     installModelSelectionListener(config)
@@ -319,6 +363,8 @@ open class FileServer {
         }
 
         "--email" -> c = c.copy(email = value(arg))
+        "--local" -> c = c.copy(local = true)
+        "--hosted" -> c = c.copy(local = false)
         "--task-root" -> c = c.copy(taskRoot = value(arg))
         "--smart-model" -> c = c.copy(
           smartModel = args.getOrNull(++i) ?: c.smartModel ?: CliSupport.fail("Missing value for $arg")
@@ -384,13 +430,16 @@ open class FileServer {
     ModelSelection.install(user = { cliUser }, smart = config.smartModel, fast = config.fastModel)
     ModelSelectionActions.install()
     models = try {
-      CliSupport.resolveModels(
-        user = cliUser,
-        smartModel = ModelSelection.smart,
-        fastModel = ModelSelection.fast,
-        imageModel = config.imageModel,
-        audioModel = config.audioModel,
-      )
+      when (ModelSelection.smart) {
+        null -> null
+        else -> CliSupport.resolveModels(
+          user = cliUser,
+          smartModel = ModelSelection.smart,
+          fastModel = ModelSelection.fast,
+          imageModel = config.imageModel,
+          audioModel = config.audioModel,
+        )
+      }
     } catch (e: Exception) {
       /* Starting without a model is no longer fatal - pick one from the web UI. */
       log.warn("Could not resolve models at start-up; continuing without them", e)
@@ -509,6 +558,7 @@ open class FileServer {
     val readOnly = config.readOnly
 
     println("Serving ${config.baseDir.absolutePath}")
+    println("  Backend   -> ${if (config.local) "local" else "hosted"}")
     println("  ->  $origin/ (redirects to ${serverInfo.landingPath})")
     if (config.homeEnabled) {
       println("  Home      -> $origin${FileServerCli.HOME_PREFIX}/ (overview: links, config, endpoints)")
@@ -858,8 +908,209 @@ open class FileServer {
     var docProcessorServlet: CliDocProcessorServlet? = null
     var available: Map<String, ChatModel> = emptyMap()
     var models: CliSupport.Models? = null
+
     @Volatile
     var serverInfo: ServerInfo = ServerInfo()
 
+  }
+}
+
+private val log = LoggerFactory.getLogger(FileServerCli::class.java)
+
+private data class LoginUser(
+  val id: String? = null,
+  val email: String? = null,
+)
+
+/** Union of the responses of the QR/device login endpoint (start + token polling). */
+private data class LoginResponse(
+  val rid: String? = null,
+  val pollSecret: String? = null,
+  val verificationUrl: String? = null,
+  val displayCode: String? = null,
+  val tokenEndpoint: String? = null,
+  val cookieName: String? = null,
+  val status: String? = null,
+  val token: String? = null,
+  val error: String? = null,
+  val interval: Long? = null,
+  val expiresIn: Long? = null,
+  val user: LoginUser? = null,
+)
+
+private val loginHttp: HttpClient by lazy {
+  HttpClient.newBuilder()
+    .followRedirects(HttpClient.Redirect.NEVER)
+    .connectTimeout(Duration.ofSeconds(15))
+    .build()
+}
+
+private fun loginProgress(msg: String) = System.err.println(msg)
+private fun postLoginForm(url: String, params: Map<String, String>): Pair<Int, LoginResponse> {
+  val form = (mapOf("formAction" to "login", "loginMethod" to "qr") + params).entries.joinToString("&") {
+    "${URLEncoder.encode(it.key, Charsets.UTF_8)}=${URLEncoder.encode(it.value, Charsets.UTF_8)}"
+  }
+  val request = HttpRequest.newBuilder(URI(url))
+    .timeout(Duration.ofSeconds(30))
+    .header("Content-Type", "application/x-www-form-urlencoded")
+    .header("Accept", "application/json")
+    .header("User-Agent", "cognotik-qr-login/1.0 (java ${System.getProperty("java.version")})")
+    .POST(HttpRequest.BodyPublishers.ofString(form))
+    .build()
+  val response = loginHttp.send(request, HttpResponse.BodyHandlers.ofString())
+  val type = response.headers().firstValue("content-type").orElse("")
+  if (!type.contains("application/json")) {
+    val location = response.headers().firstValue("location").orElse(null)
+    throw IllegalStateException(
+      "Unexpected response from server (HTTP ${response.statusCode()}" +
+          (if (location != null) ", redirect to $location" else "") +
+          "). Is the QR login method enabled on this server?"
+    )
+  }
+  return response.statusCode() to JsonUtil.fromJson<LoginResponse>(response.body(), LoginResponse::class.java)
+}
+
+private fun tryOpenBrowser(url: String) {
+  try {
+    val os = System.getProperty("os.name").lowercase()
+    val cmd = when {
+      os.contains("mac") -> listOf("open", url)
+      os.contains("win") -> listOf("cmd", "/c", "start", "\"\"", url)
+      else -> listOf("xdg-open", url)
+    }
+    ProcessBuilder(cmd)
+      .redirectErrorStream(true)
+      .redirectOutput(ProcessBuilder.Redirect.DISCARD)
+      .start()
+  } catch (e: Exception) {
+    log.debug("Could not open a browser (the URL is printed anyway)", e)
+  }
+}
+
+/**
+ * Device (QR) login, mirroring cognotik-login.mjs: start a request, send the user to the
+ * verification URL and poll until the request is approved, denied or expired.
+ *
+ * @return the session token and user, or null when the login failed.
+ */
+private fun deviceLogin(baseUrl: String, openBrowser: Boolean = true): FileServer.SessionKeyFile? {
+  val base = baseUrl.trimEnd('/')
+  val loginEndpoint = "$base/login/"
+  val clientName = "cognotik-cli@" + (try {
+    java.net.InetAddress.getLocalHost().hostName
+  } catch (e: Exception) {
+    "localhost"
+  })
+  try {
+    val (httpStatus, start) = postLoginForm(loginEndpoint, mapOf("qrAction" to "device", "client" to clientName))
+    if (httpStatus != 200 || start.rid == null) {
+      throw IllegalStateException("Failed to start login (HTTP $httpStatus): ${start.error ?: start}")
+    }
+    val tokenEndpoint = start.tokenEndpoint ?: loginEndpoint
+    var interval = maxOf(1L, start.interval ?: 2L)
+    val deadline = System.currentTimeMillis() + (start.expiresIn?.takeIf { it > 0 } ?: 180L) * 1000
+    loginProgress("")
+    loginProgress("To sign in, open this URL in a browser where you are already logged in:")
+    loginProgress("\n    ${start.verificationUrl}\n")
+    loginProgress("and check that it shows the confirmation code:  ${start.displayCode}")
+    loginProgress("")
+    if (openBrowser) start.verificationUrl?.let { tryOpenBrowser(it) }
+    var lastStatus: String? = null
+    while (System.currentTimeMillis() < deadline) {
+      Thread.sleep(interval * 1000)
+      val data = try {
+        postLoginForm(
+          tokenEndpoint,
+          mapOf("qrAction" to "token", "rid" to start.rid, "poll" to (start.pollSecret ?: ""))
+        ).second
+      } catch (e: InterruptedException) {
+        throw e
+      } catch (e: Exception) {
+        loginProgress("Polling error (${e.message}); retrying…")
+        Thread.sleep(interval * 1000)
+        continue
+      }
+      when (data.status) {
+        "pending" -> {}
+        "scanned" -> if (lastStatus != "scanned") loginProgress("Approval page opened, waiting for you to approve…")
+        "slow_down" -> interval = maxOf(interval + 1, data.interval ?: (interval + 1))
+        "approved" -> {
+          val token = data.token ?: throw IllegalStateException("Login approved but no token was returned")
+          val who = data.user?.email ?: "unknown user"
+          loginProgress("✅ Logged in as $who. Token valid for ~${Math.round((data.expiresIn ?: 0L) / 86400.0)} day(s).")
+          return FileServer.SessionKeyFile(
+            userId = data.user?.email ?: data.user?.id ?: "",
+            sessionKey = token
+          )
+        }
+
+        "denied" -> throw IllegalStateException("The login request was denied.")
+        "expired" -> throw IllegalStateException("The login request expired. Please run the command again.")
+        else -> throw IllegalStateException("Unexpected response: $data")
+      }
+      lastStatus = data.status
+    }
+    throw IllegalStateException("Timed out waiting for approval.")
+  } catch (e: InterruptedException) {
+    Thread.currentThread().interrupt()
+    log.warn("Login interrupted")
+    return null
+  } catch (e: Exception) {
+    log.warn("Device login against $base failed", e)
+    loginProgress("❌ ${e.message}")
+    return null
+  }
+}
+
+private fun saveSessionFile(file: File, session: FileServer.SessionKeyFile) {
+  try {
+    file.absoluteFile.parentFile?.mkdirs()
+    file.writeText(JsonUtil.toJson(session))
+    try {
+      Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("rw-------"))
+    } catch (e: Exception) {
+      log.debug("Could not restrict permissions on ${file.absolutePath}", e)
+    }
+    loginProgress("   Saved session to ${file.absolutePath}")
+  } catch (e: Exception) {
+    log.warn("Could not save session file ${file.absolutePath}", e)
+  }
+}
+
+fun initHostedEnv(globalRoot: File) {
+  val sessionFile = File(globalRoot, "session.json")
+  val existing = (if (sessionFile.exists()) {
+    try {
+      JsonUtil.fromJson<FileServer.SessionKeyFile>(sessionFile.readText(), FileServer.SessionKeyFile::class.java)
+    } catch (e: Exception) {
+      log.warn("Could not read session file ${sessionFile.absolutePath}", e)
+      null
+    }
+  } else null)?.takeIf { it.sessionKey.isNotBlank() }
+  val sessionInfo = existing ?: run {
+    val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
+    log.info("No usable session at ${sessionFile.absolutePath}; starting device login against $baseUrl")
+    val fresh = deviceLogin(baseUrl)
+    if (fresh != null) {
+      saveSessionFile(sessionFile, fresh)
+      fresh
+    } else {
+      log.warn("Login failed; starting without a session key")
+      FileServer.SessionKeyFile()
+    }
+  }
+  ServiceKey.USER_SETTINGS.addWrapper { inner ->
+    object : UserSettingsInterface by inner {
+      override fun getUserSettings(user: User): UserSettings {
+        return inner.getUserSettings(user).copy(
+          apis = mutableListOf(
+            ApiData(
+              provider = CoreProviders.HostedProxy,
+              key = SecureString(sessionInfo.sessionKey)
+            )
+          )
+        )
+      }
+    }
   }
 }

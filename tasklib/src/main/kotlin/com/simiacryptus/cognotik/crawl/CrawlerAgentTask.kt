@@ -771,7 +771,7 @@ class CrawlerAgentTask(
          log.debug("Skipping crawl state save (use_state_file=false)")
        }
       val totalTime = System.currentTimeMillis() - startTime
-      log.info("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
+      log.debug("CrawlerAgentTask completed: total_time=${totalTime}ms, pages_processed=${processedCount.get()}, errors=${errorCount.get()}, success_rate=${if (processedCount.get() > 0) ((processedCount.get() - errorCount.get()) * 100 / processedCount.get()) else 0}%")
       // Add page queue details tab
       addPageQueueDetailsTab(tabs, processedCount.get(), errorCount.get())
 

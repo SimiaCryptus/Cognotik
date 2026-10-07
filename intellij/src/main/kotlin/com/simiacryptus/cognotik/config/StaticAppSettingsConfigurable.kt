@@ -4,7 +4,7 @@ package com.simiacryptus.cognotik.config
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
@@ -30,48 +30,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
 
     override fun build(component: AppSettingsComponent): JComponent {
         val tabbedPane = com.intellij.ui.components.JBTabbedPane()
-        try {
-            tabbedPane.addTab("Basic Settings", JPanel(BorderLayout()).apply {
-                add(JPanel(BorderLayout()).apply {
-                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Smart Model:"))
-                        add(component.smartModel)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Fast Model:"))
-                        add(component.fastModel)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Image Chat Model:"))
-                        add(component.imageChatModel)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Image Model:"))
-                        add(component.mainImageModel)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Audio Model:"))
-                        add(component.audioModel)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Embedding Model:"))
-                        add(component.embeddingModel)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Patch Processor:"))
-                        add(component.patchProcessor)
-                    })
-                    add(JPanel(FlowLayout(FlowLayout.LEFT)).apply {
-                        add(JLabel("Temperature:"))
-                        add(component.temperature)
-                    })
-                })
-            })
-        } catch (e: Exception) {
-            log.warn("Error building Basic Settings", e)
-        }
-
         try {
             tabbedPane.addTab("Keys", JPanel(BorderLayout()).apply {
                 add(JPanel(BorderLayout()).apply {
@@ -180,7 +138,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         dialog.layout = BorderLayout()
 
       val userSettings =
-          ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+          ServiceKey.USER_SETTINGS.get().getUserSettings(
               CognotikConfig.localUser
           )
         val fullConfig = try {
@@ -367,7 +325,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     userSettingsJson, UserSettings::class.java
                 )
                 log.debug("Decrypting ${importedUserSettings.apis.size} API configurations")
-                ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
+                ServiceKey.USER_SETTINGS.get().updateUserSettings(
                     CognotikConfig.localUser, importedUserSettings
                 )
                 log.info("Successfully imported configuration with ${importedUserSettings.apis.size} API configurations")
@@ -393,20 +351,13 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             component.suppressErrors.isSelected = settings.suppressErrors
             component.disableAutoOpenUrls.isSelected = settings.disableAutoOpenUrls
             component.preferredBrowser.selectedItem = settings.preferredBrowser
-            settings.fastModel?.model?.let { component.fastModel.selectedItem = it.modelId }
-            settings.smartModel?.model?.let { component.smartModel.selectedItem = it.modelId }
-            settings.imageChatModel?.model?.let { component.imageChatModel.selectedItem = it.modelId }
-            settings.imageModel?.model?.let { component.mainImageModel.selectedItem = it.modelId }
-             settings.audioModel?.model?.let { component.audioModel.selectedItem = it.modelId }
             component.devActions.isSelected = settings.devActions
             component.temperature.text = settings.temperature.toString()
-            component.embeddingModel.selectedItem = settings.embeddingModel
             component.shellCommand.text = settings.shellCommand
-            component.patchProcessor.selectedItem = settings.processor.label
             // Refresh API table with current user settings
             val tableModel = component.apis.model as DefaultTableModel
             tableModel.rowCount = 0
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
+          val userSettings = ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -425,83 +376,18 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
+          val userSettings = ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser)
             log.debug("Current user has ${userSettings.apis.size} API configurations")
 
-            val fastModelName = component.fastModel.selectedItem as String?
-            val smartModelName = component.smartModel.selectedItem as String?
-            val imageChatModelName = component.imageChatModel.selectedItem as String?
-            val imageModelName = component.mainImageModel.selectedItem as String?
-             val audioModelName = component.audioModel.selectedItem?.let {
-                 when (it) {
-                     is String -> it
-                     else -> try {
-                         it.javaClass.getMethod("getModelId").invoke(it) as? String
-                             ?: it.javaClass.getMethod("getName").invoke(it) as? String
-                             ?: it.toString()
-                     } catch (e: Exception) {
-                         it.toString()
-                     }
-                 }
-             }
-            log.debug("Selected models - fast: $fastModelName, smart: $smartModelName, imageChat: $imageChatModelName, audio: $audioModelName")
-
-            val chatModels = userSettings.apis.filter { it.key?.decrypt != null }.flatMap { apiData ->
-                apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { !it.deprecated } ?: emptyList()
-            }
-            val imageModels = userSettings.apis.flatMap { apiData ->
-                apiData.provider?.getImageModels(apiData.key!!, apiData.apiBase) ?: emptyList()
-            }
-            val fastChatModel =
-                chatModels.find { model -> model.modelId == fastModelName || model.name == fastModelName }
-            val fastApiData = userSettings.apis.find { it.provider == fastChatModel?.provider }
-            val smartChatModel =
-                chatModels.find { model -> model.modelId == smartModelName || model.name == smartModelName }
-            val smartApiData = userSettings.apis.find { it.provider == smartChatModel?.provider }
-            val imageChatModel =
-                chatModels.find { model -> model.modelId == imageChatModelName || model.name == imageChatModelName }
-            val imageChatApiData = userSettings.apis.find { it.provider == imageChatModel?.provider }
-            val imageModel =
-                imageModels.find { model -> model.modelId == imageModelName || model.name == imageModelName }
-            val imageApiData = userSettings.apis.find { it.provider == imageModel?.provider }
-            val audioChatModel =
-                chatModels.find { model -> model.modelId == audioModelName || model.name == audioModelName }
-            val audioApiData = userSettings.apis.find { it.provider == audioChatModel?.provider }
-
-            settings.fastModel = ApiChatModel(fastChatModel, fastApiData)
             settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
-            settings.imageChatModel = ApiChatModel(imageChatModel, imageChatApiData)
             settings.listeningPort = component.listeningPort.text.safeInt()
             settings.listeningEndpoint = component.listeningEndpoint.text
             settings.suppressErrors = component.suppressErrors.isSelected
-            settings.smartModel = ApiChatModel(smartChatModel, smartApiData)
-            settings.imageModel = imageModel?.let { ApiImageModel(it, imageApiData) }
-            settings.audioModel = audioChatModel?.let { ApiChatModel(it, audioApiData) }
             settings.devActions = component.devActions.isSelected
             settings.disableAutoOpenUrls = component.disableAutoOpenUrls.isSelected
             settings.preferredBrowser = component.preferredBrowser.selectedItem?.toString() ?: BROWSER_INTELLIJ_BUILTIN
             settings.temperature = component.temperature.text.safeDouble()
-            settings.embeddingModel = component.embeddingModel.selectedItem?.let {
-                when (it) {
-                    is String -> it.embeddingModel()
-                    is EmbeddingModel -> it
-                    else -> null
-                }
-            }
             settings.shellCommand = component.shellCommand.text
-            settings.processor = component.patchProcessor.selectedItem?.let {
-              when (it) {
-                  is String -> try {
-                      PatchProcessors.valueOf(it)
-                  } catch (e: IllegalArgumentException) {
-                      log.warn("Unknown patch processor: $it, defaulting to Fuzzy")
-                      PatchProcessors.Fuzzy
-                  }
-
-                  is PatchProcessor -> it
-                  else -> PatchProcessors.Fuzzy
-              }
-            } ?: PatchProcessors.Fuzzy
 
             val tableModel = component.apis.model as DefaultTableModel
             log.debug("Reading API keys from table with ${tableModel.rowCount} rows")
@@ -523,17 +409,18 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                                     key = (key.takeIf { it.isNotBlank() } ?: "").encrypt,
                                     baseUrl = base,
                                     provider = apiProvider))
-                        } catch (e: Exception) {
                             log.debug("Added API configuration for provider: $provider")
                         } catch (e: IllegalArgumentException) {
                             log.warn("Unknown provider at row $row: $provider", e)
+                        } catch (e: Exception) {
+                            log.warn("Failed to add API configuration for provider: $provider", e)
                         }
                     }
                 } catch (e: Exception) {
                     log.error("Failed to read API configuration from row $row", e)
                 }
             }
-            ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
+            ServiceKey.USER_SETTINGS.get().updateUserSettings(
                 CognotikConfig.localUser,
                 userSettings
             )
@@ -551,12 +438,6 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     }
 }
 
-fun String.embeddingModel(): EmbeddingModel? = try {
-    EmbeddingModel.values()[this]
-} catch (e: Exception) {
-    StaticAppSettingsConfigurable.log.warn("Failed to parse embedding model: $this", e)
-    null
-}
 
 fun String?.safeInt() = if (null == this) 0 else when {
     isEmpty() -> 0

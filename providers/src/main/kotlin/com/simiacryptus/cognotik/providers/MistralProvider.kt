@@ -12,12 +12,12 @@ import java.util.concurrent.ExecutorService
 class MistralProvider : APIProvider("Mistral", "https://api.mistral.ai/v1") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = MistralChatClient(
     apiKey = key,
     apiBase = base,
@@ -25,6 +25,6 @@ class MistralProvider : APIProvider("Mistral", "https://api.mistral.ai/v1") {
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 }

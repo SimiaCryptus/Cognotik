@@ -2,10 +2,10 @@ package com.simiacryptus.cognotik.providers
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.OllamaChatClient
-import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingClient
 import com.simiacryptus.cognotik.embedding.OllamaEmbeddingModels
 import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
@@ -15,12 +15,12 @@ import java.util.concurrent.ExecutorService
 class OllamaProvider : APIProvider("Ollama", "http://localhost:11434") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = OllamaChatClient(
     apiKey = key,
     apiBase = base,

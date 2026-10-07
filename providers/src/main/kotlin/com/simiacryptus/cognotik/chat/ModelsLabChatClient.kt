@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.chat
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.chat.model.ModelsLabDataModel
 import com.simiacryptus.cognotik.CoreProviders
+import com.simiacryptus.cognotik.chat.model.ModelsLabDataModel
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageListener
@@ -18,7 +18,7 @@ import java.util.concurrent.Semaphore
 
 class ModelsLabChatClient(
   apiKey: SecureString,
-  apiBase: String = CoreProviders.ModelsLab.base!!,
+  apiBase: String = CoreProviders.ModelsLab.base,
   workPool: ExecutorService,
   logLevel: Level = Level.DEBUG,
   logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
@@ -45,7 +45,7 @@ class ModelsLabChatClient(
   override fun chat(
     chatRequest: ModelSchema.ChatRequest,
     model: ChatModel,
-    logStreams: MutableList<java.io.BufferedOutputStream>,
+    logStreams: MutableList<BufferedOutputStream>,
     usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     return modelsLabThrottle.runWithPermit {

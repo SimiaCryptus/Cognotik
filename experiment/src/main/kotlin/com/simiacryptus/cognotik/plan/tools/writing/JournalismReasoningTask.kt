@@ -1173,7 +1173,7 @@ open class JournalismReasoningTask<T : JournalismReasoningTask.JournalismReasoni
         )
 
         val finalResult = resultBuilder.toString()
-        log.info("JournalismReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
+        log.debug("JournalismReasoningTask completed: total_time=${totalTime}ms, output_size=${finalResult.length} chars")
 
         val uiMessage = buildString {
           appendLine("✅ Journalism investigation complete in ${totalTime / 1000}s")

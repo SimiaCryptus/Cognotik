@@ -102,27 +102,25 @@ class ApplyPatchAction : BaseAction(
     private fun applyPatch(
         file: VirtualFile, patchContent: String, project: Project, processor: PatchProcessor
     ) {
+        var noChanges = false
         WriteCommandAction.runWriteCommandAction(project) {
             val psiFile = PsiManager.getInstance(project).findFile(file) ?: return@runWriteCommandAction
             val newContent = processor.applyPatch(psiFile.text, patchContent)
             if (newContent == psiFile.text) {
-                Messages.showWarningDialog(project, "Patch made no changes to ${file.name}", "No Changes")
+                noChanges = true
                 return@runWriteCommandAction
             }
             psiFile.virtualFile.setBinaryContent(newContent.toByteArray())
+        }
+        if (noChanges) {
+            Messages.showWarningDialog(project, "Patch made no changes to ${file.name}", "No Changes")
         }
     }
 
     override fun isEnabled(event: AnActionEvent): Boolean {
         if (!super.isEnabled(event)) return false
         val selectedFiles = event.getSelectedFiles()
-        when {
-            false -> return false
-            selectedFiles.isEmpty() -> return false
-            selectedFiles.size > 1 -> return false
-            selectedFiles.first().isDirectory -> return false
-            else -> return true
-        }
+        return selectedFiles.size == 1 && !selectedFiles.first().isDirectory
     }
 
 }

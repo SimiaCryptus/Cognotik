@@ -1090,7 +1090,7 @@ class ScriptwritingTask(
         appendLine("> The complete script with all formatting, timing, and production notes is available in the Complete Script tab.")
       }
 
-      log.info("ScriptwritingTask completed: duration=${cumulativeDuration}s, words=$cumulativeWordCount, segments=${scriptSegments.size}, time=${totalTime}ms")
+      log.debug("ScriptwritingTask completed: duration=${cumulativeDuration}s, words=$cumulativeWordCount, segments=${scriptSegments.size}, time=${totalTime}ms")
 
       if (orchestrationConfig.autoFix) {
         log.info("Auto-fix enabled, completing automatically")

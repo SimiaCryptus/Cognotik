@@ -13,7 +13,10 @@ import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
-import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.ApiChatModel
+import com.simiacryptus.cognotik.platform.model.OperationType
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.service.PluginManagerInterface
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
 import com.simiacryptus.cognotik.util.encrypt
@@ -36,7 +39,6 @@ import java.net.ServerSocket
 import java.net.URLEncoder
 import java.util.*
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
@@ -57,7 +59,9 @@ open class CognotikApps(
     companion object {
         private val log = LoggerFactory.getLogger(CognotikApps::class.java.name)
         const val MAX_PORT_ATTEMPTS = 10
-        val scheduledExecutorService: ScheduledExecutorService = Executors.newScheduledThreadPool(1)
+        val scheduledExecutorService: ScheduledExecutorService =
+            ThreadPoolManager.newScheduledThreadPool(1, globalID)
+
         var server: CognotikApps? = null
 
         @JvmStatic
@@ -188,9 +192,7 @@ open class CognotikApps(
 
     fun checkIsAlive() {
         try {
-          val threadPoolManager =
-            ServiceRouter as ThreadPoolManager
-            val alive = threadPoolManager.isAlive()
+            val alive = ThreadPoolManager.isAlive()
             val systemTrayManager = systemTrayManager
             if (systemTrayManager != null) {
                 systemTrayManager.updateStatus(alive)
@@ -352,7 +354,10 @@ open class CognotikApps(
         return docopsApps + staticApps
     }
 
-    val scheduledExecutorService by lazy { Executors.newScheduledThreadPool(1) }
+    val scheduledExecutorService by lazy {
+        ThreadPoolManager.newScheduledThreadPool(1, globalID)
+
+    }
     fun reloadApps() {
         log.info("Reloading apps due to plugin change...")
         val jettyServer = runningServer.get()
@@ -433,7 +438,7 @@ open class CognotikApps(
                 }
             }
             contextCollection.handlers = updatedHandlers.toTypedArray()
-            log.info("App reload completed successfully. Total contexts: ${updatedHandlers.size}")
+            log.debug("App reload completed successfully. Total contexts: ${updatedHandlers.size}")
         } catch (e: Exception) {
             log.error("Error during app reload: ${e.message}", e)
             throw e
@@ -568,9 +573,8 @@ fun ApiChatModel.instance(
     },
     base = provider?.provider?.base ?: model?.provider?.base
     ?: throw IllegalStateException("No API base configured for model $model"),
-    workPool = service,
-    temperature = temperature,
-    scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
     session = session,
+    workPool = service,
+    scheduledPool = ThreadPoolManager.getScheduledPool(session, user),
     user = user,
 )

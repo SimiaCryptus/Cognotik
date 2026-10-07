@@ -478,7 +478,7 @@ Provide a structured synthesis.
       val fullDialogue = fullDialogueBuilder.toString()
       val totalTime = System.currentTimeMillis() - startTime
       val avgExchangeTime = if (exchangeTimes.isNotEmpty()) exchangeTimes.average() else 0.0
-      log.info("SocraticDialogueTask completed: total_time=${totalTime}ms, exchanges=$maxDepth, avg_exchange_time=${avgExchangeTime}ms, output_size=${finalResult.length} chars (full: ${fullDialogue.length} chars)")
+      log.debug("SocraticDialogueTask completed: total_time=${totalTime}ms, exchanges=$maxDepth, avg_exchange_time=${avgExchangeTime}ms, output_size=${finalResult.length} chars (full: ${fullDialogue.length} chars)")
       transcriptWriter?.apply {
         write("---\n\n")
         write(

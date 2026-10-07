@@ -12,7 +12,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.text.util.isBinary
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
@@ -43,11 +43,11 @@ class ChatWithCommitAction : AnAction() {
                         val after = change.afterRevision?.content
                         if ((before ?: after)!!.isBinary)
                             return@joinToString "# Binary: ${change.afterRevision?.file}".prependIndent("  ")
-                        if (before == null) return@joinToString "# Deleted: ${change.afterRevision?.file}\n${after}".replace(
+                        if (before == null) return@joinToString "# Added: ${change.afterRevision?.file}\n${after}".replace(
                             "\n",
                             "\n  "
                         )
-                        if (after == null) return@joinToString "# Added: ${change.beforeRevision?.file}\n${before}".replace(
+                        if (after == null) return@joinToString "# Deleted: ${change.beforeRevision?.file}\n${before}".replace(
                             "\n",
                             "\n  "
                         )
@@ -71,7 +71,7 @@ class ChatWithCommitAction : AnAction() {
             filename = "commit_changes.diff",
             model = AppSettingsState.instance.smartChatClient,
             fastModel = AppSettingsState.instance.fastChatClient,
-            storage = ServiceMap[ServiceKey.DATA_STORAGE]
+            storage = ServiceKey.DATA_STORAGE.get()
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",

@@ -25,7 +25,7 @@ import java.util.*
  */
 open class AuthorizationManager : AuthorizationInterface {
   init {
-    log.info("AuthorizationManager initialized", RuntimeException("Stack Trace"))
+//    log.info("AuthorizationManager initialized", RuntimeException("Stack Trace"))
   }
 
   override fun isAuthorized(
@@ -42,7 +42,7 @@ open class AuthorizationManager : AuthorizationInterface {
           grant.implies(operationType) && isGranted(resource, user, grant)
         }
         if (granted) {
-          log.info("{} authorized for {} on {}", principal, operationType, resource)
+          log.debug("{} authorized for {} on {}", principal, operationType, resource)
         } else {
           log.warn("{} not authorized for {} on {}", principal, operationType, resource)
         }

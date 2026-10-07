@@ -1,28 +1,28 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.docops.DocProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateMode
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.ChatMessageModality
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
-import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.FixedConcurrencyProcessor
 import com.simiacryptus.cognotik.util.toJson
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
+import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet.Companion.TEMPLATE_VAR_PARAM_PREFIX
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -352,7 +352,7 @@ open class DocProcessorServlet() : HttpServlet() {
     }
     val session = Session(sessionId)
     val sessionDir = dataStorage.getUserDir(user, session)
-    val sessionOwner = metadataDB.getSessionOwner(user=user, session = session)
+    val sessionOwner = metadataDB.getSessionOwner(session = session, user=user)
     when {
       null == sessionOwner -> {
         log.info("Session '$session' not found in metadataDB")
@@ -439,9 +439,10 @@ open class DocProcessorServlet() : HttpServlet() {
      * servlet has already responded to the client. Uses daemon threads so
      * the JVM may exit cleanly.
      */
-    private val asyncExecutor = Executors.newCachedThreadPool { r ->
+    private val asyncExecutor = ThreadPoolManager.newCachedThreadPool(Session.NULL) { r: Runnable ->
       Thread(r, "DocProcessorServlet-Async").apply { isDaemon = true }
     }
+
 
     /**
      * Prefix used on query parameters to identify template variable overrides.

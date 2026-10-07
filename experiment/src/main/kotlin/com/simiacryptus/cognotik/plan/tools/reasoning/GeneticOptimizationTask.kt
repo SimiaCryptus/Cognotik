@@ -746,7 +746,7 @@ class GeneticOptimizationTask(
         transcript?.write("\n\n---\n\n".toByteArray(StandardCharsets.UTF_8))
         transcript?.write(finalOverview.toByteArray(StandardCharsets.UTF_8))
 
-        log.info("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - initialBestScore}, generations=$numGenerations")
+        log.debug("GeneticOptimizationTask completed successfully: total_time=${totalTime}ms, improvement=${bestVariant.score.overall_score - initialBestScore}, generations=$numGenerations")
         task.complete(
           buildString {
             append("Optimization complete: improved by ")

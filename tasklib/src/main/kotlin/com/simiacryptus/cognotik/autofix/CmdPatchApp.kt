@@ -227,7 +227,7 @@ class CmdPatchApp(
         }
       }
     }
-    log.info("All commands completed successfully")
+    log.debug("All commands completed successfully")
     return OutputResult(0, "All commands completed successfully")
   }
 

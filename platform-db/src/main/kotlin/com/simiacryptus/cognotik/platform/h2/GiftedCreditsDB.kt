@@ -96,7 +96,7 @@ class GiftedCreditsDB(
         GiftsTable.selectAll().limit(1).toList()
         GiftClaimsTable.selectAll().limit(1).toList()
       }
-      log.info("GiftedCreditsDB schema initialization completed successfully")
+      log.debug("GiftedCreditsDB schema initialization completed successfully")
     } catch (e: Exception) {
       log.error("Failed to initialize GiftedCreditsDB schema", e)
       throw IllegalStateException("Failed to initialize GiftedCreditsDB", e)

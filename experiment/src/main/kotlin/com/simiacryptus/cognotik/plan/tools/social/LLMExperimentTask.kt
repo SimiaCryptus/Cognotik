@@ -527,7 +527,7 @@ Be specific and reference the data provided.
         }.renderMarkdown()
       )
 
-      log.info("LLMExperimentTask completed: trials=${allResults.size}/${totalTrials}, time=${totalTime}ms")
+      log.debug("LLMExperimentTask completed: trials=${allResults.size}/${totalTrials}, time=${totalTime}ms")
 
       task.complete("Completed ${allResults.size} trials across ${conditions.size} conditions in ${totalTime / 1000}s]")
 

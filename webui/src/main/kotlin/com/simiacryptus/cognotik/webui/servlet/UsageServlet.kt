@@ -2,33 +2,88 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.google.gson.Gson
 import com.google.gson.GsonBuilder
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.service.UsageInterface
-import com.simiacryptus.cognotik.platform.service.UserProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.time.format.DateTimeFormatter
-import java.time.format.DateTimeParseException
 
+/**
+ *
+ * GET /usage                         -> user usage (HTML, or JSON with ?format=json / Accept: application/json)
+ *     ?from=yyyy-MM-dd&to=yyyy-MM-dd -> date range (from inclusive, to exclusive, UTC)
+ * GET /usage?sessionId=...           -> session usage incl. per-request rows
+ *     &details=false                 -> omit per-request rows
+ *     &includeText=false             -> omit input/output text from rows
+ * GET|POST .../graphql               -> GraphQL endpoint (see [UsageGraphQL])
+ * Usage API.
+ */
 class UsageServlet : HttpServlet() {
 
-    public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-        response.status = HttpServletResponse.SC_OK
-        val useJson = isJsonRequested(request)
-      val usageManager =
-        ServiceRouter as UsageInterface
+    /** All data needed to render a usage report in any format. */
+    private data class UsageReport(
+        val scopeType: String,
+        val scopeLabel: String,
+        val usage: Map<String, ModelSchema.Usage>,
+        val daily: List<UsageInterface.DailyUsage> = emptyList(),
+        val credits: List<UsageInterface.CreditEntry> = emptyList(),
+        val rows: List<UsageInterface.UsageRow> = emptyList(),
+        val includeRows: Boolean = false,
+        val includeText: Boolean = true,
+        val availableBudget: Double? = null,
+        val balance: Double? = null,
+        val from: LocalDate? = null,
+        val to: LocalDate? = null,
+        val userEmail: String? = null,
+        val sessionId: String? = null,
+        val parentSessionId: String? = null,
+    )
 
-        if (request.parameterMap.containsKey("sessionId")) {
-            handleSessionUsage(request, response, useJson, usageManager)
+    public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+        if (UsageGraphQL.isGraphQLRequest(request)) {
+            UsageGraphQL.handle(request, response)
+            return
+        }
+        val useJson = isJsonRequested(request)
+        val usageManager = ServiceRouter as UsageInterface
+        val user = ServiceRouter.authenticate(request)
+        if (user == null) {
+            response.status = HttpServletResponse.SC_UNAUTHORIZED
+            if (useJson) {
+                response.contentType = "application/json"
+                response.writer.write(Gson().toJson(mapOf("error" to "Authentication failed")))
+            } else {
+                response.contentType = "text/plain"
+                response.writer.write("Authentication failed")
+            }
+            return
+        }
+
+        val report = if (request.parameterMap.containsKey("sessionId")) {
+            buildSessionReport(request, user, usageManager)
         } else {
-            handleUserUsage(request, response, useJson, usageManager)
+            buildUserReport(request, user, usageManager)
+        }
+
+        response.status = HttpServletResponse.SC_OK
+        if (useJson) serveJson(response, report) else serveHtml(response, report)
+    }
+
+    public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+        if (UsageGraphQL.isGraphQLRequest(request)) {
+            UsageGraphQL.handle(request, response)
+        } else {
+            response.sendError(HttpServletResponse.SC_METHOD_NOT_ALLOWED, "POST is only supported on the /graphql endpoint")
         }
     }
 
@@ -38,153 +93,135 @@ class UsageServlet : HttpServlet() {
         return formatParam || acceptHeader
     }
 
-    private fun handleSessionUsage(
+    private fun isFalse(value: String?): Boolean =
+        value != null && value.trim().lowercase() in setOf("false", "0", "no", "off", "summary")
+
+    private fun buildSessionReport(
         request: HttpServletRequest,
-        response: HttpServletResponse,
-        useJson: Boolean,
+        user: User,
         usageManager: UsageInterface
-    ) {
+    ): UsageReport {
         val session = Session(request.getParameter("sessionId"))
-        val user = ServiceRouter.authenticate(request)
-            ?: throw RuntimeException("Authentication failed")
-        val usage = usageManager.getSessionUsageSummary(user=user, session = session)
-        serve(
-            resp = response,
+        val includeRows = !isFalse(request.getParameter("details"))
+        val includeText = !isFalse(request.getParameter("includeText"))
+        val usage = usageManager.getSessionUsageSummary(user = user, session = session)
+        val rows = if (includeRows) {
+            runCatching { usageManager.getSessionUsageRows(session, user) }
+                .onFailure { log.warn("Failed to load usage rows for session ${session.sessionId}", it) }
+                .getOrElse { emptyList() }
+        } else emptyList()
+        val parent = runCatching { usageManager.getParentSession(user, session) }
+            .onFailure { log.debug("Failed to load parent session for ${session.sessionId}", it) }
+            .getOrNull()
+        return UsageReport(
+            scopeType = "session",
+            scopeLabel = "Session: ${session.sessionId}",
             usage = usage,
-            useJson = useJson,
-            scopeLabel = "Session: ${session.sessionId}"
+            rows = rows,
+            includeRows = includeRows,
+            includeText = includeText,
+            userEmail = user.email,
+            sessionId = session.sessionId,
+            parentSessionId = parent?.sessionId,
         )
     }
 
-    private fun handleUserUsage(
+    private fun buildUserReport(
         request: HttpServletRequest,
-        response: HttpServletResponse,
-        useJson: Boolean,
+        user: User,
         usageManager: UsageInterface
-    ) {
-        val userinfo =
-          ServiceRouter.authenticate(request)
-            ?: throw RuntimeException("Authentication failed")
-        val (from, to) = parseDateRange(request)
-
-        val usage = usageManager.getUserUsageSummary(userinfo, from, to)
-        val daily = runCatching { usageManager.getUserDailyUsage(userinfo, from, to) }.getOrElse { emptyList() }
-        val budget = runCatching { usageManager.getAvailableBudget(userinfo) }.getOrNull()
-        val credits = runCatching { usageManager.getUserCredits(userinfo, from, to) }.getOrElse { emptyList() }
-
-        if (useJson) {
-            serveJson(response, usage, daily, budget, credits, from, to)
-        } else {
-            serveHtml(
-                resp = response,
-                usage = usage,
-                daily = daily,
-                availableBudget = budget,
-                credits = credits,
-                from = from,
-                to = to,
-                scopeLabel = "User: ${userinfo.email}"
-            )
-        }
+    ): UsageReport {
+        val (from, to) = UsageTokens.parseRange(request.getParameter("from"), request.getParameter("to"))
+        val usage = usageManager.getUserUsageSummary(user, from, to)
+        val daily = runCatching { usageManager.getUserDailyUsage(user, from, to) }
+            .onFailure { log.warn("Failed to load daily usage", it) }.getOrElse { emptyList() }
+        val budget = runCatching { usageManager.getAvailableBudget(user) }
+            .onFailure { log.warn("Failed to load available budget", it) }.getOrNull()
+        val balance = runCatching { usageManager.getUserBalance(user) }
+            .onFailure { log.debug("Failed to load balance", it) }.getOrNull()
+        val credits = runCatching { usageManager.getUserCredits(user, from, to) }
+            .onFailure { log.warn("Failed to load credits", it) }.getOrElse { emptyList() }
+        return UsageReport(
+            scopeType = "user",
+            scopeLabel = "User: ${user.email}",
+            usage = usage,
+            daily = daily,
+            credits = credits,
+            availableBudget = budget,
+            balance = balance,
+            from = from,
+            to = to,
+            userEmail = user.email,
+        )
     }
 
-    private fun parseDateRange(request: HttpServletRequest): Pair<LocalDate, LocalDate> {
-        val today = LocalDate.now(ZoneOffset.UTC)
-        val defaultFrom = today.minusDays(30)
-        val defaultTo = today.plusDays(1)
-        val from = request.getParameter("from")?.let { parseDateOrNull(it) } ?: defaultFrom
-        val to = request.getParameter("to")?.let { parseDateOrNull(it) } ?: defaultTo
-        return if (to.isBefore(from)) defaultFrom to defaultTo else from to to
+    /**
+     * Collects the union of all TokenTypes appearing in the summary, daily and row data,
+     * in a stable column order.
+     */
+    private fun collectTokenTypes(report: UsageReport): List<TokenTypes> {
+        val present = LinkedHashSet<TokenTypes>()
+        report.usage.values.forEach { present.addAll(it.counts.keys) }
+        report.daily.forEach { present.addAll(it.usage.counts.keys) }
+        report.rows.forEach { present.addAll(it.tokenCounts.keys) }
+        return UsageTokens.orderTokenTypes(present)
     }
 
-    private fun parseDateOrNull(s: String): LocalDate? = try {
-        LocalDate.parse(s)
-    } catch (e: DateTimeParseException) {
-        null
-    }
+    // ------------------------------------------------------------------ JSON
 
-    private fun serve(
-        resp: HttpServletResponse,
-        usage: Map<String, ModelSchema.Usage>,
-        useJson: Boolean = false,
-        scopeLabel: String = ""
-    ) {
-        if (useJson) {
-            serveJson(resp, usage, emptyList(), null, emptyList(), null, null)
-        } else {
-            serveHtml(resp, usage, emptyList(), null, emptyList(), null, null, scopeLabel)
-        }
-    }
+    private fun tokenFields(
+        counts: Map<TokenTypes, Long>,
+        allTokenTypes: List<TokenTypes>,
+        cost: Double,
+        totalTokens: Long
+    ): MutableMap<String, Any?> = mutableMapOf(
+        "cost" to cost,
+        "total_tokens" to totalTokens,
+        "tokens" to allTokenTypes.associate { it.name to (counts[it] ?: 0L) },
+        // Backwards-compatible flat fields
+        "prompt_tokens" to (counts[TokenTypes.Prompt] ?: 0L),
+        "completion_tokens" to (counts[TokenTypes.Completion] ?: 0L)
+    )
 
-    private fun serveJson(
-        resp: HttpServletResponse,
-        usage: Map<String, ModelSchema.Usage>,
-        daily: List<UsageInterface.DailyUsage>,
-        availableBudget: Double?,
-        credits: List<UsageInterface.CreditEntry>,
-        from: LocalDate?,
-        to: LocalDate?
-    ) {
+    private fun serveJson(resp: HttpServletResponse, report: UsageReport) {
         resp.contentType = "application/json"
 
-        // Collect all token types present across usage and daily breakdown
-        val allTokenTypes: List<TokenTypes> = collectTokenTypes(usage, daily)
-        val totalsByType: Map<TokenTypes, Long> = allTokenTypes.associateWith { type ->
-            usage.values.sumOf { it.counts.getOrDefault(type, 0L) }
-        }
-        val totalCost = usage.values.sumOf { it.cost ?: 0.0 }
+        val allTokenTypes = collectTokenTypes(report)
+        val totalCounts = UsageTokens.mergeCounts(report.usage.values.map { it.counts })
+        val totalCost = report.usage.values.sumOf { it.cost }
+        val totalTokens = report.usage.values.sumOf { UsageTokens.totalTokens(it) }
 
         val result = mutableMapOf<String, Any?>(
-            "models" to usage.entries.map { (model, count) ->
-                val m = mutableMapOf<String, Any?>(
-                    "model" to model,
-                    "cost" to (count.cost ?: 0.0)
-                )
-                // Token counts keyed by token type name
-                val tokens = allTokenTypes.associate { type ->
-                    type.name to count.counts.getOrDefault(type, 0L)
-                }
-                m["tokens"] = tokens
-                // Backwards-compatible flat fields
-                m["prompt_tokens"] = count.counts.getOrDefault(TokenTypes.Prompt, 0L)
-                m["completion_tokens"] = count.counts.getOrDefault(TokenTypes.Completion, 0L)
-                m
+            "scope" to mutableMapOf<String, Any?>("type" to report.scopeType).also { s ->
+                report.userEmail?.let { s["user"] = it }
+                report.sessionId?.let { s["session_id"] = it }
+                report.parentSessionId?.let { s["parent_session_id"] = it }
             },
-            "totals" to mutableMapOf<String, Any?>(
-                "cost" to totalCost,
-                "tokens" to allTokenTypes.associate { it.name to (totalsByType[it] ?: 0L) },
-                // Backwards-compatible flat fields
-                "prompt_tokens" to (totalsByType[TokenTypes.Prompt] ?: 0L),
-                "completion_tokens" to (totalsByType[TokenTypes.Completion] ?: 0L)
-            )
+            "token_types" to allTokenTypes.map { it.name },
+            "models" to report.usage.entries.map { (model, u) ->
+                tokenFields(u.counts, allTokenTypes, u.cost, UsageTokens.totalTokens(u)).apply {
+                    put("model", model)
+                }
+            },
+            "totals" to tokenFields(totalCounts, allTokenTypes, totalCost, totalTokens)
         )
 
-        if (from != null && to != null) {
-            result["range"] = mapOf(
-                "from" to from.toString(),
-                "to" to to.toString()
-            )
+        if (report.from != null && report.to != null) {
+            result["range"] = mapOf("from" to report.from.toString(), "to" to report.to.toString())
         }
-        if (availableBudget != null) {
-            result["available_budget"] = availableBudget
-        }
-        if (daily.isNotEmpty()) {
-            result["daily"] = daily.map { d ->
-                mutableMapOf<String, Any?>(
-                    "day" to d.day.toString(),
-                    "model" to d.model,
-                    "cost" to (d.usage.cost ?: 0.0),
-                    "tokens" to allTokenTypes.associate { type ->
-                        type.name to d.usage.counts.getOrDefault(type, 0L)
-                    },
-                    // Backwards-compatible flat fields
-                    "prompt_tokens" to d.usage.counts.getOrDefault(TokenTypes.Prompt, 0L),
-                    "completion_tokens" to d.usage.counts.getOrDefault(TokenTypes.Completion, 0L)
-                )
+        report.availableBudget?.let { result["available_budget"] = it }
+        report.balance?.let { result["balance"] = it }
+
+        if (report.daily.isNotEmpty()) {
+            result["daily"] = report.daily.map { d ->
+                tokenFields(d.usage.counts, allTokenTypes, d.usage.cost, UsageTokens.totalTokens(d.usage)).apply {
+                    put("day", d.day.toString())
+                    put("model", d.model)
+                }
             }
         }
-        if (credits.isNotEmpty()) {
-            result["credits"] = credits.map { c ->
+        if (report.credits.isNotEmpty()) {
+            result["credits"] = report.credits.map { c ->
                 mutableMapOf<String, Any?>(
                     "datetime" to c.datetime.toString(),
                     "amount" to c.amount,
@@ -194,169 +231,95 @@ class UsageServlet : HttpServlet() {
                 }
             }
         }
+        if (report.includeRows) {
+            result["rows"] = report.rows.map { r ->
+                tokenFields(r.tokenCounts, allTokenTypes, r.cost, UsageTokens.totalTokens(r.tokenCounts)).apply {
+                    put("id", r.id)
+                    put("session_id", r.sessionId)
+                    put("user_id", r.userId)
+                    put("model", r.model)
+                    put("datetime", r.datetime?.toString())
+                    if (report.includeText) {
+                        put("input_text", r.inputText)
+                        put("output_text", r.outputText)
+                    }
+                }
+            }
+        }
 
         val gson: Gson = GsonBuilder().setPrettyPrinting().create()
         resp.writer.write(gson.toJson(result))
     }
-    /**
-     * Collects the union of all TokenTypes appearing in either the summary or daily usage,
-     * preserving a stable column order: Prompt and Completion first (when present),
-     * then any remaining types in enum declaration order.
-     */
-    private fun collectTokenTypes(
-        usage: Map<String, ModelSchema.Usage>,
-        daily: List<UsageInterface.DailyUsage>
-    ): List<TokenTypes> {
-        val present = LinkedHashSet<TokenTypes>()
-        usage.values.forEach { u -> u.counts.keys.forEach { present.add(it) } }
-        daily.forEach { d -> d.usage.counts.keys.forEach { present.add(it) } }
-        val preferredOrder = mutableListOf<TokenTypes>()
-        if (present.contains(TokenTypes.Prompt)) preferredOrder.add(TokenTypes.Prompt)
-        if (present.contains(TokenTypes.Completion)) preferredOrder.add(TokenTypes.Completion)
-        // Append remaining token types in enum declaration order for stability
-        TokenTypes.values().forEach { t ->
-            if (present.contains(t) && !preferredOrder.contains(t)) preferredOrder.add(t)
-        }
-        // Ensure at least Prompt/Completion columns appear even when no data is present
-        if (preferredOrder.isEmpty()) {
-            preferredOrder.add(TokenTypes.Prompt)
-            preferredOrder.add(TokenTypes.Completion)
-        }
-        return preferredOrder
-    }
 
+    // ------------------------------------------------------------------ HTML
 
-    private fun serveHtml(
-        resp: HttpServletResponse,
-        usage: Map<String, ModelSchema.Usage>,
-        daily: List<UsageInterface.DailyUsage>,
-        availableBudget: Double?,
-        credits: List<UsageInterface.CreditEntry>,
-        from: LocalDate?,
-        to: LocalDate?,
-        scopeLabel: String = ""
-    ) {
+    private fun serveHtml(resp: HttpServletResponse, report: UsageReport) {
         resp.contentType = "text/html"
 
-        val allTokenTypes: List<TokenTypes> = collectTokenTypes(usage, daily)
+        val allTokenTypes = collectTokenTypes(report)
         val totalsByType: Map<TokenTypes, Long> = allTokenTypes.associateWith { type ->
-            usage.values.sumOf { it.counts.getOrDefault(type, 0L) }
+            report.usage.values.sumOf { it.counts.getOrDefault(type, 0L) }
         }
-        val totalCost = usage.values.sumOf { it.cost ?: 0.0 }
+        val totalCost = report.usage.values.sumOf { it.cost }
+        val totalTokens = report.usage.values.sumOf { UsageTokens.totalTokens(it) }
 
-        val scopeHtml = renderScope(scopeLabel)
-        val budgetHtml = renderBudget(availableBudget)
-        val rangeFormHtml = renderRangeForm(from, to)
-        val modelTableHtml = renderModelTable(usage, allTokenTypes, totalsByType, totalCost)
-        val dailyHtml = renderDailyTable(daily, allTokenTypes)
-        val creditsHtml = renderCreditsTable(credits)
+        val scopeHtml = renderScope(report)
+        val budgetHtml = renderBudget(report.availableBudget, report.balance)
+        val rangeFormHtml = renderRangeForm(report.from, report.to)
+        val modelTableHtml = renderModelTable(report.usage, allTokenTypes, totalsByType, totalCost, totalTokens)
+        val dailyHtml = renderDailyTable(report.daily, allTokenTypes)
+        val rowsHtml = if (report.includeRows) renderRowsTable(report.rows, allTokenTypes, report.includeText) else ""
+        val creditsHtml = renderCreditsTable(report.credits)
 
         resp.writer.write(
             """
                 <html>
                 <head>
                     <title>Usage</title>
+                    <meta name="color-scheme" content="light dark">
                     <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+                    <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+                    <script src="/themes.js"></script>
                     <script src="/modules/theme.js"></script>
                     <style>
-                        :root,
-                        html[data-theme="light"] {
-                            --bg: #ffffff;
-                            --fg: #333333;
-                            --muted-fg: #555555;
-                            --border: #dddddd;
-                            --row-alt-bg: #f2f2f2;
-                            --header-bg: #4a6fa5;
+                        /* Page-local variables derived from the central theme tokens (see /themes.css). */
+                        :root {
+                            --bg: var(--color-canvas);
+                            --fg: var(--color-text);
+                            --muted-fg: var(--color-text-muted);
+                            --border: var(--color-border);
+                            --row-alt-bg: var(--color-surface-alt);
+                            --header-bg: var(--color-brand);
                             --header-fg: #ffffff;
-                            --total-row-bg: #e8eef7;
-                            --budget-bg: #eef7ee;
-                            --budget-border: #4a8;
-                            --nav-bg: #f0f3f8;
-                            --nav-link: #4a6fa5;
-                            --nav-link-hover-bg: #e1e7f1;
-                            --nav-active-bg: #4a6fa5;
+                            --total-row-bg: color-mix(in srgb, var(--color-brand) 15%, var(--color-surface));
+                            --budget-bg: color-mix(in srgb, var(--color-success) 15%, var(--color-surface));
+                            --budget-border: var(--color-success);
+                            --nav-bg: var(--color-surface-alt);
+                            --nav-link: var(--color-link);
+                            --nav-link-hover-bg: color-mix(in srgb, var(--color-brand) 15%, transparent);
+                            --nav-active-bg: var(--color-brand);
                             --nav-active-fg: #ffffff;
-                            --btn-primary-bg: #4a6fa5;
+                            --btn-primary-bg: var(--color-brand);
                             --btn-primary-fg: #ffffff;
-                            --btn-primary-hover-bg: #3a5a8c;
-                            --btn-secondary-bg: #ffffff;
-                            --btn-secondary-fg: #4a6fa5;
-                            --btn-secondary-border: #4a6fa5;
-                            --btn-secondary-hover-bg: #eef2f9;
-                            --credit-positive: #2a7a2a;
-                            --credit-negative: #a02020;
-                            --credit-meta-fg: #666666;
-                            --input-bg: #ffffff;
-                            --input-fg: #333333;
-                            --input-border: #cccccc;
-                        }
-                        html[data-theme="dark"] {
-                            --bg: #1e1e1e;
-                            --fg: #e6e6e6;
-                            --muted-fg: #bbbbbb;
-                            --border: #444444;
-                            --row-alt-bg: #2a2a2a;
-                            --header-bg: #2c4a78;
-                            --header-fg: #ffffff;
-                            --total-row-bg: #2f3b50;
-                            --budget-bg: #1f3a1f;
-                            --budget-border: #4a8;
-                            --nav-bg: #2a2a2a;
-                            --nav-link: #8ab0e0;
-                            --nav-link-hover-bg: #3a3a3a;
-                            --nav-active-bg: #2c4a78;
-                            --nav-active-fg: #ffffff;
-                            --btn-primary-bg: #2c4a78;
-                            --btn-primary-fg: #ffffff;
-                            --btn-primary-hover-bg: #3a5a8c;
-                            --btn-secondary-bg: #2a2a2a;
-                            --btn-secondary-fg: #8ab0e0;
-                            --btn-secondary-border: #8ab0e0;
-                            --btn-secondary-hover-bg: #3a3a3a;
-                            --credit-positive: #5fcf5f;
-                            --credit-negative: #ff7070;
-                            --credit-meta-fg: #aaaaaa;
-                            --input-bg: #2a2a2a;
-                            --input-fg: #e6e6e6;
-                            --input-border: #555555;
-                        }
-                        @media (prefers-color-scheme: dark) {
-                            html[data-theme="auto"] {
-                                --bg: #1e1e1e;
-                                --fg: #e6e6e6;
-                                --muted-fg: #bbbbbb;
-                                --border: #444444;
-                                --row-alt-bg: #2a2a2a;
-                                --header-bg: #2c4a78;
-                                --header-fg: #ffffff;
-                                --total-row-bg: #2f3b50;
-                                --budget-bg: #1f3a1f;
-                                --budget-border: #4a8;
-                                --nav-bg: #2a2a2a;
-                                --nav-link: #8ab0e0;
-                                --nav-link-hover-bg: #3a3a3a;
-                                --nav-active-bg: #2c4a78;
-                                --nav-active-fg: #ffffff;
-                                --btn-primary-bg: #2c4a78;
-                                --btn-primary-fg: #ffffff;
-                                --btn-primary-hover-bg: #3a5a8c;
-                                --btn-secondary-bg: #2a2a2a;
-                                --btn-secondary-fg: #8ab0e0;
-                                --btn-secondary-border: #8ab0e0;
-                                --btn-secondary-hover-bg: #3a3a3a;
-                                --credit-positive: #5fcf5f;
-                                --credit-negative: #ff7070;
-                                --credit-meta-fg: #aaaaaa;
-                                --input-bg: #2a2a2a;
-                                --input-fg: #e6e6e6;
-                                --input-border: #555555;
-                            }
+                            --btn-primary-hover-bg: var(--color-brand-hover);
+                            --btn-secondary-bg: var(--color-surface);
+                            --btn-secondary-fg: var(--color-brand);
+                            --btn-secondary-border: var(--color-brand);
+                            --btn-secondary-hover-bg: var(--color-surface-alt);
+                            --credit-positive: var(--color-success);
+                            --credit-negative: var(--color-danger);
+                            --credit-meta-fg: var(--color-text-muted);
+                            --input-bg: var(--color-surface);
+                            --input-fg: var(--color-text);
+                            --input-border: var(--color-border-strong);
+                            --pre-bg: var(--color-surface-alt);
                         }
                         html, body { background-color: var(--bg); color: var(--fg); }
                         body { font-family: Arial, sans-serif; margin: 20px; }
                         h1, h2 { color: var(--fg); }
+                        a { color: var(--nav-link); }
                         table { width: 100%; border-collapse: collapse; margin-bottom: 20px; }
-                        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; }
+                        th, td { border: 1px solid var(--border); padding: 8px; text-align: left; vertical-align: top; }
                         tr:nth-child(even) { background-color: var(--row-alt-bg); }
                         .table-header { background-color: var(--header-bg); color: var(--header-fg); }
                         .table-header th { color: var(--header-fg); }
@@ -374,7 +337,7 @@ class UsageServlet : HttpServlet() {
                             border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer;
                         }
                         .range-form button:hover { background: var(--btn-primary-hover-bg); }
-                        #theme-selector {
+                        #theme-selector, #palette-selector {
                             background: var(--input-bg); color: var(--input-fg);
                             border: 1px solid var(--input-border); padding: 4px 6px; border-radius: 3px;
                         }
@@ -394,16 +357,17 @@ class UsageServlet : HttpServlet() {
                          .btn-secondary { background: var(--btn-secondary-bg); color: var(--btn-secondary-fg); border: 1px solid var(--btn-secondary-border);
                                           padding: 8px 16px; border-radius: 4px; text-decoration: none; font-size: 0.95em; }
                          .btn-secondary:hover { background: var(--btn-secondary-hover-bg); }
+                         .usage-text { white-space: pre-wrap; word-break: break-word; max-height: 300px; overflow: auto;
+                                       font-size: 0.85em; background: var(--pre-bg); padding: 6px; border-radius: 3px; margin: 4px 0; }
+                         .muted { color: var(--muted-fg); }
                     </style>
                 </head>
                 <body>
                 <div class="theme-switcher" style="display:flex; justify-content:flex-end; align-items:center; margin-bottom:10px;">
+                    <label for="palette-selector" style="margin-right:8px; font-size:0.95em;">Palette:</label>
+                    <select id="palette-selector" aria-label="Palette selector" style="margin-right:16px;"></select>
                     <label for="theme-selector" style="margin-right:8px; font-size:0.95em;">Theme:</label>
-                    <select id="theme-selector" aria-label="Theme selector">
-                        <option value="auto">Auto</option>
-                        <option value="light">Light</option>
-                        <option value="dark">Dark</option>
-                    </select>
+                    <select id="theme-selector" aria-label="Theme selector"></select>
                 </div>
                 <h1>Usage Summary</h1>
                 $scopeHtml
@@ -413,14 +377,23 @@ class UsageServlet : HttpServlet() {
                 <h2>By Model</h2>
                 $modelTableHtml
                 $dailyHtml
+                $rowsHtml
              $creditsHtml
                 <script>
                     (function() {
                         function initTheme() {
                             if (typeof ThemeManager !== 'undefined') {
-                                ThemeManager.init();
+                                // ThemeManager.init() runs automatically when theme.js loads.
+                                var pal = document.getElementById('palette-selector');
+                                if (pal) ThemeManager.bindPaletteSelector(pal);
                                 var sel = document.getElementById('theme-selector');
                                 if (sel) ThemeManager.bindSelector(sel);
+                                // Follow theme changes made in other windows/frames live.
+                                window.addEventListener('storage', function (e) {
+                                    if (!e.newValue) return;
+                                    if (e.key === ThemeManager.PALETTE_STORAGE_KEY) ThemeManager.setPalette(e.newValue);
+                                    if (e.key === ThemeManager.STORAGE_KEY) ThemeManager.setTheme(e.newValue);
+                                });
                             } else {
                                 console.warn('ThemeManager not loaded from /modules/theme.js');
                             }
@@ -438,13 +411,23 @@ class UsageServlet : HttpServlet() {
         )
     }
 
-    private fun renderScope(scopeLabel: String): String =
-        if (scopeLabel.isNotEmpty()) """<div class="scope">$scopeLabel</div>""" else ""
+    private fun sessionLink(sessionId: String): String {
+        val encoded = URLEncoder.encode(sessionId, StandardCharsets.UTF_8)
+        return """<a href="?sessionId=$encoded">${escapeHtml(sessionId)}</a>"""
+    }
 
-    private fun renderBudget(availableBudget: Double?): String =
-        if (availableBudget != null) {
-            """<div class="budget">Available budget: <strong>${"%.4f".format(availableBudget)}</strong></div>"""
-        } else ""
+    private fun renderScope(report: UsageReport): String {
+        if (report.scopeLabel.isEmpty()) return ""
+        val parent = report.parentSessionId?.let { " <span class=\"muted\">(parent: ${sessionLink(it)})</span>" } ?: ""
+        return """<div class="scope">${escapeHtml(report.scopeLabel)}$parent</div>"""
+    }
+
+    private fun renderBudget(availableBudget: Double?, balance: Double?): String {
+        val parts = mutableListOf<String>()
+        if (availableBudget != null) parts.add("Available budget: <strong>${"%.4f".format(availableBudget)}</strong>")
+        if (balance != null) parts.add("Balance: <strong>${"%.4f".format(balance)}</strong>")
+        return if (parts.isEmpty()) "" else """<div class="budget">${parts.joinToString(" &nbsp;|&nbsp; ")}</div>"""
+    }
 
     private fun renderRangeForm(from: LocalDate?, to: LocalDate?): String =
         if (from != null && to != null) {
@@ -457,41 +440,47 @@ class UsageServlet : HttpServlet() {
                 """.trimIndent()
         } else ""
 
+    private fun tokenHeaderCols(allTokenTypes: List<TokenTypes>): String =
+        allTokenTypes.joinToString("\n") { t ->
+            "                        <th>${escapeHtml(formatTokenTypeName(t))}</th>"
+        }
+
+    private fun tokenCells(counts: Map<TokenTypes, Long>, allTokenTypes: List<TokenTypes>): String =
+        allTokenTypes.joinToString("\n") { t ->
+            """                    <td class="token-cell token-${t.name.lowercase()}">${counts.getOrDefault(t, 0L)}</td>"""
+        }
+
     private fun renderModelTable(
         usage: Map<String, ModelSchema.Usage>,
         allTokenTypes: List<TokenTypes>,
         totalsByType: Map<TokenTypes, Long>,
-        totalCost: Double
+        totalCost: Double,
+        totalTokens: Long
     ): String {
-        val headerCols = allTokenTypes.joinToString("\n") { t ->
-            "                        <th>${escapeHtml(formatTokenTypeName(t))}</th>"
-        }
+        val headerCols = tokenHeaderCols(allTokenTypes)
         val rows = usage.entries.joinToString("\n") { (model, count) ->
-            val tokenCells = allTokenTypes.joinToString("\n") { t ->
-                """                    <td class="token-cell token-${t.name.lowercase()}">${count.counts.getOrDefault(t, 0L)}</td>"""
-            }
             """
                 <tr class="table-row">
                     <td class="model-cell">${escapeHtml(model)}</td>
-$tokenCells
-                    <td class="cost-cell">${"%.4f".format(count.cost ?: 0.0)}</td>
+${tokenCells(count.counts, allTokenTypes)}
+                    <td class="token-cell token-total">${UsageTokens.totalTokens(count)}</td>
+                    <td class="cost-cell">${"%.4f".format(count.cost)}</td>
                 </tr>
                 """.trimIndent()
-        }
-        val totalCells = allTokenTypes.joinToString("\n") { t ->
-            """                    <td class="token-cell token-${t.name.lowercase()}">${totalsByType[t] ?: 0L}</td>"""
         }
         return """
                 <table class="usage-table">
                     <tr class="table-header">
                         <th>Model</th>
 $headerCols
+                        <th>Total Tokens</th>
                         <th>Cost</th>
                     </tr>
                     $rows
                     <tr class="table-row total-row">
                         <td class="model-cell">Total</td>
-$totalCells
+${tokenCells(totalsByType, allTokenTypes)}
+                        <td class="token-cell token-total">$totalTokens</td>
                         <td class="cost-cell">${"%.4f".format(totalCost)}</td>
                     </tr>
                 </table>
@@ -503,19 +492,15 @@ $totalCells
         allTokenTypes: List<TokenTypes>
     ): String {
         if (daily.isEmpty()) return ""
-        val headerCols = allTokenTypes.joinToString("\n") { t ->
-            "                        <th>${escapeHtml(formatTokenTypeName(t))}</th>"
-        }
+        val headerCols = tokenHeaderCols(allTokenTypes)
         val rows = daily.joinToString("\n") { d ->
-            val tokenCells = allTokenTypes.joinToString("\n") { t ->
-                """                    <td class="token-cell token-${t.name.lowercase()}">${d.usage.counts.getOrDefault(t, 0L)}</td>"""
-            }
             """
                 <tr class="table-row">
                     <td>${d.day}</td>
                     <td>${escapeHtml(d.model)}</td>
-$tokenCells
-                    <td>${"%.4f".format(d.usage.cost ?: 0.0)}</td>
+${tokenCells(d.usage.counts, allTokenTypes)}
+                    <td>${UsageTokens.totalTokens(d.usage)}</td>
+                    <td>${"%.4f".format(d.usage.cost)}</td>
                 </tr>
                 """.trimIndent()
         }
@@ -526,20 +511,72 @@ $tokenCells
                         <th>Day</th>
                         <th>Model</th>
 $headerCols
+                        <th>Total Tokens</th>
                         <th>Cost</th>
                     </tr>
                     $rows
                 </table>
                 """.trimIndent()
     }
+
+    private fun renderRowsTable(
+        rows: List<UsageInterface.UsageRow>,
+        allTokenTypes: List<TokenTypes>,
+        includeText: Boolean
+    ): String {
+        if (rows.isEmpty()) {
+            return """
+                <h2>Requests</h2>
+                <p class="muted">No individual usage records found.</p>
+                """.trimIndent()
+        }
+        val dtFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss").withZone(ZoneOffset.UTC)
+        val headerCols = tokenHeaderCols(allTokenTypes)
+        val body = rows.joinToString("\n") { r ->
+            val textCell = if (includeText) {
+                val input = r.inputText?.takeIf { it.isNotEmpty() }?.let {
+                    """<details><summary>Input (${it.length} chars)</summary><pre class="usage-text">${escapeHtml(it)}</pre></details>"""
+                } ?: ""
+                val output = r.outputText?.takeIf { it.isNotEmpty() }?.let {
+                    """<details><summary>Output (${it.length} chars)</summary><pre class="usage-text">${escapeHtml(it)}</pre></details>"""
+                } ?: ""
+                val content = (input + output).ifEmpty { """<span class="muted">-</span>""" }
+                "\n                    <td>$content</td>"
+            } else ""
+            """
+                <tr class="table-row">
+                    <td>${r.datetime?.let { dtFormatter.format(it) } ?: ""}</td>
+                    <td>${r.sessionId?.let { sessionLink(it) } ?: ""}</td>
+                    <td>${escapeHtml(r.model ?: "")}</td>
+${tokenCells(r.tokenCounts, allTokenTypes)}
+                    <td>${UsageTokens.totalTokens(r.tokenCounts)}</td>
+                    <td>${"%.4f".format(r.cost)}</td>$textCell
+                </tr>
+                """.trimIndent()
+        }
+        val textHeader = if (includeText) "\n                        <th>Input / Output</th>" else ""
+        return """
+                <h2>Requests (${rows.size})</h2>
+                <table class="usage-table">
+                    <tr class="table-header">
+                        <th>Date/Time (UTC)</th>
+                        <th>Session</th>
+                        <th>Model</th>
+$headerCols
+                        <th>Total Tokens</th>
+                        <th>Cost</th>$textHeader
+                    </tr>
+                    $body
+                </table>
+                """.trimIndent()
+    }
+
     /**
      * Formats a TokenTypes enum value into a more readable column header.
-     * Inserts spaces before camel-case boundaries, e.g. "CacheRead" -> "Cache Read".
+     * Inserts spaces before camel-case boundaries, e.g. "CacheWrite5m" -> "Cache Write5m".
      */
-    private fun formatTokenTypeName(t: TokenTypes): String {
-        val name = t.name
-        return name.replace(Regex("(?<=[a-z0-9])(?=[A-Z])"), " ")
-    }
+    private fun formatTokenTypeName(t: TokenTypes): String =
+        t.name.replace(Regex("(?<=[a-z0-9])(?=[A-Z])"), " ")
 
     private fun renderCreditsTable(credits: List<UsageInterface.CreditEntry>): String {
         if (credits.isEmpty()) return ""
@@ -585,6 +622,7 @@ $headerCols
             .replace(">", "&gt;")
             .replace("\"", "&quot;")
             .replace("'", "&#39;")
+
     private fun navBar(active: String): String {
         fun cls(name: String) = if (name == active) "active" else ""
         return """
@@ -595,7 +633,6 @@ $headerCols
             </nav>
         """.trimIndent()
     }
-
 
     companion object {
         val log = LoggerFactory.getLogger(UsageServlet::class.java)

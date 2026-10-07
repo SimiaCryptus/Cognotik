@@ -66,6 +66,7 @@ open class OpenAIImageClient(
     request.addHeader("Authorization", "Bearer ${key}")
     return EntityUtils.toString(client.execute(request).entity)
   }
+
   override fun createImage(request: ImageGenerationRequest): ImageGenerationResponse {
     return withPerformanceLogging {
       val url = "${apiBase}/images/generations"

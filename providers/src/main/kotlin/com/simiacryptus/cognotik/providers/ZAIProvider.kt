@@ -2,9 +2,9 @@ package com.simiacryptus.cognotik.providers
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.ZAIChatClient
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.ZAIModels
 import com.simiacryptus.cognotik.platform.model.APIProvider
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
@@ -18,12 +18,12 @@ import java.util.concurrent.ExecutorService
 class ZAIProvider : APIProvider("z.ai", DEFAULT_BASE) {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = ZAIChatClient(
     apiKey = key,
     apiBase = base,

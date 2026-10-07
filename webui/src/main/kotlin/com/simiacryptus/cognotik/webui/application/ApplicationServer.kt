@@ -11,8 +11,6 @@ import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.Session.Companion.validateSessionId
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
@@ -32,6 +30,7 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.HttpURLConnection
 import java.net.URLEncoder
+import kotlin.getValue
 
 abstract class ApplicationServer(
   final override val applicationName: String,
@@ -64,6 +63,8 @@ abstract class ApplicationServer(
   }
   protected open val userInfo by lazy { ServletHolder("userInfo", UserInfoServlet()) }
   protected open val usageServlet by lazy { ServletHolder("usage", UsageServlet()) }
+
+  /** Metrics dashboard GraphQL API; override to supply a stricter authorization predicate. */
   protected open val fileZip by lazy { ServletHolder("fileZip", ZipServlet(dataStorage)) }
   protected open val fileIndex by lazy {
     ServletHolder("fileIndex", object : SessionFileServlet(dataStorage) {
@@ -249,9 +250,10 @@ abstract class ApplicationServer(
       FileServlet.isWriteAllowed = fun(user: User?, request: HttpServletRequest): Boolean {
         val sessionOwner = request.session()?.let {
           ServiceRouter.getSessionOwner(
-            user = user!!,
-            session = it
-          ) }
+            session = it,
+            user = user!!
+          )
+        }
         return sessionOwner == null || sessionOwner == user?.id
       }
     }
@@ -364,4 +366,3 @@ fun HttpURLConnection.appendCookies(cookies: Map<String, String?>) {
   val newCookies = prevCookies + cookies
   setCookies(newCookies)
 }
-

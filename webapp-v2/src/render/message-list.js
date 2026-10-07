@@ -2,6 +2,7 @@ import {createLogger} from '../util/logger.js';
 import {describeNode, el} from '../util/dom.js';
 import {expandReferences} from './references.js';
 import {applyVerboseWrappers} from './verbose.js';
+import {decorateSpinners} from './quips.js';
 import {runPipeline} from './pipeline.js';
 import {isReferenceId} from '../core/store.js';
 import {bus, Events} from '../core/bus.js';
@@ -167,6 +168,8 @@ export class MessageListView {
             this.store.setDependencies(message.id, []);
         }
         applyVerboseWrappers(body);
+         // Server spinners become parody "thinking" lines (render/quips.js).
+         if (message.isHtml) decorateSpinners(body);
         wrapper.appendChild(body);
 
         return wrapper;

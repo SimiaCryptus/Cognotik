@@ -12,19 +12,19 @@ import java.util.concurrent.ExecutorService
 class AnthropicProvider : APIProvider("Anthropic", "https://api.anthropic.com/v1") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = AnthropicChatClient(
-      apiKey = key,
-      apiBase = base,
-      workPool = workPool,
-      logLevel = logLevel,
-      logStreams = logStreams,
-      scheduledPool = scheduledPool,
-      session = session,
+    apiKey = key,
+    apiBase = base,
+    workPool = workPool,
+    logLevel = logLevel,
+    logStreams = logStreams,
+    scheduledPool = scheduledPool,
+    session = session,
   )
 }

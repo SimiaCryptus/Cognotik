@@ -120,7 +120,7 @@ FileSearch - Search for patterns in files and provide results with context
             }
           }
         }
-        log.info("FileSearchTask completed successfully.")
+        log.debug("FileSearchTask completed successfully.")
         resultFn(formattedResults)
       } catch (e: Exception) {
         task.error(e)

@@ -375,7 +375,7 @@ class IllustrateDocumentTask(
         transcript?.write(summary.toByteArray())
         transcript?.write("\n</div>\n\n".toByteArray())
 
-        log.info("IllustrateDocumentTask completed for $documentFile in ${totalTime}ms")
+        log.debug("IllustrateDocumentTask completed for $documentFile in ${totalTime}ms")
         task.safeComplete("Generated ${generatedImages.size} images in ${totalTime / 1000}s", log)
         resultFn(summary)
 

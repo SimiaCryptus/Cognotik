@@ -44,6 +44,13 @@ abstract class LoginMethod(
      * or false to allow other handlers to continue.
      */
     abstract fun handleLogin(request: HttpServletRequest, response: HttpServletResponse): Boolean
+     /**
+      * Whether this method must handle the given request even when the caller is already
+      * authenticated (e.g. a logged-in device approving a cross-device login). By default,
+      * [LoginServlet] redirects authenticated users away from the login flow.
+      */
+     open fun allowsAuthenticatedUser(request: HttpServletRequest): Boolean = false
+
 
     companion object {
         @JvmStatic

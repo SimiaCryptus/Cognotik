@@ -1,8 +1,8 @@
 package com.simiacryptus.cognotik.platform.model
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.ModelSchema.Usage
 import com.simiacryptus.cognotik.util.SecureString
@@ -10,8 +10,6 @@ import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import kotlin.collections.get
 
 class ChatModel(
     val name: String = "",
@@ -122,7 +120,7 @@ class ChatModel(
 
         val totalCost = (accountedCost + estimatedUnaccountedCost) / 1000.0
         // TODO: Downgrade this to debug once we have more confidence in the accuracy of the cost estimation
-        log.info(
+        log.debug(
             "Calculating cost for model ${modelId}: " +
                     perTypeCosts.entries.joinToString(", ") { (type, cost) ->
                         val count = counts.getOrDefault(type, 0)
@@ -142,14 +140,9 @@ class ChatModel(
         base: String = provider?.base!!,
         logLevel: Level = Level.DEBUG,
         logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-        workPool: ExecutorService = Executors.newFixedThreadPool(4),
-        temperature: Double = 0.1,
-        scheduledPool: ListeningScheduledExecutorService = MoreExecutors.listeningDecorator(
-            Executors.newScheduledThreadPool(
-                1
-            )
-        ),
         session: Session,
+        workPool: ExecutorService = ThreadPoolManager.newFixedThreadPool(4, session),
+        scheduledPool: ListeningScheduledExecutorService = ThreadPoolManager.newScheduledThreadPool(1, session),
         user: User,
     ): ChatInterface = ChatInterface(
         logStreams = logStreams,

@@ -80,6 +80,8 @@ abstract class ApplicationDirectory(
     *allResources("web").map(Resource::newResource).toTypedArray()
   )
     .also { log.debug("Initialized web resources with ${allResources("web").size} resource(s)") }
+
+  open val metricsServlet by lazy { MetricServlet() }
   open val userInfoServlet: HttpServlet = UserInfoServlet()
     .also { log.debug("Initialized UserInfoServlet") }
   open val userSettingsServlet: HttpServlet = UserSettingsServlet()
@@ -91,6 +93,8 @@ abstract class ApplicationDirectory(
     .also { log.debug("Initialized LogoutServlet") }
   open val usageServlet: HttpServlet = UsageServlet()
     .also { log.debug("Initialized UsageServlet") }
+  open val usageGraphQLServlet: HttpServlet = UsageGraphQLServlet()
+    .also { log.debug("Initialized UsageGraphQLServlet") }
 
   open val usageStorageApiServlet: HttpServlet = UsageStorageApiServlet()
     .also { log.debug("Initialized UsageStorageApiServlet") }
@@ -222,8 +226,10 @@ abstract class ApplicationDirectory(
       newWebAppContext("/cognitiveConfig", cognitiveConfigServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/docops", docopsServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/userInfo", userInfoServlet).configureAuth(ApplicationServer::class.java),
+      newWebAppContext("/metrics", metricsServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/userSettings", userSettingsServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/usage", usageServlet).configureAuth(ApplicationServer::class.java),
+      newWebAppContext("/usageGraphQL", usageGraphQLServlet).configureAuth(ApplicationServer::class.java),
       newWebAppContext("/taskConfig", taskConfigServlet).configureAuth(ApplicationServer::class.java),
       pluginManagerServlet?.let { pluginManagerServlet ->
         newWebAppContext("/pluginManager", pluginManagerServlet).configureAuth(ApplicationServer::class.java)
@@ -289,7 +295,7 @@ abstract class ApplicationDirectory(
     server.start()
     if (!server.isStarted) throw IllegalStateException("Server failed to start")
     log.info("Jetty server started successfully and is ready to accept connections")
-    log.info("Server initialization completed successfully.")
+    log.debug("Server initialization completed successfully.")
     return server
   }
 

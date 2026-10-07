@@ -244,7 +244,7 @@ open class UnifiedHarness(
       override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
       override fun onTaskComplete(result: String, task: ISessionTask) {
-        log.info("Task completed successfully")
+        log.debug("Task completed successfully")
         task.resolveSystemFile("result.md")?.writeText(result)
         val usageManager =
           ServiceRouter as UsageInterface
@@ -408,27 +408,17 @@ open class UnifiedHarness(
 
     @JvmStatic
     fun configurePlatform(user: User) {
-      log.info("Configuring platform for user: {}", user, RuntimeException("Stack Trace"))
+      log.info("Configuring platform for user: {}", user, /*RuntimeException("Stack Trace")*/)
       PlanHarness.initDynamicEnums()
       CognotikPlatform.init()
       ServiceKey.AUTHENTICATION.factory = {
         object : AuthenticationInterface {
-          init {
-            log.info("AuthenticationManager initialized", RuntimeException("Stack Trace"))
-          }
-
           override fun getUser(accessToken: String?) = user
-          fun getAccessToken(user: User) = "test-token"
           override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-          fun logout(accessToken: String, user: User) {}
         }
       }
       ServiceKey.AUTHORIZATION_MANAGER.factory = {
         object : AuthorizationManager() {
-          init {
-            log.info("AuthorizationManager initialized with permissive local auth for desktop mode")
-          }
-
           override fun isAuthorized(
             applicationClass: Class<*>?,
             user: User?,

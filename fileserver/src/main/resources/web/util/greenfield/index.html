@@ -4,19 +4,30 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>Greenfield Implementer</title>
+    <meta name="color-scheme" content="light dark">
+    <!-- Central theme system (see /themes.md). Order matters: tokens, manifest, manager.
+         Loaded in <head> to avoid a flash of the wrong theme. -->
+    <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+    <script src="/themes.js"></script>
+    <script src="/modules/theme.js"></script>
     <style>
         :root {
-            --bg: #0f1115;
-            --panel: #171a21;
-            --panel-2: #1e222b;
-            --border: #2a2f3a;
-            --fg: #e6e9ef;
-            --muted: #9aa4b2;
-            --accent: #4f8cff;
-            --accent-2: #7c5cff;
-            --ok: #3ecf8e;
-            --warn: #f5a524;
-            --err: #f4636e;
+            /* Page-local names aliased onto the central --color-* theme tokens.
+               Fallbacks keep the page readable if themes.css fails to load. */
+            --bg: var(--color-canvas, #0f1115);
+            --panel: var(--color-surface, #171a21);
+            --panel-2: var(--color-surface-alt, #1e222b);
+            --border: var(--color-border, #2a2f3a);
+            --fg: var(--color-text, #e6e9ef);
+            --muted: var(--color-text-muted, #9aa4b2);
+            --accent: var(--color-brand, #4f8cff);
+            --accent-hover: var(--color-brand-hover, #3f76e0);
+            --accent-2: var(--color-accent, #7c5cff);
+            --ok: var(--color-success, #3ecf8e);
+            --warn: var(--color-warning, #f5a524);
+            --err: var(--color-danger, #f4636e);
+            --heading: var(--color-heading, var(--color-text, #fff));
+            --code-bg: var(--color-canvas, #0b0d12);
             --radius: 10px;
         }
 
@@ -151,11 +162,16 @@
         }
 
         button.primary {
-            background: linear-gradient(180deg, var(--accent), #3f76e0);
+            background: var(--accent);
             border-color: transparent;
             color: #fff;
             font-weight: 600;
         }
+        button.primary:hover:not(:disabled) {
+            background: var(--accent-hover);
+            border-color: transparent;
+        }
+
 
         button.warnish {
             border-color: var(--warn);
@@ -198,14 +214,14 @@
 
         .banner.error {
             border-color: var(--err);
-            color: #ffd7da;
-            background: #2a1417;
+            color: var(--fg);
+            background: color-mix(in srgb, var(--err) 14%, var(--panel-2));
         }
 
         .banner.warn {
             border-color: var(--warn);
-            color: #ffe6bf;
-            background: #2a2113;
+            color: var(--fg);
+            background: color-mix(in srgb, var(--warn) 14%, var(--panel-2));
         }
 
         .banner.info {
@@ -325,7 +341,7 @@
             overflow: auto;
             font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
             font-size: 12px;
-            background: #0b0d12;
+            background: var(--code-bg);
             border: 1px solid var(--border);
             border-radius: 8px;
             padding: .5rem .6rem;
@@ -385,7 +401,7 @@
         }
 
         .doc pre {
-            background: #0b0d12;
+            background: var(--code-bg);
             padding: .75rem;
             border-radius: 8px;
             overflow: auto;
@@ -419,7 +435,7 @@
 
         .view-toolbar button[aria-pressed="true"] {
             border-color: var(--accent);
-            color: #fff;
+            color: var(--heading);
         }
 
         /* file trees */
@@ -451,7 +467,7 @@
 
         .tree li button.tree-open[aria-current="true"] {
             border-color: var(--accent);
-            color: #fff;
+            color: var(--heading);
         }
 
         .tree li button.tree-del {
@@ -588,11 +604,11 @@
         }
 
         .card[data-status="done"] {
-            border-color: rgba(62, 207, 142, .45);
+            border-color: color-mix(in srgb, var(--ok) 45%, transparent);
         }
 
         .card[data-status="error"] {
-            border-color: rgba(244, 99, 110, .55);
+            border-color: color-mix(in srgb, var(--err) 55%, transparent);
         }
 
         /* readiness is advisory only — tasks stay runnable out of order */
@@ -642,7 +658,7 @@
         }
 
         .files code {
-            background: #0b0d12;
+            background: var(--code-bg);
             border: 1px solid var(--border);
             border-radius: 6px;
             padding: .1rem .35rem;
@@ -894,7 +910,7 @@
 </div>
 
 <!-- Local copy of marked — required for markdown rendering. Must load before the module. -->
-<script src="/lib/marked.min.js"></script>
+<script src="/app/marked.min.js"></script>
 <script type="module">
     import {runDocOp, waitForTask, createStatusPoller} from '/app/docops.js';
     import {readFile, writeFile, listFiles, deleteFile} from '/app/fileIO.js';

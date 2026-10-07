@@ -35,7 +35,7 @@ import java.util.concurrent.atomic.AtomicLong
  */
 open class AuthenticationDB : AuthenticationInterface {
   init {
-    log.info("AuthenticationManager initialized", RuntimeException("Stack Trace"))
+    log.info("AuthenticationManager initialized", /*RuntimeException("Stack Trace")*/)
   }
 
   /**
@@ -235,7 +235,7 @@ open class AuthenticationDB : AuthenticationInterface {
             )
           }
       }
-      .also { if (verbose) log.info("Listed {} active token(s) for user: {}", it.size, user) }
+      .also { if (verbose) log.debug("Listed {} active token(s) for user: {}", it.size, user) }
     } catch (e: Exception) {
       log.error("Failed to list tokens for user: {}: {}", user, e.message, e)
       emptyList()
@@ -358,7 +358,7 @@ open class AuthenticationDB : AuthenticationInterface {
       transaction(database) {
         AccessTokensTable.update({ AccessTokensTable.token eq accessToken }) {
           it[AccessTokensTable.lastUsedAt] = now
-          if (verbose) log.info("Flushed last_used_at for an access token")
+          if (verbose) log.debug("Flushed last_used_at for an access token")
         }
       }
     } catch (e: Exception) {

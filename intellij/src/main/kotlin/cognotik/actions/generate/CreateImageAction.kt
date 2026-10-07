@@ -186,7 +186,7 @@ class CreateImageAction : BaseAction() {
         val codeFiles = mutableSetOf<Path>()
         virtualFiles?.forEach { file ->
             if (file.isDirectory) {
-                getFiles(file.children, root)
+                codeFiles.addAll(getFiles(file.children, root))
             } else {
                 val relative = root.relativize(file.toNioPath())
                 codeFiles.add(relative)

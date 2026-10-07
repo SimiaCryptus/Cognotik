@@ -52,8 +52,6 @@ subprojects {
     }
     tasks.withType<org.jetbrains.kotlin.gradle.tasks.KotlinCompile> {
         compilerOptions {
-            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
-            freeCompilerArgs.set(listOf("-Xjsr305=strict"))
             javaParameters.set(true)
         }
     }
@@ -250,11 +248,6 @@ subprojects {
     tasks.withType<KotlinCompile>().configureEach {
         compilerOptions {
             freeCompilerArgs.add("-Xannotation-default-target=param-property")
-            if (quietKotlin) {
-                suppressWarnings.set(true)
-            } else {
-                freeCompilerArgs.addAll(suppressedKotlinWarnings.map { "-Xsuppress-warning=$it" })
-            }
         }
     }
 }

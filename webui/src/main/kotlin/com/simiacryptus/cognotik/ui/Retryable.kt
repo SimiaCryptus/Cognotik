@@ -1,9 +1,9 @@
 package com.simiacryptus.cognotik.ui
 
-import com.simiacryptus.cognotik.util.ImmediateExecutorService
-import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.platform.model.ISessionTask
+import com.simiacryptus.cognotik.util.oneAtATime
 import com.simiacryptus.cognotik.webui.session.SocketManager
+import java.util.concurrent.ExecutorService
 
 open class Retryable(
   task: ISessionTask,
@@ -48,7 +48,7 @@ open class Retryable(
   companion object {
     fun ((ISessionTask) -> Unit?).async(
       socketManager: SocketManager,
-      pool: ImmediateExecutorService = socketManager.pool
+      pool: ExecutorService = socketManager.pool
     ): (StringBuilder) -> String = {
       val task = socketManager.newTask(false)
       pool.submit {
@@ -58,7 +58,7 @@ open class Retryable(
     }
     fun ((ISessionTask) -> Unit?).async(
       socketManager: ISessionTask,
-      pool: ImmediateExecutorService = socketManager.pool
+      pool: ExecutorService = socketManager.pool
     ): (StringBuilder) -> String = {
       val task = socketManager.newTask(false)
       pool.submit {

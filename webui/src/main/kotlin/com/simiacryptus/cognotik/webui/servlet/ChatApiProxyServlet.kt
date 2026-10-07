@@ -2,8 +2,8 @@ package com.simiacryptus.cognotik.webui.servlet
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.registerKotlinModule
-import com.google.common.util.concurrent.MoreExecutors
 import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.service.UsageInterface
@@ -19,7 +19,6 @@ import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 /**
@@ -45,8 +44,10 @@ class ChatApiProxyServlet(
 
   private val log = LoggerFactory.getLogger(ChatApiProxyServlet::class.java)
   private val mapper = ObjectMapper().registerKotlinModule()
-  private val workPool = MoreExecutors.listeningDecorator(Executors.newCachedThreadPool())
-  private val scheduledPool = MoreExecutors.listeningDecorator(Executors.newScheduledThreadPool(2))
+  private val workPool = ThreadPoolManager.newCachedThreadPool(Session.NULL)
+
+  private val scheduledPool = ThreadPoolManager.newScheduledThreadPool(2, Session.NULL)
+
   private val usageManager = ServiceRouter as UsageInterface
 
   /**
@@ -512,9 +513,9 @@ class ChatApiProxyServlet(
     val key = apiKey.key ?: throw ApiKeyNotConfiguredException("API key is null for provider ${provider.name}")
     return try {
       provider.getChatClient(
-        key = key, workPool = workPool,
+        key = key, session = session,
+        workPool = workPool,
         scheduledPool = scheduledPool,
-        session = session,
       )
     } catch (e: ApiKeyNotConfiguredException) {
       throw e
@@ -632,7 +633,7 @@ class ChatApiProxyServlet(
       ?: throw AuthenticationException("Authentication failed for proxy models request")
     MDC.put("user", user.email)
     val userSettings = getUserSettings(user, false, null)
-    log.info("Retrieving chat models for provider(s) '{}'", providerLabel)
+    log.debug("Retrieving chat models for provider(s) '{}'", providerLabel)
     val models = mutableListOf<ChatModel>()
     val seenModelIds = mutableSetOf<String>()
     val failures = mutableListOf<Exception>()
@@ -750,7 +751,7 @@ class ChatApiProxyServlet(
           job.retrievedAt = System.currentTimeMillis()
         }
         val elapsed = System.currentTimeMillis() - startTime
-        log.info(
+        log.debug(
           "Poll for token={} returned COMPLETED in {}ms (job duration {}ms)",
           token, elapsed, (job.completedAt ?: 0L) - job.createdAt
         )
@@ -770,7 +771,7 @@ class ChatApiProxyServlet(
           job.retrievedAt = System.currentTimeMillis()
         }
         val elapsed = System.currentTimeMillis() - startTime
-        log.info("Poll for token={} returned FAILED in {}ms", token, elapsed)
+        log.debug("Poll for token={} returned FAILED in {}ms", token, elapsed)
       }
     }
     return false

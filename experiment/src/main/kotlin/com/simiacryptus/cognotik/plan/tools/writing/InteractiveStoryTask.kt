@@ -1101,7 +1101,7 @@ class InteractiveStoryTask(
         appendLine("> The complete interactive story map is available in the Story Map tab for play-through.")
       }
 
-      log.info("InteractiveStoryTask completed: words=$cumulativeWordCount, decisions=${structure.decision_points.size}, endings=${structure.endings.size}, time=${totalTime}ms")
+      log.debug("InteractiveStoryTask completed: words=$cumulativeWordCount, decisions=${structure.decision_points.size}, endings=${structure.endings.size}, time=${totalTime}ms")
 
       task.safeComplete(
         "Interactive story generation complete: $cumulativeWordCount words, ${structure.decision_points.size} decisions, ${structure.endings.size} endings in ${totalTime / 1000}s",

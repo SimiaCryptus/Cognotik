@@ -2,17 +2,17 @@ package com.simiacryptus.cognotik.platform.model
 
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.platform.service.StorageInterface
-import com.simiacryptus.cognotik.util.ImmediateExecutorService
 import java.awt.image.BufferedImage
 import java.io.BufferedOutputStream
 import java.io.File
+import java.util.concurrent.ExecutorService
 import java.util.function.Consumer
 
 interface ISessionTask {
   val messageID: String
   val placeholder: String
   val currentText: String
-  val pool: ImmediateExecutorService
+  val pool: ExecutorService
   val dataStorage: StorageInterface
   val sessionId: Session
 

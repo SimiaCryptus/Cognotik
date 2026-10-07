@@ -488,7 +488,7 @@ class HistoricalFigureDebateTask(
             val fullDebate = fullDebateBuilder.toString()
             val totalTime = System.currentTimeMillis() - startTime
             val avgRoundTime = if (roundTimes.isNotEmpty()) roundTimes.average() else 0.0
-            log.info("HistoricalFigureDebateTask completed: total_time=${totalTime}ms, rounds=$rounds, avg_round_time=${avgRoundTime}ms, output_size=${finalResult.length} chars (full: ${fullDebate.length} chars)")
+            log.debug("HistoricalFigureDebateTask completed: total_time=${totalTime}ms, rounds=$rounds, avg_round_time=${avgRoundTime}ms, output_size=${finalResult.length} chars (full: ${fullDebate.length} chars)")
 
             transcriptWriter?.apply {
                 write("---\n\n")

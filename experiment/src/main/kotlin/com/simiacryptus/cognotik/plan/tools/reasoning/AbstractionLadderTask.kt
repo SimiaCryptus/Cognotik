@@ -254,7 +254,7 @@ AbstractionLadder - Traverse abstraction levels to find patterns and design insi
       overviewTask.complete()
 
       val duration = System.currentTimeMillis() - startTime
-      log.info("Abstraction Ladder Analysis completed successfully - Concept: ${concept.truncateForDisplay(100)}, Levels: $levels")
+      log.debug("Abstraction Ladder Analysis completed successfully - Concept: ${concept.truncateForDisplay(100)}, Levels: $levels")
       detailedOutputFile?.close()
       task.safeComplete(
         "Abstraction ladder analysis complete for '${concept.truncateForDisplay(100)}' with $levels levels in $direction direction(s) (${duration}ms)",

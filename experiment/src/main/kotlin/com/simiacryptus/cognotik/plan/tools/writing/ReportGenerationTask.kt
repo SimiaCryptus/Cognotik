@@ -1154,7 +1154,7 @@ Provide the complete revised report.
             appendLine("> The full report is available in the Complete Report tab for detailed review.")
           }
 
-          log.info("ReportGenerationTask completed: words=$cumulativeWordCount, sections=${generatedSections.size}, time=${totalTime}ms")
+          log.debug("ReportGenerationTask completed: words=$cumulativeWordCount, sections=${generatedSections.size}, time=${totalTime}ms")
 
           transcript?.write("\n\n---\n\n# Final Result\n\n${finalResult}".toByteArray())
 

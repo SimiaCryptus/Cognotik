@@ -66,8 +66,7 @@ interface SessionMetadataInterface {
 
   /** `java.time` accessor for the session timestamp. */
   @Suppress("DEPRECATION")
-  fun getSessionTimestamp(user: User, session: Session): Instant? =
-    getSessionTimestamp(user, session)
+  fun getSessionTimestamp(user: User, session: Session): Instant?
 
   /** `java.time` mutator for the session timestamp. */
   @Suppress("DEPRECATION")
@@ -75,11 +74,11 @@ interface SessionMetadataInterface {
 
   /** Lists all session IDs associated with [path]. */
   @Suppress("DEPRECATION")
-  fun listSessionsByPath(user: User, path: String): List<String> = listSessionsByPath(user = user, path = path)
+  fun listSessionsByPath(user: User, path: String): List<String>
 
   /** Lists all session IDs associated with [user]. */
   @Suppress("DEPRECATION")
-  fun listSessionsForUser(user: User): List<String> = listSessionsForUser(user)
+  fun listSessionsForUser(user: User): List<String>
 
   /**
    * Sets or updates the owner ID for a session.
@@ -87,7 +86,7 @@ interface SessionMetadataInterface {
    * @param session The session object containing the session ID
    * @param ownerId The owner identifier to associate with the session, or null to clear it
    */
-  fun setSessionOwner(session: Session, user: User, ownerId: String? = user?.id)
+  fun setSessionOwner(session: Session, user: User)
 
   /** User-scoped overload, for signature consistency with the rest of the interface. */
   fun getSessionOwner(user: User, session: Session): String?
@@ -97,7 +96,7 @@ interface SessionMetadataInterface {
    *
    * @param ownerId the worker identifier (`ip:port`), or null to clear the assignment
    */
-  fun setSessionWorker(session: Session, user: User, ownerId: String? = user?.id)
+  fun setSessionWorker(session: Session, user: User)
 
   /** User-scoped overload of [getSessionWorker]. */
   fun getSessionWorker(user: User, session: Session): String?
@@ -178,8 +177,8 @@ interface SessionMetadataInterface {
     patch.name.ifSet { setSessionName(user, session, it ?: session.sessionId) }
     patch.messageIds.ifSet { setMessageIds(user, session, it) }
     patch.sessionTime.ifSet { if (it != null) setSessionTimestamp(user, session, it) }
-    patch.ownerId.ifSet { setSessionOwner(session = session, user = user, ownerId = it) }
-    patch.workerId.ifSet { setSessionWorker(session = session, user = user, ownerId = it) }
+    patch.ownerId.ifSet { setSessionOwner(session = session, user = user) }
+    patch.workerId.ifSet { setSessionWorker(session = session, user = user) }
     patch.path.ifSet { setSessionPath(user, session, it) }
   }
 
@@ -256,4 +255,37 @@ interface SessionMetadataInterface {
   /** Paged variant of [listSessionEntries]; default pages in memory. */
   fun listSessionEntries(user: User, path: String, page: Page): PageResult<SessionListEntry> =
     listSessionEntries(user = user, path = path).paginate(page)
+  /**
+   * Bulk-fetch listing entries for an explicit set of session IDs, without
+   * loading heavyweight fields such as message ids.
+   *
+   * @return a map keyed by session id; ids with no recorded metadata are omitted
+   */
+  fun getSessionEntries(user: User, sessionIds: Collection<String>): Map<String, SessionListEntry> =
+    getSessionMetadataMap(user, sessionIds).mapValues { it.value.toEntry() }
+  /**
+   * Filtered, sorted session listing.
+   *
+   * The default filters [listSessionEntries] in memory using [SessionQuery.matches];
+   * DB-backed implementations should push the filter and sort down.
+   */
+  fun querySessions(user: User, query: SessionQuery): List<SessionListEntry> {
+    val base = when {
+      query.sessionIds != null -> getSessionEntries(user, query.sessionIds).values.toList()
+      query.path != null -> listSessionEntries(user = user, path = query.path)
+      else -> listSessionEntries(user)
+    }
+    return base.filter { query.matches(it) }.sortedWith(query.sort.comparator)
+  }
+  /** Paged variant of [querySessions]; default pages in memory. */
+  fun querySessions(user: User, query: SessionQuery, page: Page): PageResult<SessionListEntry> =
+    querySessions(user, query).paginate(page)
+  /** Number of sessions matching [query]; DB-backed implementations should use a COUNT. */
+  fun countSessions(user: User, query: SessionQuery = SessionQuery()): Int =
+    querySessions(user, query).size
+  /** Distinct, sorted application paths that the user has sessions under. */
+  fun listSessionPaths(user: User): List<String> =
+    listSessionEntries(user).mapNotNull { it.path }.distinct().sorted()
+  /** Number of messages recorded for a session, without materialising the id list where possible. */
+  fun getMessageCount(user: User, session: Session): Int = getMessageIds(user, session).size
 }

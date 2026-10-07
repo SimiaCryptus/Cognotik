@@ -5,20 +5,17 @@ import com.fasterxml.jackson.annotation.JsonTypeInfo
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
-import com.simiacryptus.cognotik.platform.model.ChatModel.ReasoningLevel
+import com.simiacryptus.cognotik.exceptions.*
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.platform.model.LLMModel
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
+import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.ChatModel.ReasoningLevel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
+import java.io.IOException
 import java.net.URLEncoder
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
@@ -112,6 +109,7 @@ class AnthropicChatClient(
       afterId?.let { queryParams.add("after_id=${URLEncoder.encode(it, "UTF-8")}") }
       val queryString = if (queryParams.isNotEmpty()) "?${queryParams.joinToString("&")}" else ""
       val response = get("${apiBase}/models$queryString")
+      checkAnthropicError(response, null)
       checkError(response)
       log.debug("Anthropic models response: $response")
       val listResponse = JsonUtil.objectMapper().readValue(response, ListModelsResponse::class.java)
@@ -135,10 +133,10 @@ class AnthropicChatClient(
       val anthropicChatRequest = try {
         val chatMessages = chatRequest.messages
         require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
-        require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+        require(model.modelId.isNotBlank() == true) { "Model name cannot be blank" }
         val reasoningLevel = model.reasoningLevel
         val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
-        var temperature : Double? = if (model.supportsTemperature) chatRequest.temperature else null
+        var temperature: Double? = if (model.supportsTemperature) chatRequest.temperature else null
         val model = chatRequest.model ?: model.modelId
         val system = chatMessages
           .firstOrNull { it.role == ModelSchema.Role.system }
@@ -232,7 +230,7 @@ class AnthropicChatClient(
             }
           )
         }
-        if(thinking != null) temperature = 1.0
+        if (thinking != null) temperature = 1.0
         AnthropicChatRequest(
           model = model,
           system = system,
@@ -244,27 +242,18 @@ class AnthropicChatClient(
         )
       } catch (e: Exception) {
         log.error("Failed to map chat request to Anthropic format", e)
-        throw RuntimeException("Failed to map chat request to Anthropic format: ${e.message}", e)
+        // An invalid request will not succeed on retry
+        throw NonRetryableException("Failed to map chat request to Anthropic format: ${e.message}", e)
       }
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(anthropicChatRequest)
       val rawResponse =
-        post("${apiBase}/messages", json)
-      checkError(rawResponse)
+        post("${apiBase}/messages", json, model = model.modelId)
+      checkAnthropicError(rawResponse, model)
+      checkError(rawResponse, model)
       val responseJson = try {
         require(rawResponse.isNotBlank()) { "Response cannot be blank" }
         try {
-          val errorCheck = JsonUtil.objectMapper().readTree(rawResponse)
-          if (errorCheck.has("type") && errorCheck.get("type").asText() == "error") {
-            val errorMessage = if (errorCheck.has("message")) {
-              errorCheck.get("message").asText()
-            } else if (errorCheck.has("error") && errorCheck.get("error").has("message")) {
-              errorCheck.get("error").get("message").asText()
-            } else {
-              "Unknown error: $errorCheck"
-            }
-            throw RuntimeException("Anthropic API error: $errorMessage")
-          }
           val response = JsonUtil.objectMapper()
             .readValue(
               rawResponse,
@@ -285,10 +274,17 @@ class AnthropicChatClient(
             )
           )
           JsonUtil.toJson(chatResponse)
+        } catch (e: IOException) {
+          // Typed provider errors (AIServiceException etc.) and parser errors propagate unchanged
+          throw e
         } catch (e: Exception) {
           log.error("Failed to parse Anthropic response", e)
           throw RuntimeException("Error parsing Anthropic response", e)
         }
+      } catch (e: IOException) {
+        throw e
+      } catch (e: NonRetryableException) {
+        throw e
       } catch (e: Exception) {
         log.error("Failed to parse Anthropic response: $rawResponse", e)
         throw RuntimeException("Failed to parse Anthropic response: ${e.message}", e)
@@ -300,21 +296,57 @@ class AnthropicChatClient(
       if (response.usage != null) {
         usageHandler.onUsage(
           model, response.usage!!, ModelSchema.UsageData(
-          input_text = anthropicChatRequest.messages?.joinToString("\n\n") { msg ->
-            msg.content?.joinToString("\n") { part ->
-              when (part) {
-                is AnthropicTextContentBlock -> part.text ?: ""
-                is AnthropicImageContentBlock -> "[Image: ${part.source.type}]"
-                else -> ""
-              }
-            }.orEmpty()
-          }.orEmpty(),
-          output_text = response.choices.joinToString("\n\n") { it.message?.content.orEmpty() }
-        ))
+            input_text = anthropicChatRequest.messages?.joinToString("\n\n") { msg ->
+              msg.content?.joinToString("\n") { part ->
+                when (part) {
+                  is AnthropicTextContentBlock -> part.text
+                  is AnthropicImageContentBlock -> "[Image: ${part.source.type}]"
+                  else -> ""
+                }
+              }.orEmpty()
+            }.orEmpty(),
+            output_text = response.choices.joinToString("\n\n") { it.message?.content.orEmpty() }
+          ))
       }
       response
     }
   }
+
+  /**
+   * Maps Anthropic-native error bodies ({"type":"error","error":{"type":...,"message":...}})
+   * to Cognotik typed exceptions, since ErrorUtil.checkError only knows OpenAI-style messages.
+   * Returns normally if the body is not an Anthropic error.
+   */
+  private fun checkAnthropicError(body: String, model: LLMModel?) {
+    val node = try {
+      JsonUtil.objectMapper().readTree(body)
+    } catch (e: Exception) {
+      return // let checkError report invalid JSON
+    } ?: return
+    if (node.path("type").asText() != "error") return
+    val err = node.path("error")
+    val errType = err.path("type").asText("")
+    val message = err.path("message").asText(node.path("message").asText("Unknown Anthropic error"))
+    when (errType) {
+      "overloaded_error", "api_error" -> throw RequestOverloadException("Anthropic: $message")
+      "rate_limit_error" -> throw RateLimitException("anthropic", 0, 60)
+      "not_found_error" ->
+        if (message.contains("model", ignoreCase = true)) throw InvalidModelException(model?.modelId)
+
+      "invalid_request_error" -> {
+        Regex("""prompt is too long: (\d+) tokens > (\d+) maximum""").find(message)?.let { m ->
+          val prompt = m.groupValues[1].toInt()
+          val max = m.groupValues[2].toInt()
+          throw ModelMaxException(max, prompt, prompt, 0)
+        }
+        if (message.contains("credit balance", ignoreCase = true) ||
+          message.contains("billing", ignoreCase = true)
+        ) throw QuotaException()
+      }
+    }
+    throw IOException("Anthropic API error ($errType): $message")
+  }
+
 
   private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }

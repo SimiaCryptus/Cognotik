@@ -3,20 +3,17 @@ package com.simiacryptus.cognotik.chat
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
-import com.simiacryptus.cognotik.platform.model.ChatMessageModality
-import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.chat.model.QwenModels
+import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
-import com.simiacryptus.cognotik.platform.model.LLMModel
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
 import org.slf4j.LoggerFactory.getLogger
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
+import java.util.concurrent.CancellationException
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.ExecutorService
 
@@ -63,8 +60,10 @@ class QwenChatClient(
       val sanitizedRequest = if (model.supportsTemperature) chatRequest else chatRequest.copy(temperature = 0.0)
       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
         .writeValueAsString(sanitizedRequest)
-      val rawResponse = post("${apiBase}/chat/completions", json)
-      checkError(rawResponse)
+      // Pass the model so AI_ERROR metrics can be broken down per model.
+      val rawResponse = post("${apiBase}/chat/completions", json, model = model.modelId)
+      // post() only reports embedded errors; we must throw the typed exception here.
+      checkError(rawResponse, model)
       val response = JsonUtil.objectMapper().readValue(
         rawResponse,
         ModelSchema.ChatResponse::class.java
@@ -78,7 +77,7 @@ class QwenChatClient(
 
   private fun validateChatRequest(chatRequest: ModelSchema.ChatRequest, model: LLMModel) {
     require(chatRequest.messages.isNotEmpty()) { "Chat request must contain messages" }
-    require(model.modelId?.isNotBlank() == true) { "Model name cannot be blank" }
+    require(model.modelId.isNotBlank() == true) { "Model name cannot be blank" }
     require(chatRequest.model?.isNotBlank() == true) { "Chat request model must be specified" }
   }
 
@@ -107,8 +106,18 @@ class QwenChatClient(
           else -> null
         }
       }.ifEmpty { QwenModels.values.values.toList() }
+    } catch (e: InterruptedException) {
+      Thread.currentThread().interrupt()
+      throw e
+    } catch (e: CancellationException) {
+      throw e
+    } catch (e: VirtualMachineError) {
+      throw e
     } catch (e: Exception) {
-      log.warn("Failed to fetch Qwen models, falling back to static catalog: ${e.message}")
+      log.warn(
+        "Failed to fetch Qwen models (${ErrorUtil.errorType(e)}, fatal=${ErrorUtil.isFatal(e)}), " +
+            "falling back to static catalog: ${e.message}"
+      )
       QwenModels.values.values.toList()
     }
     modelsCache[apiBase] = models

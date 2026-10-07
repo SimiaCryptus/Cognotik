@@ -33,7 +33,10 @@ dependencies {
   testImplementation(project("$projectPrefix:kotlin"))
   compileOnly(project("$projectPrefix:groovy"))
   implementation(project("$projectPrefix:groovy"))
-//    testImplementation(project(":Cognotik:scala"))
+
+//  import graphql.GraphQL
+  implementation(libs.graphql.java)
+
   implementation(libs.pty4j)
   implementation(libs.webdrivermanager)
   implementation(libs.pdfbox)

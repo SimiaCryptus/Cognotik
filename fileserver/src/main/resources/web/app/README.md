@@ -1,8 +1,7 @@
 # Cognotik Shared Web Modules (`/app/`)
 
-This directory contains the shared front-end utility modules used by the Cognotik web apps (Resume Customizer, Goal
-Planner, Presentation Creator, …). Each module is a self-contained ES module with named exports plus a convenience
-namespace export.
+This directory contains the shared front-end utility modules used by the Cognotik web apps 
+Each module is a self-contained ES module with named exports plus a convenience namespace export.
 
 > **These assets are served from the host-absolute path `/app/`.** Import them as
 > `/app/<module>.js` — *not* as `./utils/<module>.js`. If your deployment is **not** mounted at the
@@ -19,6 +18,7 @@ namespace export.
 | `fileIO.js` | `FileIOUtils`    | Read, write, delete, and list session files                     |
 | `menu.js`   | `MenuUtils`      | Common application menubar: nav, IDE link, git, sessions, usage |
 | `models.js` | `ModelUtils`     | Load and manage AI model/provider selections                    |
+| `theme.js`  | `ThemeUtils`     | Bridge to the central theme system (palette + light/dark mode)  |
 
 Other files exist in this directory (`ui.js`, `session.js`, `marked.min.js`, …). They are used internally by the modules
 above or loaded directly by apps, and are out of scope for this document.
@@ -74,6 +74,12 @@ Object shapes (`Config`, `Models`, `Task`, `StatusData`, `FileEntry`, …) are d
     <meta charset="utf-8">
     <!-- Optional: only needed if the server is NOT mounted at the host root -->
     <!-- <meta name="cognotik-server-base" content="/cognotik"> -->
+     <meta name="color-scheme" content="light dark">
+     <!-- Central theme system: load in <head> to avoid a flash of the wrong theme.
+          menu.js loads these on demand if omitted. -->
+     <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+     <script src="/themes.js"></script>
+     <script src="/modules/theme.js"></script>
 </head>
 <body>
 <!-- Local copy of marked — required by /app/ui.js renderMarkdown() -->
@@ -100,6 +106,21 @@ DocOpsUtils.runDocOp(sessionId, opPath, targetPath);
 `ui.js` calls the global `marked` object for markdown rendering. **Do not load `marked` from a CDN** — a vendored copy
 lives at `/app/marked.min.js`. Include it with a classic `<script>` tag **before** your module script so the global is
 defined by the time modules run. This keeps the app functional offline and avoids CDN/CSP issues.
+### Theming
+The shared modules use the central Cognotik theme system (see `themes.md`). Everything rendered by `menu.js` is styled
+with the `--color-*` tokens from `/themes.css` (with the previous dark colours as fallbacks), and dark-only tweaks key
+on `html[data-scheme="dark"]`. The menubar adds a 🎨 **Appearance** panel with palette and mode selectors bound to
+`ThemeManager`. It also follows theme changes made in other windows or iframes.
+If the page did not include the theme assets, `initMenu()` loads them itself (`autoLoadTheme: true`). The paths are
+resolved through `serverUrl()`. To use the theme system without the menubar:
+```js
+import {ensureTheme, syncThemeAcrossWindows, isDarkScheme} from '/app/theme.js';
+const tm = await ensureTheme();     // ThemeManager, or null if unavailable (never rejects)
+syncThemeAcrossWindows();           // returns an unsubscribe function
+isDarkScheme();                     // true when <html data-scheme="dark">
+```
+Your own app CSS should also use `var(--color-*)` tokens rather than hard-coded colours.
+
 
 ### Deploying behind a path prefix
 
@@ -570,13 +591,18 @@ const menu = initMenu({appName: 'Resume Customizer'});
 | `sessionIds`       | `Array \| Function`     | `null`             | Extra session IDs folded into usage totals      |
 | `extraLinks`       | `Array`                 | `[]`               | `[{ href, label, target }]` appended to the nav |
 | `sessionsEndpoint` | `string`                | auto-probed        | Endpoint returning the list of sessions         |
+| `showAppearance`   | `boolean`               | `true`             | Show the palette / light-dark selector panel    |
+| `autoLoadTheme`    | `boolean`               | `true`             | Load the theme assets if the page did not       |
+| `syncThemeAcrossWindows` | `boolean`         | `true`             | Follow theme changes from other windows/iframes |
+| `themeStylesheetHref` / `themeManifestSrc` / `themeManagerSrc` | `string` | `/themes.css`, `/themes.js`, `/modules/theme.js` | Theme asset locations |
 
 Returns a controller:
 
 ```js
-menu.open('usage');       // 'git' | 'sessions' | 'usage'
+menu.open('usage');       // 'git' | 'sessions' | 'usage' | 'models' | 'appearance'
 menu.close();
 await menu.refresh();     // refreshGit() + refreshSessions() + refreshUsage()
+await menu.themeReady();  // ThemeManager (or null) once the theme system is loaded
 menu.context;             // { view, appId, sessionId, appRoot, basePath, pathname }
 menu.destroy();           // remove the bar and its listeners
 ```

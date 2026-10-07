@@ -91,14 +91,16 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInte
                         log.error("Error in scrubHtml", e)
                     }
                 }
-                if ((document.body()?.html()?.length ?: 0) > maxLength) return document.body()?.html()
-                    ?.substring(0, maxLength) ?: ""
+                document.body().html().let { html ->
+                    if (html.length > maxLength) return html.substring(0, maxLength)
+                }
                 select("script, style, link, meta, iframe, noscript").remove()
 
                 outputSettings().prettyPrint(false)
 
-                if ((document.body()?.html()?.length ?: 0) > maxLength) return document.body()?.html()
-                    ?.substring(0, maxLength) ?: ""
+                document.body().html().let { html ->
+                    if (html.length > maxLength) return html.substring(0, maxLength)
+                }
 
                 qTry { select("*").forEach { it.childNodes().removeAll { node -> node.nodeName() == "#comment" } } }
                 if (document.body().html().length > maxLength) return@apply
@@ -140,8 +142,10 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInte
 
                 qTry {
                     select("[href],[src]").forEach { element ->
-                        element.attr("href").let { href -> element.attr("href", href.makeAbsolute()) }
-                        element.attr("src").let { src -> element.attr("src", src.makeAbsolute()) }
+                        element.attr("href").takeIf { it.isNotBlank() }
+                            ?.let { href -> element.attr("href", href.makeAbsolute()) }
+                        element.attr("src").takeIf { it.isNotBlank() }
+                            ?.let { src -> element.attr("src", src.makeAbsolute()) }
                     }
                 }
                 if (document.body().html().length > maxLength) return@apply
@@ -192,13 +196,11 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInte
             }
         }
 
-        fun hasClipboard() = Toolkit.getDefaultToolkit().systemClipboard.getContents(null)?.let { contents ->
-            return when {
-                contents.isDataFlavorSupported(stringFlavor) -> true
-                contents.isDataFlavorSupported(getTextPlainUnicodeFlavor()) -> true
-                else -> false
-            }
-        } ?: false
+        fun hasClipboard(): Boolean {
+            val contents = Toolkit.getDefaultToolkit().systemClipboard.getContents(null) ?: return false
+            return contents.isDataFlavorSupported(stringFlavor) ||
+                    contents.isDataFlavorSupported(getTextPlainUnicodeFlavor())
+        }
 
         fun converter(chatModel: ChatInterface, temp: Double) = ProxyAgent(
             clazz = VirtualAPI::class.java,

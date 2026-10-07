@@ -266,7 +266,7 @@ class EntropyReductionTreeTask(
           transcript?.write("## Entropy Reduction Tree Results\n\n".toByteArray())
           transcript?.write("<details><summary>Generated JSON</summary>\n\n```json\n$jsonString\n```\n</details>\n\n".toByteArray())
           transcript?.write("</div>\n\n".toByteArray())
-          log.info("EntropyReductionTreeTask completed successfully.")
+          log.debug("EntropyReductionTreeTask completed successfully.")
           resultFn(buildString {
             appendLine("## Entropy Reduction Tree Generated")
             appendLine("* Analysis Fields: ${analysisFields.joinToString(", ") { "`$it`" }}")

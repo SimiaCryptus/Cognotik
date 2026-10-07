@@ -3,8 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="color-scheme" content="light dark">
     <link href="/favicon.svg" rel="icon"/>
     <title>Register — Cognotik</title>
+    <!-- Central theme system: tokens, manifest, then manager (order matters) -->
+    <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+    <script src="/themes.js"></script>
+    <script src="/modules/theme.js"></script>
     <style>
         /* ===== Reset & Base ===== */
         *, *::before, *::after { box-sizing: border-box; }
@@ -17,8 +22,11 @@
             align-items: center;
             min-height: 100vh;
             margin: 0;
-            background: linear-gradient(135deg, #f4f6f9 0%, #e8edf5 50%, #dce3ed 100%);
-            color: #333;
+            background: linear-gradient(135deg,
+                var(--color-canvas) 0%,
+                color-mix(in srgb, var(--color-canvas) 94%, var(--color-brand)) 60%,
+                color-mix(in srgb, var(--color-canvas) 88%, var(--color-brand)) 100%);
+            color: var(--color-text);
             line-height: 1.6;
             position: relative;
             overflow: hidden;
@@ -35,17 +43,19 @@
         body::before {
             width: 600px;
             height: 600px;
-            background: #8e44ad;
+            background: var(--color-accent);
             top: -200px;
             left: -150px;
         }
         body::after {
             width: 500px;
             height: 500px;
-            background: #3498db;
+            background: var(--color-brand);
             bottom: -180px;
             right: -120px;
         }
+        html[data-scheme="dark"] body::before,
+        html[data-scheme="dark"] body::after { opacity: 0.04; }
 
         /* ===== Logo Area ===== */
         .brand {
@@ -64,17 +74,17 @@
         .brand img {
             width: 48px;
             height: 48px;
-            filter: drop-shadow(0 2px 8px rgba(52,152,219,0.25));
+            filter: drop-shadow(0 2px 8px color-mix(in srgb, var(--color-brand) 25%, transparent));
         }
         .brand-name {
             font-size: 1.8em;
             font-weight: 700;
-            color: #2c3e50;
+            color: var(--color-heading);
             letter-spacing: -0.5px;
         }
         .brand-tagline {
             font-size: 0.92em;
-            color: #7f8c8d;
+            color: var(--color-text-muted);
             margin: 0;
         }
 
@@ -82,12 +92,12 @@
         .login-container {
             position: relative;
             z-index: 1;
-            background: rgba(255, 255, 255, 0.97);
+            background: color-mix(in srgb, var(--color-surface) 97%, transparent);
             backdrop-filter: blur(12px);
             padding: 36px 32px 28px;
             border-radius: 16px;
             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 2px 8px rgba(0, 0, 0, 0.04);
-            border: 1px solid rgba(255,255,255,0.6);
+            border: 1px solid var(--color-border);
             width: 100%;
             max-width: 440px;
             transition: transform 0.3s ease, box-shadow 0.3s ease;
@@ -96,17 +106,23 @@
             transform: translateY(-2px);
             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.12), 0 4px 12px rgba(0, 0, 0, 0.06);
         }
+        html[data-scheme="dark"] .login-container {
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+        html[data-scheme="dark"] .login-container:hover {
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
+        }
 
         h2 {
             text-align: center;
-            color: #2c3e50;
+            color: var(--color-heading);
             margin: 0 0 6px;
             font-size: 1.5em;
             font-weight: 700;
         }
         .subtitle {
             text-align: center;
-            color: #95a5a6;
+            color: var(--color-text-muted);
             font-size: 0.9em;
             margin: 0 0 24px;
         }
@@ -117,7 +133,7 @@
         label {
             display: block;
             margin-bottom: 6px;
-            color: #444;
+            color: var(--color-text);
             font-weight: 600;
             font-size: 0.9em;
         }
@@ -126,33 +142,34 @@
         input[type="password"] {
             width: 100%;
             padding: 11px 14px;
-            border: 1.5px solid #dde1e7;
+            border: 1.5px solid var(--color-border-strong);
             border-radius: 8px;
             font-size: 0.98em;
             font-family: inherit;
             box-sizing: border-box;
-            transition: border-color 0.2s ease, box-shadow 0.2s ease;
-            background: #fafbfc;
-            color: #333;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease, background 0.2s ease;
+            background: var(--color-surface-alt);
+            color: var(--color-text);
         }
         input[type="text"]:focus,
         input[type="password"]:focus {
             outline: none;
-            border-color: #3498db;
-            box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.15);
-            background: #fff;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 15%, transparent);
+            background: var(--color-surface);
         }
         input[type="text"]::placeholder,
         input[type="password"]::placeholder {
-            color: #b0b8c1;
+            color: var(--color-text-muted);
+            opacity: 0.7;
         }
 
         /* ===== Button ===== */
         button[type="submit"] {
             width: 100%;
             padding: 12px;
-            background: linear-gradient(135deg, #8e44ad 0%, #7d3c98 100%);
-            color: white;
+            background: var(--color-brand);
+            color: #fff;
             border: none;
             border-radius: 8px;
             font-size: 1em;
@@ -160,33 +177,33 @@
             font-family: inherit;
             cursor: pointer;
             transition: background 0.2s ease, transform 0.15s ease, box-shadow 0.2s ease;
-            box-shadow: 0 4px 12px rgba(142, 68, 173, 0.25);
+            box-shadow: 0 4px 12px color-mix(in srgb, var(--color-brand) 25%, transparent);
             margin-top: 4px;
         }
         button[type="submit"]:hover {
-            background: linear-gradient(135deg, #7d3c98 0%, #6c3483 100%);
+            background: var(--color-brand-hover);
             transform: translateY(-2px);
-            box-shadow: 0 6px 20px rgba(142, 68, 173, 0.35);
+            box-shadow: 0 6px 20px color-mix(in srgb, var(--color-brand) 35%, transparent);
         }
         button[type="submit"]:active {
             transform: translateY(0);
-            box-shadow: 0 2px 8px rgba(142, 68, 173, 0.2);
+            box-shadow: 0 2px 8px color-mix(in srgb, var(--color-brand) 20%, transparent);
         }
         button[type="submit"]:focus {
             outline: none;
-            box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.4);
+            box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 40%, transparent);
         }
 
         /* ===== Error ===== */
         .error {
-            color: #c0392b;
-            background: linear-gradient(135deg, #fdf2f2 0%, #fce8e8 100%);
+            color: var(--color-danger);
+            background: color-mix(in srgb, var(--color-danger) 10%, var(--color-surface));
             padding: 12px 16px;
             border-radius: 8px;
             margin-bottom: 16px;
             text-align: center;
             font-size: 0.9em;
-            border: 1px solid #f5c6cb;
+            border: 1px solid color-mix(in srgb, var(--color-danger) 35%, transparent);
             font-weight: 500;
         }
 
@@ -200,7 +217,7 @@
         .strength-meter {
             height: 5px;
             border-radius: 3px;
-            background: #e9ecef;
+            background: var(--color-border);
             margin-top: 8px;
             overflow: hidden;
         }
@@ -210,27 +227,26 @@
             transition: width 0.35s ease, background-color 0.35s ease;
             width: 0%;
         }
-        .strength-weak { color: #e74c3c; }
-        .strength-fair { color: #f39c12; }
-        .strength-good { color: #27ae60; }
-        .strength-strong { color: #3498db; }
+        .strength-weak { color: var(--color-danger); }
+        .strength-fair { color: var(--color-warning); }
+        .strength-good { color: var(--color-success); }
+        .strength-strong { color: var(--color-brand); }
 
         /* ===== Links ===== */
         .links {
             text-align: center;
             margin-top: 18px;
             padding-top: 16px;
-            border-top: 1px solid #eef0f3;
+            border-top: 1px solid var(--color-border);
         }
         .links a {
-            color: #8e44ad;
+            color: var(--color-link);
             text-decoration: none;
             font-size: 0.92em;
             font-weight: 500;
             transition: color 0.2s ease;
         }
         .links a:hover {
-            color: #6c3483;
             text-decoration: underline;
         }
 
@@ -248,7 +264,7 @@
             align-items: center;
             gap: 6px;
             font-size: 0.82em;
-            color: #7f8c8d;
+            color: var(--color-text-muted);
         }
         .feature-icon {
             font-size: 1.1em;
@@ -259,7 +275,7 @@
             margin-top: 24px;
             text-align: center;
             font-size: 0.78em;
-            color: #95a5a6;
+            color: var(--color-text-muted);
             z-index: 1;
         }
         .footer-content {
@@ -273,190 +289,49 @@
             height: 16px;
             opacity: 0.5;
         }
-         /* ===== Theme Selector ===== */
-         .theme-selector-container {
-             position: fixed;
-             top: 16px;
-             right: 16px;
-             z-index: 10;
-             display: flex;
-             align-items: center;
-             gap: 8px;
-             background: rgba(255, 255, 255, 0.85);
-             backdrop-filter: blur(8px);
-             padding: 6px 10px;
-             border-radius: 8px;
-             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-             border: 1px solid rgba(255, 255, 255, 0.6);
-         }
-         .theme-selector-container label {
-             margin: 0;
-             font-size: 0.78em;
-             color: #7f8c8d;
-             font-weight: 600;
-         }
-         #theme-selector {
-             padding: 4px 8px;
-             border: 1px solid #dde1e7;
-             border-radius: 6px;
-             font-size: 0.85em;
-             font-family: inherit;
-             background: #fff;
-             color: #333;
-             cursor: pointer;
-         }
-         #theme-selector:focus {
-             outline: none;
-             border-color: #8e44ad;
-             box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.2);
-         }
-         /* ===== Dark Mode (explicit data-theme="dark") ===== */
-         [data-theme="dark"] body {
-             background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] body::before { opacity: 0.04; }
-         [data-theme="dark"] body::after { opacity: 0.04; }
-         [data-theme="dark"] .brand-name { color: #e0e0e0; }
-         [data-theme="dark"] .brand-tagline { color: #777; }
-         [data-theme="dark"] .login-container {
-             background: rgba(30, 34, 46, 0.95);
-             border-color: rgba(255,255,255,0.06);
-             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-         }
-         [data-theme="dark"] .login-container:hover {
-             box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
-         }
-         [data-theme="dark"] h2 { color: #e0e0e0; }
-         [data-theme="dark"] .subtitle { color: #666; }
-         [data-theme="dark"] label { color: #ccc; }
-         [data-theme="dark"] input[type="text"],
-         [data-theme="dark"] input[type="password"] {
-             background: #2a2e3a;
-             border-color: #3a3f4c;
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] input[type="text"]:focus,
-         [data-theme="dark"] input[type="password"]:focus {
-             border-color: #8e44ad;
-             background: #2e3340;
-             box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2);
-         }
-         [data-theme="dark"] input[type="text"]::placeholder,
-         [data-theme="dark"] input[type="password"]::placeholder {
-             color: #555;
-         }
-         [data-theme="dark"] .error {
-             background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
-             color: #e74c3c;
-             border-color: #5a2a2a;
-         }
-         [data-theme="dark"] .strength-meter { background: #333; }
-         [data-theme="dark"] .links { border-top-color: #2a2e3a; }
-         [data-theme="dark"] .links a { color: #bb8fce; }
-         [data-theme="dark"] .links a:hover { color: #d2b4de; }
-         [data-theme="dark"] .feature-item { color: #666; }
-         [data-theme="dark"] .footer { color: #555; }
-         [data-theme="dark"] .footer img { opacity: 0.3; }
-         [data-theme="dark"] button[type="submit"] {
-             box-shadow: 0 4px 12px rgba(142, 68, 173, 0.15);
-         }
-         [data-theme="dark"] button[type="submit"]:hover {
-             box-shadow: 0 6px 20px rgba(142, 68, 173, 0.25);
-         }
-         [data-theme="dark"] .theme-selector-container {
-             background: rgba(30, 34, 46, 0.85);
-             border-color: rgba(255, 255, 255, 0.06);
-             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-         }
-         [data-theme="dark"] .theme-selector-container label { color: #888; }
-         [data-theme="dark"] #theme-selector {
-             background: #2a2e3a;
-             border-color: #3a3f4c;
-             color: #e0e0e0;
-         }
-         [data-theme="dark"] #theme-selector:focus {
-             border-color: #8e44ad;
-             box-shadow: 0 0 0 2px rgba(142, 68, 173, 0.3);
-         }
+        html[data-scheme="dark"] .footer img { opacity: 0.3; }
 
-         /* ===== Dark Mode (auto via prefers-color-scheme when no explicit theme set) ===== */
-        @media (prefers-color-scheme: dark) {
-             :root:not([data-theme="light"]) body {
-                background: linear-gradient(135deg, #0d1117 0%, #161b22 50%, #1a2030 100%);
-                color: #e0e0e0;
-            }
-             :root:not([data-theme="light"]) body::before { opacity: 0.04; }
-             :root:not([data-theme="light"]) body::after { opacity: 0.04; }
-
-             :root:not([data-theme="light"]) .brand-name { color: #e0e0e0; }
-             :root:not([data-theme="light"]) .brand-tagline { color: #777; }
-
-             :root:not([data-theme="light"]) .login-container {
-                background: rgba(30, 34, 46, 0.95);
-                border-color: rgba(255,255,255,0.06);
-                box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3), 0 2px 8px rgba(0, 0, 0, 0.2);
-            }
-             :root:not([data-theme="light"]) .login-container:hover {
-                box-shadow: 0 12px 40px rgba(0, 0, 0, 0.4), 0 4px 12px rgba(0, 0, 0, 0.25);
-            }
-
-             :root:not([data-theme="light"]) h2 { color: #e0e0e0; }
-             :root:not([data-theme="light"]) .subtitle { color: #666; }
-
-             :root:not([data-theme="light"]) label { color: #ccc; }
-
-             :root:not([data-theme="light"]) input[type="text"],
-             :root:not([data-theme="light"]) input[type="password"] {
-                background: #2a2e3a;
-                border-color: #3a3f4c;
-                color: #e0e0e0;
-            }
-             :root:not([data-theme="light"]) input[type="text"]:focus,
-             :root:not([data-theme="light"]) input[type="password"]:focus {
-                border-color: #8e44ad;
-                background: #2e3340;
-                box-shadow: 0 0 0 3px rgba(142, 68, 173, 0.2);
-            }
-             :root:not([data-theme="light"]) input[type="text"]::placeholder,
-             :root:not([data-theme="light"]) input[type="password"]::placeholder {
-                color: #555;
-            }
-
-             :root:not([data-theme="light"]) .error {
-                background: linear-gradient(135deg, #2d1a1a 0%, #331e1e 100%);
-                color: #e74c3c;
-                border-color: #5a2a2a;
-            }
-
-             :root:not([data-theme="light"]) .strength-meter { background: #333; }
-
-             :root:not([data-theme="light"]) .links { border-top-color: #2a2e3a; }
-             :root:not([data-theme="light"]) .links a { color: #bb8fce; }
-             :root:not([data-theme="light"]) .links a:hover { color: #d2b4de; }
-
-             :root:not([data-theme="light"]) .feature-item { color: #666; }
-
-             :root:not([data-theme="light"]) .footer { color: #555; }
-             :root:not([data-theme="light"]) .footer img { opacity: 0.3; }
-
-             :root:not([data-theme="light"]) button[type="submit"] {
-                box-shadow: 0 4px 12px rgba(142, 68, 173, 0.15);
-            }
-             :root:not([data-theme="light"]) button[type="submit"]:hover {
-                box-shadow: 0 6px 20px rgba(142, 68, 173, 0.25);
-            }
-             :root:not([data-theme="light"]) .theme-selector-container {
-                 background: rgba(30, 34, 46, 0.85);
-                 border-color: rgba(255, 255, 255, 0.06);
-             }
-             :root:not([data-theme="light"]) .theme-selector-container label { color: #888; }
-             :root:not([data-theme="light"]) #theme-selector {
-                 background: #2a2e3a;
-                 border-color: #3a3f4c;
-                 color: #e0e0e0;
-             }
+        /* ===== Theme Selector ===== */
+        .theme-selector-container {
+            position: fixed;
+            top: 16px;
+            right: 16px;
+            z-index: 10;
+            display: flex;
+            align-items: center;
+            flex-wrap: wrap;
+            justify-content: flex-end;
+            gap: 8px;
+            background: color-mix(in srgb, var(--color-surface) 85%, transparent);
+            backdrop-filter: blur(8px);
+            padding: 6px 10px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            border: 1px solid var(--color-border);
         }
+        html[data-scheme="dark"] .theme-selector-container { box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3); }
+        .theme-selector-container label {
+            margin: 0;
+            font-size: 0.78em;
+            color: var(--color-text-muted);
+            font-weight: 600;
+        }
+        .theme-selector-container select {
+            padding: 4px 8px;
+            border: 1px solid var(--color-border-strong);
+            border-radius: 6px;
+            font-size: 0.85em;
+            font-family: inherit;
+            background: var(--color-surface);
+            color: var(--color-text);
+            cursor: pointer;
+        }
+        .theme-selector-container select:focus {
+            outline: none;
+            border-color: var(--color-brand);
+            box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand) 25%, transparent);
+        }
+        .theme-selector-container select:disabled { opacity: 0.6; cursor: not-allowed; }
 
         /* ===== Responsive ===== */
         @media (max-width: 480px) {
@@ -465,12 +340,12 @@
             .brand img { width: 40px; height: 40px; }
             .brand-name { font-size: 1.5em; }
             .features { flex-direction: column; align-items: center; gap: 8px; }
-             .theme-selector-container {
-                 top: 8px;
-                 right: 8px;
-                 padding: 4px 8px;
-             }
-             .theme-selector-container label { display: none; }
+            .theme-selector-container {
+                top: 8px;
+                right: 8px;
+                padding: 4px 8px;
+            }
+            .theme-selector-container label { display: none; }
         }
 
         /* ===== Animations ===== */
@@ -485,14 +360,16 @@
     </style>
 </head>
 <body>
-     <div class="theme-selector-container">
-         <label for="theme-selector">Theme:</label>
-         <select id="theme-selector" aria-label="Select theme">
-             <option value="auto">Auto</option>
-             <option value="light">Light</option>
-             <option value="dark">Dark</option>
-         </select>
-     </div>
+    <div class="theme-selector-container">
+        <label for="palette-selector" id="palette-selector-label">Palette:</label>
+        <select id="palette-selector" aria-label="Select color palette"></select>
+        <label for="theme-selector">Theme:</label>
+        <select id="theme-selector" aria-label="Select theme">
+            <option value="auto">Auto</option>
+            <option value="light">Light</option>
+            <option value="dark">Dark</option>
+        </select>
+    </div>
     <div class="brand">
         <div class="brand-logo-row">
             <img alt="Cognotik Logo" src="/logo.svg">
@@ -553,6 +430,35 @@
     </div>
 
     <script>
+        // Bind the page's selectors to the central ThemeManager.
+        (function() {
+            document.addEventListener('DOMContentLoaded', function() {
+                var paletteSel = document.getElementById('palette-selector');
+                var paletteLbl = document.getElementById('palette-selector-label');
+                var modeSel = document.getElementById('theme-selector');
+                if (!window.ThemeManager) {
+                    // Theme scripts unavailable: hide the (non-functional) controls.
+                    var box = document.querySelector('.theme-selector-container');
+                    if (box) box.style.display = 'none';
+                    return;
+                }
+                if (ThemeManager.getManifest && ThemeManager.getManifest()) {
+                    ThemeManager.bindPaletteSelector(paletteSel);
+                } else {
+                    if (paletteSel) paletteSel.style.display = 'none';
+                    if (paletteLbl) paletteLbl.style.display = 'none';
+                }
+                ThemeManager.bindSelector(modeSel);
+            });
+            // Follow theme changes made in other tabs/windows while this page is open.
+            window.addEventListener('storage', function(e) {
+                if (!window.ThemeManager || !e.newValue) return;
+                if (e.key === ThemeManager.PALETTE_STORAGE_KEY) ThemeManager.setPalette(e.newValue);
+                if (e.key === ThemeManager.STORAGE_KEY) ThemeManager.setTheme(e.newValue);
+            });
+        })();
+    </script>
+    <script>
     (function() {
       var pw = document.getElementById('password');
       var cpw = document.getElementById('confirmPassword');
@@ -574,12 +480,17 @@
       }
       function update() {
         var r = evaluateStrength(pw.value);
-        if (!pw.value) { strengthEl.textContent = ''; meterFill.style.width = '0%'; meterFill.style.backgroundColor = '#eee'; }
+        if (!pw.value) { strengthEl.textContent = ''; meterFill.style.width = '0%'; meterFill.style.backgroundColor = 'transparent'; }
         else {
           var pct = Math.min(100, (r.score / 5) * 100);
-          var colors = { 'strength-weak': '#e74c3c', 'strength-fair': '#f39c12', 'strength-good': '#27ae60', 'strength-strong': '#3498db' };
+          var colors = {
+            'strength-weak': 'var(--color-danger, #e74c3c)',
+            'strength-fair': 'var(--color-warning, #f39c12)',
+            'strength-good': 'var(--color-success, #27ae60)',
+            'strength-strong': 'var(--color-brand, #3498db)'
+          };
           meterFill.style.width = pct + '%';
-          meterFill.style.backgroundColor = colors[r.cls] || '#eee';
+          meterFill.style.backgroundColor = colors[r.cls] || 'transparent';
           var tip = r.tips.length > 0 ? ' \u2014 ' + r.tips.slice(0, 2).join(', ') : '';
           strengthEl.innerHTML = '<span class="' + r.cls + '">' + r.label + tip + '</span>';
         }

@@ -12,12 +12,12 @@ import java.util.concurrent.ExecutorService
 class ModelsLabProvider : APIProvider("ModelsLab", "https://modelslab.com/api/v6") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = ModelsLabChatClient(
     apiKey = key,
     apiBase = base,
@@ -25,6 +25,6 @@ class ModelsLabProvider : APIProvider("ModelsLab", "https://modelslab.com/api/v6
     logLevel = logLevel,
     logStreams = logStreams,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 }

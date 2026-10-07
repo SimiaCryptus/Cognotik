@@ -3,6 +3,7 @@ package cognotik.actions.git
 
 import com.intellij.openapi.actionSystem.AnAction
 import com.intellij.openapi.actionSystem.AnActionEvent
+import com.intellij.openapi.actionSystem.ActionUpdateThread
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.vcs.VcsDataKeys
 import com.intellij.openapi.vcs.changes.ChangeListManager
@@ -10,10 +11,11 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
+import com.simiacryptus.cognotik.util.UITools
 import com.simiacryptus.cognotik.webui.application.AppInfoData
 import com.simiacryptus.cognotik.webui.application.ApplicationServer
 import java.text.SimpleDateFormat
@@ -36,7 +38,7 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
                 openChatWithDiff(e, diffInfo)
             } catch (e: Throwable) {
                 log.error("Error comparing changes", e)
-                JOptionPane.showMessageDialog(null, e.message, "Error", JOptionPane.ERROR_MESSAGE)
+                UITools.showError(project, e.message ?: "Error comparing changes")
             }
         }.start()
     }
@@ -50,7 +52,7 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
             filename = "working_copy_changes.diff",
             model = AppSettingsState.instance.smartChatClient,
             fastModel = AppSettingsState.instance.fastChatClient,
-            storage = ServiceMap[ServiceKey.DATA_STORAGE]
+            storage = ServiceKey.DATA_STORAGE.get()
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",
@@ -127,8 +129,13 @@ class ChatWithWorkingCopyDiffAction : AnAction() {
         return diff.toString()
     }
 
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
     override fun update(e: AnActionEvent) {
-        val project = e.project ?: return
+        if (e.project == null) {
+            e.presentation.isEnabledAndVisible = false
+            return
+        }
         val vcs = e.getData(VcsDataKeys.VCS)
         e.presentation.isEnabledAndVisible = vcs != null
     }

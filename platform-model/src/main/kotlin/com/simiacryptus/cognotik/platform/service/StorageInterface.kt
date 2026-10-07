@@ -10,6 +10,7 @@ import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.InputStream
 import java.io.OutputStream
+import java.time.Instant
 
 /**
  * Interface defining storage operations for managing sessions, messages, and associated data.
@@ -105,6 +106,18 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
   @Suppress("DEPRECATION")
   override fun exists(user: User?, session: Session, path: String): Boolean =
     resolveSessionFile(getUserDir(user, session), path).exists()
+  @Suppress("DEPRECATION")
+  override fun listEntries(user: User?, session: Session, prefix: String): List<SessionContentStore.ContentEntry> {
+    val root = getUserDir(user, session)
+    return list(user, session, prefix).map { path ->
+      val file = resolveSessionFile(root, path)
+      SessionContentStore.ContentEntry(
+        path = path,
+        size = file.length(),
+        lastModified = Instant.ofEpochMilli(file.lastModified()),
+      )
+    }
+  }
 
   @Suppress("DEPRECATION")
   override fun delete(user: User?, session: Session, path: String): Boolean {
@@ -180,6 +193,17 @@ interface MessageStore {
    */
   fun getMessage(user: User?, session: Session, messageId: String): String? =
     getMessageMap(user, session)[messageId]
+  /**
+   * Bulk-fetch a subset of messages, preserving the order of [messageIds].
+   *
+   * The default loads the full map; backends should fetch only the requested ids.
+   *
+   * @return a map containing only the ids that exist
+   */
+  fun getMessages(user: User?, session: Session, messageIds: Collection<String>): Map<String, String> {
+    val all = getMessageMap(user, session)
+    return messageIds.mapNotNull { id -> all[id]?.let { id to it } }.toMap(LinkedHashMap())
+  }
 
   /**
    * Updates or creates a message in the session's message store.
@@ -236,6 +260,18 @@ interface SessionContentStore {
 
   /** @return true if something was deleted, false if the path did not exist. */
   fun delete(user: User?, session: Session, path: String): Boolean
+  /**
+   * Lists session-relative entries beginning with [prefix], including size and
+   * modification time where the backend can supply them.
+   */
+  fun listEntries(user: User?, session: Session, prefix: String = ""): List<ContentEntry> =
+    list(user, session, prefix).map { ContentEntry(it) }
+  /** Lightweight description of a stored content item. */
+  data class ContentEntry(
+    val path: String,
+    val size: Long? = null,
+    val lastModified: Instant? = null,
+  )
 }
 
 /**

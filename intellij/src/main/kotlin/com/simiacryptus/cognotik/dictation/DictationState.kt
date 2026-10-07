@@ -10,7 +10,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.dictation.DictationWidgetFactory.Companion.dictationManager
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.AudioModels
 import com.simiacryptus.cognotik.util.EventDispatcher
 import org.slf4j.LoggerFactory
@@ -148,7 +148,7 @@ open class DictationState {
 fun findAudioModel(model: String?) = audioModels().firstOrNull { it.modelId == model }
 
 fun audioModels(): List<AudioModels> =
-    ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+    ServiceKey.USER_SETTINGS.get().getUserSettings(
         CognotikConfig.localUser
     ).apis.flatMap {
         it.provider?.getTranscriptionModels(key = it.key!!, baseUrl = it.apiBase) ?: listOf()

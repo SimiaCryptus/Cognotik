@@ -21,13 +21,9 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.CoreTasks
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
-import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.CognotikConfig
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
-import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.*
 import com.simiacryptus.cognotik.platform.CognotikConfig.localUser
-import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
@@ -285,7 +281,7 @@ data class AppSettingsState(
       CoreProviders.init()
       CoreTasks.init()
       try {
-        ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        ServiceKey.PLUGIN_MANAGER.get().getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
       } catch (e: Exception) {
         log.error("Error loading plugins", e)
       }
@@ -330,13 +326,12 @@ fun ApiChatModel.instance(): ChatInterface? {
     key = provider?.key ?: throw IllegalArgumentException("API key is not set"),
     base = provider?.provider?.base
       ?: throw IllegalArgumentException("API base for ${provider?.provider?.name} is not set"),
+    session = AppSettingsState.currentSession,
     workPool = AppSettingsState.workPool,
-    temperature = AppSettingsState.instance.temperature,
     scheduledPool = ThreadPoolManager.getScheduledPool(
       AppSettingsState.currentSession,
       localUser
     ),
-    session = AppSettingsState.currentSession,
     user = localUser,
   )
 }

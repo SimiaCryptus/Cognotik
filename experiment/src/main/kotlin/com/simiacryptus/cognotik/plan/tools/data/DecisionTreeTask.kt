@@ -223,7 +223,7 @@ class DecisionTreeTask(
           transcript?.write("## Decision Tree Results\n\n".toByteArray())
           transcript?.write("<details><summary>Generated Code</summary>\n\n```kotlin\n$code\n```\n</details>\n\n".toByteArray())
           transcript?.write("</div>\n\n".toByteArray())
-          log.info("DecisionTreeTask completed successfully.")
+          log.debug("DecisionTreeTask completed successfully.")
 
           resultFn(buildString {
             appendLine("## Decision Tree Generated")

@@ -11,6 +11,9 @@
 *   • Available budget indicator + "Usage & Credits" (buy credits) dialog
 *   • Standardized model selection (smart/fast) persisted to user settings —
 *     disable per page with `initMenu({ showModels: false })`
+*   • Appearance panel (palette + light/dark mode) bound to the central theme
+*     system (/themes.css, /themes.js, /modules/theme.js); all colours use
+*     the shared `--color-*` tokens
  *
  * Usage:
  *   import { initMenu } from '/app/menu.js';
@@ -36,6 +39,12 @@ import {
      collectPreferredModels,
      savePreferredModels
 } from './models.js';
+import {
+     ensureTheme,
+     getThemeManifest,
+     syncThemeAcrossWindows,
+     describeTheme
+} from './theme.js';
 
 const STYLE_ID = 'cognotik-menu-style';
 const MENU_ID = 'cognotik-menu';
@@ -47,63 +56,67 @@ const DEFAULT_MODEL_LABELS = {
 };
 
 const MENU_CSS = `
-.cog-menu { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: #1d2330; color: #e7ecf3; box-shadow: 0 1px 4px rgba(0,0,0,.35); z-index: 900; }
+.cog-menu { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--color-surface, #1d2330); color: var(--color-text, #e7ecf3); border-bottom: 1px solid var(--color-border, #333d52); box-shadow: 0 1px 4px rgba(0,0,0,.12); z-index: 900; }
+html[data-scheme="dark"] .cog-menu { box-shadow: 0 1px 4px rgba(0,0,0,.45); }
 .cog-menu-sticky { position: sticky; top: 0; }
-.cog-menu a { color: #cfe0ff; text-decoration: none; }
+.cog-menu a { color: var(--color-link, #cfe0ff); text-decoration: none; }
 .cog-menu a:hover { text-decoration: underline; }
 .cog-menu-bar { display: flex; align-items: center; gap: .6rem; padding: .4rem .8rem; flex-wrap: wrap; }
-.cog-menu-brand { font-weight: 700; color: #fff !important; margin-right: .3rem; }
-.cog-menu-context { font-size: .78rem; color: #9fb0c8; border: 1px solid #33405a; border-radius: 10px; padding: .1rem .5rem; white-space: nowrap; }
+.cog-menu-brand { font-weight: 700; color: var(--color-heading, #fff) !important; margin-right: .3rem; }
+.cog-menu-context { font-size: .78rem; color: var(--color-text-muted, #9fb0c8); border: 1px solid var(--color-border, #33405a); border-radius: 10px; padding: .1rem .5rem; white-space: nowrap; }
 .cog-menu-links { display: flex; align-items: center; gap: .55rem; flex-wrap: wrap; }
 .cog-menu-links a { padding: .15rem .35rem; border-radius: 4px; }
-.cog-menu-links a.active { background: #2c3446; }
+.cog-menu-links a.active { background: var(--color-surface-alt, #2c3446); }
 .cog-menu-grow { flex: 1 1 auto; }
 .cog-menu-tabs { display: flex; gap: .35rem; }
-.cog-menu button { font: inherit; background: #2c3446; color: #e7ecf3; border: 1px solid #3c4760; border-radius: 5px; padding: .2rem .6rem; cursor: pointer; }
-.cog-menu button:hover:not(:disabled) { background: #38425a; }
-.cog-menu button[aria-expanded="true"] { background: #4a90d9; border-color: #4a90d9; color: #fff; }
+.cog-menu button { font: inherit; background: var(--color-surface-alt, #2c3446); color: var(--color-text, #e7ecf3); border: 1px solid var(--color-border-strong, #3c4760); border-radius: 5px; padding: .2rem .6rem; cursor: pointer; }
+.cog-menu button:hover:not(:disabled) { background: color-mix(in srgb, var(--color-surface-alt, #2c3446) 85%, var(--color-text, #e7ecf3)); }
+.cog-menu button:focus-visible { outline: 2px solid var(--color-brand, #4a90d9); outline-offset: 1px; }
+.cog-menu button[aria-expanded="true"] { background: var(--color-brand, #4a90d9); border-color: var(--color-brand, #4a90d9); color: #fff; }
+.cog-menu button[aria-expanded="true"]:hover:not(:disabled) { background: var(--color-brand-hover, #3a7bc0); }
 .cog-menu button:disabled { opacity: .45; cursor: not-allowed; }
-.cog-menu button.cog-danger { background: #5a2b2b; border-color: #7a3a3a; color: #ffd9d9; }
-.cog-menu button.cog-danger:hover:not(:disabled) { background: #7a3a3a; }
-.cog-menu .cog-danger-link { color: #ff9b9b !important; }
-.cog-menu-panel { border-top: 1px solid #333d52; background: #232a39; padding: .6rem .8rem; max-height: 55vh; overflow: auto; }
+.cog-menu button.cog-danger { background: color-mix(in srgb, var(--color-danger, #c53030) 18%, var(--color-surface-alt, #2c3446)); border-color: var(--color-danger, #c53030); color: var(--color-text, #ffd9d9); }
+.cog-menu button.cog-danger:hover:not(:disabled) { background: var(--color-danger, #c53030); color: #fff; }
+.cog-menu .cog-danger-link { color: var(--color-danger, #ff9b9b) !important; }
+.cog-menu-panel { border-top: 1px solid var(--color-border, #333d52); background: var(--color-canvas, #232a39); padding: .6rem .8rem; max-height: 55vh; overflow: auto; }
 .cog-panel-head { display: flex; align-items: center; gap: .6rem; margin-bottom: .5rem; flex-wrap: wrap; }
-.cog-panel-head strong { font-size: .95rem; }
+.cog-panel-head strong { font-size: .95rem; color: var(--color-heading, inherit); }
 .cog-panel-actions { display: flex; gap: .35rem; flex-wrap: wrap; }
-.cog-muted { color: #93a2b8; font-size: .85rem; margin: .2rem 0; }
+.cog-muted { color: var(--color-text-muted, #93a2b8); font-size: .85rem; margin: .2rem 0; }
 .cog-menu ul.cog-list { list-style: none; margin: .2rem 0 .6rem; padding: 0; }
-.cog-menu ul.cog-list li { display: flex; gap: .5rem; align-items: center; padding: .18rem 0; border-bottom: 1px solid #2c3446; font-size: .86rem; }
-.cog-tag { font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; border-radius: 8px; padding: .05rem .4rem; background: #3c4760; }
-.cog-tag.running { background: #b7791f; color: #fff; }
-.cog-tag.completed { background: #2f855a; color: #fff; }
-.cog-tag.error { background: #c53030; color: #fff; }
+.cog-menu ul.cog-list li { display: flex; gap: .5rem; align-items: center; padding: .18rem 0; border-bottom: 1px solid var(--color-border, #2c3446); font-size: .86rem; }
+.cog-tag { font-size: .7rem; text-transform: uppercase; letter-spacing: .03em; border-radius: 8px; padding: .05rem .4rem; background: var(--color-surface-alt, #3c4760); color: var(--color-text, inherit); border: 1px solid var(--color-border, transparent); }
+.cog-tag.running { background: var(--color-warning, #b7791f); border-color: var(--color-warning, #b7791f); color: #fff; }
+.cog-tag.completed { background: var(--color-success, #2f855a); border-color: var(--color-success, #2f855a); color: #fff; }
+.cog-tag.error { background: var(--color-danger, #c53030); border-color: var(--color-danger, #c53030); color: #fff; }
 .cog-usage-summary { display: flex; gap: 1.2rem; flex-wrap: wrap; margin-bottom: .5rem; font-size: .85rem; }
-.cog-usage-summary span b { display: block; color: #9fb0c8; font-weight: 500; font-size: .72rem; text-transform: uppercase; }
+.cog-usage-summary span b { display: block; color: var(--color-text-muted, #9fb0c8); font-weight: 500; font-size: .72rem; text-transform: uppercase; }
 .cog-menu table { border-collapse: collapse; width: 100%; font-size: .82rem; }
-.cog-menu table th, .cog-menu table td { border-bottom: 1px solid #2f394d; padding: .25rem .4rem; text-align: left; }
+.cog-menu table th, .cog-menu table td { border-bottom: 1px solid var(--color-border, #2f394d); padding: .25rem .4rem; text-align: left; }
+.cog-menu table th { color: var(--color-heading, inherit); }
 .cog-menu .git-status-box { font-size: .85rem; }
 .cog-menu .git-changes-list { list-style: none; padding-left: 0; }
 .cog-menu button.cog-budget-btn { display: inline-flex; align-items: center; gap: .3rem; }
-.cog-menu button.cog-budget-btn.budget-warning { background: #b7791f; border-color: #b7791f; color: #fff; }
-.cog-menu button.cog-budget-btn.budget-critical { background: #c53030; border-color: #c53030; color: #fff; }
-.cog-budget-banner { padding: .35rem .8rem; font-size: .82rem; background: #b7791f; color: #fff; }
-.cog-budget-banner.critical { background: #c53030; }
+.cog-menu button.cog-budget-btn.budget-warning { background: var(--color-warning, #b7791f); border-color: var(--color-warning, #b7791f); color: #fff; }
+.cog-menu button.cog-budget-btn.budget-critical { background: var(--color-danger, #c53030); border-color: var(--color-danger, #c53030); color: #fff; }
+.cog-budget-banner { padding: .35rem .8rem; font-size: .82rem; background: var(--color-warning, #b7791f); color: #fff; }
+.cog-budget-banner.critical { background: var(--color-danger, #c53030); }
 .cog-budget-banner a { color: #fff !important; text-decoration: underline; }
 .cog-budget-banner[hidden] { display: none; }
 .cog-credits-overlay { position: fixed; inset: 0; background: rgba(0,0,0,.55); z-index: 1000; display: flex; align-items: center; justify-content: center; }
 .cog-credits-overlay[hidden] { display: none; }
-.cog-credits-dialog { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: #1d2330; color: #e7ecf3; width: min(1100px, 92vw); height: 85vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
-.cog-credits-head { display: flex; align-items: center; gap: .6rem; padding: .5rem .8rem; border-bottom: 1px solid #333d52; }
-.cog-credits-head strong { flex: 1 1 auto; font-size: .95rem; }
-.cog-credits-head button { font: inherit; background: #2c3446; color: #e7ecf3; border: 1px solid #3c4760; border-radius: 5px; padding: .2rem .6rem; cursor: pointer; }
-.cog-credits-head button:hover { background: #38425a; }
-.cog-credits-dialog iframe { flex: 1 1 auto; width: 100%; border: none; background: #fff; }
+.cog-credits-dialog { font: 14px/1.4 system-ui, -apple-system, "Segoe UI", sans-serif; background: var(--color-surface, #1d2330); color: var(--color-text, #e7ecf3); border: 1px solid var(--color-border, transparent); width: min(1100px, 92vw); height: 85vh; border-radius: 8px; display: flex; flex-direction: column; overflow: hidden; box-shadow: 0 12px 40px rgba(0,0,0,.5); }
+.cog-credits-head { display: flex; align-items: center; gap: .6rem; padding: .5rem .8rem; border-bottom: 1px solid var(--color-border, #333d52); }
+.cog-credits-head strong { flex: 1 1 auto; font-size: .95rem; color: var(--color-heading, inherit); }
+.cog-credits-head button { font: inherit; background: var(--color-surface-alt, #2c3446); color: var(--color-text, #e7ecf3); border: 1px solid var(--color-border-strong, #3c4760); border-radius: 5px; padding: .2rem .6rem; cursor: pointer; }
+.cog-credits-head button:hover { background: color-mix(in srgb, var(--color-surface-alt, #2c3446) 85%, var(--color-text, #e7ecf3)); }
+.cog-credits-dialog iframe { flex: 1 1 auto; width: 100%; border: none; background: var(--color-canvas, #fff); }
 .cog-models-form { display: flex; gap: 1rem; flex-wrap: wrap; align-items: flex-end; }
 .cog-model-field { display: flex; flex-direction: column; gap: .2rem; min-width: 220px; flex: 1 1 220px; }
-.cog-model-field label { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: #9fb0c8; }
-.cog-menu select { font: inherit; background: #2c3446; color: #e7ecf3; border: 1px solid #3c4760; border-radius: 5px; padding: .25rem .4rem; max-width: 340px; }
+.cog-model-field label { font-size: .72rem; text-transform: uppercase; letter-spacing: .03em; color: var(--color-text-muted, #9fb0c8); }
+.cog-menu select { font: inherit; background: var(--color-surface, #2c3446); color: var(--color-text, #e7ecf3); border: 1px solid var(--color-border-strong, #3c4760); border-radius: 5px; padding: .25rem .4rem; max-width: 340px; }
 .cog-menu select:disabled { opacity: .45; cursor: not-allowed; }
-.cog-menu select:focus { outline: 2px solid #4a90d9; outline-offset: 1px; }
+.cog-menu select:focus { outline: 2px solid var(--color-brand, #4a90d9); outline-offset: 1px; }
 @media (max-width: 700px) { .cog-menu-grow { display: none; } }
 `;
 
@@ -358,6 +371,35 @@ function buildModelsPanelHtml(fields, labels) {
                  <p class="cog-muted" data-models-status>Open to load models&hellip;</p>
              </section>`;
 }
+/**
+   * Build the markup for the Appearance (palette + mode) panel.
+   * Selects start disabled and are bound to ThemeManager once it is available.
+   * @returns {string}
+   */
+function buildAppearancePanelHtml() {
+      const suffix = Math.random().toString(36).slice(2, 8);
+      return `
+              <section class="cog-menu-panel" data-panel="appearance" hidden>
+                  <div class="cog-panel-head">
+                      <strong>Appearance</strong>
+                  </div>
+                  <div class="cog-models-form">
+                      <div class="cog-model-field" data-appearance-field="palette">
+                          <label for="cog-palette-${suffix}">Palette</label>
+                          <select id="cog-palette-${suffix}" data-appearance="palette" disabled>
+                              <option value="">Loading&hellip;</option>
+                          </select>
+                      </div>
+                      <div class="cog-model-field" data-appearance-field="mode">
+                          <label for="cog-mode-${suffix}">Theme</label>
+                          <select id="cog-mode-${suffix}" data-appearance="mode" disabled>
+                              <option value="">Loading&hellip;</option>
+                          </select>
+                      </div>
+                  </div>
+                  <p class="cog-muted" data-appearance-status>Loading theme system&hellip;</p>
+              </section>`;
+}
 
 
 /**
@@ -378,6 +420,13 @@ function buildModelsPanelHtml(fields, labels) {
 *                        (default `['smartModel','fastModel']`)
 * @param {Object}  [options.modelLabels] - Override display labels per field
 * @param {Function}[options.onModelsChanged] - (models, savedOk) => void
+* @param {boolean} [options.showAppearance=true] - Show the palette / light-dark selector panel
+* @param {boolean} [options.autoLoadTheme=true] - Load /themes.css, /themes.js and
+*                  /modules/theme.js if the page did not include them
+* @param {boolean} [options.syncThemeAcrossWindows=true] - Follow theme changes made in other windows/iframes
+* @param {string}  [options.themeStylesheetHref='/themes.css']
+* @param {string}  [options.themeManifestSrc='/themes.js']
+* @param {string}  [options.themeManagerSrc='/modules/theme.js']
  * @param {boolean} [options.sticky=true]
  * @param {string} [options.newSessionPath='new']
  * @param {Function} [options.getProxyUrl]
@@ -404,6 +453,12 @@ export function initMenu(options = {}) {
          modelFields: null,
          modelLabels: null,
          onModelsChanged: null,
+          showAppearance: true,
+          autoLoadTheme: true,
+          syncThemeAcrossWindows: true,
+          themeStylesheetHref: '/themes.css',
+          themeManifestSrc: '/themes.js',
+          themeManagerSrc: '/modules/theme.js',
         sticky: true,
         newSessionPath: 'new',
         getProxyUrl: defaultGetProxyUrl,
@@ -438,6 +493,7 @@ export function initMenu(options = {}) {
                     ${opts.showSessions ? '<button type="button" data-tab="sessions" aria-expanded="false">Sessions</button>' : ''}
                     ${opts.showUsage ? '<button type="button" data-tab="usage" aria-expanded="false">Usage</button>' : ''}
                      ${opts.showModels ? '<button type="button" data-tab="models" aria-expanded="false" title="Preferred AI models">Models</button>' : ''}
+                      ${opts.showAppearance ? '<button type="button" data-tab="appearance" aria-expanded="false" title="Appearance" aria-label="Appearance">&#127912;</button>' : ''}
                 </div>
             </div>
              <div class="cog-budget-banner" data-budget-banner role="alert" aria-live="polite" hidden></div>
@@ -482,7 +538,8 @@ export function initMenu(options = {}) {
                 </div>
                 <div data-usage-table><p class="cog-muted">Open to load usage&hellip;</p></div>
              </section>
-             ${opts.showModels ? buildModelsPanelHtml(modelFields, modelLabels) : ''}`;
+              ${opts.showModels ? buildModelsPanelHtml(modelFields, modelLabels) : ''}
+              ${opts.showAppearance ? buildAppearancePanelHtml() : ''}`;
 
     // Mount
     let mount = opts.mount;
@@ -494,7 +551,8 @@ export function initMenu(options = {}) {
         git: nav.querySelector('[data-panel="git"]'),
         sessions: nav.querySelector('[data-panel="sessions"]'),
          usage: nav.querySelector('[data-panel="usage"]'),
-         models: nav.querySelector('[data-panel="models"]')
+          models: nav.querySelector('[data-panel="models"]'),
+          appearance: nav.querySelector('[data-panel="appearance"]')
     };
     const tabs = Array.from(nav.querySelectorAll('[data-tab]'));
     const gitOut = nav.querySelector('[data-git-output]');
@@ -927,6 +985,63 @@ export function initMenu(options = {}) {
              return null;
          }
      }
+     // ---- Appearance (central theme system) --------------------------------
+     let appearanceBound = false;
+     let unsyncTheme = opts.syncThemeAcrossWindows ? syncThemeAcrossWindows() : null;
+     function updateAppearanceButton() {
+         const btn = nav.querySelector('[data-tab="appearance"]');
+         if (btn) btn.title = 'Appearance \u2014 ' + (describeTheme() || 'default');
+     }
+     /** Bind the Appearance selects to ThemeManager (once). */
+     function bindAppearance(tm) {
+         const panel = panels.appearance;
+         if (appearanceBound || !panel) return;
+         const paletteSel = panel.querySelector('[data-appearance="palette"]');
+         const modeSel = panel.querySelector('[data-appearance="mode"]');
+         const statusEl = panel.querySelector('[data-appearance-status]');
+         if (!tm) {
+             if (statusEl) statusEl.textContent = 'Theme system unavailable \u2014 using default colours.';
+             return;
+         }
+         appearanceBound = true;
+         if (paletteSel) {
+             if (getThemeManifest() && typeof tm.bindPaletteSelector === 'function') {
+                 paletteSel.innerHTML = '';
+                 paletteSel.disabled = false;
+                 tm.bindPaletteSelector(paletteSel);
+             } else {
+                 // Palette switching requires the themes.js manifest.
+                 const field = paletteSel.closest('[data-appearance-field]');
+                 if (field) field.remove();
+             }
+         }
+         if (modeSel) {
+             if (typeof tm.bindSelector === 'function') {
+                 modeSel.innerHTML = '';
+                 modeSel.disabled = false;
+                 tm.bindSelector(modeSel);
+             } else {
+                 const field = modeSel.closest('[data-appearance-field]');
+                 if (field) field.remove();
+             }
+         }
+         if (statusEl) statusEl.textContent = 'Applies to all Cognotik pages in this browser.';
+         const onThemeChanged = () => {
+             if (nav.isConnected) updateAppearanceButton();
+         };
+         if (typeof tm.onChange === 'function') tm.onChange(onThemeChanged);
+         if (typeof tm.onPaletteChange === 'function') tm.onPaletteChange(onThemeChanged);
+         updateAppearanceButton();
+     }
+     const themeReady = ensureTheme({
+         autoLoad: opts.autoLoadTheme,
+         stylesheetHref: opts.themeStylesheetHref,
+         manifestSrc: opts.themeManifestSrc,
+         managerSrc: opts.themeManagerSrc
+     }).then(tm => {
+         if (nav.isConnected && opts.showAppearance) bindAppearance(tm);
+         return tm;
+     });
 
     nav.querySelector('[data-sessions="refresh"]')?.addEventListener('click', refreshSessions);
     nav.querySelector('[data-usage="refresh"]')?.addEventListener('click', refreshUsage);
@@ -942,6 +1057,10 @@ export function initMenu(options = {}) {
     function destroy() {
         document.removeEventListener('keydown', onKeydown);
         document.removeEventListener('click', onDocClick);
+         if (unsyncTheme) {
+             unsyncTheme();
+             unsyncTheme = null;
+         }
           if (modelUnbind) {
               modelUnbind();
               modelUnbind = null;
@@ -976,6 +1095,8 @@ export function initMenu(options = {}) {
           refreshModels,
           getSelectedModels,
           setModels,
+           /** @returns {Promise<Object|null>} ThemeManager once the theme system is ready */
+           themeReady: () => themeReady,
         destroy
     };
 }

@@ -492,7 +492,7 @@ Provide a structured synthesis.
             val fullDialogue = fullBuilder.toString()
             val totalTime = System.currentTimeMillis() - startTime
             val avgIterationTime = if (iterationTimes.isNotEmpty()) iterationTimes.average() else 0.0
-            log.info("UnrunnableProtocolDialogTask completed: total_time=${totalTime}ms, iterations=$iterations, avg_iteration_time=${avgIterationTime}ms, output_size=${finalResult.length} chars (full: ${fullDialogue.length} chars)")
+            log.debug("UnrunnableProtocolDialogTask completed: total_time=${totalTime}ms, iterations=$iterations, avg_iteration_time=${avgIterationTime}ms, output_size=${finalResult.length} chars (full: ${fullDialogue.length} chars)")
             transcriptWriter?.apply {
                 write("---\n\n")
                 write(

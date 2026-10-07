@@ -616,7 +616,7 @@ class BrainstormingTask(
         appendLine("---")
       }
 
-      log.info("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
+      log.debug("BrainstormingTask completed: total_time=${totalTime}ms, options=${options.size}, output_size=${finalOutput.length} chars")
 
       // Update overview with completion
       progressStatus?.setLength(0)

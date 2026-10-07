@@ -12,17 +12,17 @@ import java.util.concurrent.ExecutorService
 class PerplexityProvider : APIProvider("Perplexity", "https://api.perplexity.ai") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = OpenAIChatClient(
     apiKey = key,
     apiBase = base,
     workPool = workPool,
     scheduledPool = scheduledPool,
-      session = session,
+    session = session,
   )
 }

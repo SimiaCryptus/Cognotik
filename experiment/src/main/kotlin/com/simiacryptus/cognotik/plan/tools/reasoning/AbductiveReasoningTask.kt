@@ -559,7 +559,7 @@ AbductiveReasoning - Generate and evaluate explanatory hypotheses
       }
 
 
-      log.info("AbductiveReasoningTask completed: total_time=${totalTime}ms, observations=${observations.size}, hypotheses=${hypotheses.size}, best_score=${bestHypothesis?.overall_score}")
+      log.debug("AbductiveReasoningTask completed: total_time=${totalTime}ms, observations=${observations.size}, hypotheses=${hypotheses.size}, best_score=${bestHypothesis?.overall_score}")
 
       overviewTask.add(
         buildString {

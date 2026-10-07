@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
 import java.util.concurrent.*
-import java.util.concurrent.CompletableFuture.allOf
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
@@ -40,9 +39,9 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
 
   fun run(
     plan: WorkPlan<K>,
-    scheduler: DocTaskScheduler = host.newScheduler(),
     cancelFlag: AtomicBoolean = AtomicBoolean(false),
     onNewSession: (S) -> Unit = { },
+    executorService: ExecutorService,
   ): List<S> {
     initializeStatus(plan)
     val sessions: MutableList<S> = Collections.synchronizedList(mutableListOf())
@@ -63,11 +62,11 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
     queues.forEachIndexed { i, queue ->
       log.info("  queue #$i (${queue.tasks.size} task(s)): ${queue.tasks.joinToString { targetKeyOf(it) }}")
     }
-    val futures: Array<CompletableFuture<*>> = queues.map { queue ->
-      scheduler.submit { runQueue(queue.tasks, cancelFlag, onNewSession, sessions) }
+    val futures: Array<Future<*>> = queues.map { queue ->
+      executorService.submit { runQueue(queue.tasks, cancelFlag, onNewSession, sessions) }
     }.toTypedArray()
     try {
-      allOf(*futures).get(config.overallTimeoutMinutes, TimeUnit.MINUTES)
+      collectFutures(futures, config.overallTimeoutMinutes, TimeUnit.MINUTES)
     } catch (e: TimeoutException) {
       log.error("DocOps timed out after ${config.overallTimeoutMinutes} minutes")
       status.markAllRunningAs(TaskStatus.FAILED, "Timed out after ${config.overallTimeoutMinutes} minutes")
@@ -83,6 +82,29 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
     }
     log.info("DocOps run finished: ${sessions.size} session(s) started across ${queues.size} queue(s)")
     return sessions.toList()
+  }
+
+  fun collectFutures(
+    futures: Array<Future<*>>,
+    timeout: Long,
+    units: TimeUnit
+  ) {
+    val deadline = System.nanoTime() + units.toNanos(timeout)
+    for (future in futures) {
+      val remaining = deadline - System.nanoTime()
+      if (remaining <= 0) {
+        throw TimeoutException("Timeout reached while waiting for futures to complete")
+      }
+      try {
+        future.get(remaining, TimeUnit.NANOSECONDS)
+      } catch (e: TimeoutException) {
+        throw TimeoutException("Timeout reached while waiting for futures to complete")
+      } catch (e: ExecutionException) {
+        throw e
+      } catch (e: InterruptedException) {
+        throw e
+      }
+    }
   }
 
   private fun runQueue(
@@ -183,7 +205,7 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
           }
 
           override fun onCompleted(sessionId: String) {
-            log.info("Task completed for target '$targetKey' in session $sessionId")
+            log.debug("Task completed for target '$targetKey' in session $sessionId")
             status.set(targetKey, TaskStatus.COMPLETED, sessionId = sessionId)
           }
 

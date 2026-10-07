@@ -335,7 +335,7 @@ DataIngest - Iteratively parse unstructured logs/text into structured data
         summaryTask.add("**Total Extracted Records:** $totalExtracted".renderMarkdown())
         summaryTask.add("**Patterns Discovered:** ${registry.size}".renderMarkdown())
         summaryTask.complete()
-        log.info("DataIngestTask completed: $totalExtracted records processed.")
+        log.debug("DataIngestTask completed: $totalExtracted records processed.")
 
 
         // Final Report

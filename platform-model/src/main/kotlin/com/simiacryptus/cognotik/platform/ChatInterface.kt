@@ -2,22 +2,13 @@ package com.simiacryptus.cognotik.platform
 
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.google.common.util.concurrent.MoreExecutors
-import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ChatModel.Companion.ON_USAGE
-import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.platform.model.ModelSchema
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.UsageListener
-import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
-import kotlin.collections.setOf
 
 class ChatInterface(
     val provider: APIProvider,
@@ -40,11 +31,11 @@ class ChatInterface(
 
     fun chat(chatRequest: ModelSchema.ChatRequest): ModelSchema.ChatResponse = provider.getChatClient(
         key = key,
-        workPool = workPool,
         logLevel = logLevel,
-        logStreams = logStreams,
-        scheduledPool = scheduledPool,
         session = session,
+        logStreams = logStreams,
+        workPool = workPool,
+        scheduledPool = scheduledPool,
     ).chat(
         chatRequest = chatRequest,
         model = model,
@@ -82,12 +73,8 @@ class ChatInterface(
                 inputModalities = setOf(),
                 outputModalities = setOf()
             ),
-            workPool = Executors.newCachedThreadPool(),
-            scheduledPool = MoreExecutors.listeningDecorator(
-                Executors.newScheduledThreadPool(
-                    4
-                )
-            ),
+            workPool = ThreadPoolManager.newCachedThreadPool(Session.NULL),
+            scheduledPool = ThreadPoolManager.newScheduledThreadPool(4, Session.NULL),
             session = Session.newUserID(),
             user = User.NULL,
         )

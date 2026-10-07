@@ -744,7 +744,7 @@ open class NarrativeGenerationTask<T : NarrativeGenerationTask.NarrativeGenerati
         transcript?.write("\n## Final Statistics\n\n- Total Scenes: ${generatedScenes.size}\n- Total Word Count: $cumulativeWordCount\n- Time: ${totalTime / 1000.0}s\n\n")
 
         val finalResult = finalResult(outline, cumulativeWordCount, generatedScenes, totalTime, outlineContent)
-        log.info("NarrativeGenerationTask completed: scenes=${generatedScenes.size}, words=$cumulativeWordCount, time=${totalTime}ms")
+        log.debug("NarrativeGenerationTask completed: scenes=${generatedScenes.size}, words=$cumulativeWordCount, time=${totalTime}ms")
         val narrativeData = mapOf(
           "config" to genConfig,
           "highLevelOutline" to highLevelOutline,

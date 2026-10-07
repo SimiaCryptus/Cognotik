@@ -1,420 +1,209 @@
-﻿package com.simiacryptus.cognotik.util
+package com.simiacryptus.cognotik.util
 
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
+import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.vfs.VirtualFile
 import com.simiacryptus.cognotik.txt.BlockComment
 import com.simiacryptus.cognotik.txt.LineComment
 import com.simiacryptus.cognotik.txt.TextBlockFactory
 import java.util.*
 
+private fun line(prefix: String) = LineComment.Factory(prefix)
+private fun block(start: String, end: String, linePrefix: String = "") = BlockComment.Factory(start, linePrefix, end)
+private fun cBlock() = block("/*", "*/")
+private fun cDoc() = block("/**", "*/", "*")
+
 enum class ComputerLanguage(configuration: Configuration) {
     Java(
-        Configuration()
-            .setDocumentationStyle("JavaDoc")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", " * ", " */"))
-            .setFileExtensions("java")
+        Configuration().setDocumentationStyle("JavaDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(BlockComment.Factory("/**", " * ", " */")).setFileExtensions("java")
     ),
     Cpp(
-        Configuration()
-            .setDocumentationStyle("Doxygen")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("cpp")
+        Configuration().setDocumentationStyle("Doxygen").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("cpp", "cc", "cxx", "c++", "hpp", "hh", "hxx")
     ),
     LUA(
-        Configuration()
-            .setDocumentationStyle("LuaDoc")
-            .setLineComments(LineComment.Factory("--"))
-            .setBlockComments(BlockComment.Factory("--[[", "", "]]"))
-            .setDocComments(BlockComment.Factory("---[[", "", "]]"))
-            .setFileExtensions("lua")
+        Configuration().setDocumentationStyle("LuaDoc").setLineComments(line("--"))
+            .setBlockComments(block("--[[", "]]")).setDocComments(block("---[[", "]]")).setFileExtensions("lua")
     ),
     SVG(
-        Configuration()
-            .setDocumentationStyle("SVG")
-            .setLineComments(LineComment.Factory("<!--"))
-            .setBlockComments(BlockComment.Factory("<!--", "", "-->"))
-            .setDocComments(BlockComment.Factory("<!--", "", "-->"))
-            .setFileExtensions("svg")
+        Configuration().setDocumentationStyle("SVG").setLineComments(block("<!--", "-->"))
+            .setBlockComments(block("<!--", "-->")).setDocComments(block("<!--", "-->")).setFileExtensions("svg")
     ),
     OpenSCAD(
-        Configuration()
-            .setDocumentationStyle("OpenSCAD")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("scad")
+        Configuration().setDocumentationStyle("OpenSCAD").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("scad")
     ),
-    Bash(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setFileExtensions("sh")
-    ),
+    Bash(Configuration().setLineComments(line("#")).setFileExtensions("sh", "bash")),
     Markdown(
-        Configuration()
-            .setDocumentationStyle("Markdown")
-            .setLineComments(BlockComment.Factory("<!--", "", "-->"))
-            .setBlockComments(BlockComment.Factory("<!--", "", "-->"))
-            .setDocComments(BlockComment.Factory("<!--", "", "-->"))
-            .setFileExtensions("md")
+        Configuration().setDocumentationStyle("Markdown").setLineComments(block("<!--", "-->"))
+            .setBlockComments(block("<!--", "-->")).setDocComments(block("<!--", "-->"))
+            .setFileExtensions("md", "markdown")
     ),
-    Text(
-        Configuration()
-            .setDocumentationStyle("Text")
-            .setLineComments(LineComment.Factory("#"))
-            .setFileExtensions("txt")
-    ),
+    Text(Configuration().setDocumentationStyle("Text").setLineComments(line("#")).setFileExtensions("txt")),
     XML(
-        Configuration()
-            .setDocumentationStyle("XML")
-            .setLineComments(BlockComment.Factory("<!--", "", "-->"))
-            .setBlockComments(BlockComment.Factory("<!--", "", "-->"))
-            .setDocComments(BlockComment.Factory("<!--", "", "-->"))
-            .setFileExtensions("xml")
+        Configuration().setDocumentationStyle("XML").setLineComments(block("<!--", "-->"))
+            .setBlockComments(block("<!--", "-->")).setDocComments(block("<!--", "-->"))
+            .setFileExtensions("xml", "xsd", "xsl", "xslt")
     ),
-    Ada(
-        Configuration()
-            .setLineComments(LineComment.Factory("--"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("ada")
-    ),
-    Assembly(
-        Configuration()
-            .setLineComments(LineComment.Factory(";"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("assembly", "asm")
-    ),
-    Basic(
-        Configuration()
-            .setLineComments(LineComment.Factory("'"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("basic", "bs")
-    ),
+    Ada(Configuration().setLineComments(line("--")).setFileExtensions("ada", "adb", "ads")),
+    Assembly(Configuration().setLineComments(line(";")).setFileExtensions("asm", "s", "assembly")),
+    Basic(Configuration().setLineComments(line("'")).setFileExtensions("bas", "basic", "bs")),
     C(
-        Configuration()
-            .setDocumentationStyle("Doxygen")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("c")
+        Configuration().setDocumentationStyle("Doxygen").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("c", "h")
     ),
     Clojure(
-        Configuration()
-            .setDocumentationStyle("ClojureDocs")
-            .setLineComments(LineComment.Factory(";"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("cj")
+        Configuration().setDocumentationStyle("ClojureDocs").setLineComments(line(";"))
+            .setFileExtensions("clj", "cljs", "cljc", "edn")
     ),
-    COBOL(
-        Configuration()
-            .setLineComments(LineComment.Factory("*"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("cobol", "cob")
-    ),
+    COBOL(Configuration().setLineComments(line("*>")).setFileExtensions("cob", "cbl", "cobol")),
     CSharp(
-        Configuration()
-            .setDocumentationStyle("XML")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("cs", "c#")
+        Configuration().setDocumentationStyle("XML").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(line("///")).setFileExtensions("cs", "csx")
     ),
     CSS(
-        Configuration()
-            .setLineComments(BlockComment.Factory("/*", "", "*/"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
+        Configuration().setLineComments(cBlock()).setBlockComments(cBlock()).setDocComments(cDoc())
             .setFileExtensions("css")
     ),
     Dart(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("dart")
+        Configuration().setDocumentationStyle("DartDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(line("///")).setFileExtensions("dart")
     ),
     Delphi(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("delphi")
+        Configuration().setLineComments(line("//")).setBlockComments(block("{", "}"))
+            .setFileExtensions("delphi", "dpr")
     ),
     Erlang(
-        Configuration()
-            .setLineComments(LineComment.Factory("%"))
-            .setBlockComments(BlockComment.Factory("%%", "", "%%"))
-            .setDocComments(BlockComment.Factory("%%%", "%", "%%%"))
-            .setFileExtensions("erl")
+        Configuration().setDocumentationStyle("EDoc").setLineComments(line("%")).setDocComments(line("%%"))
+            .setFileExtensions("erl", "hrl")
     ),
     Elixir(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("elixir")
+        Configuration().setDocumentationStyle("ExDoc").setLineComments(line("#"))
+            .setDocComments(block("@doc \"\"\"", "\"\"\"")).setFileExtensions("ex", "exs")
     ),
     FORTRAN(
-        Configuration()
-            .setLineComments(LineComment.Factory("!"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
+        Configuration().setLineComments(line("!"))
             .setFileExtensions("f", "for", "ftn", "f77", "f90", "f95", "f03", "f08")
     ),
     FSharp(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("f#")
+        Configuration().setLineComments(line("//")).setBlockComments(block("(*", "*)"))
+            .setDocComments(line("///")).setFileExtensions("fs", "fsi", "fsx")
     ),
     Go(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("go")
+        Configuration().setDocumentationStyle("GoDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(line("//")).setFileExtensions("go")
     ),
     Groovy(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("groovy", "gradle")
+        Configuration().setDocumentationStyle("GroovyDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("groovy", "gradle")
     ),
     Haskell(
-        Configuration()
-            .setLineComments(LineComment.Factory("--"))
-            .setBlockComments(BlockComment.Factory("{-", "-}", "{- -}"))
-            .setDocComments(BlockComment.Factory("{-|", "|-}", "{-| -}"))
-            .setFileExtensions("hs")
+        Configuration().setDocumentationStyle("Haddock").setLineComments(line("--"))
+            .setBlockComments(block("{-", "-}")).setDocComments(block("{-|", "-}")).setFileExtensions("hs", "lhs")
     ),
     HTML(
-        Configuration()
-            .setLineComments(BlockComment.Factory("<!--", "", "-->"))
-            .setBlockComments(BlockComment.Factory("<!--", "", "-->"))
-            .setDocComments(BlockComment.Factory("<!--", "", "-->"))
-            .setFileExtensions("html")
+        Configuration().setLineComments(block("<!--", "-->")).setBlockComments(block("<!--", "-->"))
+            .setDocComments(block("<!--", "-->")).setFileExtensions("html", "htm")
     ),
     Julia(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("julia")
+        Configuration().setLineComments(line("#")).setBlockComments(block("#=", "=#")).setFileExtensions("jl")
     ),
     JavaScript(
-        Configuration()
-            .setDocumentationStyle("JSDoc")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("js", "javascript")
+        Configuration().setDocumentationStyle("JSDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("js", "mjs", "cjs", "jsx", "javascript")
     ),
-    Json(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setFileExtensions("json")
-    ),
+    Json(Configuration().setLineComments(line("//")).setFileExtensions("json", "jsonc")),
     Kotlin(
-        Configuration()
-            .setDocumentationStyle("KDoc")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("kt", "kts")
+        Configuration().setDocumentationStyle("KDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("kt", "kts")
     ),
     Lisp(
-        Configuration()
-            .setLineComments(LineComment.Factory(";"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("lisp")
+        Configuration().setLineComments(line(";")).setBlockComments(block("#|", "|#"))
+            .setFileExtensions("lisp", "lsp", "cl")
     ),
-    Logo(
-        Configuration()
-            .setLineComments(LineComment.Factory(";"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("logo", "log")
-    ),
+    Logo(Configuration().setLineComments(line(";")).setFileExtensions("logo")),
     MATLAB(
-        Configuration()
-            .setLineComments(LineComment.Factory("%"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("matlab", "m")
+        Configuration().setLineComments(line("%")).setBlockComments(block("%{", "%}"))
+            .setFileExtensions("m", "matlab")
     ),
     OCaml(
-        Configuration()
-            .setLineComments(LineComment.Factory("(Params.create(*"))
-            .setBlockComments(BlockComment.Factory("*))", "", "ocaml"))
-            .setDocComments(BlockComment.Factory("*))", "", "ocaml"))
-            .setFileExtensions("ml")
+        Configuration().setDocumentationStyle("OCamlDoc").setLineComments(block("(*", "*)"))
+            .setBlockComments(block("(*", "*)")).setDocComments(block("(**", "*)")).setFileExtensions("ml", "mli")
     ),
     Pascal(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("pascal", "pas")
+        Configuration().setLineComments(line("//")).setBlockComments(block("{", "}"))
+            .setFileExtensions("pas", "pp", "pascal")
     ),
     PHP(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("php")
+        Configuration().setDocumentationStyle("PHPDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("php")
     ),
     Perl(
-        Configuration()
-            .setDocumentationStyle("POD")
-            .setLineComments(LineComment.Factory("#"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("perl", "pl")
+        Configuration().setDocumentationStyle("POD").setLineComments(line("#"))
+            .setBlockComments(block("=pod", "=cut")).setFileExtensions("pl", "pm", "perl")
     ),
-    Prolog(
-        Configuration()
-            .setLineComments(LineComment.Factory("%"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("prolog")
-    ),
+    Prolog(Configuration().setLineComments(line("%")).setBlockComments(cBlock()).setFileExtensions("prolog")),
     Python(
-        Configuration()
-            .setDocumentationStyle("PyDoc")
-            .setLineComments(LineComment.Factory("#"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("py", "python")
+        Configuration().setDocumentationStyle("PyDoc").setLineComments(line("#"))
+            .setBlockComments(block("\"\"\"", "\"\"\"")).setFileExtensions("py", "pyw", "python")
     ),
-    R(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("r")
-    ),
+    R(Configuration().setLineComments(line("#")).setDocComments(line("#'")).setFileExtensions("r")),
     Ruby(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("ruby", "rb")
+        Configuration().setDocumentationStyle("RDoc").setLineComments(line("#"))
+            .setBlockComments(block("=begin", "=end")).setFileExtensions("rb", "ruby", "rake", "gemspec")
     ),
     Racket(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setBlockComments(BlockComment.Factory("#|", "", "|#"))
-            .setDocComments(BlockComment.Factory("#|", "", "|#"))
-            .setFileExtensions("racket")
+        Configuration().setLineComments(line(";")).setBlockComments(block("#|", "|#"))
+            .setFileExtensions("rkt", "racket")
     ),
     Rust(
-        Configuration()
-            .setDocumentationStyle("Rustdoc")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("rs", "rust")
+        Configuration().setDocumentationStyle("Rustdoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(line("///")).setFileExtensions("rs")
     ),
     Scala(
-        Configuration()
-            .setDocumentationStyle("ScalaDoc")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("scala", "sc")
+        Configuration().setDocumentationStyle("ScalaDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("scala", "sc")
     ),
     Scheme(
-        Configuration()
-            .setLineComments(LineComment.Factory(";"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("scheme")
+        Configuration().setLineComments(line(";")).setBlockComments(block("#|", "|#"))
+            .setFileExtensions("scm", "ss", "scheme")
     ),
     SCSS(
-        Configuration()
-            .setDocumentationStyle("SCSS")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(LineComment.Factory("///"))
-            .setFileExtensions("scss")
+        Configuration().setDocumentationStyle("SCSS").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(line("///")).setFileExtensions("scss")
     ),
-    SQL(
-        Configuration()
-            .setLineComments(LineComment.Factory("--"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("sql")
-    ),
+    SQL(Configuration().setLineComments(line("--")).setBlockComments(cBlock()).setFileExtensions("sql")),
     Smalltalk(
-        Configuration()
-            .setLineComments(LineComment.Factory("\""))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("smalltalk", "st")
+        Configuration().setLineComments(block("\"", "\"")).setBlockComments(block("\"", "\""))
+            .setFileExtensions("st", "smalltalk")
     ),
     Swift(
-        Configuration()
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
+        Configuration().setLineComments(line("//")).setBlockComments(cBlock()).setDocComments(line("///"))
             .setFileExtensions("swift")
     ),
-    Tcl(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("tcl")
-    ),
+    Tcl(Configuration().setLineComments(line("#")).setFileExtensions("tcl")),
     TypeScript(
-        Configuration()
-            .setDocumentationStyle("TypeDoc")
-            .setLineComments(LineComment.Factory("//"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("typescript", "ts")
+        Configuration().setDocumentationStyle("TypeDoc").setLineComments(line("//")).setBlockComments(cBlock())
+            .setDocComments(cDoc()).setFileExtensions("ts", "tsx", "mts", "cts", "typescript")
     ),
     VisualBasic(
-        Configuration()
-            .setLineComments(LineComment.Factory("'"))
-            .setBlockComments(BlockComment.Factory("/*", "", "*/"))
-            .setDocComments(BlockComment.Factory("/**", "*", "*/"))
-            .setFileExtensions("visualbasic", "vb")
+        Configuration().setLineComments(line("'")).setDocComments(line("'''"))
+            .setFileExtensions("vb", "vbs", "visualbasic")
     ),
-    YAML(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setFileExtensions("yaml")
-    ),
-    ZShell(
-        Configuration()
-            .setLineComments(LineComment.Factory("#"))
-            .setFileExtensions("zsh")
+    YAML(Configuration().setLineComments(line("#")).setFileExtensions("yaml", "yml")),
+    ZShell(Configuration().setLineComments(line("#")).setFileExtensions("zsh")),
+    PowerShell(
+        Configuration().setLineComments(line("#")).setBlockComments(block("<#", "#>"))
+            .setFileExtensions("ps1", "psm1", "psd1")
     );
 
     val extensions: List<CharSequence> = listOf(*configuration.fileExtensions)
-    val docStyle: String
-    val lineComment: TextBlockFactory<*>
-    val blockComment: TextBlockFactory<*>
-    private val docComment: TextBlockFactory<*>
-
-    init {
-        docStyle = configuration.documentationStyle
-        lineComment = configuration.lineComments!!
-        blockComment = configuration.getBlockComments()!!
-        docComment = configuration.getDocComments()!!
-    }
+    val docStyle: String = configuration.documentationStyle
+    val lineComment: TextBlockFactory<*> = configuration.lineComments!!
+    val blockComment: TextBlockFactory<*> = configuration.getBlockComments()!!
+    val docComment: TextBlockFactory<*> = configuration.getDocComments()!!
 
     internal class Configuration {
         var documentationStyle = ""
@@ -425,56 +214,50 @@ enum class ComputerLanguage(configuration: Configuration) {
             private set
         private var blockComments: TextBlockFactory<*>? = null
         private var docComments: TextBlockFactory<*>? = null
-        fun setDocumentationStyle(documentationStyle: String): Configuration {
-            this.documentationStyle = documentationStyle
-            return this
+
+        fun setDocumentationStyle(documentationStyle: String) = apply { this.documentationStyle = documentationStyle }
+
+        fun setFileExtensions(vararg extensions: CharSequence) = apply {
+            this.fileExtensions = arrayOf(*extensions)
         }
 
-        fun setFileExtensions(vararg extensions: CharSequence): Configuration {
-            @Suppress("UNCHECKED_CAST")
-            this.fileExtensions = extensions as Array<CharSequence>
-            return this
-        }
+        fun setLineComments(lineComments: TextBlockFactory<*>) = apply { this.lineComments = lineComments }
 
-        fun setLineComments(lineComments: TextBlockFactory<*>): Configuration {
-            this.lineComments = lineComments
-            return this
-        }
+        fun getBlockComments(): TextBlockFactory<*>? = blockComments ?: lineComments
 
-        fun getBlockComments(): TextBlockFactory<*>? {
-            return if (null == blockComments) lineComments else blockComments
-        }
+        fun setBlockComments(blockComments: TextBlockFactory<*>) = apply { this.blockComments = blockComments }
 
-        fun setBlockComments(blockComments: TextBlockFactory<*>): Configuration {
-            this.blockComments = blockComments
-            return this
-        }
+        fun getDocComments(): TextBlockFactory<*>? = docComments ?: getBlockComments()
 
-        fun getDocComments(): TextBlockFactory<*>? {
-            return if (null == docComments) getBlockComments() else docComments
-        }
-
-        fun setDocComments(docComments: TextBlockFactory<*>): Configuration {
-            this.docComments = docComments
-            return this
-        }
+        fun setDocComments(docComments: TextBlockFactory<*>) = apply { this.docComments = docComments }
     }
 
     companion object {
-        @JvmStatic
-        fun findByExtension(extension: CharSequence): ComputerLanguage? {
-            return Arrays.stream(entries.toTypedArray()).filter { x: ComputerLanguage ->
-                x.extensions.contains(
-                    extension
-                )
-            }.findAny().orElse(null)
+        /** Extension (lowercase, no dot) -> language. First declared language wins on conflicts. */
+        private val byExtension: Map<String, ComputerLanguage> by lazy {
+            val map = LinkedHashMap<String, ComputerLanguage>()
+            entries.forEach { lang ->
+                lang.extensions.forEach { map.putIfAbsent(it.toString().lowercase(Locale.ROOT), lang) }
+            }
+            map
         }
 
         @JvmStatic
+        fun findByExtension(extension: CharSequence?): ComputerLanguage? =
+            extension?.toString()?.trim()?.removePrefix(".")?.lowercase(Locale.ROOT)
+                ?.takeIf { it.isNotEmpty() }?.let { byExtension[it] }
+
+        @JvmStatic
+        fun forFile(file: VirtualFile?): ComputerLanguage? =
+            file?.takeIf { !it.isDirectory }?.extension?.let { findByExtension(it) }
+
+        /** Uses the active editor's file if present, otherwise the selected virtual file. */
+        @JvmStatic
         fun getComputerLanguage(e: AnActionEvent?): ComputerLanguage? {
-            val file = e?.getData(CommonDataKeys.VIRTUAL_FILE) ?: return null
-            val extension = if (file.extension != null) file.extension!!.lowercase(Locale.getDefault()) else ""
-            return findByExtension(extension)
+            e ?: return null
+            val editorFile = e.getData(CommonDataKeys.EDITOR)?.document
+                ?.let { FileDocumentManager.getInstance().getFile(it) }
+            return forFile(editorFile ?: e.getData(CommonDataKeys.VIRTUAL_FILE))
         }
     }
 }

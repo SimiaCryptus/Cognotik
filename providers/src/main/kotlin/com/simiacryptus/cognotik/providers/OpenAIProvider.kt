@@ -1,17 +1,12 @@
 package com.simiacryptus.cognotik.providers
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
-import com.simiacryptus.cognotik.platform.model.AudioModels
 import com.simiacryptus.cognotik.chat.OpenAIChatClient
-import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.embedding.OpenAIEmbeddingClient
 import com.simiacryptus.cognotik.embedding.OpenAIEmbeddingModels
-import com.simiacryptus.cognotik.platform.model.ImageClientInterface
-import com.simiacryptus.cognotik.platform.model.ImageModel
 import com.simiacryptus.cognotik.image.OpenAIImageClient
 import com.simiacryptus.cognotik.image.OpenAIImageModels
-import com.simiacryptus.cognotik.platform.model.APIProvider
-import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
 import java.io.BufferedOutputStream
@@ -20,12 +15,12 @@ import java.util.concurrent.ExecutorService
 class OpenAIProvider : APIProvider("OpenAI", "https://api.openai.com/v1") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = OpenAIChatClient(
     apiKey = key,
     apiBase = base,

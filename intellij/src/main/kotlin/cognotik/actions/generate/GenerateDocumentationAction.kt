@@ -19,7 +19,9 @@ import com.intellij.ui.components.JBTextField
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ModelSchema.*
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.getSelectedFiles
 import com.simiacryptus.cognotik.util.getSelectedFolder
 import com.simiacryptus.cognotik.util.toContentList
@@ -31,7 +33,6 @@ import java.io.FileInputStream
 import java.nio.file.Files
 import java.nio.file.Path
 import java.util.*
-import java.util.concurrent.Executors
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 import java.util.concurrent.TimeoutException
@@ -158,7 +159,8 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
             outputPath = projectRoot.resolve("$name.$fileIndex.$extension") ?: outputPath
         }
 
-        val executorService = Executors.newFixedThreadPool(4)
+        val executorService = ThreadPoolManager.newFixedThreadPool(4, Session.NULL)
+
         val transformationMessage = config.settings.transformationMessage
         val markdownContent = TreeMap<String, String>()
         try {
@@ -292,9 +294,8 @@ class GenerateDocumentationAction : FileContextAction<GenerateDocumentationActio
       ).choices.first().message?.content?.trim()
     } ?: fileContent
 
-    companion object {
-        private val scheduledPool = Executors.newScheduledThreadPool(1)
-    }
+    private val scheduledPool by lazy { ThreadPoolManager.newScheduledThreadPool(1, Session.NULL) }
+
 
     fun open(project: Project, outputPath: Path) {
         lateinit var function: () -> Unit

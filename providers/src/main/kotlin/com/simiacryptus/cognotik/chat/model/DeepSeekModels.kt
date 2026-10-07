@@ -9,35 +9,49 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 object DeepSeekModels {
 
   // Pricing is quoted per 1M tokens in the DeepSeek docs; convert to per-1k.
-  // Note: DeepSeek pricing is scheduled to move to peak/off-peak billing on
-  // 2026-08-16 16:00 UTC, with off-peak rates at half the peak rate. The
-  // prices below reflect the current (pre-change) standard pricing.
-  // deepseek-v4-flash:
-  //   cache hit (Cached) input: $0.0028 / 1M
-  //   cache miss (Prompt) input: $0.14   / 1M
-  //   output (Completion):       $0.28   / 1M
+// Prices below reflect peak rates (off-peak rates are half of peak rates).
+// deepseek-flash:
+//   cache hit (Cached) input: $0.006 / 1M
+//   cache miss (Prompt) input: $0.30  / 1M
+//   output (Completion):       $1.20  / 1M
   private val flashPricing = mapOf(
-    TokenTypes.Prompt to 0.14 / 1000.0,
-    TokenTypes.Cached to 0.0028 / 1000.0,
-    TokenTypes.Completion to 0.28 / 1000.0,
-    TokenTypes.Thinking to 0.28 / 1000.0,
+    TokenTypes.Prompt to 0.3 / 1000.0,
+    TokenTypes.Cached to 0.006 / 1000.0,
+    TokenTypes.Completion to 1.2 / 1000.0,
+    TokenTypes.Thinking to 1.2 / 1000.0,
   )
 
   // deepseek-v4-pro:
-  //   cache hit (Cached) input: $0.003625 / 1M
-  //   cache miss (Prompt) input: $0.435   / 1M
-  //   output (Completion):       $0.87    / 1M
+//   cache hit (Cached) input: $0.044 / 1M
+//   cache miss (Prompt) input: $1.32  / 1M
+//   output (Completion):       $3.96  / 1M
   private val proPricing = mapOf(
-    TokenTypes.Prompt to 0.435 / 1000.0,
-    TokenTypes.Cached to 0.003625 / 1000.0,
-    TokenTypes.Completion to 0.87 / 1000.0,
-    TokenTypes.Thinking to 0.87 / 1000.0,
+    TokenTypes.Prompt to 1.32 / 1000.0,
+    TokenTypes.Cached to 0.044 / 1000.0,
+    TokenTypes.Completion to 3.96 / 1000.0,
+    TokenTypes.Thinking to 3.96 / 1000.0,
   )
-  // deepseek-v4-flash: DeepSeek-V4-Flash-0731, 1M context, 384K max output,
+
+  // deepseek-flash: DeepSeek-V4.1-Flash, 1M context, 384K max output,
   // supports both thinking and non-thinking modes (thinking is default).
   // Concurrency limit: 2500. Supports JSON output, tool calls, responses API,
-  // Anthropic API, and chat prefix completion (beta).
+  // Anthropic API, chat prefix completion (beta), FIM completion (beta, non-thinking only),
+  // and Vision.
+  val DeepSeekFlash by lazy {
+    ChatModel(
+      name = "DeepSeekFlash",
+      modelId = "deepseek-flash",
+      maxTotalTokens = 1_000_000,
+      maxOutTokens = 384_000,
+      provider = CoreProviders.DeepSeek,
+      tokenPricingPerK = flashPricing,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
 
+  // Retired legacy name for deepseek-flash; served by DeepSeek-V4.1-Flash.
   val DeepSeekV4Flash by lazy {
     ChatModel(
       name = "DeepSeekV4Flash",
@@ -47,11 +61,12 @@ object DeepSeekModels {
       provider = CoreProviders.DeepSeek,
       tokenPricingPerK = flashPricing,
       supportsReasoning = true,
-      inputModalities = setOf(ChatMessageModality.TEXT),
+      deprecated = true,
+      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
-  // deepseek-v4-pro: DeepSeek-V4-Pro-0813, 1M context, 384K max output,
+
   // supports both thinking and non-thinking modes (thinking is default).
   // Concurrency limit: 500. Supports JSON output, tool calls, responses API,
   // Anthropic API, and chat prefix completion (beta).
@@ -103,6 +118,7 @@ object DeepSeekModels {
 
   val values by lazy {
     mapOf(
+      "DeepSeekFlash" to DeepSeekFlash,
       "DeepSeekV4Flash" to DeepSeekV4Flash,
       "DeepSeekV4Pro" to DeepSeekV4Pro,
       "DeepSeekChat" to DeepSeekChat,

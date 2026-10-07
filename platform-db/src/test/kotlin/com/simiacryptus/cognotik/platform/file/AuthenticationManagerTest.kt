@@ -1,22 +1,18 @@
 package com.simiacryptus.cognotik.platform.file
 
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.User
-import org.junit.jupiter.api.Assertions.assertEquals
-import org.junit.jupiter.api.Assertions.assertFalse
-import org.junit.jupiter.api.Assertions.assertNotNull
-import org.junit.jupiter.api.Assertions.assertNull
-import org.junit.jupiter.api.Assertions.assertThrows
-import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.Assertions.*
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.DisplayName
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
 import java.time.Duration
 import java.time.Instant
-import java.util.UUID
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CountDownLatch
-import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
 
 class AuthenticationManagerTest {
@@ -400,7 +396,8 @@ class AuthenticationManagerTest {
     fun `concurrent writes and reads are consistent`() {
       val threads = 8
       val perThread = 200
-      val pool = Executors.newFixedThreadPool(threads)
+      val pool = ThreadPoolManager.newFixedThreadPool(threads, Session.NULL)
+
       val start = CountDownLatch(1)
       val tokens = ConcurrentHashMap.newKeySet<String>()
 
@@ -434,7 +431,8 @@ class AuthenticationManagerTest {
       manager.putUser(t, alice)
 
       val threads = 16
-      val pool = Executors.newFixedThreadPool(threads)
+      val pool = ThreadPoolManager.newFixedThreadPool(threads, Session.NULL)
+
       val start = CountDownLatch(1)
       val successes = java.util.concurrent.atomic.AtomicInteger()
 

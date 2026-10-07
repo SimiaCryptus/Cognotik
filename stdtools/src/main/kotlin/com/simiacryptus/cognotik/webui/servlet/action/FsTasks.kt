@@ -1,24 +1,20 @@
 package com.simiacryptus.cognotik.webui.servlet.action
 
-    import com.simiacryptus.cognotik.fileserver.action.ActionMenu
-    import com.simiacryptus.cognotik.fileserver.action.ActionParam
-    import com.simiacryptus.cognotik.fileserver.action.ActionSelection
-    import com.simiacryptus.cognotik.fileserver.action.ActionUi
-    import com.simiacryptus.cognotik.fileserver.action.FsAction
-    import com.simiacryptus.cognotik.fileserver.action.FsActionContext
-    import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
-    import jakarta.servlet.http.HttpServletResponse
-    import java.io.ByteArrayOutputStream
-    import java.io.OutputStream
-    import java.io.PrintStream
-    import java.util.concurrent.ConcurrentHashMap
-    import java.util.concurrent.Executors
-    import java.util.concurrent.TimeUnit
-    import java.util.concurrent.atomic.AtomicBoolean
-    import java.util.concurrent.atomic.AtomicLong
-    import java.util.concurrent.locks.ReentrantLock
+import com.simiacryptus.cognotik.fileserver.action.*
+import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+import com.simiacryptus.cognotik.platform.ThreadPoolManager
+import com.simiacryptus.cognotik.platform.model.Session
+import jakarta.servlet.http.HttpServletResponse
+import java.io.ByteArrayOutputStream
+import java.io.OutputStream
+import java.io.PrintStream
+import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
+import java.util.concurrent.atomic.AtomicLong
+import java.util.concurrent.locks.ReentrantLock
 
-    /**
+/**
      * Task book-keeping for the long-running FS API actions (DocOps `run`, AutoFix), plus the
      * `tasks` operation used to poll them:
      *
@@ -46,9 +42,10 @@ package com.simiacryptus.cognotik.webui.servlet.action
       private val ids = AtomicLong()
       private val ioLock = ReentrantLock()
       private val installed = AtomicBoolean(false)
-      private val executor = Executors.newSingleThreadExecutor { r ->
+      private val executor = ThreadPoolManager.newSingleThreadExecutor(Session.NULL) { r: Runnable ->
         Thread(r, "cognotik-task").apply { isDaemon = true }
       }
+
 
       /** Idempotent: registers the `tasks` operation once. */
       @Synchronized

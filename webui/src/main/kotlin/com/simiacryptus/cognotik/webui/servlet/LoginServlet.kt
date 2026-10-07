@@ -3,8 +3,14 @@ package com.simiacryptus.cognotik.webui.servlet
 import com.google.gson.Gson
 import com.google.gson.JsonObject
 import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.model.AuthReasons
+import com.simiacryptus.cognotik.platform.model.Outcomes
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.Companion.AUTH_COOKIE
+import com.simiacryptus.cognotik.platform.service.recordLogin
+import com.simiacryptus.cognotik.platform.service.recordLogout
+import com.simiacryptus.cognotik.platform.service.recordRegistration
+import com.simiacryptus.cognotik.platform.service.recordSessionVerification
 import jakarta.servlet.http.Cookie
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -48,6 +54,8 @@ class LoginServlet : HttpServlet() {
       log.error("Error during LoginServlet initialization", e)
     }
   }
+  /** Metrics label for the built-in username/password login method. */
+  private val passwordMethodName: String get() = UsernamePasswordLoginMethod.name
 
   companion object {
     private val log = LoggerFactory.getLogger(LoginServlet::class.java)
@@ -227,6 +235,18 @@ class LoginServlet : HttpServlet() {
      */
     fun verifySessionToken(
       token: String, passwordHash: String, maxAgeMs: Long = 7L * 24 * 60 * 60 * 1000
+    ): SessionVerificationResult {
+      val result = verifySessionTokenInternal(token, passwordHash, maxAgeMs)
+      when (result) {
+        is SessionVerificationResult.Success ->
+          ServiceRouter.recordSessionVerification(Outcomes.SUCCESS)
+        is SessionVerificationResult.Failure ->
+          ServiceRouter.recordSessionVerification(Outcomes.FAILURE, result.error.name.lowercase())
+      }
+      return result
+    }
+    private fun verifySessionTokenInternal(
+      token: String, passwordHash: String, maxAgeMs: Long
     ): SessionVerificationResult {
       return try {
         if (token.isBlank()) {
@@ -557,7 +577,7 @@ class LoginServlet : HttpServlet() {
       log.debug("doGet action='{}' from remote='{}'", action, req.remoteAddr)
       // If the user is already authenticated, redirect them away from the login flow
       // regardless of which action was requested (login, register, or default).
-      if (action != "logout" && isAlreadyAuthenticated(req)) {
+       if (action != "logout" && !methodAllowsAuthenticated(req, action) && isAlreadyAuthenticated(req)) {
         val redirectUrl = resolveRedirectTarget(req.getParameter("target"))
         log.debug("User already authenticated, redirecting to '{}'", redirectUrl)
         resp.sendRedirect(redirectUrl)
@@ -593,7 +613,7 @@ class LoginServlet : HttpServlet() {
       val action = req.getParameter("action") ?: req.getParameter("formAction")
       log.debug("doPost action='{}' from remote='{}'", action, req.remoteAddr)
       // If the user is already authenticated, redirect them away from login/register flows.
-      if (action != "logout" && isAlreadyAuthenticated(req)) {
+       if (action != "logout" && !methodAllowsAuthenticated(req, action) && isAlreadyAuthenticated(req)) {
         val redirectUrl = resolveRedirectTarget(req.getParameter("target"))
         log.debug("User already authenticated on POST, redirecting to '{}'", redirectUrl)
         resp.sendRedirect(redirectUrl)
@@ -629,6 +649,22 @@ class LoginServlet : HttpServlet() {
       }
     }
   }
+   /**
+    * Returns true if the request targets a [LoginMethod] that explicitly needs to handle
+    * already-authenticated users (e.g. QR login approval from a logged-in phone).
+    */
+   private fun methodAllowsAuthenticated(req: HttpServletRequest, action: String?): Boolean {
+     if (action != "login") return false
+     val methodName = req.getParameter("loginMethod")
+     if (methodName.isNullOrBlank()) return false
+     return try {
+       LoginMethod.valueOf(methodName).allowsAuthenticatedUser(req)
+     } catch (e: Exception) {
+       log.debug("Could not resolve login method '{}' for auth bypass check", methodName)
+       false
+     }
+   }
+
 
   /**
    * Dispatches the POST to the selected [LoginMethod] (if any). If the method's
@@ -655,6 +691,7 @@ class LoginServlet : HttpServlet() {
             "Username/password login attempt while local auth is disabled from remote: {}",
             req.remoteAddr
           )
+          ServiceRouter.recordLogin(method.name, Outcomes.FAILURE, AuthReasons.DISABLED)
           serveLoginPage(
             req,
             resp,
@@ -674,6 +711,7 @@ class LoginServlet : HttpServlet() {
           }
         } catch (e: Exception) {
           log.error("Error in login method '{}' from remote: {}", methodName, req.remoteAddr, e)
+          ServiceRouter.recordLogin(method.name, Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR)
           serveLoginPage(
             req,
             resp,
@@ -687,6 +725,7 @@ class LoginServlet : HttpServlet() {
       return null
     } else if (!IS_LOCAL_AUTH_ENABLED) {
       log.warn("Legacy login fallback blocked because local auth is disabled from remote: {}", req.remoteAddr)
+      ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.DISABLED)
       serveLoginPage(
         req,
         resp,
@@ -704,6 +743,7 @@ class LoginServlet : HttpServlet() {
   private fun handleLogin(req: HttpServletRequest, resp: HttpServletResponse, methodName: String) {
     if (!IS_LOCAL_AUTH_ENABLED) {
       log.warn("handleLogin invoked while local auth is disabled from remote: {}", req.remoteAddr)
+      ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.DISABLED)
       serveLoginPage(
         req,
         resp,
@@ -722,9 +762,11 @@ class LoginServlet : HttpServlet() {
         "Login attempt with missing credentials from remote: {} (username blank: {}, password blank: {})",
         req.remoteAddr, username.isNullOrBlank(), password.isNullOrBlank()
       )
+      ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.MISSING_CREDENTIALS)
       serveLoginPage(req, resp, error = "Username and password are required.", target = target)
       return
     }
+    var succeeded = false
 
     try {
       val user = User(
@@ -736,12 +778,14 @@ class LoginServlet : HttpServlet() {
         ServiceRouter.getUserSettings(user)
       } catch (e: Exception) {
         log.error("Failed to load user settings for login: {}", username, e)
+        ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR, user)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
         return
       }
 
       if (settings.passwordHash == null) {
         log.warn("Login attempt for user without password set: {} from remote: {}", username, req.remoteAddr)
+        ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.UNKNOWN_USER, user)
         serveLoginPage(req, resp, error = "User not found. Please register first.", target = target)
         return
       }
@@ -749,6 +793,7 @@ class LoginServlet : HttpServlet() {
       val inputHash = hashPassword(password)
       if (inputHash != settings.passwordHash) {
         log.warn("Failed login attempt for user: {} from remote: {}", username, req.remoteAddr)
+        ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.INVALID_CREDENTIALS, user)
         serveLoginPage(req, resp, error = "Username password is not set.", target = target)
         return
       }
@@ -758,6 +803,7 @@ class LoginServlet : HttpServlet() {
         ServiceRouter.putUser(accessToken, user)
       } catch (e: Exception) {
         log.error("Failed to register user with authentication manager: {}", username, e)
+        ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR, user)
         serveLoginPage(req, resp, error = "An internal error occurred.", target = target)
         return
       }
@@ -769,6 +815,8 @@ class LoginServlet : HttpServlet() {
       })
 
       log.info("User logged in successfully: {} from remote: {}", username, req.remoteAddr)
+      succeeded = true
+      ServiceRouter.recordLogin(passwordMethodName, Outcomes.SUCCESS, user = user)
       try {
         initializeSystem(user)
       } catch (e: Exception) {
@@ -787,6 +835,9 @@ class LoginServlet : HttpServlet() {
       resp.sendRedirect(redirectUrl)
     } catch (e: Exception) {
       log.error("Error during login for user: {} from remote: {}", username, req.remoteAddr, e)
+      if (!succeeded) {
+        ServiceRouter.recordLogin(passwordMethodName, Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR)
+      }
       serveLoginPage(req, resp, error = "An error occurred during login.", target = target)
     }
   }
@@ -845,19 +896,24 @@ class LoginServlet : HttpServlet() {
           val user = ServiceRouter.getUser(token)
           if (user == null) {
             log.warn("Logout requested for token with no associated user from remote: {}", req.remoteAddr)
+            ServiceRouter.recordLogout(Outcomes.FAILURE, AuthReasons.NO_SESSION)
           } else {
             try {
               ServiceRouter.logoutIfMatching(token, user)
               log.info("User logged out: {} from remote: {}", user.email, req.remoteAddr)
+              ServiceRouter.recordLogout(Outcomes.SUCCESS, user = user)
             } catch (e: Exception) {
               log.error("Error invoking authenticationManager.logout for user: {}", user.email, e)
+              ServiceRouter.recordLogout(Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR, user)
             }
           }
         } catch (e: Exception) {
           log.warn("Error removing user from authentication manager during logout", e)
+          ServiceRouter.recordLogout(Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR)
         }
       } else {
         log.debug("Logout requested but no auth cookie present from remote: {}", req.remoteAddr)
+        ServiceRouter.recordLogout(Outcomes.FAILURE, AuthReasons.NO_SESSION)
       }
       // Clear the auth cookie on the client by sending a cookie with maxAge=0
       resp.addCookie(Cookie(AUTH_COOKIE, "").apply {
@@ -886,6 +942,7 @@ class LoginServlet : HttpServlet() {
   private fun handleRegistration(req: HttpServletRequest, resp: HttpServletResponse) {
     if (!IS_LOCAL_AUTH_ENABLED) {
       log.warn("handleRegistration invoked while local auth is disabled from remote: {}", req.remoteAddr)
+      ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.DISABLED)
       serveLoginPage(
         req,
         resp,
@@ -905,21 +962,25 @@ class LoginServlet : HttpServlet() {
         "Registration missing fields (username blank: {}, password blank: {}, confirm blank: {})",
         username.isNullOrBlank(), password.isNullOrBlank(), confirmPassword.isNullOrBlank()
       )
+      ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.VALIDATION)
       serveRegistrationPage(req, resp, error = "All fields are required.", target = target)
       return
     }
 
     if (password != confirmPassword) {
       log.debug("Registration password mismatch for username: {}", username)
+      ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.VALIDATION)
       serveRegistrationPage(req, resp, error = "Passwords do not match.", target = target)
       return
     }
 
     if (password.isEmpty()) {
       log.debug("Registration empty password for username: {}", username)
+      ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.VALIDATION)
       serveRegistrationPage(req, resp, error = "Password cannot be empty.", target = target)
       return
     }
+    var registered = false
 
     try {
       val user = User(
@@ -930,6 +991,7 @@ class LoginServlet : HttpServlet() {
       val throttleKey = "${req.remoteAddr}:$username"
       if (isThrottled(throttleKey)) {
         log.warn("Registration attempt throttled for key: {} from remote: {}", throttleKey, req.remoteAddr)
+        ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.THROTTLED, user)
         serveRegistrationPage(
           req,
           resp,
@@ -950,6 +1012,7 @@ class LoginServlet : HttpServlet() {
       }
       if (!approved) {
         log.info("Registration denied by operator for user: {} from remote: {}", username, req.remoteAddr)
+        ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.DENIED, user)
         serveRegistrationPage(
           req,
           resp,
@@ -963,11 +1026,13 @@ class LoginServlet : HttpServlet() {
         ServiceRouter.getUserSettings(user)
       } catch (e: Exception) {
         log.error("Failed to load existing settings for registration: {}", username, e)
+        ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR, user)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
         return
       }
       if (existingSettings.passwordHash != null) {
         log.info("Registration attempt for existing user: {} from remote: {}", username, req.remoteAddr)
+        ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.ALREADY_EXISTS, user)
         serveRegistrationPage(req, resp, error = "User already exists. Please login instead.", target = target)
         return
       }
@@ -976,11 +1041,14 @@ class LoginServlet : HttpServlet() {
         ServiceRouter.updateUserSettings(user, newSettings)
       } catch (e: Exception) {
         log.error("Failed to persist user settings during registration: {}", username, e)
+        ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR, user)
         serveRegistrationPage(req, resp, error = "An internal error occurred.", target = target)
         return
       }
 
       log.info("User registered successfully: {} from remote: {}", username, req.remoteAddr)
+      registered = true
+      ServiceRouter.recordRegistration(Outcomes.SUCCESS, user = user)
 
       val accessToken = createSessionToken(username, hashPassword(password))
       try {
@@ -1009,6 +1077,9 @@ class LoginServlet : HttpServlet() {
       resp.sendRedirect(redirectUrl)
     } catch (e: Exception) {
       log.error("Error during registration for user: {} from remote: {}", username, req.remoteAddr, e)
+      if (!registered) {
+        ServiceRouter.recordRegistration(Outcomes.FAILURE, AuthReasons.INTERNAL_ERROR)
+      }
       serveRegistrationPage(req, resp, error = "An error occurred during registration.", target = target)
     }
   }
@@ -1020,6 +1091,7 @@ class LoginServlet : HttpServlet() {
     target: String? = null
   ) {
     try {
+       val error = error ?: req.getParameter("error")?.takeIf { it.isNotBlank() }?.take(300)
       val effectiveTarget = target ?: req.getParameter("target")
       // If the user is already authenticated, skip the login form and redirect them
       // to either the requested target or the homepage. This applies regardless of

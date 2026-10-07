@@ -42,16 +42,6 @@ object CliSupport {
 
   var defaultUser: User? = User(email = email)
 
-  init {
-    CognotikPlatform.init()
-    ServiceKey.USER_RESOLVER.factory = {
-      object : UserProvider {
-        override fun authenticate(
-          request: HttpServletRequest
-        ) = defaultUser
-      }
-    }
-  }
   val log = LoggerFactory.getLogger(CliSupport::class.java)
 
   /**

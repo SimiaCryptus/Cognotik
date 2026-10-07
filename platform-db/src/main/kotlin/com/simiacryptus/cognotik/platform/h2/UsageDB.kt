@@ -14,6 +14,7 @@ import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.util.toJson
 import org.jetbrains.exposed.v1.core.SortOrder
 import org.jetbrains.exposed.v1.core.Table
+import org.jetbrains.exposed.v1.core.Expression
 import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
@@ -28,6 +29,7 @@ import org.jetbrains.exposed.v1.jdbc.deleteAll
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
+import org.jetbrains.exposed.v1.jdbc.select
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.slf4j.LoggerFactory
@@ -130,23 +132,25 @@ class UsageDB : UsageInterface {
 
   /**
    * Invalidate the cached usage summary for [sessionId] and every ancestor.
-   * Must be invoked inside a transaction (it consults SessionParentsTable).
+    * Must be invoked inside a transaction (it consults SessionParentsTable).
+    * Walks the ancestry level-by-level with one bulk query per level.
    */
   private fun invalidateSessionAndAncestors(sessionId: String) {
-    val toInvalidate = linkedSetOf<String>()
-    val queue = ArrayDeque<String>()
-    queue.add(sessionId)
-    while (queue.isNotEmpty()) {
-      val current = queue.removeFirst()
-      if (!toInvalidate.add(current)) continue
-      SessionParentsTable
-        .selectAll()
-        .where { SessionParentsTable.childSessionId eq current }
-        .forEach { row ->
-          val parentId = row[SessionParentsTable.parentSessionId]
-          if (parentId !in toInvalidate) queue.add(parentId)
-        }
-    }
+     val toInvalidate = linkedSetOf(sessionId)
+     var frontier = listOf(sessionId)
+     while (frontier.isNotEmpty()) {
+       val next = mutableListOf<String>()
+       frontier.chunked(IN_LIST_CHUNK).forEach { chunk ->
+         SessionParentsTable
+           .select(SessionParentsTable.parentSessionId)
+           .where { SessionParentsTable.childSessionId inList chunk }
+           .forEach { row ->
+             val parentId = row[SessionParentsTable.parentSessionId]
+             if (toInvalidate.add(parentId)) next.add(parentId)
+           }
+       }
+       frontier = next
+     }
     for (sid in toInvalidate) sessionUsageCache.remove(sid)
   }
 
@@ -271,16 +275,18 @@ class UsageDB : UsageInterface {
         return@transaction emptyMap()
       }
       // Fetch usage rows for the relevant sessions.
-      val usageRows = UsageTable
-        .selectAll()
-        .where { UsageTable.sessionId inList allSessionIds.toList() }
-        .map { row ->
-          Triple(
-            row[UsageTable.id],
-            row[UsageTable.model] ?: "",
-            row[UsageTable.cost] ?: 0.0
-          )
-        }
+       val usageRows = allSessionIds.toList().chunked(IN_LIST_CHUNK).flatMap { chunk ->
+         UsageTable
+           .select(UsageTable.id, UsageTable.model, UsageTable.cost)
+           .where { UsageTable.sessionId inList chunk }
+           .map { row ->
+             Triple(
+               row[UsageTable.id],
+               row[UsageTable.model] ?: "",
+               row[UsageTable.cost] ?: 0.0
+             )
+           }
+       }
       if (usageRows.isEmpty()) {
         sessionUsageCache[session.sessionId] =
           SessionUsageCacheEntry(emptyMap(), System.nanoTime())
@@ -289,10 +295,12 @@ class UsageDB : UsageInterface {
       val usageIds = usageRows.map { it.first }
       val usageById = usageRows.associateBy { it.first }
       // Fetch token rows for those usage ids.
-      val tokenRowsByUsageId = UsageTokensTable
-        .selectAll()
-        .where { UsageTokensTable.usageId inList usageIds }
-        .groupBy { it[UsageTokensTable.usageId] }
+       val tokenRowsByUsageId = usageIds.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+         UsageTokensTable
+           .selectAll()
+           .where { UsageTokensTable.usageId inList chunk }
+           .toList()
+       }.groupBy { it[UsageTokensTable.usageId] }
       // Aggregate per-model: token counts summed, cost summed (single source of truth per usage row).
       val counts = linkedMapOf<String, MutableMap<TokenTypes, Long>>()
       val costs = linkedMapOf<String, Double>()
@@ -365,22 +373,26 @@ class UsageDB : UsageInterface {
       // Intentionally does NOT recurse into descendant sessions — this is
       // the listing-page semantics (each row in the listing represents a
       // single session, not a subtree).
-      val usageRows = UsageTable
-        .selectAll()
-        .where { UsageTable.sessionId inList toLoad.map { it.sessionId } }
-        .map { row ->
-          UsageRowSlim(
-            id = row[UsageTable.id],
-            sessionId = row[UsageTable.sessionId] ?: "",
-            model = row[UsageTable.model] ?: "",
-            cost = row[UsageTable.cost] ?: 0.0,
-          )
-        }
+       val usageRows = toLoad.map { it.sessionId }.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+         UsageTable
+           .select(UsageTable.id, UsageTable.sessionId, UsageTable.model, UsageTable.cost)
+           .where { UsageTable.sessionId inList chunk }
+           .map { row ->
+             UsageRowSlim(
+               id = row[UsageTable.id],
+               sessionId = row[UsageTable.sessionId] ?: "",
+               model = row[UsageTable.model] ?: "",
+               cost = row[UsageTable.cost] ?: 0.0,
+             )
+           }
+       }
       val tokenRowsByUsageId = if (usageRows.isEmpty()) emptyMap()
-      else UsageTokensTable
-        .selectAll()
-        .where { UsageTokensTable.usageId inList usageRows.map { it.id } }
-        .groupBy { it[UsageTokensTable.usageId] }
+       else usageRows.map { it.id }.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+         UsageTokensTable
+           .selectAll()
+           .where { UsageTokensTable.usageId inList chunk }
+           .toList()
+       }.groupBy { it[UsageTokensTable.usageId] }
       // Per-session, per-model accumulators.
       val countsBySession = linkedMapOf<Session, LinkedHashMap<String, MutableMap<TokenTypes, Long>>>()
       val costsBySession = linkedMapOf<Session, LinkedHashMap<String, Double>>()
@@ -478,8 +490,8 @@ class UsageDB : UsageInterface {
     }
   }
 
-  override fun getParentSession(user: User, child: Session): Session? {
-    log.debug("Getting parent session for child: {}", child.sessionId)
+    override fun getParentSession(user: User, child: Session): Session? {
+      log.debug("Getting parent session for child: {}", child.sessionId)
     return transaction(database) {
       val row = SessionParentsTable
         .selectAll()
@@ -496,6 +508,100 @@ class UsageDB : UsageInterface {
       }
     }
   }
+   /**
+    * Bulk parent lookup: one `WHERE child IN (...)` query per chunk.
+    * Every requested child is present in the result (null when it has no parent).
+    */
+   override fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> {
+     val distinct = children.toSet()
+     if (distinct.isEmpty()) return emptyMap()
+     val byId = distinct.associateBy { it.sessionId }
+     val out = LinkedHashMap<Session, Session?>()
+     distinct.forEach { out[it] = null }
+     transaction(database) {
+       byId.keys.toList().chunked(IN_LIST_CHUNK).forEach { chunk ->
+         SessionParentsTable
+           .selectAll()
+           .where { SessionParentsTable.childSessionId inList chunk }
+           .forEach { row ->
+             val child = byId[row[SessionParentsTable.childSessionId]] ?: return@forEach
+             if (out[child] != null) return@forEach
+             out[child] = Session.tryParse(row[SessionParentsTable.parentSessionId])
+           }
+       }
+     }
+     return out
+   }
+   override fun listChildSessions(user: User, parent: Session): List<Session> =
+     listChildSessionsBulk(user, listOf(parent))[parent].orEmpty()
+   /**
+    * Bulk child enumeration: one `WHERE parent IN (...)` query per chunk.
+    * Every requested parent is present in the result (empty list when childless).
+    * Malformed child ids are skipped rather than failing the whole call.
+    */
+   override fun listChildSessionsBulk(user: User, parents: Collection<Session>): Map<Session, List<Session>> {
+     val distinct = parents.toSet()
+     if (distinct.isEmpty()) return emptyMap()
+     val byId = distinct.associateBy { it.sessionId }
+     val out = LinkedHashMap<Session, MutableList<Session>>()
+     distinct.forEach { out[it] = mutableListOf() }
+     transaction(database) {
+       byId.keys.toList().chunked(IN_LIST_CHUNK).forEach { chunk ->
+         SessionParentsTable
+           .selectAll()
+           .where { SessionParentsTable.parentSessionId inList chunk }
+           .orderBy(SessionParentsTable.childSessionId to SortOrder.ASC)
+           .forEach { row ->
+             val parent = byId[row[SessionParentsTable.parentSessionId]] ?: return@forEach
+             val child = Session.tryParse(row[SessionParentsTable.childSessionId]) ?: return@forEach
+             out.getValue(parent).add(child)
+           }
+       }
+     }
+     return out
+   }
+   /**
+    * Time-based listing of a user's calls, independent of sessions (includes
+    * ad-hoc calls recorded under [Session.NULL]). Served by idx_usage_user_dt.
+    */
+   override fun getUserUsageRows(
+     user: User,
+     from: Instant,
+     to: Instant,
+     includeText: Boolean
+   ): List<UsageInterface.UsageRow> {
+     require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
+     if (user.id.isEmpty()) return emptyList()
+     log.debug("Getting user usage rows user={} from={} to={} includeText={}", user.id, from, to, includeText)
+     return transaction(database) {
+       val columns = mutableListOf<Expression<*>>(
+         UsageTable.id,
+         UsageTable.sessionId,
+         UsageTable.userId,
+         UsageTable.model,
+         UsageTable.promptTokens,
+         UsageTable.completionTokens,
+         UsageTable.cost,
+         UsageTable.datetime,
+       )
+       if (includeText) {
+         columns.add(UsageTable.inputText)
+         columns.add(UsageTable.outputText)
+       }
+       val rows = UsageTable
+         .select(columns)
+         .where {
+           (UsageTable.userId eq user.id) and
+               (UsageTable.datetime greaterEq from) and
+               (UsageTable.datetime less to)
+         }
+         .orderBy(UsageTable.datetime to SortOrder.ASC)
+         .orderBy(UsageTable.id to SortOrder.ASC)
+         .map { toUsageRow(it, includeText) }
+       attachTokenCounts(rows)
+     }
+   }
+
 
   override fun getAvailableBudget(user: User): Double {
     if (user.id.isEmpty()) return 0.0
@@ -631,71 +737,80 @@ class UsageDB : UsageInterface {
   }
 
   override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> {
-    log.debug("Getting session usage rows for session: {}", session)
+//    log.debug("Getting session usage rows for session: {}", session)
     return transaction(database) {
       val allSessionIds = collectSessionIds(session.sessionId)
       if (allSessionIds.isEmpty()) return@transaction emptyList()
-      val rows = UsageTable
-        .selectAll()
-        .where { UsageTable.sessionId inList allSessionIds.toList() }
-        .orderBy(UsageTable.datetime to SortOrder.ASC)
-        .map { row ->
-          val id = row[UsageTable.id]
-          id to UsageInterface.UsageRow(
-            id = id,
-            sessionId = row[UsageTable.sessionId],
-            userId = row[UsageTable.userId],
-            model = row[UsageTable.model],
-            datetime = row[UsageTable.datetime],
-            tokenCounts = emptyMap(),
-            cost = row[UsageTable.cost] ?: 0.0,
-            inputText = row[UsageTable.inputText],
-            outputText = row[UsageTable.outputText]
-          )
-        }
-      if (rows.isEmpty()) return@transaction emptyList()
-      val ids = rows.map { it.first }
-      val tokensById = UsageTokensTable
-        .selectAll()
-        .where { UsageTokensTable.usageId inList ids }
-        .groupBy { it[UsageTokensTable.usageId] }
-        .mapValues { (_, tokenRows) ->
-          val map = mutableMapOf<TokenTypes, Long>()
-          for (tr in tokenRows) {
-            val rawType = tr[UsageTokensTable.tokenType]
-            val count = tr[UsageTokensTable.tokenCount]
-            val parsed = runCatching { TokenTypes.valueOf(rawType) }.getOrNull()
-            if (parsed != null && count != 0L) {
-              map.merge(parsed, count) { a, b -> a + b }
-            }
-          }
-          map.toMap()
-        }
-      rows.map { (id, row) ->
-        row.copy(tokenCounts = tokensById[id] ?: emptyMap())
-      }
+       val rows = allSessionIds.toList().chunked(IN_LIST_CHUNK).flatMap { chunk ->
+         UsageTable
+           .selectAll()
+           .where { UsageTable.sessionId inList chunk }
+           .map { toUsageRow(it, includeText = true) }
+       }.sortedWith(
+         compareBy<UsageInterface.UsageRow, Instant?>(nullsFirst()) { it.datetime }.thenBy { it.id }
+       )
+       attachTokenCounts(rows)
     }
   }
+   /** Maps a usage row; text columns are read only when they were selected. */
+   private fun toUsageRow(row: org.jetbrains.exposed.v1.core.ResultRow, includeText: Boolean): UsageInterface.UsageRow {
+     // Legacy fallback for rows predating usage_tokens; replaced by attachTokenCounts when present.
+     val legacy = LinkedHashMap<TokenTypes, Long>()
+     row[UsageTable.promptTokens]?.takeIf { it != 0L }?.let { legacy[TokenTypes.Prompt] = it }
+     row[UsageTable.completionTokens]?.takeIf { it != 0L }?.let { legacy[TokenTypes.Completion] = it }
+     return UsageInterface.UsageRow(
+       id = row[UsageTable.id],
+       sessionId = row[UsageTable.sessionId],
+       userId = row[UsageTable.userId],
+       model = row[UsageTable.model],
+       datetime = row[UsageTable.datetime],
+       tokenCounts = legacy,
+       cost = row[UsageTable.cost] ?: 0.0,
+       inputText = if (includeText) row[UsageTable.inputText] else null,
+       outputText = if (includeText) row[UsageTable.outputText] else null,
+     )
+   }
+   /** Fills per-type token counts with chunked bulk lookups. Must be invoked inside a transaction. */
+   private fun attachTokenCounts(rows: List<UsageInterface.UsageRow>): List<UsageInterface.UsageRow> {
+     if (rows.isEmpty()) return rows
+     val tokensById = HashMap<Long, MutableMap<TokenTypes, Long>>()
+     rows.map { it.id }.chunked(IN_LIST_CHUNK).forEach { chunk ->
+       UsageTokensTable
+         .selectAll()
+         .where { UsageTokensTable.usageId inList chunk }
+         .forEach { tr ->
+           val parsed = runCatching { TokenTypes.valueOf(tr[UsageTokensTable.tokenType]) }.getOrNull()
+             ?: return@forEach
+           val count = tr[UsageTokensTable.tokenCount]
+           if (count == 0L) return@forEach
+           tokensById.getOrPut(tr[UsageTokensTable.usageId]) { mutableMapOf() }
+             .merge(parsed, count) { a, b -> a + b }
+         }
+     }
+     return rows.map { r -> tokensById[r.id]?.let { r.copy(tokenCounts = it.toMap()) } ?: r }
+   }
 
 
   /**
-   * Recursively collect all descendant session IDs (BFS). Must be invoked inside a transaction.
+    * Collect the session and all descendant session IDs, level-by-level with one
+    * bulk query per tree level. Must be invoked inside a transaction.
    */
   private fun collectSessionIds(sessionId: String): Set<String> {
-    val visited = linkedSetOf<String>()
-    val queue = ArrayDeque<String>()
-    queue.add(sessionId)
-    while (queue.isNotEmpty()) {
-      val current = queue.removeFirst()
-      if (!visited.add(current)) continue
-      SessionParentsTable
-        .selectAll()
-        .where { SessionParentsTable.parentSessionId eq current }
-        .forEach { row ->
-          val childId = row[SessionParentsTable.childSessionId]
-          if (childId !in visited) queue.add(childId)
-        }
-    }
+     val visited = linkedSetOf(sessionId)
+     var frontier = listOf(sessionId)
+     while (frontier.isNotEmpty()) {
+       val next = mutableListOf<String>()
+       frontier.chunked(IN_LIST_CHUNK).forEach { chunk ->
+         SessionParentsTable
+           .select(SessionParentsTable.childSessionId)
+           .where { SessionParentsTable.parentSessionId inList chunk }
+           .forEach { row ->
+             val childId = row[SessionParentsTable.childSessionId]
+             if (visited.add(childId)) next.add(childId)
+           }
+       }
+       frontier = next
+     }
     return visited
   }
 
@@ -824,6 +939,9 @@ class UsageDB : UsageInterface {
       CognotikPlatform.init()
     }
     private val log = LoggerFactory.getLogger(UsageDB::class.java)
+     /** Max ids per IN (...) list; keeps well below driver bind-parameter limits. */
+     private const val IN_LIST_CHUNK = 1000
+
 
     var cost_scaling_factor: Double = 1.0
       set(value) {

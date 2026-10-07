@@ -4,21 +4,36 @@
         <meta charset="utf-8">
         <meta name="viewport" content="width=device-width, initial-scale=1">
         <title>Cognotik Dev Tools</title>
+         <meta name="color-scheme" content="light dark">
+         <!-- Central theme system: tokens first (id is required by ThemeManager), page styles after. -->
+         <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
         <style>
             :root {
-                --bg: #0f1115;
-                --panel: #171a21;
-                --panel-2: #1e222b;
-                --border: #2a2f3a;
-                --fg: #e6e9ef;
-                --muted: #9aa4b2;
-                --accent: #4f8cff;
-                --accent-2: #7c5cff;
-                --ok: #3ecf8e;
-                --warn: #f5a524;
-                --err: #f4636e;
+                 /* Local names alias the shared --color-* tokens from /themes.css;
+                    the literals are fallbacks for when the theme assets are unavailable. */
+                 --bg: var(--color-canvas, #0f1115);
+                 --panel: var(--color-surface, #171a21);
+                 --panel-2: var(--color-surface-alt, #1e222b);
+                 --border: var(--color-border, #2a2f3a);
+                 --fg: var(--color-text, #e6e9ef);
+                 --heading: var(--color-heading, var(--fg));
+                 --muted: var(--color-text-muted, #9aa4b2);
+                 --accent: var(--color-brand, #4f8cff);
+                 --accent-2: var(--color-accent, #7c5cff);
+                 --ok: var(--color-success, #3ecf8e);
+                 --warn: var(--color-warning, #f5a524);
+                 --err: var(--color-danger, #f4636e);
+                 --code-bg: var(--color-canvas, #0b0d12);
+                 --shadow-card: 0 10px 30px rgba(0, 0, 0, .14);
+                 --shadow-toast: 0 8px 24px rgba(0, 0, 0, .16);
+                 --shadow-modal: 0 24px 60px rgba(0, 0, 0, .3);
                 --radius: 12px;
             }
+             html[data-scheme="dark"] {
+                 --shadow-card: 0 10px 30px rgba(0, 0, 0, .35);
+                 --shadow-toast: 0 8px 24px rgba(0, 0, 0, .4);
+                 --shadow-modal: 0 24px 60px rgba(0, 0, 0, .55);
+             }
 
             * { box-sizing: border-box; }
 
@@ -26,8 +41,8 @@
                 margin: 0;
                 padding: 0;
                 background:
-                    radial-gradient(1200px 600px at 12% -10%, rgba(124, 92, 255, .18), transparent 60%),
-                    radial-gradient(900px 500px at 88% -20%, rgba(79, 140, 255, .16), transparent 60%),
+                     radial-gradient(1200px 600px at 12% -10%, color-mix(in srgb, var(--accent-2) 18%, transparent), transparent 60%),
+                     radial-gradient(900px 500px at 88% -20%, color-mix(in srgb, var(--accent) 16%, transparent), transparent 60%),
                     var(--bg);
                 background-attachment: fixed;
                 color: var(--fg);
@@ -57,7 +72,7 @@
             .hero h1 {
                 font-size: 2rem;
                 letter-spacing: -.02em;
-                background: linear-gradient(90deg, var(--fg), var(--accent-2));
+                 background: linear-gradient(90deg, var(--heading), var(--accent-2));
                 -webkit-background-clip: text;
                 background-clip: text;
                 color: transparent;
@@ -121,7 +136,7 @@
             .seg button { border-radius: 0; }
             .seg button:first-child { border-radius: 8px 0 0 8px; }
             .seg button:last-child { border-radius: 0 8px 8px 0; margin-left: -1px; }
-            .seg button[aria-pressed="true"] { border-color: var(--accent); color: #fff; background: var(--panel); }
+             .seg button[aria-pressed="true"] { border-color: var(--accent); color: var(--heading); background: var(--panel); }
 
             /* ───────────── chips ───────────── */
             .chips { display: flex; gap: .4rem; flex-wrap: wrap; margin: .35rem 0; }
@@ -142,7 +157,7 @@
             .chip:hover { border-color: var(--accent); color: var(--fg); }
 
             .chip[aria-pressed="true"] {
-                color: #fff;
+                 color: var(--heading);
                 border-color: var(--chip, var(--accent));
                 background: color-mix(in srgb, var(--chip, var(--accent)) 22%, transparent);
             }
@@ -190,7 +205,7 @@
             .card:hover {
                 transform: translateY(-2px);
                 border-color: color-mix(in srgb, var(--cat, var(--accent)) 55%, var(--border));
-                box-shadow: 0 10px 30px rgba(0, 0, 0, .35);
+                 box-shadow: var(--shadow-card);
             }
 
             .card[data-missing="true"] { opacity: .55; }
@@ -244,7 +259,7 @@
             }
 
             .tag:hover { color: var(--fg); border-color: var(--accent); }
-            .tag[aria-pressed="true"] { color: #fff; border-color: var(--accent); }
+             .tag[aria-pressed="true"] { color: var(--heading); border-color: var(--accent); }
 
             details { border-top: 1px solid var(--border); padding-top: .5rem; }
             details summary { cursor: pointer; color: var(--muted); font-size: .8rem; }
@@ -254,7 +269,7 @@
 
             code {
                 font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
-                background: #0b0d12;
+                 background: var(--code-bg);
                 border: 1px solid var(--border);
                 border-radius: 5px;
                 padding: .05rem .3rem;
@@ -320,7 +335,7 @@
                 border-radius: 8px;
                 padding: .5rem .8rem;
                 font-size: .82rem;
-                box-shadow: 0 8px 24px rgba(0, 0, 0, .4);
+                 box-shadow: var(--shadow-toast);
             }
 
             .toast.err { border-left-color: var(--err); }
@@ -351,7 +366,7 @@
                 border: 1px solid var(--border);
                 border-top: 3px solid var(--doc, var(--accent-2));
                 border-radius: var(--radius);
-                box-shadow: 0 24px 60px rgba(0, 0, 0, .55);
+                 box-shadow: var(--shadow-modal);
                 overflow: hidden;
             }
             .modal-head {
@@ -380,7 +395,7 @@
             .modal-body th, .modal-body td { border: 1px solid var(--border); padding: .3rem .55rem; text-align: left; }
             .modal-body blockquote { margin: .6rem 0; padding-left: .8rem; border-left: 3px solid var(--border); color: var(--muted); }
             .modal-body pre {
-                background: #0b0d12;
+                 background: var(--code-bg);
                 border: 1px solid var(--border);
                 border-radius: 8px;
                 padding: .7rem .85rem;
@@ -389,6 +404,9 @@
             }
             .modal-body pre code { background: none; border: 0; padding: 0; }
         </style>
+         <!-- Manifest first, then manager (order matters). Loaded in <head> to avoid a flash of the wrong theme. -->
+         <script src="/themes.js"></script>
+         <script src="/modules/theme.js"></script>
     </head>
     <body>
     <!-- Shared Cognotik menubar (/app/menu.js) renders here; stays empty if unavailable -->
@@ -448,6 +466,11 @@
                 <code>apps.js</code> — e.g. <code>{ showGit: false, sessionsEndpoint: '/api/sessions?format=json' }</code>.
                 If the shared modules are not deployed the bar is simply omitted.
             </p>
+             <p class="small muted" style="margin:.5rem 0 0">
+                 Colours come from the central theme system (<code>/themes.css</code>,
+                 <code>/themes.js</code>, <code>/modules/theme.js</code>). Use the 🎨 Appearance panel in
+                 the menubar to switch palette or light/dark mode; the choice is shared by every Cognotik page.
+             </p>
         </section>
     </div>
     <div class="modal-host hidden" id="doc-modal" role="dialog" aria-modal="true" aria-labelledby="doc-title">
@@ -481,7 +504,7 @@
         const tools = (catalog.tools || fallback.tools || []).slice();
 
         const catById = new Map(categories.map((c) => [c.id, c]));
-        const accentOf = (tool) => (catById.get(tool.category) || {}).accent || '#4f8cff';
+         const accentOf = (tool) => (catById.get(tool.category) || {}).accent || 'var(--color-brand, #4f8cff)';
 
         /* ───────────────────────── helpers ───────────────────────── */
 
@@ -611,7 +634,7 @@
                 '<span class="count">' + count + '</span></button>';
 
             $('category-chips').innerHTML =
-                chip('all', 'All', '#9aa4b2', tools.length, state.category === 'all') +
+                 chip('all', 'All', 'var(--color-text-muted, #9aa4b2)', tools.length, state.category === 'all') +
                 categories.map((c) =>
                     chip(c.id, c.name, c.accent, counts.get(c.id) || 0, state.category === c.id)).join('');
 

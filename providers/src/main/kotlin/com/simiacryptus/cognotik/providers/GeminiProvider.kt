@@ -4,9 +4,9 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.chat.GeminiSdkChatClient
 import com.simiacryptus.cognotik.image.GeminiImageClient
 import com.simiacryptus.cognotik.image.GeminiImageModels
+import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.ImageClientInterface
 import com.simiacryptus.cognotik.platform.model.ImageModel
-import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.event.Level
@@ -16,12 +16,12 @@ import java.util.concurrent.ExecutorService
 class GeminiProvider : APIProvider("Gemini", "https://generativelanguage.googleapis.com") {
 
   override fun getChatClient(
-      key: SecureString,
-      workPool: ExecutorService,
-      logLevel: Level,
-      logStreams: MutableList<BufferedOutputStream>,
-      scheduledPool: ListeningScheduledExecutorService,
-      session: Session
+    key: SecureString,
+    logLevel: Level,
+    session: Session,
+    logStreams: MutableList<BufferedOutputStream>,
+    workPool: ExecutorService,
+    scheduledPool: ListeningScheduledExecutorService
   ) = GeminiSdkChatClient(
     apiKey = key,
     apiBase = base,
