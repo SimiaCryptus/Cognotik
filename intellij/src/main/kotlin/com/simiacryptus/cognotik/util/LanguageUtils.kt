@@ -1,25 +1,12 @@
 package com.simiacryptus.cognotik.util
 
-import cognotik.actions.agent.toFile
 import com.intellij.openapi.actionSystem.AnActionEvent
-import com.intellij.openapi.actionSystem.CommonDataKeys
-import com.intellij.openapi.application.ApplicationManager
-import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.vfs.VirtualFile
-import com.intellij.psi.PsiManager
-import java.util.*
 
 object LanguageUtils {
 
-    fun getComputerLanguage(e: AnActionEvent): ComputerLanguage? {
-        return ApplicationManager.getApplication().runReadAction<ComputerLanguage?> {
-            val editor = e.getData(CommonDataKeys.EDITOR) ?: return@runReadAction null
-            val virtualFile: VirtualFile =
-                FileDocumentManager.getInstance().getFile(editor.document) ?: return@runReadAction null
-            val file = PsiManager.getInstance(e.project!!).findFile(virtualFile)?.virtualFile?.toFile
-                ?: return@runReadAction null
-            val extension = file.extension.lowercase(Locale.getDefault())
-            return@runReadAction ComputerLanguage.findByExtension(extension)
-        }
-    }
+    /**
+     * Detects the language of the active editor's file, falling back to the selected virtual file.
+     * Safe to call from any thread; requires no read action.
+     */
+    fun getComputerLanguage(e: AnActionEvent): ComputerLanguage? = ComputerLanguage.getComputerLanguage(e)
 }

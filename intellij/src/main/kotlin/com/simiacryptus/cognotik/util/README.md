@@ -5,8 +5,11 @@ This package contains a collection of utility classes and extension functions de
 ## Core Components
 
 ### Task Management
-*   **`BgTask<T>`**: A wrapper for `Task.Backgroundable` that implements `Supplier<T>`. It provides a thread-safe way to execute background operations with progress indicators, supporting cancellation and result retrieval with timeout handling.
-*   **`ModalTask<T>`**: Similar to `BgTask`, but executes as a modal dialog, blocking the UI until completion. It includes robust error handling and thread interruption logic.
+*   **`BgTask<T>`**: A wrapper for `Task.Backgroundable` that implements `Supplier<T>`. `get()` blocks until the task completes, rethrows task exceptions, and throws `InterruptedException` on cancellation.
+*   **`ModalTask<T>`**: Same semantics as `BgTask`, but runs as a modal progress dialog.
+*   **`TaskExecution<T>`** (internal): Shared execution logic for both. It runs the body at most once, interrupts the worker on cancellation, never leaks interrupt flags into IDE pool threads, and enforces start (60s) and execution (60min) timeouts.
+
+> Never call `get()` on a background task from the EDT; use `UITools.runAsync` instead.
 
 ### UI & Interaction
 *   **`UITools`**: A comprehensive utility object for UI operations:

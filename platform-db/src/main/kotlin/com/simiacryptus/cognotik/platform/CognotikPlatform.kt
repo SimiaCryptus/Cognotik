@@ -2,12 +2,7 @@ package com.simiacryptus.cognotik.platform
 
 import com.simiacryptus.cognotik.platform.file.AuthorizationManager
 import com.simiacryptus.cognotik.platform.file.DataStorage
-import com.simiacryptus.cognotik.platform.h2.AuthenticationDB
-import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
-import com.simiacryptus.cognotik.platform.h2.MetricsDB
-import com.simiacryptus.cognotik.platform.h2.SessionMetadataDB
-import com.simiacryptus.cognotik.platform.h2.UsageDB
-import com.simiacryptus.cognotik.platform.h2.UserSettingsDB
+import com.simiacryptus.cognotik.platform.h2.*
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import java.io.File
 
@@ -35,7 +30,7 @@ object CognotikPlatform {
       ServiceKey.USER_SETTINGS.defaultFactory = { UserSettingsDB() }
       ServiceKey.AUTHENTICATION.defaultFactory = { AuthenticationDB() }
       ServiceKey.GIFTED_CREDITS.defaultFactory = { GiftedCreditsDB(rootDir.resolve("giftsdb")) }
-       ServiceKey.METRICS.defaultFactory = { MetricsDB() }
+      ServiceKey.METRICS.defaultFactory = { MetricsDB() }
     } catch (e: Exception) {
       log.error("Error initializing CognotikPlatform services", e)
     }

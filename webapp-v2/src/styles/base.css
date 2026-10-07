@@ -773,6 +773,73 @@ body.verbose-mode .hud-chip.hud-verbose {
     }
     .spinner-border::after { display: none; }
 }
+/* --------------------------------------------------------- parody spinner */
+/*
+  * render/quips.js: "✻ Plotting the end of humanity… (12s · esc won't save you)".
+  * Decorated server spinners are hidden; the quip glyph takes their place.
+  */
+.spinner-quipped {
+     display: none !important;
+}
+.quip {
+     display: inline-flex;
+     align-items: baseline;
+     max-width: 100%;
+     font-family: var(--font-mono);
+     font-size: 0.82rem;
+     letter-spacing: 0.02em;
+     vertical-align: baseline;
+}
+.quip-visual {
+     display: inline-flex;
+     flex-wrap: wrap;
+     align-items: baseline;
+     gap: 0.5em;
+     min-width: 0;
+}
+.quip-glyph {
+     display: inline-block;
+     width: 1em;
+     text-align: center;
+     font-weight: 700;
+     color: var(--color-secondary);
+     text-shadow: 0 0 0.6rem color-mix(in oklch, var(--color-secondary) 70%, transparent);
+}
+.quip-text {
+     display: inline-block;
+     font-weight: 600;
+     background: linear-gradient(
+         90deg,
+         var(--color-brand) 0%,
+         var(--color-brand) 40%,
+         var(--color-text) 50%,
+         var(--color-brand) 60%,
+         var(--color-brand) 100%
+     );
+     background-size: 250% 100%;
+     -webkit-background-clip: text;
+     background-clip: text;
+     color: transparent;
+     animation: quip-shimmer 2.2s linear infinite;
+}
+.quip-text.quip-swap {
+     animation: quip-shimmer 2.2s linear infinite, quip-in 0.35s var(--ease-snap) both;
+}
+.quip-meta {
+     color: var(--color-text-muted);
+     font-size: 0.9em;
+     opacity: 0.85;
+     white-space: nowrap;
+}
+@keyframes quip-shimmer {
+     from { background-position: 100% 0; }
+     to   { background-position: -150% 0; }
+}
+@keyframes quip-in {
+     from { opacity: 0; transform: translateY(0.3em); filter: blur(2px); }
+     to   { opacity: 1; transform: none; filter: none; }
+}
+
 
 /* ------------------------------------------------------------- references */
 

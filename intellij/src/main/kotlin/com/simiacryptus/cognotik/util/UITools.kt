@@ -1,96 +1,151 @@
 package com.simiacryptus.cognotik.util
 
-import com.google.common.util.concurrent.*
+import com.google.common.util.concurrent.FutureCallback
+import com.google.common.util.concurrent.Futures
+import com.google.common.util.concurrent.ListenableFuture
+import com.google.common.util.concurrent.ListeningExecutorService
+import com.google.common.util.concurrent.ListeningScheduledExecutorService
+import com.google.common.util.concurrent.MoreExecutors
+import com.google.common.util.concurrent.ThreadFactoryBuilder
 import com.intellij.openapi.actionSystem.AnActionEvent
 import com.intellij.openapi.actionSystem.CommonDataKeys
 import com.intellij.openapi.actionSystem.PlatformDataKeys
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.application.ModalityState
 import com.intellij.openapi.command.WriteCommandAction
 import com.intellij.openapi.editor.Caret
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.fileEditor.FileDocumentManager
+import com.intellij.openapi.ide.CopyPasteManager
+import com.intellij.openapi.options.ShowSettingsUtil
+import com.intellij.openapi.progress.ProcessCanceledException
 import com.intellij.openapi.progress.ProgressIndicator
 import com.intellij.openapi.progress.ProgressManager
 import com.intellij.openapi.progress.util.AbstractProgressIndicatorBase
 import com.intellij.openapi.project.Project
-import com.intellij.openapi.ui.ComboBox
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.openapi.ui.Messages
 import com.intellij.openapi.util.TextRange
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.ui.components.JBCheckBox
 import com.intellij.ui.components.JBLabel
-import com.intellij.ui.dsl.builder.*
+import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.dsl.builder.Align
+import com.intellij.ui.dsl.builder.panel
 import com.intellij.util.ui.FormBuilder
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.Name
+import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.exceptions.ModerationException
 import com.simiacryptus.cognotik.txt.IndentedText
 import com.simiacryptus.cognotik.util.BrowseUtil.browse
+import org.slf4j.Logger
 import org.slf4j.LoggerFactory.getLogger
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
 import java.awt.Toolkit
+import java.awt.datatransfer.StringSelection
 import java.awt.event.ComponentAdapter
 import java.awt.event.ComponentEvent
 import java.awt.event.WindowAdapter
 import java.awt.event.WindowEvent
-import java.beans.PropertyChangeEvent
 import java.io.IOException
 import java.io.PrintWriter
 import java.io.StringWriter
+import java.lang.reflect.Type
 import java.net.URI
-import java.util.*
-import java.util.concurrent.*
+import java.util.Collections
+import java.util.IdentityHashMap
+import java.util.Locale
+import java.util.WeakHashMap
+import java.util.concurrent.CancellationException
+import java.util.concurrent.Executors
+import java.util.concurrent.LinkedBlockingQueue
+import java.util.concurrent.ScheduledThreadPoolExecutor
+import java.util.concurrent.ThreadPoolExecutor
+import java.util.concurrent.TimeUnit
 import java.util.concurrent.atomic.AtomicReference
 import java.util.function.Supplier
 import javax.swing.*
 import javax.swing.text.JTextComponent
 import kotlin.concurrent.thread
-import kotlin.math.max
 import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty
-import kotlin.reflect.KProperty1
 import kotlin.reflect.KVisibility
 import kotlin.reflect.full.memberProperties
 import kotlin.reflect.jvm.isAccessible
 import kotlin.reflect.jvm.javaType
 
 object UITools {
-    val retry = WeakHashMap<Document, Runnable>()
+    val log: Logger = getLogger(UITools::class.java)
 
-    fun showError(project: Project?, message: String, title: String = "Error") {
-        ReadAction.run<RuntimeException> {
-            Messages.showErrorDialog(project, message, title)
-        }
-    }
+    /** Redo/retry handlers keyed by document. Weakly keyed and thread-safe. */
+    val retry: MutableMap<Document, Runnable> = Collections.synchronizedMap(WeakHashMap())
 
-    fun showWarning(project: Project?, message: String, title: String = "Warning") {
-        ReadAction.run<RuntimeException> { Messages.showWarningDialog(project, message, title) }
-    }
+    private const val MAX_ERROR_HISTORY = 20
+    private const val MAX_ACTION_HISTORY = 100
+    private const val ERROR_HISTORY_IN_REPORT = 5
+    private const val GITHUB_NEW_ISSUE_URL = "https://github.com/SimiaCryptus/intellij-cognotik/issues/new"
 
-    val log = getLogger(UITools::class.java)
+    private val errorLog = ArrayDeque<Pair<String, Throwable>>()
+    private val actionLog = ArrayDeque<String>()
 
-    private val threadFactory: ThreadFactory = ThreadFactoryBuilder().setNameFormat("API Thread %d").build()
+    private fun daemonFactory(nameFormat: String) =
+        ThreadFactoryBuilder().setNameFormat(nameFormat).setDaemon(true).build()
+
     val pool: ListeningExecutorService by lazy {
+        val threads = AppSettingsState.instance.apiThreads.coerceAtLeast(1)
         MoreExecutors.listeningDecorator(
-            ThreadPoolExecutor(/* corePoolSize = */ AppSettingsState.instance.apiThreads,/* maximumPoolSize = */
-                AppSettingsState.instance.apiThreads,/* keepAliveTime = */
-                0L,/* unit = */
-                TimeUnit.MILLISECONDS,/* workQueue = */
-                LinkedBlockingQueue(),/* threadFactory = */
-                threadFactory,/* handler = */
-                ThreadPoolExecutor.AbortPolicy()
+            ThreadPoolExecutor(
+                threads, threads, 0L, TimeUnit.MILLISECONDS,
+                LinkedBlockingQueue(), daemonFactory("API Thread %d")
             )
         )
     }
 
     val scheduledPool: ListeningScheduledExecutorService by lazy {
-        MoreExecutors.listeningDecorator(ScheduledThreadPoolExecutor(1, threadFactory))
+        MoreExecutors.listeningDecorator(ScheduledThreadPoolExecutor(1, daemonFactory("UITools Scheduler %d")))
     }
-    private val errorLog = mutableListOf<Pair<String, Throwable>>()
-    private val actionLog = mutableListOf<String>()
-    private val singleThreadPool = Executors.newSingleThreadExecutor()
+
+    private val errorDialogExecutor = Executors.newSingleThreadExecutor(daemonFactory("Error Dialog %d"))
+
+    // ---------------------------------------------------------------------------------------------
+    // EDT helpers
+    // ---------------------------------------------------------------------------------------------
+
+    /** Runs [block] on the EDT (immediately if already there), without waiting. */
+    fun runOnEdt(block: () -> Unit) {
+        val app = ApplicationManager.getApplication()
+        when {
+            app == null -> SwingUtilities.invokeLater { block() }
+            app.isDispatchThread -> block()
+            else -> app.invokeLater({ block() }, ModalityState.any())
+        }
+    }
+
+    /** Runs [block] on the EDT and waits for its result. Must not be called while holding a read lock. */
+    fun <T> computeOnEdt(block: () -> T): T {
+        val app = ApplicationManager.getApplication()
+        val onEdt = app?.isDispatchThread ?: SwingUtilities.isEventDispatchThread()
+        if (onEdt) return block()
+        val result = AtomicReference<Result<T>>()
+        val runnable = Runnable { result.set(runCatching(block)) }
+        if (app != null) app.invokeAndWait(runnable, ModalityState.any()) else SwingUtilities.invokeAndWait(runnable)
+        return result.get().getOrThrow()
+    }
+
+    fun showError(project: Project?, message: String, title: String = "Error") {
+        runOnEdt { Messages.showErrorDialog(project, message, title) }
+    }
+
+    fun showWarning(project: Project?, message: String, title: String = "Warning") {
+        runOnEdt { Messages.showWarningDialog(project, message, title) }
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Task execution
+    // ---------------------------------------------------------------------------------------------
 
     fun runAsync(
         project: Project?,
@@ -98,23 +153,30 @@ object UITools {
         canBeCancelled: Boolean = true,
         task: (ProgressIndicator) -> Unit,
     ) {
-        thread(name = title ?: "runAsync") {
+        val name = title ?: "Background Task"
+        val job = Runnable {
             try {
-                if (project == null) {
-                    task(AbstractProgressIndicatorBase())
-                } else {
-                    val t = if (AppSettingsState.instance.modalTasks)
-                        ModalTask(project, title ?: "", canBeCancelled, task)
-                    else
-                        BgTask(project, title ?: "", canBeCancelled, task)
-                    ProgressManager.getInstance().run(t)
-                    t.get()
-                }
+                run(project, name, canBeCancelled, task)
             } catch (e: Throwable) {
-                error(log, "Error running task", e)
-                showError(project, "Failed to initialize chat: ${e.message}")
+                if (e.isCancellation()) log.info("Task '$name' was cancelled")
+                else error(log, "Error running task '$name'", e)
             }
         }
+        val app = ApplicationManager.getApplication()
+        if (app != null) app.executeOnPooledThread(job) else thread(name = name, isDaemon = true) { job.run() }
+    }
+
+    fun <T : Any> run(
+        project: Project?,
+        title: String?,
+        canBeCancelled: Boolean = true,
+        task: (ProgressIndicator) -> T,
+    ): T {
+        if (project == null || project.isDisposed) return task(AbstractProgressIndicatorBase())
+        val t = if (AppSettingsState.instance.modalTasks) ModalTask(project, title ?: "", canBeCancelled, task)
+        else BgTask(project, title ?: "", canBeCancelled, task)
+        ProgressManager.getInstance().run(t)
+        return t.get()
     }
 
     fun getRetry(
@@ -130,251 +192,144 @@ object UITools {
         )
     }
 
+    fun <I : Any?, O : Any?> map(
+        moderateAsync: ListenableFuture<I>,
+        o: com.google.common.base.Function<in I, out O>,
+    ): ListenableFuture<O> = Futures.transform(moderateAsync, o::apply, pool)
+
+    // ---------------------------------------------------------------------------------------------
+    // Reflection-based UI binding
+    // ---------------------------------------------------------------------------------------------
+
+    private fun unwrap(uiVal: Any?): Any? = if (uiVal is JScrollPane) uiVal.viewport.view else uiVal
+
+    /**
+     * Copies values from UI components on [component] into same-named mutable properties of [settings].
+     * Values that cannot be read or parsed are left unchanged.
+     */
     fun <T : Any, R : Any> readKotlinUIViaReflection(
         settings: T,
         component: R,
         componentClass: KClass<*> = component::class,
     ) {
-
-        val declaredUIFields = componentClass.memberProperties.map { it.name }.toSet()
+        val uiFields = componentClass.memberProperties.associateBy { it.name }
         for (settingsField in settings.javaClass.kotlin.memberProperties) {
-            if (settingsField is KMutableProperty<*>) {
-                settingsField.isAccessible = true
-                val settingsFieldName = settingsField.name
-                try {
-                    var newSettingsValue: Any? = null
-                    if (!declaredUIFields.contains(settingsFieldName)) continue
-                    val uiField: KProperty1<R, *> =
-                        (componentClass.memberProperties.find { it.name == settingsFieldName } as KProperty1<R, *>?)!!
-                    var uiVal = uiField.get(component)
-                    if (uiVal is JScrollPane) {
-                        uiVal = uiVal.viewport.view
-                    }
-                    when (settingsField.returnType.javaType.typeName) {
-                        "java.lang.String" -> if (uiVal is JTextComponent) {
-                            newSettingsValue = uiVal.text
-                        } else if (uiVal is ComboBox<*>) {
-                            newSettingsValue = uiVal.item
-                        }
-
-                        "int", "java.lang.Integer" -> if (uiVal is JTextComponent) {
-                            newSettingsValue = if (uiVal.text.isBlank()) -1 else uiVal.text.toInt()
-                        }
-
-                        "long" -> if (uiVal is JTextComponent) {
-                            newSettingsValue = if (uiVal.text.isBlank()) -1 else uiVal.text.toLong()
-                        }
-
-                        "double", "java.lang.Double" -> if (uiVal is JTextComponent) {
-                            newSettingsValue = if (uiVal.text.isBlank()) 0.0 else uiVal.text.toDouble()
-                        }
-
-                        "boolean" -> if (uiVal is JCheckBox) {
-                            newSettingsValue = uiVal.isSelected
-                        } else if (uiVal is JTextComponent) {
-                            newSettingsValue = java.lang.Boolean.parseBoolean(uiVal.text)
-                        }
-
-                        else -> if (Enum::class.java.isAssignableFrom(settingsField.returnType.javaType as Class<*>)) {
-                            if (uiVal is ComboBox<*>) {
-                                val comboBox = uiVal
-                                val item = comboBox.item
-                                val enumClass = settingsField.returnType.javaType as Class<out Enum<*>?>
-                                val string = item.toString()
-                                newSettingsValue = enumClass.findValue(string)
-                            }
-                        }
-                    }
-                    settingsField.setter.call(settings, newSettingsValue)
-                } catch (e: Throwable) {
-                    throw RuntimeException("Error processing $settingsField", e)
-                }
-            }
-        }
-    }
-
-    fun <T : Any, R : Any> writeKotlinUIViaReflection(
-        settings: T, component: R, componentClass: KClass<*>
-    ) {
-        val declaredUIFields = componentClass.memberProperties.map { it.name }.toSet()
-        val memberProperties = settings.javaClass.kotlin.memberProperties
-        val publicProperties = memberProperties.filter {
-            it.visibility == KVisibility.PUBLIC && (it is KMutableProperty<*> || it.isAccessible)
-        }
-        for (settingsField in publicProperties) {
-            settingsField.isAccessible = true
-            val fieldName = settingsField.name
+            if (settingsField !is KMutableProperty<*>) continue
+            val uiField = uiFields[settingsField.name] ?: continue
             try {
-                if (!declaredUIFields.contains(fieldName)) {
-                    log.warn("Field not found: $fieldName")
-                    continue
-                }
-                val uiField = (componentClass.memberProperties.find { it.name == fieldName }
-                    ?: throw IllegalStateException("UI field not found: $fieldName")) as KProperty1<R, Any>
+                settingsField.isAccessible = true
                 uiField.isAccessible = true
-                val settingsVal = settingsField.get(settings) ?: continue
-                var uiVal = uiField.get(component)
-                if (uiVal is JScrollPane) {
-                    uiVal = uiVal.viewport.view
-                }
-                when (settingsField.returnType.javaType.typeName) {
-                    "java.lang.String" -> if (uiVal is JTextComponent) {
-                        uiVal.text = settingsVal.toString()
-                    } else if (uiVal is ComboBox<*>) {
-                        (uiVal as ComboBox<String>).item = settingsVal.toString()
-                    }
-
-                    "int", "java.lang.Integer" -> if (uiVal is JTextComponent) {
-                        uiVal.text = (settingsVal as Int).toString()
-                    }
-
-                    "long" -> if (uiVal is JTextComponent) {
-                        uiVal.text = (settingsVal as Int).toLong().toString()
-                    }
-
-                    "boolean" -> if (uiVal is JCheckBox) {
-                        uiVal.isSelected = (settingsVal as Boolean)
-                    } else if (uiVal is JTextComponent) {
-                        uiVal.text = java.lang.Boolean.toString((settingsVal as Boolean))
-                    }
-
-                    "double", "java.lang.Double" -> if (uiVal is JTextComponent) {
-                        uiVal.text = (settingsVal as Double).toString()
-                    }
-
-                    else -> if (uiVal is ComboBox<*>) {
-                        (uiVal as ComboBox<String>).item = settingsVal.toString()
-                    }
-                }
+                val uiVal = unwrap(uiField.getter.call(component))
+                val newValue = readValue(settingsField.returnType.javaType, uiVal) ?: continue
+                settingsField.setter.call(settings, newValue)
             } catch (e: Throwable) {
                 throw RuntimeException("Error processing $settingsField", e)
             }
         }
     }
 
-    fun <T : Any> addKotlinFields(ui: T, formBuilder: FormBuilder, fillVertically: Boolean) {
-        var first = true
-        for (field in ui.javaClass.kotlin.memberProperties.filterNotNull()) {
+    private fun readValue(type: Type, uiVal: Any?): Any? = when (type.typeName) {
+        "java.lang.String" -> when (uiVal) {
+            is JTextComponent -> uiVal.text
+            is JComboBox<*> -> uiVal.selectedItem?.toString()
+            else -> null
+        }
+
+        "int", "java.lang.Integer" -> (uiVal as? JTextComponent)?.text?.trim()
+            ?.let { if (it.isEmpty()) -1 else it.toIntOrNull() }
+
+        "long", "java.lang.Long" -> (uiVal as? JTextComponent)?.text?.trim()
+            ?.let { if (it.isEmpty()) -1L else it.toLongOrNull() }
+
+        "double", "java.lang.Double" -> (uiVal as? JTextComponent)?.text?.trim()
+            ?.let { if (it.isEmpty()) 0.0 else it.toDoubleOrNull() }
+
+        "boolean", "java.lang.Boolean" -> when (uiVal) {
+            is AbstractButton -> uiVal.isSelected
+            is JTextComponent -> uiVal.text.trim().toBoolean()
+            else -> null
+        }
+
+        else -> {
+            val cls = type as? Class<*>
+            if (cls != null && cls.isEnum && uiVal is JComboBox<*>) {
+                val item = uiVal.selectedItem
+                @Suppress("UNCHECKED_CAST")
+                if (cls.isInstance(item)) item
+                else item?.toString()?.let { (cls as Class<out Enum<*>?>).findValue(it) }
+            } else null
+        }
+    }
+
+    /** Copies public property values of [settings] into same-named UI components of [component]. */
+    fun <T : Any, R : Any> writeKotlinUIViaReflection(
+        settings: T,
+        component: R,
+        componentClass: KClass<*> = component::class,
+    ) {
+        val uiFields = componentClass.memberProperties.associateBy { it.name }
+        for (settingsField in settings.javaClass.kotlin.memberProperties) {
+            if (settingsField.visibility != KVisibility.PUBLIC) continue
+            val uiField = uiFields[settingsField.name]
+            if (uiField == null) {
+                log.debug("No UI field for setting: {}", settingsField.name)
+                continue
+            }
             try {
-                val nameAnnotation = field.annotations.find { it is Name } as Name?
-                val component = field.get(ui) as JComponent
-                if (nameAnnotation != null) {
-                    if (first && fillVertically) {
-                        first = false
-                        formBuilder.addLabeledComponentFillVertically(nameAnnotation.value + ": ", component)
-                    } else {
-                        formBuilder.addLabeledComponent(JBLabel(nameAnnotation.value + ": "), component, 1, false)
-                    }
-                } else {
-                    formBuilder.addComponentToRightColumn(component, 1)
-                }
-            } catch (e: IllegalAccessException) {
-                throw RuntimeException(e)
+                settingsField.isAccessible = true
+                uiField.isAccessible = true
+                val settingsVal = settingsField.get(settings) ?: continue
+                writeValue(unwrap(uiField.getter.call(component)), settingsVal)
             } catch (e: Throwable) {
-                error(log, "Error processing " + field.name, e)
+                throw RuntimeException("Error processing $settingsField", e)
             }
         }
     }
 
-    private fun getMaximumSize(factor: Double): Dimension {
-        val screenSize = Toolkit.getDefaultToolkit().screenSize
-        return Dimension((screenSize.getWidth() * factor).toInt(), (screenSize.getHeight() * factor).toInt())
-    }
-
-    private fun showOptionDialog(mainPanel: JPanel?, vararg options: Any, title: String, modal: Boolean = true): Int {
-        val pane = getOptionPane(mainPanel, options)
-        val rootFrame = JOptionPane.getRootFrame()
-        pane.componentOrientation = rootFrame.componentOrientation
-        val dialog = JDialog(rootFrame, title, modal)
-        dialog.componentOrientation = rootFrame.componentOrientation
-
-        val latch = if (!modal) CountDownLatch(1) else null
-        configure(dialog, pane, latch)
-        dialog.isVisible = true
-        if (!modal) latch?.await()
-
-        dialog.dispose()
-        return getSelectedValue(pane, options)
-    }
-
-    private fun getOptionPane(
-        mainPanel: JPanel?,
-        options: Array<out Any>,
-    ): JOptionPane {
-        val pane = JOptionPane(
-            mainPanel, JOptionPane.PLAIN_MESSAGE, JOptionPane.NO_OPTION, null, options, options[0]
-        )
-        pane.initialValue = options[0]
-        return pane
-    }
-
-    private fun configure(dialog: JDialog, pane: JOptionPane, latch: CountDownLatch? = null) {
-        val contentPane = dialog.contentPane
-        contentPane.layout = BorderLayout()
-        contentPane.add(pane, BorderLayout.CENTER)
-
-        if (JDialog.isDefaultLookAndFeelDecorated() && UIManager.getLookAndFeel().supportsWindowDecorations) {
-            dialog.isUndecorated = true
-            pane.rootPane.windowDecorationStyle = JRootPane.PLAIN_DIALOG
+    private fun writeValue(uiVal: Any?, value: Any) {
+        val isScalar = value is String || value is Number || value is Boolean || value is Enum<*>
+        when (uiVal) {
+            is AbstractButton -> if (value is Boolean) uiVal.isSelected = value
+            is JTextComponent -> if (isScalar) uiVal.text = value.toString()
+            is JComboBox<*> -> selectComboItem(uiVal, value)
         }
-        dialog.isResizable = true
-        dialog.maximumSize = getMaximumSize(0.9)
-        dialog.pack()
-        dialog.setLocationRelativeTo(null as Component?)
-        val adapter: WindowAdapter = windowAdapter(pane, dialog)
-        dialog.addWindowListener(adapter)
-        dialog.addWindowFocusListener(adapter)
-        dialog.addComponentListener(object : ComponentAdapter() {
-            override fun componentShown(ce: ComponentEvent) {
-
-                pane.value = JOptionPane.UNINITIALIZED_VALUE
-            }
-        })
-        pane.addPropertyChangeListener { event: PropertyChangeEvent ->
-            if (dialog.isVisible && event.source === pane && event.propertyName == JOptionPane.VALUE_PROPERTY && event.newValue != null && event.newValue !== JOptionPane.UNINITIALIZED_VALUE) {
-                dialog.isVisible = false
-                latch?.countDown()
-            }
-        }
-
-        pane.selectInitialValue()
     }
 
-    private fun windowAdapter(pane: JOptionPane, dialog: JDialog): WindowAdapter {
-        val adapter: WindowAdapter = object : WindowAdapter() {
-            private var gotFocus = false
-            override fun windowClosing(we: WindowEvent) {
-                pane.value = null
-            }
+    private fun selectComboItem(combo: JComboBox<*>, value: Any) {
+        val model = combo.model
+        val match = (0 until model.size).map { model.getElementAt(it) }
+            .firstOrNull { it == value || it?.toString() == value.toString() }
+        when {
+            match != null -> combo.selectedItem = match
+            combo.isEditable -> combo.selectedItem = value.toString()
+        }
+    }
 
-            override fun windowClosed(e: WindowEvent) {
-                pane.removePropertyChangeListener { event: PropertyChangeEvent ->
-                    if (dialog.isVisible && event.source === pane && event.propertyName == JOptionPane.VALUE_PROPERTY && event.newValue != null && event.newValue !== JOptionPane.UNINITIALIZED_VALUE) {
-                        dialog.isVisible = false
-                    }
+    /** Adds all [JComponent] properties of [ui] to [formBuilder], in declaration order. */
+    fun <T : Any> addKotlinFields(ui: T, formBuilder: FormBuilder, fillVertically: Boolean) {
+        val declarationOrder = ui.javaClass.declaredFields.withIndex().associate { it.value.name to it.index }
+        val properties = ui.javaClass.kotlin.memberProperties
+            .sortedBy { declarationOrder[it.name] ?: Int.MAX_VALUE }
+        var first = true
+        for (field in properties) {
+            val component = try {
+                field.isAccessible = true
+                field.get(ui) as? JComponent
+            } catch (e: Throwable) {
+                log.debug("Skipping field ${field.name}", e)
+                null
+            } ?: continue
+            val nameAnnotation = field.annotations.filterIsInstance<Name>().firstOrNull()
+            when {
+                nameAnnotation == null -> formBuilder.addComponentToRightColumn(component, 1)
+                first && fillVertically -> {
+                    first = false
+                    formBuilder.addLabeledComponentFillVertically(nameAnnotation.value + ": ", component)
                 }
-                dialog.contentPane.removeAll()
-            }
 
-            override fun windowGainedFocus(we: WindowEvent) {
-                if (!gotFocus) {
-                    pane.selectInitialValue()
-                    gotFocus = true
-                }
+                else -> formBuilder.addLabeledComponent(JBLabel(nameAnnotation.value + ": "), component, 1, false)
             }
         }
-        return adapter
-    }
-
-    private fun getSelectedValue(pane: JOptionPane, options: Array<out Any>): Int {
-        val selectedValue = pane.value ?: return JOptionPane.CLOSED_OPTION
-        var counter = 0
-        val maxCounter = options.size
-        while (counter < maxCounter) {
-            if (options[counter] == selectedValue) return counter
-            counter++
-        }
-        return JOptionPane.CLOSED_OPTION
     }
 
     fun <T : Any, C : Any> showDialog(
@@ -383,318 +338,334 @@ object UITools {
         configClass: Class<C>,
         title: String = "Generate Project",
         onComplete: (C) -> Unit = { _ -> },
-    ): C? {
-        val component1 = uiClass.getConstructor().newInstance()
+    ): C? = computeOnEdt {
+        val component = uiClass.getConstructor().newInstance()
         val config = configClass.getConstructor().newInstance()
-        log.debug("Showing dialog with title: $title")
         val dialog = object : DialogWrapper(project) {
             init {
-                init()
                 this.title = title
                 setOKButtonText("Generate")
                 setCancelButtonText("Cancel")
                 isResizable = true
+                init()
             }
 
-            override fun createCenterPanel(): JComponent? {
-                log.debug("Creating center panel for dialog")
-                return component1.buildFormViaReflection()
+            override fun createCenterPanel(): JComponent? = component.buildFormViaReflection()
+        }
+        if (!dialog.showAndGet()) {
+            log.debug("Dialog '{}' cancelled", title)
+            return@computeOnEdt null
+        }
+        readKotlinUIViaReflection(settings = config, component = component, componentClass = component::class)
+        onComplete(config)
+        config
+    }
+
+    // ---------------------------------------------------------------------------------------------
+    // Option dialogs
+    // ---------------------------------------------------------------------------------------------
+
+    private fun getMaximumSize(factor: Double): Dimension {
+        val screenSize = Toolkit.getDefaultToolkit().screenSize
+        return Dimension((screenSize.getWidth() * factor).toInt(), (screenSize.getHeight() * factor).toInt())
+    }
+
+    /** Shows a modal option dialog on the EDT and returns the selected option index. */
+    private fun showOptionDialog(mainPanel: JPanel?, vararg options: Any, title: String): Int = computeOnEdt {
+        val pane = JOptionPane(mainPanel, JOptionPane.PLAIN_MESSAGE, JOptionPane.NO_OPTION, null, options, options[0])
+        pane.initialValue = options[0]
+        val rootFrame = JOptionPane.getRootFrame()
+        pane.componentOrientation = rootFrame.componentOrientation
+        val dialog = JDialog(rootFrame, title, true)
+        dialog.componentOrientation = rootFrame.componentOrientation
+        configure(dialog, pane)
+        dialog.isVisible = true
+        dialog.dispose()
+        getSelectedValue(pane, options)
+    }
+
+    private fun configure(dialog: JDialog, pane: JOptionPane) {
+        val contentPane = dialog.contentPane
+        contentPane.layout = BorderLayout()
+        contentPane.add(pane, BorderLayout.CENTER)
+        if (JDialog.isDefaultLookAndFeelDecorated() && UIManager.getLookAndFeel().supportsWindowDecorations) {
+            dialog.isUndecorated = true
+            pane.rootPane.windowDecorationStyle = JRootPane.PLAIN_DIALOG
+        }
+        dialog.isResizable = true
+        dialog.maximumSize = getMaximumSize(0.9)
+        dialog.pack()
+        dialog.setLocationRelativeTo(null as Component?)
+        val adapter = windowAdapter(pane, dialog)
+        dialog.addWindowListener(adapter)
+        dialog.addWindowFocusListener(adapter)
+        dialog.addComponentListener(object : ComponentAdapter() {
+            override fun componentShown(ce: ComponentEvent) {
+                pane.value = JOptionPane.UNINITIALIZED_VALUE
+            }
+        })
+        pane.addPropertyChangeListener { event ->
+            if (dialog.isVisible && event.source === pane && event.propertyName == JOptionPane.VALUE_PROPERTY &&
+                event.newValue != null && event.newValue !== JOptionPane.UNINITIALIZED_VALUE
+            ) {
+                dialog.isVisible = false
             }
         }
-        dialog.show()
-        log.debug("Dialog shown with result: ${dialog.isOK}")
-        if (dialog.isOK) {
-            readKotlinUIViaReflection(
-                settings = config, component = component1, componentClass = component1::class
-            )
-            log.debug("Reading UI via reflection completed")
-            onComplete
-            (config)
-            log.debug("onComplete callback executed")
-            return config
-        } else {
-            log.debug("Dialog cancelled")
-            return null
+        pane.selectInitialValue()
+    }
+
+    private fun windowAdapter(pane: JOptionPane, dialog: JDialog): WindowAdapter = object : WindowAdapter() {
+        private var gotFocus = false
+        override fun windowClosing(we: WindowEvent) {
+            pane.value = null
+        }
+
+        override fun windowClosed(e: WindowEvent) {
+            dialog.contentPane.removeAll()
+        }
+
+        override fun windowGainedFocus(we: WindowEvent) {
+            if (!gotFocus) {
+                pane.selectInitialValue()
+                gotFocus = true
+            }
         }
     }
 
-    fun <T : Any> run(
-        project: Project?,
-        title: String?,
-        canBeCancelled: Boolean = true,
-        task: (ProgressIndicator) -> T,
-    ): T {
-        return if (project == null) {
-            task(AbstractProgressIndicatorBase())
-        } else {
-            val t = if (AppSettingsState.instance.modalTasks) ModalTask(project, title ?: "", canBeCancelled, task)
-            else BgTask(project, title ?: "", canBeCancelled, task)
-            ProgressManager.getInstance().run(t)
-            t.get()
-        }
-    }
-
-    fun <I : Any?, O : Any?> map(
-        moderateAsync: ListenableFuture<I>,
-        o: com.google.common.base.Function<in I, out O>,
-    ): ListenableFuture<O> = Futures.transform(moderateAsync, o::apply, pool)
-
-    fun logAction(message: String) {
-        actionLog += message
-    }
-
-    fun error(log: org.slf4j.Logger, msg: String, e: Throwable) {
-        log.error(msg, e)
-        errorLog += Pair(msg, e)
-        singleThreadPool.submit {
-            if (AppSettingsState.instance.suppressErrors) {
-                return@submit
-            } else if (e.matches { ModerationException::class.java.isAssignableFrom(it.javaClass) }) {
-                JOptionPane.showMessageDialog(
-                    null, e.message, "This request was rejected by OpenAI Moderation", JOptionPane.WARNING_MESSAGE
-                )
-            } else if (e.matches {
-                    InterruptedException::class.java.isAssignableFrom(it.javaClass) && it.message?.contains(
-                        "sleep interrupted"
-                    ) == true
-                }) {
-                JOptionPane.showMessageDialog(
-                    null,
-                    "This request was cancelled by the user",
-                    "User Cancelled Request",
-                    JOptionPane.WARNING_MESSAGE
-                )
-            } else if (e.matches { IOException::class.java.isAssignableFrom(it.javaClass) && it.message?.contains("Incorrect API key") == true }) {
-                val panel = panel {
-                    row {
-                        label("The API key was rejected by the server.")
-                    }
-                    row {
-                        val apiKeyInput = passwordField().columns(80).focused().component
-                        button("Test Key") {
-                            val apiKey = apiKeyInput.password.joinToString("")
-                            try {
-                                JOptionPane.showMessageDialog(
-                                    null,
-                                    "The API key was accepted by the server. The new value will be saved.",
-                                    "Success",
-                                    JOptionPane.INFORMATION_MESSAGE
-                                )
-                                // TODO: Fix saving of API key
-                                //AppSettingsState.instance.getApiKeys().set(APIProvider.OpenAI.name, apiKey)
-                            } catch (e: Exception) {
-                                JOptionPane.showMessageDialog(
-                                    null,
-                                    "The API key was rejected by the server.",
-                                    "Failure",
-                                    JOptionPane.WARNING_MESSAGE
-                                )
-                            }
-                        }
-                    }
-                    row {
-                        button("Open Account Page") {
-                            browse(URI("https://platform.openai.com/account/api-keys"))
-                        }
-                    }
-                }
-                val showOptionDialog = showOptionDialog(
-                    panel, "Dismiss", title = "Error", modal = true
-                )
-                log.info("showOptionDialog = $showOptionDialog")
-            } else {
-                val panel = panel {
-                    row {
-                        label("Oops! Something went wrong. An error report has been generated. You can copy and paste the report below into a new issue on our Github page.")
-                    }
-                    row {
-                        textArea().rows(40).columns(80).text(
-                            """
-                Log Message: ${msg.trimIndent()}
-                Error Message: ${e.message?.trimIndent()}
-                Error Type: ${e.javaClass.name}
-
-                OS: ${System.getProperty("os.name")} / ${System.getProperty("os.version")} / ${System.getProperty("os.arch")}
-                Locale: ${Locale.getDefault().country} / ${Locale.getDefault().language}
-                Error Details:
-                ```
-                ${e.toFullString()}
-                ```
-                Action History:
-                ${actionLog.joinToString("\n") { "* ${it.prependIndent("  ")}" }}
-                Error History:
-                ${
-                                errorLog.filter { it.second != e }
-                                    .joinToString("\n") { "${it.first}\n```\n${it.second.toFullString()}\n```" }
-                            }
-                """.trimIndent()
-                        )
-                    }
-                    row {
-                        button("Open New Issue on our Github page") {
-                            browse(URI("https://github.com/SimiaCryptus/intellij-cognotik/issues/new"))
-                        }
-                    }
-                    row {
-                        val suppressCheckbox = checkBox("Suppress Future Error Popups").component
-                        button("Dismiss") {
-                            if (suppressCheckbox.isSelected) {
-                                AppSettingsState.instance.suppressErrors = true
-                            }
-                        }
-                    }
-                }
-
-                val showOptionDialog = showOptionDialog(
-                    panel, "Dismiss", title = "Error", modal = true
-                )
-                log.info("showOptionDialog = $showOptionDialog")
-            }
-        }
+    private fun getSelectedValue(pane: JOptionPane, options: Array<out Any>): Int {
+        val selectedValue = pane.value ?: return JOptionPane.CLOSED_OPTION
+        val index = options.indexOfFirst { it == selectedValue }
+        return if (index >= 0) index else JOptionPane.CLOSED_OPTION
     }
 
     fun showInputDialog(
         parentComponent: Component?, message: Any?, title: String?, messageType: Int
-    ): Any? {
-        val icon = null
-        val selectionValues = null
-        val initialSelectionValue = null
-        val pane = JOptionPane(message, messageType, JOptionPane.OK_CANCEL_OPTION, icon, null, null)
+    ): Any? = computeOnEdt {
+        val pane = JOptionPane(message, messageType, JOptionPane.OK_CANCEL_OPTION, null, null, null)
         pane.wantsInput = true
-        pane.selectionValues = selectionValues
-        pane.initialSelectionValue = initialSelectionValue
         val dialog = pane.createDialog(parentComponent, title)
         pane.selectInitialValue()
         dialog.isVisible = true
         dialog.dispose()
-        val value = pane.inputValue
-        return if (value == JOptionPane.UNINITIALIZED_VALUE) null else value
+        pane.inputValue.takeUnless { it == JOptionPane.UNINITIALIZED_VALUE }
     }
 
     fun showErrorDialog(errorMessage: String, title: String) {
-        val panel = panel {
-            row { label(errorMessage) }
+        computeOnEdt {
+            val panel = panel { row { label(errorMessage) } }
+            showOptionDialog(panel, "OK", title = title)
         }
-        showOptionDialog(panel, "OK", title = title, modal = true)
     }
 
+    // ---------------------------------------------------------------------------------------------
+    // Error reporting
+    // ---------------------------------------------------------------------------------------------
+
+    fun logAction(message: String) {
+        synchronized(actionLog) {
+            actionLog.addLast(message)
+            while (actionLog.size > MAX_ACTION_HISTORY) actionLog.removeFirst()
+        }
+    }
+
+    fun error(log: Logger, msg: String, e: Throwable) {
+        if (e.isCancellation()) {
+            log.info("$msg (cancelled)")
+            return
+        }
+        log.error(msg, e)
+        synchronized(errorLog) {
+            errorLog.addLast(msg to e)
+            while (errorLog.size > MAX_ERROR_HISTORY) errorLog.removeFirst()
+        }
+        if (AppSettingsState.instance.suppressErrors) return
+        errorDialogExecutor.submit {
+            try {
+                computeOnEdt { showErrorPopup(msg, e) }
+            } catch (t: Throwable) {
+                log.warn("Unable to display error dialog", t)
+            }
+        }
+    }
+
+    private fun showErrorPopup(msg: String, e: Throwable) {
+        when {
+            e.matches { it is ModerationException } -> JOptionPane.showMessageDialog(
+                null,
+                e.get { it is ModerationException }?.message ?: e.message,
+                "This request was rejected by moderation",
+                JOptionPane.WARNING_MESSAGE
+            )
+
+            e.matches { it is IOException && it.message?.contains("Incorrect API key") == true } ->
+                showApiKeyErrorDialog()
+
+            else -> showErrorReportDialog(msg, e)
+        }
+    }
+
+    private fun showApiKeyErrorDialog() {
+        val panel = panel {
+            row { label("The API key was rejected by the server. Please update it in the plugin settings.") }
+            row {
+                button("Open Settings") {
+                    ShowSettingsUtil.getInstance().editConfigurable(null as Project?, StaticAppSettingsConfigurable())
+                }
+                button("Open OpenAI Account Page") {
+                    browse(URI("https://platform.openai.com/account/api-keys"))
+                }
+            }
+        }
+        showOptionDialog(panel, "Dismiss", title = "Invalid API Key")
+    }
+
+    private fun showErrorReportDialog(msg: String, e: Throwable) {
+        val report = buildErrorReport(msg, e)
+        lateinit var suppress: JBCheckBox
+        val panel = panel {
+            row {
+                label("Oops! Something went wrong. An error report has been generated; you can paste it into a new GitHub issue.")
+            }
+            row {
+                scrollCell(JBTextArea(report, 20, 80).apply {
+                    isEditable = false
+                    caretPosition = 0
+                }).align(Align.FILL)
+            }.resizableRow()
+            row {
+                button("Copy Report") { CopyPasteManager.getInstance().setContents(StringSelection(report)) }
+                button("Open New Issue on GitHub") { browse(URI(GITHUB_NEW_ISSUE_URL)) }
+            }
+            row { suppress = checkBox("Suppress future error popups").component }
+        }
+        showOptionDialog(panel, "Dismiss", title = "Error")
+        if (suppress.isSelected) AppSettingsState.instance.suppressErrors = true
+    }
+
+    private fun buildErrorReport(msg: String, e: Throwable): String {
+        val actions = synchronized(actionLog) { actionLog.toList() }
+        val history = synchronized(errorLog) { errorLog.filter { it.second !== e } }.takeLast(ERROR_HISTORY_IN_REPORT)
+        return buildString {
+            appendLine("Log Message: ${msg.trim()}")
+            appendLine("Error Message: ${e.message?.trim()}")
+            appendLine("Error Type: ${e.javaClass.name}")
+            appendLine()
+            appendLine("OS: ${System.getProperty("os.name")} / ${System.getProperty("os.version")} / ${System.getProperty("os.arch")}")
+            appendLine("Java: ${System.getProperty("java.version")}")
+            appendLine("Locale: ${Locale.getDefault().country} / ${Locale.getDefault().language}")
+            appendLine()
+            appendLine("Error Details:")
+            appendLine("```")
+            appendLine(e.toFullString().trim())
+            appendLine("```")
+            appendLine("Action History:")
+            actions.forEach { appendLine("* ${it.trim().replace("\n", "\n  ")}") }
+            if (history.isNotEmpty()) {
+                appendLine("Error History:")
+                history.forEach { (m, t) ->
+                    appendLine(m)
+                    appendLine("```")
+                    appendLine(t.toFullString().trim())
+                    appendLine("```")
+                }
+            }
+        }
+    }
 }
+
+// -------------------------------------------------------------------------------------------------
+// AnActionEvent helpers
+// -------------------------------------------------------------------------------------------------
+
+private fun AnActionEvent.editorFile(): VirtualFile? =
+    PlatformDataKeys.EDITOR.getData(dataContext)?.let { FileDocumentManager.getInstance().getFile(it.document) }
 
 fun AnActionEvent.getSelectedFiles(): List<VirtualFile> {
-    val dataContext = this.dataContext
-    val data = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-    if (null != data) return data.toList()
-    val editor = PlatformDataKeys.EDITOR.getData(dataContext)
-    if (editor != null) {
-        val file = FileDocumentManager.getInstance().getFile(editor.document)
-        if (file != null) {
-            return listOf(file)
-        }
-    }
-    return emptyList()
+    PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)?.let { return it.toList() }
+    return listOfNotNull(editorFile())
 }
 
-fun Throwable.toFullString(): String {
-    val sw = StringWriter()
-    val pw = PrintWriter(sw)
-    printStackTrace(pw)
-    return sw.toString()
+fun AnActionEvent.getSelectedFile(): VirtualFile? =
+    PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)?.takeIf { !it.isDirectory }
+
+fun AnActionEvent.getSelectedFolders(): List<VirtualFile> {
+    PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)?.let { files -> return files.filter { it.isDirectory } }
+    return listOfNotNull(editorFile()?.parent)
 }
 
-fun Throwable.get(matchFn: (Throwable) -> Boolean): Throwable? {
-    if (matchFn(this)) return this
-    if (this.cause != null && this.cause !== this) return this.cause!!.get(matchFn)
-    return null
+fun AnActionEvent.getSelectedFolder(): VirtualFile? {
+    PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)?.takeIf { it.isDirectory }?.let { return it }
+    return editorFile()?.parent
 }
 
-fun Throwable.matches(matchFn: (Throwable) -> Boolean): Boolean {
-    if (matchFn(this)) return true
-    if (this.cause != null && this.cause !== this) return this.cause!!.matches(matchFn)
-    return false
-}
-
-fun AnActionEvent.writeableFn(
-    fn: () -> Runnable,
-): Runnable {
+fun AnActionEvent.writeableFn(fn: () -> Runnable): Runnable {
     val runnable = AtomicReference<Runnable>()
     WriteCommandAction.runWriteCommandAction(this.project) { runnable.set(fn()) }
     return runnable.get()
 }
 
-fun AnActionEvent.getSelectedFile(): VirtualFile? {
-    val dataContext = this.dataContext
-    val data = PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)
-    if (data != null && !data.isDirectory) {
-        return data
-    }
-    return null
-}
-
-fun AnActionEvent.getSelectedFolders(): List<VirtualFile> {
-    val dataContext = this.dataContext
-    val data = PlatformDataKeys.VIRTUAL_FILE_ARRAY.getData(dataContext)
-    if (null != data) return data.filter { it.isDirectory }
-    val editor = PlatformDataKeys.EDITOR.getData(dataContext)
-    if (editor != null) {
-        val file = FileDocumentManager.getInstance().getFile(editor.document)
-        if (file != null) {
-            return listOf(file.parent)
-        }
-    }
-    return emptyList()
-}
-
-fun AnActionEvent.getSelectedFolder(): VirtualFile? {
-    val dataContext = this.dataContext
-    val data = PlatformDataKeys.VIRTUAL_FILE.getData(dataContext)
-    if (data != null && data.isDirectory) {
-        return data
-    }
-    val editor = PlatformDataKeys.EDITOR.getData(dataContext)
-    if (editor != null) {
-        val file = FileDocumentManager.getInstance().getFile(editor.document)
-        if (file != null) {
-            return file.parent
-        }
-    }
-    return null
-}
-
 fun AnActionEvent.getIndent() = getData(CommonDataKeys.CARET)?.getIndent() ?: ""
 
 fun Caret?.getIndent(): CharSequence {
-    if (null == this) return ""
-    val document = this.editor.document
-    val documentText = document.text
-    val lineNumber = document.getLineNumber(this.selectionStart)
-    val lines = documentText.split("\n".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
-    if (lines.isEmpty()) return ""
-    return IndentedText.fromString(lines[max(lineNumber, 0).coerceAtMost(lines.size - 1)]).indent
+    if (this == null) return ""
+    val document = editor.document
+    if (document.lineCount == 0) return ""
+    val line = document.getLineNumber(selectionStart.coerceIn(0, document.textLength))
+    val lineText = document.getText(TextRange(document.getLineStartOffset(line), document.getLineEndOffset(line)))
+    return IndentedText.fromString(lineText).indent
 }
 
-fun AnActionEvent.redoableTask(
-    request: Supplier<Runnable>,
-) {
-    UITools.log.debug("Starting redoableTask with event: {}, request: {}", this, request)
-    Futures.addCallback(UITools.pool.submit<Runnable> {
-        request.get()
-    }, futureCallback(request), UITools.pool)
-    UITools.log.debug("Submitted redoableTask for execution")
+fun AnActionEvent.redoableTask(request: Supplier<Runnable>) {
+    Futures.addCallback(UITools.pool.submit<Runnable> { request.get() }, futureCallback(request), UITools.pool)
 }
 
-fun Class<out Enum<*>?>.findValue(string: String): Enum<*>? {
-
-    val caseInsensitiveMatch = this.enumConstants?.firstOrNull {
-        it?.name?.equals(string, ignoreCase = true) == true
+fun AnActionEvent.futureCallback(request: Supplier<Runnable>) = object : FutureCallback<Runnable> {
+    override fun onSuccess(undo: Runnable) {
+        val document = getData(CommonDataKeys.EDITOR)?.document ?: return
+        UITools.retry[document] = UITools.getRetry(this@futureCallback, request, undo)
     }
-    if (caseInsensitiveMatch != null) return caseInsensitiveMatch
 
-    return try {
-        java.lang.Enum.valueOf(this, string)
-    } catch (e: IllegalArgumentException) {
-        null
+    override fun onFailure(t: Throwable) {
+        UITools.error(UITools.log, "Error", t)
     }
 }
+
+// -------------------------------------------------------------------------------------------------
+// Throwable helpers
+// -------------------------------------------------------------------------------------------------
+
+fun Throwable.toFullString(): String {
+    val sw = StringWriter()
+    PrintWriter(sw).use { printStackTrace(it) }
+    return sw.toString()
+}
+
+/** The causal chain of this throwable, safe against arbitrary cause cycles. */
+fun Throwable.causalChain(): Sequence<Throwable> = sequence {
+    val seen = Collections.newSetFromMap(IdentityHashMap<Throwable, Boolean>())
+    var current: Throwable? = this@causalChain
+    while (current != null && seen.add(current)) {
+        yield(current)
+        current = current.cause
+    }
+}
+
+fun Throwable.get(matchFn: (Throwable) -> Boolean): Throwable? = causalChain().firstOrNull(matchFn)
+
+fun Throwable.matches(matchFn: (Throwable) -> Boolean): Boolean = causalChain().any(matchFn)
+
+/** True if this throwable (or any cause) represents user/system cancellation rather than a failure. */
+fun Throwable.isCancellation(): Boolean = matches {
+    it is InterruptedException || it is ProcessCanceledException || it is CancellationException
+}
+
+// -------------------------------------------------------------------------------------------------
+// Misc
+// -------------------------------------------------------------------------------------------------
+
+fun Class<out Enum<*>?>.findValue(string: String): Enum<*>? =
+    enumConstants?.firstOrNull { it?.name?.equals(string, ignoreCase = true) == true }
+        ?: enumConstants?.firstOrNull { it?.toString()?.equals(string, ignoreCase = true) == true }
 
 fun <T : Any> T.buildFormViaReflection(
     fillVertically: Boolean = true,
@@ -704,68 +675,31 @@ fun <T : Any> T.buildFormViaReflection(
     return formBuilder.addComponentFillVertically(JPanel(), 0).panel
 }
 
-fun AnActionEvent.futureCallback(
-    request: Supplier<Runnable>,
-) = object : FutureCallback<Runnable> {
-    override fun onSuccess(undo: Runnable) {
-        val requiredData = getData(CommonDataKeys.EDITOR) ?: return
-        val document = requiredData.document
-        UITools.retry[document] = UITools.getRetry(this@futureCallback, request, undo)
-    }
-
-    override fun onFailure(t: Throwable) {
-        UITools.error(UITools.log, "Error", t)
-    }
-}
-
+/** Deletes the given range and returns a Runnable that restores it. */
 @Suppress("unused")
-fun Document.deleteString(startOffset: Int, endOffset: Int): Runnable {
+fun Document.deleteSubString(startOffset: Int, endOffset: Int): Runnable {
     val oldText: CharSequence = getText(TextRange(startOffset, endOffset))
-    this.deleteString(startOffset, endOffset)
+    deleteString(startOffset, endOffset)
     return Runnable {
         insertString(startOffset, oldText)
-        UITools.log.debug(String.format("REV insertString @ %s (%s): %s", startOffset, oldText.length, oldText))
+        UITools.log.debug("REV insertString @ {} ({})", startOffset, oldText.length)
     }
 }
 
+/** Replaces the given range and returns a Runnable that verifies and reverts the change. */
 fun Document.replaceSubString(startOffset: Int, endOffset: Int, newText: CharSequence): Runnable {
-    UITools.log.debug("Invoking replaceString with startOffset: $startOffset, endOffset: $endOffset, newText: $newText")
     val oldText: CharSequence = getText(TextRange(startOffset, endOffset))
-    this.replaceString(startOffset, endOffset, newText)
-    UITools.log.debug(
-        String.format(
-            "FWD replaceString from %s to %s (%s->%s): %s",
-            startOffset,
-            endOffset,
-            endOffset - startOffset,
-            newText.length,
-            newText
-        )
-    )
+    replaceString(startOffset, endOffset, newText)
+    UITools.log.debug("FWD replaceString {}..{} ({} -> {} chars)", startOffset, endOffset, endOffset - startOffset, newText.length)
     return Runnable {
-        val verifyTxt = getText(TextRange(startOffset, startOffset + newText.length))
-        UITools.log.debug("Verifying text after replaceString: expected: $newText, actual: $verifyTxt")
-        if (verifyTxt != newText) {
-            val msg = String.format(
-                "The text range from %d to %d does not match the expected text \"%s\" and is instead \"%s\"",
-                startOffset,
-                startOffset + newText.length,
-                newText,
-                verifyTxt
-            )
-            UITools.log.error("Verification failed after replaceString: $msg")
+        val newEnd = startOffset + newText.length
+        val verifyTxt = if (newEnd <= textLength) getText(TextRange(startOffset, newEnd)) else null
+        if (verifyTxt != newText.toString()) {
+            val msg = "The text range from $startOffset to $newEnd does not match the expected text \"$newText\" and is instead \"$verifyTxt\""
+            UITools.log.error("Verification failed while reverting replaceString: {}", msg)
             throw IllegalStateException(msg)
         }
-        this.replaceString(startOffset, startOffset + newText.length, oldText)
-        UITools.log.debug(
-            String.format(
-                "REV replaceString from %s to %s (%s->%s): %s",
-                startOffset,
-                startOffset + newText.length,
-                newText.length,
-                oldText.length,
-                oldText
-            )
-        )
+        replaceString(startOffset, newEnd, oldText)
+        UITools.log.debug("REV replaceString {}..{} ({} -> {} chars)", startOffset, newEnd, newText.length, oldText.length)
     }
 }

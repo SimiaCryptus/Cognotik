@@ -2,6 +2,7 @@ import {marked} from 'marked';
 import {el} from '../util/dom.js';
 import {createLogger} from '../util/logger.js';
 import {highlightAllUnder} from '../render/prism.js';
+import {Quip} from '../render/quips.js';
 import {getAppConfig} from '../config/app-config.js';
 
 /** reverse-spec §11 — composer (input area). */
@@ -92,12 +93,8 @@ export class Composer {
             hidden: true,
             text: 'Connection lost. Reconnecting… (Your message will be preserved)'
         });
-         this.status = el('div', {class: 'composer-status', role: 'status', hidden: true}, [
-             el('span', {class: 'spinner-border', 'aria-hidden': 'true'}, [
-                 el('span', {class: 'sr-only', text: 'Loading...'})
-             ]),
-             el('span', {class: 'composer-status-text', text: 'Working…'})
-         ]);
+          this.quip = new Quip();
+          this.status = el('div', {class: 'composer-status', role: 'status', hidden: true}, [this.quip.node]);
 
 
         this.collapseToggle = el('button', {
@@ -236,6 +233,8 @@ export class Composer {
          if (this.pending === pending) return;
          this.pending = pending;
          this.status.hidden = !pending;
+          if (pending) this.quip.reset().start();
+          else this.quip.stop();
          document.body.classList.toggle('processing', pending);
      }
 

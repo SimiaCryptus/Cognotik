@@ -4,31 +4,22 @@ import com.intellij.psi.PsiElement
 
 object PsiUtil {
 
+    /**
+     * Returns the deepest element that fully contains [selectionStart, selectionEnd] and is at least
+     * [minSize] characters long. Subtrees that cannot contain the selection are pruned.
+     */
     fun getSmallestContainingEntity(
         element: PsiElement?,
         selectionStart: Int,
         selectionEnd: Int,
         minSize: Int = 0
     ): PsiElement? {
-        if (null == element) {
-            return null
-        }
+        if (element == null) return null
+        val range = element.textRange ?: return null
+        if (range.startOffset > selectionStart || range.endOffset < selectionEnd) return null
         for (child in element.children) {
-            val entity = getSmallestContainingEntity(child, selectionStart, selectionEnd, minSize)
-            if (null != entity) {
-                return entity
-            }
+            getSmallestContainingEntity(child, selectionStart, selectionEnd, minSize)?.let { return it }
         }
-        val textRange = element.textRange
-        if (textRange.startOffset <= selectionStart) {
-            if (textRange.endOffset >= selectionEnd) {
-                if (element.text.length >= minSize) {
-                    return element
-                }
-            }
-        }
-        return null
+        return if (range.length >= minSize) element else null
     }
-
-
 }
