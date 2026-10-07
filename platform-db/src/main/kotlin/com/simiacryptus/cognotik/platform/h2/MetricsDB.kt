@@ -21,6 +21,7 @@ import com.simiacryptus.cognotik.platform.model.MetricUnit
 import com.simiacryptus.cognotik.platform.service.AlertQuery
 import com.simiacryptus.cognotik.platform.service.DistributionStats
 import com.simiacryptus.cognotik.platform.service.EventQuery
+import com.simiacryptus.cognotik.platform.service.LoggingNotifications
 import com.simiacryptus.cognotik.platform.service.MetricKind
 import com.simiacryptus.cognotik.platform.service.MetricQuery
 import com.simiacryptus.cognotik.platform.service.MetricsInterface
@@ -73,7 +74,7 @@ class MetricsDB(
     System.getProperty("cognotik.metrics.flushIntervalMillis", "10000").toLongOrNull() ?: 10_000L,
   private val eventRetention: Duration? = Duration.ofDays(30),
   private val maxBufferedEvents: Int = 10_000,
-  private val notifications: () -> NotificationsInterface = { NotificationsInterface.resolve() },
+  private val notifications: () -> NotificationsInterface = { LoggingNotifications },
 ) : MetricsInterface {
 
   object SeriesTable : Table("metric_series") {

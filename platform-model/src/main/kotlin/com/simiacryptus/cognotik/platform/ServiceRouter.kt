@@ -11,7 +11,7 @@ import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
- * Static facade over the services registered in [ServiceMap].
+  * Static facade over the services resolved through their [ServiceKey]s.
  *
  * Every call resolves its backing service at invocation time, so late or overridden
  * factory registrations are honoured. All interface members — including those with
@@ -37,23 +37,27 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   /* ---------------------------------------------------------------- resolution */
 
-  private val pluginManager: PluginManagerInterface get() = ServiceMap[ServiceKey.PLUGIN_MANAGER]
-  private val authorization: AuthorizationInterface get() = ServiceMap[ServiceKey.AUTHORIZATION_MANAGER]
-  private val storage: StorageInterface get() = ServiceMap[ServiceKey.DATA_STORAGE]
-  private val metadata: SessionMetadataInterface get() = ServiceMap[ServiceKey.METADATA_DB]
-  private val usage: UsageInterface get() = ServiceMap[ServiceKey.USAGE_DB]
-  private val userSettings: UserSettingsInterface get() = ServiceMap[ServiceKey.USER_SETTINGS]
-  private val userResolver: UserProvider get() = ServiceMap[ServiceKey.USER_RESOLVER]
-  private val authentication: AuthenticationInterface get() = ServiceMap[ServiceKey.AUTHENTICATION]
-  private val giftedCredits: GiftedCreditsInterface get() = ServiceMap[ServiceKey.GIFTED_CREDITS]
+   private val pluginManager: PluginManagerInterface get() = ServiceKey.PLUGIN_MANAGER.get()
+   private val authorization: AuthorizationInterface get() = ServiceKey.AUTHORIZATION_MANAGER.get()
+   private val storage: StorageInterface get() = ServiceKey.DATA_STORAGE.get()
+   private val metadata: SessionMetadataInterface get() = ServiceKey.METADATA_DB.get()
+   private val usage: UsageInterface get() = ServiceKey.USAGE_DB.get()
+   private val userSettings: UserSettingsInterface get() = ServiceKey.USER_SETTINGS.get()
+   private val userResolver: UserProvider get() = ServiceKey.USER_RESOLVER.get()
+   private val authentication: AuthenticationInterface get() = ServiceKey.AUTHENTICATION.get()
+   private val giftedCredits: GiftedCreditsInterface get() = ServiceKey.GIFTED_CREDITS.get()
   private val metrics: MetricsInterface
     get() = try {
-      ServiceMap[ServiceKey.METRICS]
+       ServiceKey.METRICS.get()
     } catch (e: UnsupportedOperationException) {
       NoOpMetrics
     }
    private val notifications: NotificationsInterface
-     get() = NotificationsInterface.resolve()
+     get() = try {
+       ServiceKey.NOTIFICATIONS.get()
+     } catch (e: UnsupportedOperationException) {
+       LoggingNotifications
+     }
 
   /* ---------------------------------------------------------------- metrics interception helpers */
   private val log = LoggerFactory.getLogger(ServiceRouter::class.java)
@@ -661,67 +665,67 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   override fun getSessionName(
     user: User,
     session: Session
-  ): String = ServiceMap[ServiceKey.METADATA_DB].getSessionName(user, session)
+   ): String = metadata.getSessionName(user, session)
 
   override fun setSessionName(
     user: User,
     session: Session,
     name: String
-  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionName(user, session, name)
+   ) = metadata.setSessionName(user, session, name)
 
   override fun getMessageIds(
     user: User,
     session: Session
-  ): List<String> = ServiceMap[ServiceKey.METADATA_DB].getMessageIds(user, session)
+   ): List<String> = metadata.getMessageIds(user, session)
 
   override fun setMessageIds(
     user: User,
     session: Session,
     ids: List<String>
-  ) = ServiceMap[ServiceKey.METADATA_DB].setMessageIds(user, session, ids)
+   ) = metadata.setMessageIds(user, session, ids)
 
   override fun getSessionTimestamp(
     user: User,
     session: Session
-  ): Instant? = ServiceMap[ServiceKey.METADATA_DB].getSessionTimestamp(user, session)
+   ): Instant? = metadata.getSessionTimestamp(user, session)
 
   override fun setSessionTimestamp(
     user: User,
     session: Session,
     time: Instant
-  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionTimestamp(user, session, time)
+   ) = metadata.setSessionTimestamp(user, session, time)
 
   override fun listSessionsByPath(
     user: User,
     path: String
-  ) = ServiceMap[ServiceKey.METADATA_DB].listSessionsByPath(user, path)
+   ) = metadata.listSessionsByPath(user, path)
 
-  override fun listSessionsForUser(user: User) = ServiceMap[ServiceKey.METADATA_DB].listSessionsForUser(user)
+   override fun listSessionsForUser(user: User) = metadata.listSessionsForUser(user)
 
   override fun setSessionOwner(
     session: Session,
     user: User
-  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionOwner(session, user)
+   ) = metadata.setSessionOwner(session, user)
 
   override fun getSessionOwner(
     user: User,
     session: Session
-  ): String? = ServiceMap[ServiceKey.METADATA_DB].getSessionOwner(user, session)
+   ): String? = metadata.getSessionOwner(user, session)
 
   override fun setSessionWorker(
     session: Session,
     user: User
-  ) = ServiceMap[ServiceKey.METADATA_DB].setSessionWorker(session, user)
+   ) = metadata.setSessionWorker(session, user)
 
   override fun getSessionWorker(
     user: User,
     session: Session
-  ): String? = ServiceMap[ServiceKey.METADATA_DB].getSessionWorker(user, session)
+   ): String? = metadata.getSessionWorker(user, session)
 
   override fun deleteSession(
     user: User,
     session: Session
-  ) = ServiceMap[ServiceKey.METADATA_DB].deleteSession(user, session)
+   ) = metadata.deleteSession(user, session)
 
   override fun getSessionPath(user: User, session: Session): String? =
     metadata.getSessionPath(user, session)

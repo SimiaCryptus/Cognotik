@@ -1,7 +1,7 @@
 package com.simiacryptus.cognotik.platform.service
 
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.Alert
 import com.simiacryptus.cognotik.platform.model.AlertSeverity
 import com.simiacryptus.cognotik.platform.model.AlertState
@@ -27,14 +27,6 @@ interface NotificationsInterface {
   /** Delivers an alert transition. [Alert.state] tells FIRING from RESOLVED. */
   fun notifyAlert(alert: Alert)
 
-  companion object {
-    /** The registered notifications backend, or [LoggingNotifications] if none is registered. */
-    fun resolve(): NotificationsInterface = try {
-      ServiceMap[ServiceKey.NOTIFICATIONS]
-    } catch (e: UnsupportedOperationException) {
-      LoggingNotifications
-    }
-  }
 }
 
 /** Discards all notifications. */

@@ -331,7 +331,7 @@ class CompositeMetrics(private val delegates: List<MetricsInterface>) : MetricsI
 class InMemoryMetrics(
   private val maxEvents: Int = 10_000,
   private val maxResolvedAlerts: Int = 1_000,
-  private val notifications: () -> NotificationsInterface = { NotificationsInterface.resolve() },
+  private val notifications: () -> NotificationsInterface = { LoggingNotifications },
 ) : MetricsInterface {
 
   data class SeriesKey(val metric: MetricType, val attributes: Attributes)
