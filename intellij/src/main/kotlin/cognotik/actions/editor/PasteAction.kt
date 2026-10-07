@@ -142,8 +142,10 @@ abstract class PasteActionBase(private val model: (AppSettingsState) -> ChatInte
 
                 qTry {
                     select("[href],[src]").forEach { element ->
-                        element.attr("href").let { href -> element.attr("href", href.makeAbsolute()) }
-                        element.attr("src").let { src -> element.attr("src", src.makeAbsolute()) }
+                        element.attr("href").takeIf { it.isNotBlank() }
+                            ?.let { href -> element.attr("href", href.makeAbsolute()) }
+                        element.attr("src").takeIf { it.isNotBlank() }
+                            ?.let { src -> element.attr("src", src.makeAbsolute()) }
                     }
                 }
                 if (document.body().html().length > maxLength) return@apply

@@ -92,7 +92,7 @@ class CreateFileFromDescriptionAction :
             val extension = path.substringAfterLast(".")
             val name = path.substringBeforeLast(".")
             val fileIndex = (1..Int.MAX_VALUE).find {
-                !File("$name.$it.$extension").exists()
+                !moduleRoot.resolve("$name.$it.$extension").toFile().exists()
             }
             path = "$name.$fileIndex.$extension"
             outputPath = moduleRoot.resolve(path)

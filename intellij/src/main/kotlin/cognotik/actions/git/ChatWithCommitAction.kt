@@ -43,11 +43,11 @@ class ChatWithCommitAction : AnAction() {
                         val after = change.afterRevision?.content
                         if ((before ?: after)!!.isBinary)
                             return@joinToString "# Binary: ${change.afterRevision?.file}".prependIndent("  ")
-                        if (before == null) return@joinToString "# Deleted: ${change.afterRevision?.file}\n${after}".replace(
+                        if (before == null) return@joinToString "# Added: ${change.afterRevision?.file}\n${after}".replace(
                             "\n",
                             "\n  "
                         )
-                        if (after == null) return@joinToString "# Added: ${change.beforeRevision?.file}\n${before}".replace(
+                        if (after == null) return@joinToString "# Deleted: ${change.beforeRevision?.file}\n${before}".replace(
                             "\n",
                             "\n  "
                         )

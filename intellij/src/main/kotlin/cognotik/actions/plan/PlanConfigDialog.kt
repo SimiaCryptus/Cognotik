@@ -490,7 +490,7 @@ open class PlanConfigDialog(
                         val confirmResult = JOptionPane.showConfirmDialog(
                             null, "Delete configuration '$selected'?", "Confirm Delete", JOptionPane.YES_NO_OPTION
                         )
-                        if (confirmResult == Messages.YES) {
+                        if (confirmResult == JOptionPane.YES_OPTION) {
                             val configs = appSettings.savedPlanConfigs ?: mutableMapOf()
                             configs.remove(selected)
                             appSettings.savedPlanConfigs = configs

@@ -83,13 +83,13 @@ class CommandAutofixAction : BaseAction() {
                                 AppSettingsState.instance.recentArguments?.remove(argument)
                                 AppSettingsState.instance.recentArguments?.add(0, argument)
                                 AppSettingsState.instance.recentArguments?.apply {
-                                    if (size > MAX_RECENT_ARGUMENTS) dropLast(size - MAX_RECENT_ARGUMENTS)
+                                    while (size > MAX_RECENT_ARGUMENTS) removeAt(size - 1)
                                 }
                                 val workingDir = cmdPanel.workingDirectoryField.selectedItem?.toString() ?: ""
                                 AppSettingsState.instance.recentWorkingDirs?.remove(workingDir)
                                 AppSettingsState.instance.recentWorkingDirs?.add(0, workingDir)
                                 AppSettingsState.instance.recentWorkingDirs?.apply {
-                                    if (size > MAX_RECENT_ARGUMENTS) dropLast(size - MAX_RECENT_DIRS)
+                                    while (size > MAX_RECENT_DIRS) removeAt(size - 1)
                                 }
                                 //require(executable.exists()) { "Executable file does not exist: $executable" }
                                 val workingDirectory = File(workingDir)

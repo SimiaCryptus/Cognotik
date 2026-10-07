@@ -409,10 +409,11 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                                     key = (key.takeIf { it.isNotBlank() } ?: "").encrypt,
                                     baseUrl = base,
                                     provider = apiProvider))
-                        } catch (e: Exception) {
                             log.debug("Added API configuration for provider: $provider")
                         } catch (e: IllegalArgumentException) {
                             log.warn("Unknown provider at row $row: $provider", e)
+                        } catch (e: Exception) {
+                            log.warn("Failed to add API configuration for provider: $provider", e)
                         }
                     }
                 } catch (e: Exception) {
