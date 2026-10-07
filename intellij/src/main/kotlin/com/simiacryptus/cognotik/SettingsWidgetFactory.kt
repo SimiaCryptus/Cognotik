@@ -12,6 +12,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.treeStructure.Tree
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.HostedAutoSetup
 import com.simiacryptus.cognotik.config.UsageTable
 import com.simiacryptus.cognotik.platform.*
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
@@ -41,7 +42,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private val log = getLogger(SettingsWidgetFactory::class.java)
     }
 
-    class SettingsWidget : StatusBarWidget, StatusBarWidget.MultipleTextValuesPresentation {
+     class SettingsWidget(
+         private val project: Project? = null
+     ) : StatusBarWidget, StatusBarWidget.MultipleTextValuesPresentation {
 
         private var statusBar: StatusBar? = null
 
@@ -488,6 +491,12 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getPopup(): JBPopup {
+             // Auto-setup mode: no providers configured yet -> offer Cognotik Hosted
+             if (HostedAutoSetup.needsSetup(this@SettingsWidget.settings)) {
+                 return HostedAutoSetup.createSetupPopup(project) {
+                     SwingUtilities.invokeLater { statusBar?.updateWidget(ID()) }
+                 }
+             }
             updateSessionsList()
             val panel = JPanel(BorderLayout())
             panel.accessibleContext.accessibleDescription = getMessage("popup.description")
@@ -536,7 +545,8 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         }
 
         override fun getSelectedValue(): String {
-            return AppSettingsState.instance.smartModel?.model?.name ?: "Uninitialized"
+             return AppSettingsState.instance.smartModel?.model?.name
+                 ?: if (HostedAutoSetup.needsSetup()) "Cognotik: Set up" else "Uninitialized"
         }
 
         override fun getTooltipText() = """
@@ -590,7 +600,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
     }
 
     override fun createWidget(project: Project): StatusBarWidget {
-        return SettingsWidget()
+         return SettingsWidget(project)
     }
 
     override fun isAvailable(project: Project): Boolean {
