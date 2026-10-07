@@ -20,9 +20,9 @@ class ServiceKey<T : Any>(
     set(value) {
       when {
         null == value -> fail("Factory cannot be null")
-        null != field -> log.info("Ignoring duplicate factory registration for service '$name': $value", /*RuntimeException("Stack trace")*/)
+        null != field -> log.info("Ignoring duplicate factory registration for service '$name': $value", RuntimeException("Stack trace"))
         else -> {
-          log.info("Registering factory for service '$name': $value", /*RuntimeException("Stack trace")*/)
+          log.info("Registering factory for service '$name': $value", RuntimeException("Stack trace"))
           field = value
         }
       }
@@ -43,17 +43,38 @@ class ServiceKey<T : Any>(
         null == value -> fail("Factory cannot be null")
         null != field -> fail("Duplicate factory registration for service '$name': $value")
         else -> {
-          log.info("Registering default factory for service '$name': $value")
+          log.info("Registering default factory for service '$name': $value", RuntimeException("Stack trace"))
           field = value
         }
       }
     }
+  private val wrappers: MutableList<(T) -> T> = CopyOnWriteArrayList()
+  /**
+   * Registers a wrapper that decorates every instance produced by [create].
+   * Wrappers are applied in registration order (the first registered is innermost),
+   * on top of whatever the base factory ([factory] or [defaultFactory]) returns.
+   * Unlike [factory], any number of wrappers may be registered.
+   */
+  fun addWrapper(wrapper: (T) -> T) {
+    wrappers.add(wrapper)
+    log.info("Registered wrapper for service '$name' (${wrappers.size} total): $wrapper")
+  }
+  /** Snapshot of the registered wrappers, in application order. */
+  fun getWrappers(): List<(T) -> T> = wrappers.toList()
+  /** Removes all registered wrappers (mainly useful for tests). */
+  fun clearWrappers() {
+    wrappers.clear()
+  }
+
 
   fun create(): T {
     val factory = factory ?: defaultFactory
     ?: throw UnsupportedOperationException("No factory registered for service '$name'")
-    val newInstance = (factory).invoke()
-    log.info("Created service instance for '$name': $newInstance")
+    var newInstance = (factory).invoke()
+    for (wrapper in wrappers) {
+      newInstance = wrapper(newInstance)
+    }
+    log.info("Created service instance for '$name' (${wrappers.size} wrapper(s)): $newInstance")
     return newInstance
   }
 
