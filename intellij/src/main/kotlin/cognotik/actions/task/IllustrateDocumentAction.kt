@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.plan.tools.AbstractTask.TaskState
 import com.simiacryptus.cognotik.plan.tools.file.IllustrateDocumentTask
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.Session
@@ -376,7 +376,7 @@ class IllustrateDocumentAction : BaseAction() {
         }
 
         private fun getVisibleModels() =
-            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser).apis.flatMap { apiData ->
+            ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
                     model.provider == apiData.provider && model.modelId.isNotBlank() && PlanConfigDialog.isVisible(
                         model

@@ -11,7 +11,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.CodeChatSocketManager
 import com.simiacryptus.cognotik.util.LanguageUtils
@@ -35,7 +35,7 @@ class CodeChatAction : BaseAction() {
             filename = filename,
             model = AppSettingsState.instance.smartChatClient,
             fastModel = AppSettingsState.instance.fastChatClient,
-            storage = ServiceMap[ServiceKey.DATA_STORAGE]
+            storage = ServiceKey.DATA_STORAGE.get()
         )
         ApplicationServer.appInfoMap[session] = AppInfoData(
             applicationName = "Code Chat",

@@ -24,7 +24,7 @@ import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.file.WriteHtmlTask
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.Session
@@ -312,7 +312,7 @@ class WriteHtmlAction : BaseAction() {
         }
 
         private fun getVisibleModels() =
-            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+            ServiceKey.USER_SETTINGS.get().getUserSettings(
                 CognotikConfig.localUser
             ).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase ?: throw IllegalArgumentException("No API found for provider: ${apiData.provider?.name}"))?.filter { model ->

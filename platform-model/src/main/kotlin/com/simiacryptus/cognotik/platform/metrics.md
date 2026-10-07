@@ -74,7 +74,7 @@ ServiceRouter.appStarted(app = "chat", session = session, user = user, worker = 
 ServiceRouter.increment(MetricType.TOKEN_SPEND, 0.03)
 ```
 
-Each call resolves `ServiceMap[ServiceKey.METRICS]` at invocation time, so late or overridden
+Each call resolves `ServiceKey.METRICS.get()` at invocation time, so late or overridden
 factory registrations are honoured.
 
 ### 3.2 When no backend is registered
@@ -83,12 +83,12 @@ The router's `metrics` accessor catches the `UnsupportedOperationException` that
 `ServiceKey.create()` throws when neither `factory` nor `defaultFactory` is set. In that case it uses
 `NoOpMetrics`. Calls through `ServiceRouter` are therefore safe in minimal deployments.
 
-Resolving `ServiceMap[ServiceKey.METRICS]` **directly** has no such fallback. If you must bypass the
+Resolving `ServiceKey.METRICS.get()` **directly** has no such fallback. If you must bypass the
 router, guard the lookup:
 
 ```kotlin
 val metrics: MetricsInterface =
-  runCatching { ServiceMap[ServiceKey.METRICS] }.getOrElse { NoOpMetrics }
+  runCatching { ServiceKey.METRICS.get() }.getOrElse { NoOpMetrics }
 ```
 
 ### 3.3 Constructor injection (recommended for new, testable classes)

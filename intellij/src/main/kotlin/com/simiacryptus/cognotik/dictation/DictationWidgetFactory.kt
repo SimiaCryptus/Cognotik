@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.config.AppSettingsState.Companion.currentSession
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import icons.MyIcons
 import kotlinx.coroutines.CoroutineScope
@@ -128,7 +128,7 @@ class DictationWidgetFactory : StatusBarWidgetFactory {
           findAudioModel(it)
         } ?: throw IOException("Transcription model not configured")
         val apiData =
-          ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser).apis.find { it.provider == model.provider }
+          ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser).apis.find { it.provider == model.provider }
         return TranscriptionClient(
           key = apiData?.key?.decrypt ?: throw IOException("API key for ${model.provider} not configured"),
           apiBase = apiData.apiBase,

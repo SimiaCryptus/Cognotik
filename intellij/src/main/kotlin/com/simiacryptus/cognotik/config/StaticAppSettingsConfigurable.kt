@@ -4,7 +4,7 @@ package com.simiacryptus.cognotik.config
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
@@ -138,7 +138,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
         dialog.layout = BorderLayout()
 
       val userSettings =
-          ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+          ServiceKey.USER_SETTINGS.get().getUserSettings(
               CognotikConfig.localUser
           )
         val fullConfig = try {
@@ -325,7 +325,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     userSettingsJson, UserSettings::class.java
                 )
                 log.debug("Decrypting ${importedUserSettings.apis.size} API configurations")
-                ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
+                ServiceKey.USER_SETTINGS.get().updateUserSettings(
                     CognotikConfig.localUser, importedUserSettings
                 )
                 log.info("Successfully imported configuration with ${importedUserSettings.apis.size} API configurations")
@@ -357,7 +357,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
             // Refresh API table with current user settings
             val tableModel = component.apis.model as DefaultTableModel
             tableModel.rowCount = 0
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
+          val userSettings = ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""
@@ -376,7 +376,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
     override fun read(component: AppSettingsComponent, settings: AppSettingsState) {
         log.debug("Reading settings from UI components")
         try {
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
+          val userSettings = ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser)
             log.debug("Current user has ${userSettings.apis.size} API configurations")
 
             settings.diffLoggingEnabled = component.diffLoggingEnabled.isSelected
@@ -419,7 +419,7 @@ class StaticAppSettingsConfigurable : AppSettingsConfigurable() {
                     log.error("Failed to read API configuration from row $row", e)
                 }
             }
-            ServiceMap[ServiceKey.USER_SETTINGS].updateUserSettings(
+            ServiceKey.USER_SETTINGS.get().updateUserSettings(
                 CognotikConfig.localUser,
                 userSettings
             )

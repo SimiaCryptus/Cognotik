@@ -14,7 +14,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.text.ui.DiffInstrumentor
@@ -119,7 +119,7 @@ class DiffChatAction : BaseAction() {
         filename = filename,
         model = AppSettingsState.instance.smartChatClient,
         fastModel = AppSettingsState.instance.fastChatClient,
-        storage = ServiceMap[ServiceKey.DATA_STORAGE]
+        storage = ServiceKey.DATA_STORAGE.get()
       ) {
             override val systemPrompt: String
                 @Language("Markdown")

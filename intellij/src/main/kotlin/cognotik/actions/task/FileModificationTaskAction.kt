@@ -27,7 +27,7 @@ import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask
 import com.simiacryptus.cognotik.plan.tools.file.FileModificationTask.Companion.FileModification
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.file.DataStorage
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.Session
@@ -289,7 +289,7 @@ class FileModificationTaskAction : BaseAction() {
         }
 
         private fun getVisibleModels() =
-            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+            ServiceKey.USER_SETTINGS.get().getUserSettings(
                 CognotikConfig.localUser
             ).apis.flatMap { apiData ->
                 apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->

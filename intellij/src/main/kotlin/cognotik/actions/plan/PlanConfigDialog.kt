@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.newSettings
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.AIModel
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
@@ -333,7 +333,7 @@ open class PlanConfigDialog(
     }
 
     private fun getVisibleModels(): List<ChatModel> =
-        ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+        ServiceKey.USER_SETTINGS.get().getUserSettings(
           CognotikConfig.localUser
         ).apis.flatMap { apiData ->
             apiData.provider?.getChatModels(apiData.key!!, apiData.apiBase)?.filter { model ->
@@ -648,7 +648,7 @@ open class PlanConfigDialog(
         private val CONFIG_NAME_PATTERN = Regex("^[a-zA-Z0-9_ -]+$")
 
         fun isVisible(chatModel: AIModel) =
-            ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+            ServiceKey.USER_SETTINGS.get().getUserSettings(
               CognotikConfig.localUser
             ).apis
               .filter { it.key?.decrypt != null }

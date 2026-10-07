@@ -52,7 +52,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
         private val sessionsListModel = DefaultListModel<Session>()
 
         val settings: UserSettings
-            get() = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(
+            get() = ServiceKey.USER_SETTINGS.get().getUserSettings(
                 CognotikConfig.localUser
             )
 
@@ -379,7 +379,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 label.text = if (value != null) {
                     try {
                         val sessionName =
-                            ServiceMap[ServiceKey.METADATA_DB].getSessionName(
+                            ServiceKey.METADATA_DB.get().getSessionName(
                                 CognotikConfig.localUser,
                                 value
                             )
@@ -508,7 +508,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             val usagePanel = JPanel(BorderLayout())
             usagePanel.add(
-                UsageTable(ServiceMap[ServiceKey.USAGE_DB]),
+                UsageTable(ServiceKey.USAGE_DB.get()),
                 BorderLayout.CENTER
             )
 

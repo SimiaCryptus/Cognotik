@@ -20,7 +20,7 @@ import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.CognotikConfig.dataStorageRoot
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.OperationType
 import com.simiacryptus.cognotik.platform.model.Principal
@@ -85,7 +85,7 @@ class PluginStartupActivity : ProjectActivity {
             DatabaseFacet.root = extFile.resolve(".cognotik").absolutePath
         }
         try {
-            ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+            ServiceKey.PLUGIN_MANAGER.get().getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
         } catch (e: Exception) {
             log.error("Error loading plugins", e)
         }

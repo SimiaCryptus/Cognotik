@@ -16,7 +16,7 @@ import com.intellij.ui.components.JBTextField
 import com.intellij.ui.table.JBTable
 import com.simiacryptus.cognotik.platform.CognotikConfig
 import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.ServiceMap
+
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.platform.model.ImageModel
@@ -345,7 +345,7 @@ class AppSettingsComponent : Disposable {
 
     @Name("Editor Actions")
     var usage =
-        UsageTable(ServiceMap[ServiceKey.USAGE_DB])
+        UsageTable(ServiceKey.USAGE_DB.get())
 
     init {
         log.debug("Initializing AppSettingsComponent")
@@ -373,7 +373,7 @@ class AppSettingsComponent : Disposable {
             log.debug("Populating API table")
             val model = apis.model as DefaultTableModel
             model.rowCount = 0
-          val userSettings = ServiceMap[ServiceKey.USER_SETTINGS].getUserSettings(CognotikConfig.localUser)
+          val userSettings = ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser)
             userSettings.apis.forEach { api ->
                 val providerName = api.provider?.name ?: ""
                 val name = api.name ?: api.provider?.name ?: ""

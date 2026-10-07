@@ -281,7 +281,7 @@ data class AppSettingsState(
       CoreProviders.init()
       CoreTasks.init()
       try {
-        ServiceMap[ServiceKey.PLUGIN_MANAGER].getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
+        ServiceKey.PLUGIN_MANAGER.get().getLoadedPlugins() // Force plugin loading to ensure classloader is initialized
       } catch (e: Exception) {
         log.error("Error loading plugins", e)
       }
