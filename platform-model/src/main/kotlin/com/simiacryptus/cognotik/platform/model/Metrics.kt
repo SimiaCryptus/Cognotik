@@ -85,6 +85,11 @@ class MetricAttribute<T : Any>(
     val SERVICE = of<String>("service")
     val STATUS = of<ServiceStatus>("status")
     val WORKER = of<String>("worker")
+    // --- Logging ---
+    /** Logger name (conventionally the emitting class). Bounded by the code base. */
+    val LOG_CLASS = of<String>("class")
+    /** Log level, lower-case (trace, debug, info, warn, error). */
+    val LOG_LEVEL = of<String>("level")
      // --- Errors ---
      val ERROR_TYPE = of<String>("error_type")
      val FATAL = of<Boolean>("fatal")
@@ -211,6 +216,19 @@ interface MetricType {
          MetricAttribute.PROVIDER, MetricAttribute.MODEL, MetricAttribute.ERROR_TYPE, MetricAttribute.FATAL,
        )
      }
+    // ---------------- Logging ----------------
+    val LOG_MESSAGES: CounterType by lazy {
+      CounterType.of(
+        "cognotik.log.messages", MetricUnit.COUNT, "Log messages emitted, per logger class and level",
+        MetricAttribute.LOG_CLASS, MetricAttribute.LOG_LEVEL,
+      )
+    }
+    val LOG_BYTES: CounterType by lazy {
+      CounterType.of(
+        "cognotik.log.bytes", MetricUnit.BYTES, "UTF-8 bytes of log messages emitted, per logger class and level",
+        MetricAttribute.LOG_CLASS, MetricAttribute.LOG_LEVEL,
+      )
+    }
 
 
     // ---------------- Input cash ----------------

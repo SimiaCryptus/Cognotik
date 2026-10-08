@@ -80,7 +80,7 @@ open class UserSettingsDB : UserSettingsInterface {
         }
       }
       cacheMisses.incrementAndGet()
-      val loaded = loadFromDb(user) ?: UserSettings()
+      val loaded = loadFromDb(user) ?: UserSettings(user = user)
       cache[user] = CacheEntry(loaded, System.nanoTime())
       loaded
     }

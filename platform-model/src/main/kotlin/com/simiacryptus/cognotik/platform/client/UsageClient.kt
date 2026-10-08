@@ -26,7 +26,7 @@ import java.time.LocalDate
  *
  * @param baseUrl e.g. `http://host:port/usageStorageApi` (no trailing slash)
  */
-class UsageClient(
+open class UsageClient(
   private val baseUrl: String = controllerEndpoint + "/usageApi",
   private val httpClient: HttpClient = HttpClient.newBuilder()
     .followRedirects(HttpClient.Redirect.NORMAL)
@@ -122,7 +122,7 @@ class UsageClient(
     return trimmed.startsWith("<!DOCTYPE", ignoreCase = true) || trimmed.startsWith("<html", ignoreCase = true)
   }
 
-  private fun cookieHeader(auth: Map<String, String?>): String? {
+  open fun cookieHeader(auth: Map<String, String?>): String? {
     val entries = auth.filterValues { !it.isNullOrEmpty() }
     if (entries.isEmpty()) return null
     return entries.entries.joinToString("; ") { (k, v) -> "$k=$v" }

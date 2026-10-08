@@ -6,8 +6,11 @@ import com.simiacryptus.cognotik.fileserver.StaticZipServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.client.UsageClient
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
@@ -1077,8 +1080,83 @@ private fun saveSessionFile(file: File, session: FileServer.SessionKeyFile) {
   }
 }
 
+/** Result of querying the hosted `/userSettings/` endpoint. */
+private sealed class HostedSettingsResult {
+  data class Ok(val settings: UserSettings?) : HostedSettingsResult()
+
+  /** The server rejected the session key (401/403 or a login redirect). */
+  object Unauthorized : HostedSettingsResult()
+  data class Failed(val reason: String) : HostedSettingsResult()
+}
+
+/**
+ * Fetches `{baseUrl}/userSettings/` authenticated with the session cookie, asking for JSON.
+ */
+private fun fetchHostedUserSettings(baseUrl: String, sessionKey: String): HostedSettingsResult {
+  if (sessionKey.isBlank()) return HostedSettingsResult.Unauthorized
+  val url = "${baseUrl.trimEnd('/')}/userSettings/"
+  return try {
+    val request = HttpRequest.newBuilder(URI(url))
+      .timeout(Duration.ofSeconds(30))
+      .header("Accept", "application/json")
+      .header("Cookie", "${AuthenticationInterface.AUTH_COOKIE}=$sessionKey")
+      .header("User-Agent", "cognotik-cli/1.0 (java ${System.getProperty("java.version")})")
+      .GET()
+      .build()
+    val response = loginHttp.send(request, HttpResponse.BodyHandlers.ofString())
+    val status = response.statusCode()
+    val type = response.headers().firstValue("content-type").orElse("")
+    when {
+      status == 401 || status == 403 -> HostedSettingsResult.Unauthorized
+      status in 300..399 -> {
+        /* Redirects are not followed: a redirect here means "go log in". */
+        val location = response.headers().firstValue("location").orElse("")
+        if (location.contains("login", ignoreCase = true)) HostedSettingsResult.Unauthorized
+        else HostedSettingsResult.Failed("unexpected redirect (HTTP $status) to $location")
+      }
+
+      status != 200 -> HostedSettingsResult.Failed("HTTP $status from $url")
+      !type.contains("application/json") -> HostedSettingsResult.Failed("non-JSON response ($type) from $url")
+      else -> HostedSettingsResult.Ok(JsonUtil.fromJson<UserSettings>(response.body(), Any::class.java))
+    }
+  } catch (e: InterruptedException) {
+    Thread.currentThread().interrupt()
+    HostedSettingsResult.Failed("interrupted")
+  } catch (e: Exception) {
+    log.debug("Fetching $url failed", e)
+    HostedSettingsResult.Failed(e.message ?: e.javaClass.simpleName)
+  }
+}
+
+/** Depth-first search for an `email` field that looks like an address. */
+private fun findEmail(node: Any?, depth: Int = 0): String? {
+  if (depth > 8 || node == null) return null
+  return when (node) {
+    is Map<*, *> -> {
+      (node["email"] as? String)?.takeIf { it.contains('@') }
+        ?: node.values.firstNotNullOfOrNull { findEmail(it, depth + 1) }
+    }
+
+    is Iterable<*> -> node.firstNotNullOfOrNull { findEmail(it, depth + 1) }
+    is Array<*> -> node.firstNotNullOfOrNull { findEmail(it, depth + 1) }
+    else -> null
+  }
+}
+
+private fun clearSessionFile(file: File) {
+  try {
+    if (file.exists() && file.delete()) {
+      loginProgress("   Cleared saved session ${file.absolutePath}; you will be asked to log in again.")
+    }
+  } catch (e: Exception) {
+    log.warn("Could not delete session file ${file.absolutePath}", e)
+  }
+}
+
+
 fun initHostedEnv(globalRoot: File) {
   val sessionFile = File(globalRoot, "session.json")
+  val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
   val existing = (if (sessionFile.exists()) {
     try {
       JsonUtil.fromJson<FileServer.SessionKeyFile>(sessionFile.readText(), FileServer.SessionKeyFile::class.java)
@@ -1088,7 +1166,6 @@ fun initHostedEnv(globalRoot: File) {
     }
   } else null)?.takeIf { it.sessionKey.isNotBlank() }
   val sessionInfo = existing ?: run {
-    val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
     log.info("No usable session at ${sessionFile.absolutePath}; starting device login against $baseUrl")
     val fresh = deviceLogin(baseUrl)
     if (fresh != null) {
@@ -1099,6 +1176,35 @@ fun initHostedEnv(globalRoot: File) {
       FileServer.SessionKeyFile()
     }
   }
+
+  val settingsEmail: String? = when (val result = fetchHostedUserSettings(baseUrl, sessionInfo.sessionKey)) {
+    is HostedSettingsResult.Ok -> result.settings?.user?.email.also {
+      if (it == null) log.info("Hosted user settings did not contain an email; falling back to the login identity")
+    }
+
+    HostedSettingsResult.Unauthorized -> {
+      log.warn("The hosted server rejected the session key")
+      loginProgress("❌ The saved session is no longer valid.")
+      clearSessionFile(sessionFile)
+      null
+    }
+
+    is HostedSettingsResult.Failed -> {
+      log.warn("Could not fetch hosted user settings: {}", result.reason)
+      null
+    }
+  }
+  val email: String = settingsEmail
+    ?: sessionInfo.userId.takeIf { it.contains('@') }
+    ?: sessionInfo.userId.takeIf { it.isNotBlank() }
+    ?: "anonymous@localhost"
+  log.info("Hosted user: {}", email)
+
+
+
+  defaultUser = User(
+    email = email,
+  )
   ServiceKey.USER_SETTINGS.addWrapper { inner ->
     object : UserSettingsInterface by inner {
       override fun getUserSettings(user: User): UserSettings {
@@ -1112,5 +1218,29 @@ fun initHostedEnv(globalRoot: File) {
         )
       }
     }
+  }
+  ServiceKey.AUTHENTICATION.factory = {
+    object : AuthenticationInterface {
+      override fun getUser(accessToken: String?) = defaultUser
+
+      override fun putUser(accessToken: String, user: User) =
+        defaultUser ?: throw IllegalStateException("No default user available")
+
+      override fun listTokens(user: User) = listOf(
+        AuthenticationInterface.TokenMetadata(
+          token = sessionInfo.sessionKey,
+          userId = sessionInfo.userId,
+        )
+      )
+    }
+  }
+  ServiceKey.USAGE_DB.factory = { UsageClient() }
+  try {
+    require(ServiceRouter.getUserBalance(defaultUser!!) > 0.0) { "The default user has no balance; the hosted server will not work." }
+  } catch (e: Exception) {
+    log.error("Could not check user balance; the hosted server may not work.", e)
+    /* The login may have been bad: forget it so the next start performs a fresh device login. */
+    clearSessionFile(sessionFile)
+    throw e
   }
 }
