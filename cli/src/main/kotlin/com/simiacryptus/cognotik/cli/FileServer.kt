@@ -319,6 +319,100 @@ open class FileServer {
     server.join()
   }
 
+  open fun initHostedEnv(globalRoot: File) {
+    val sessionFile = File(globalRoot, "session.json")
+    val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
+    val existing = (if (sessionFile.exists()) {
+      try {
+        JsonUtil.fromJson<SessionKeyFile>(sessionFile.readText(), SessionKeyFile::class.java)
+      } catch (e: Exception) {
+        com.simiacryptus.cognotik.cli.log.warn("Could not read session file ${sessionFile.absolutePath}", e)
+        null
+      }
+    } else null)?.takeIf { it.sessionKey.isNotBlank() }
+    val sessionInfo = existing ?: run {
+      com.simiacryptus.cognotik.cli.log.info("No usable session at ${sessionFile.absolutePath}; starting device login against $baseUrl")
+      val fresh = deviceLogin(baseUrl)
+      if (fresh != null) {
+        saveSessionFile(sessionFile, fresh)
+        fresh
+      } else {
+        com.simiacryptus.cognotik.cli.log.warn("Login failed; starting without a session key")
+        SessionKeyFile()
+      }
+    }
+    login(baseUrl, sessionInfo, sessionFile)
+    ServiceKey.USER_SETTINGS.addWrapper { inner ->
+      object : UserSettingsInterface by inner {
+        override fun getUserSettings(user: User): UserSettings {
+          return inner.getUserSettings(user).copy(
+            apis = mutableListOf(
+              ApiData(
+                provider = CoreProviders.HostedProxy,
+                key = SecureString(sessionInfo.sessionKey)
+              )
+            )
+          )
+        }
+      }
+    }
+    ServiceKey.AUTHENTICATION.factory = {
+      object : AuthenticationInterface {
+        override fun getUser(accessToken: String?) = defaultUser
+
+        override fun putUser(accessToken: String, user: User) =
+          defaultUser ?: throw IllegalStateException("No default user available")
+
+        override fun listTokens(user: User) = listOf(
+          AuthenticationInterface.TokenMetadata(
+            token = sessionInfo.sessionKey,
+            userId = sessionInfo.userId,
+          )
+        )
+      }
+    }
+    ServiceKey.USAGE_DB.factory = { UsageClient() }
+  }
+
+  open fun login(
+    baseUrl: String,
+    sessionInfo: SessionKeyFile,
+    sessionFile: File
+  ) {
+    val settingsEmail: String? = when (val result = fetchHostedUserSettings(baseUrl, sessionInfo.sessionKey)) {
+      is HostedSettingsResult.Ok -> result.settings?.user?.email.also {
+        if (it == null) com.simiacryptus.cognotik.cli.log.info("Hosted user settings did not contain an email; falling back to the login identity")
+      }
+
+      HostedSettingsResult.Unauthorized -> {
+        com.simiacryptus.cognotik.cli.log.warn("The hosted server rejected the session key")
+        loginProgress("❌ The saved session is no longer valid.")
+        clearSessionFile(sessionFile)
+        null
+      }
+
+      is HostedSettingsResult.Failed -> {
+        com.simiacryptus.cognotik.cli.log.warn("Could not fetch hosted user settings: {}", result.reason)
+        null
+      }
+    }
+    val email: String = settingsEmail
+      ?: sessionInfo.userId.takeIf { it.contains('@') }
+      ?: sessionInfo.userId.takeIf { it.isNotBlank() }
+      ?: "anonymous@localhost"
+    com.simiacryptus.cognotik.cli.log.info("Hosted user: {}", email)
+    defaultUser = User(
+      email = email,
+    )
+    try {
+      require(ServiceRouter.getUserBalance(defaultUser!!) > 0.0) { "The default user has no balance; the hosted server will not work." }
+    } catch (e: Exception) {
+      com.simiacryptus.cognotik.cli.log.error("Could not check user balance; the hosted server may not work.", e)
+      /* The login may have been bad: forget it so the next start performs a fresh device login. */
+      clearSessionFile(sessionFile)
+      throw e
+    }
+  }
   // ---------------------------------------------------------------------------------
   // Parsing & validation
   // ---------------------------------------------------------------------------------
@@ -422,7 +516,7 @@ open class FileServer {
   /** Builds the CLI user (honouring --email), bootstraps the platform and resolves models. */
   fun initializeUser(config: Config) {
     config.email?.let { CliSupport.email = it }
-    val cliUser = CliSupport.defaultUser
+    val cliUser = defaultUser
     CliSupport.bootstrapPlatform(cliUser)
     if (cliUser == null) {
       log.info("No user could be created; the server will start without a user or models.")
@@ -521,7 +615,7 @@ open class FileServer {
         .onFailure { log.warn("Failed to refresh modify models", it) }
       models = try {
         CliSupport.resolveModels(
-          user = CliSupport.defaultUser ?: throw IllegalStateException("No user available"),
+          user = defaultUser ?: throw IllegalStateException("No user available"),
           smartModel = ModelSelection.smart,
           fastModel = ModelSelection.fast,
           imageModel = config.imageModel,
@@ -1154,93 +1248,3 @@ private fun clearSessionFile(file: File) {
 }
 
 
-fun initHostedEnv(globalRoot: File) {
-  val sessionFile = File(globalRoot, "session.json")
-  val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
-  val existing = (if (sessionFile.exists()) {
-    try {
-      JsonUtil.fromJson<FileServer.SessionKeyFile>(sessionFile.readText(), FileServer.SessionKeyFile::class.java)
-    } catch (e: Exception) {
-      log.warn("Could not read session file ${sessionFile.absolutePath}", e)
-      null
-    }
-  } else null)?.takeIf { it.sessionKey.isNotBlank() }
-  val sessionInfo = existing ?: run {
-    log.info("No usable session at ${sessionFile.absolutePath}; starting device login against $baseUrl")
-    val fresh = deviceLogin(baseUrl)
-    if (fresh != null) {
-      saveSessionFile(sessionFile, fresh)
-      fresh
-    } else {
-      log.warn("Login failed; starting without a session key")
-      FileServer.SessionKeyFile()
-    }
-  }
-
-  val settingsEmail: String? = when (val result = fetchHostedUserSettings(baseUrl, sessionInfo.sessionKey)) {
-    is HostedSettingsResult.Ok -> result.settings?.user?.email.also {
-      if (it == null) log.info("Hosted user settings did not contain an email; falling back to the login identity")
-    }
-
-    HostedSettingsResult.Unauthorized -> {
-      log.warn("The hosted server rejected the session key")
-      loginProgress("❌ The saved session is no longer valid.")
-      clearSessionFile(sessionFile)
-      null
-    }
-
-    is HostedSettingsResult.Failed -> {
-      log.warn("Could not fetch hosted user settings: {}", result.reason)
-      null
-    }
-  }
-  val email: String = settingsEmail
-    ?: sessionInfo.userId.takeIf { it.contains('@') }
-    ?: sessionInfo.userId.takeIf { it.isNotBlank() }
-    ?: "anonymous@localhost"
-  log.info("Hosted user: {}", email)
-
-
-
-  defaultUser = User(
-    email = email,
-  )
-  ServiceKey.USER_SETTINGS.addWrapper { inner ->
-    object : UserSettingsInterface by inner {
-      override fun getUserSettings(user: User): UserSettings {
-        return inner.getUserSettings(user).copy(
-          apis = mutableListOf(
-            ApiData(
-              provider = CoreProviders.HostedProxy,
-              key = SecureString(sessionInfo.sessionKey)
-            )
-          )
-        )
-      }
-    }
-  }
-  ServiceKey.AUTHENTICATION.factory = {
-    object : AuthenticationInterface {
-      override fun getUser(accessToken: String?) = defaultUser
-
-      override fun putUser(accessToken: String, user: User) =
-        defaultUser ?: throw IllegalStateException("No default user available")
-
-      override fun listTokens(user: User) = listOf(
-        AuthenticationInterface.TokenMetadata(
-          token = sessionInfo.sessionKey,
-          userId = sessionInfo.userId,
-        )
-      )
-    }
-  }
-  ServiceKey.USAGE_DB.factory = { UsageClient() }
-  try {
-    require(ServiceRouter.getUserBalance(defaultUser!!) > 0.0) { "The default user has no balance; the hosted server will not work." }
-  } catch (e: Exception) {
-    log.error("Could not check user balance; the hosted server may not work.", e)
-    /* The login may have been bad: forget it so the next start performs a fresh device login. */
-    clearSessionFile(sessionFile)
-    throw e
-  }
-}
