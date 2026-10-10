@@ -155,7 +155,7 @@ open class UsageClient(
    override fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage> =
      guarded("getSessionUsageSummary", emptyMap()) {
        requireNotNull(user) { "user is required" }
-       log.info("Fetching usage summary for session={} user={}", session.sessionId, user.toJson())
+       log.debug("Fetching usage summary for session={} user={}", session.sessionId, user.toJson())
        JsonUtil.fromJson<UsageSummaryResponse>(
          get("sessionSummary", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
          UsageSummaryResponse::class.java

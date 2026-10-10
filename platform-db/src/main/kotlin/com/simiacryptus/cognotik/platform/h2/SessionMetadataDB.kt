@@ -202,8 +202,7 @@ class SessionMetadataDB : SessionMetadataInterface {
     }
   }
 
-  override fun setSessionWorker(session: Session, user: User) {
-    val workerId: String? = user?.id
+  override fun setSessionWorker(user: User, session: Session, workerId: String?) {
     log.info("setSessionWorker for session: {} to {}", session, workerId)
     // Worker assignment is user-agnostic, mirroring owner_id storage.
     upsertMetadata(session.sessionId, "", KEY_WORKER_ID, workerId)

@@ -96,7 +96,7 @@ interface SessionMetadataInterface {
    *
    * @param ownerId the worker identifier (`ip:port`), or null to clear the assignment
    */
-  fun setSessionWorker(session: Session, user: User)
+  fun setSessionWorker(user: User, session: Session, workerId: String?)
 
   /** User-scoped overload of [getSessionWorker]. */
   fun getSessionWorker(user: User, session: Session): String?
@@ -178,7 +178,7 @@ interface SessionMetadataInterface {
     patch.messageIds.ifSet { setMessageIds(user, session, it) }
     patch.sessionTime.ifSet { if (it != null) setSessionTimestamp(user, session, it) }
     patch.ownerId.ifSet { setSessionOwner(session = session, user = user) }
-    patch.workerId.ifSet { setSessionWorker(session = session, user = user) }
+    patch.workerId.ifSet { setSessionWorker(user = user, session = session, it) }
     patch.path.ifSet { setSessionPath(user, session, it) }
   }
 

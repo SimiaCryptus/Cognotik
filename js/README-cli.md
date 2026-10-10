@@ -30,34 +30,42 @@ Use `"""` on its own line to start and end multi-line input.
 Environment overrides: `COGNOTIK_URL`, `COGNOTIK_TOKEN`, `COGNOTIK_TOKEN_FILE`, `COGNOTIK_COOKIE`,
 `COGNOTIK_API_KEY`, `COGNOTIK_MODEL`, `COGNOTIK_PROVIDERS`, `COGNOTIK_TEMPERATURE`, `COGNOTIK_TIMEOUT`,
 `COGNOTIK_DEBUG`, `NO_COLOR`.
+
 ## Client library (Node + browser)
+
 `js/cognotik-client.mjs` is a dependency-free ES module used by the CLI and usable directly.
+
 Node:
-     import { readFile } from 'node:fs/promises';
-     import { CognotikClient, Conversation, buildRequest, extractText } from './cognotik-client.mjs';
-     const { token, cookieName, baseUrl } = JSON.parse(await readFile(`${process.env.HOME}/.cognotik/token.json`, 'utf8'));
-     const client = new CognotikClient({ baseUrl, token, cookieName });
-     const models = await client.listModels();
-     const { text } = await client.ask('Explain monads briefly', { model: models[0].modelId });
-     // multi-turn
-     const conv = new Conversation({ system: 'You are terse.' });
-     conv.addUser([{ type: 'text', text: 'Hi' }]);
-     const resp = await client.chat(buildRequest(conv, { model: models[0].modelId }));
-     conv.addAssistant(extractText(resp));
+
+         import { readFile } from 'node:fs/promises';
+         import { CognotikClient, Conversation, buildRequest, extractText } from './cognotik-client.mjs';
+         const { token, cookieName, baseUrl } = JSON.parse(await readFile(`${process.env.HOME}/.cognotik/token.json`, 'utf8'));
+         const client = new CognotikClient({ baseUrl, token, cookieName });
+         const models = await client.listModels();
+         const { text } = await client.ask('Explain monads briefly', { model: models[0].modelId });
+         // multi-turn
+         const conv = new Conversation({ system: 'You are terse.' });
+         conv.addUser([{ type: 'text', text: 'Hi' }]);
+         const resp = await client.chat(buildRequest(conv, { model: models[0].modelId }));
+         conv.addAssistant(extractText(resp));
+
 Browser (the page's own session cookie is used; `baseUrl: ''` means same origin):
-     <script type="module">
-       import { CognotikClient, imagePartFromBlob } from './cognotik-client.mjs';
-       const client = new CognotikClient({ baseUrl: '' });
-       const ctrl = new AbortController();
-       const { text } = await client.ask('Hello!', {
-         model: 'claude-sonnet-4',
-         signal: ctrl.signal,
-         onStatus: (s) => console.log(s),
-       });
-     </script>
+
+         <script type="module">
+           import { CognotikClient, imagePartFromBlob } from './cognotik-client.mjs';
+           const client = new CognotikClient({ baseUrl: '' });
+           const ctrl = new AbortController();
+           const { text } = await client.ask('Hello!', {
+             model: 'claude-sonnet-4',
+             signal: ctrl.signal,
+             onStatus: (s) => console.log(s),
+           });
+         </script>
+
 Notes:
+
 - In browsers the `Cookie` header cannot be set, so `token` is ignored and requests use
-   `credentials: 'include'`. Cross-origin use requires the server to send the appropriate
-   CORS headers (including `Access-Control-Allow-Credentials`), and `X-API-Key` triggers a preflight.
+  `credentials: 'include'`. Cross-origin use requires the server to send the appropriate
+  CORS headers (including `Access-Control-Allow-Credentials`), and `X-API-Key` triggers a preflight.
 - Pass `fetch` to use a custom implementation, `logger` + `verbose` for diagnostics.
 - Errors are `CognotikError` instances with `status`, `auth`, `retryable` and `aborted` fields.
