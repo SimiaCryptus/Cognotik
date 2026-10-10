@@ -25,7 +25,7 @@ class ServiceKey<T : Any>(
         null == value -> fail("Factory cannot be null")
         null != field -> log.info("Ignoring duplicate factory registration for service '$name': $value", RuntimeException("Stack trace"))
         else -> {
-          log.info("Registering factory for service '$name': $value", RuntimeException("Stack trace"))
+          log.debug("Registering factory for service '{}': {}", name, value, RuntimeException("Stack trace"))
           field = value
         }
       }
@@ -46,7 +46,7 @@ class ServiceKey<T : Any>(
         null == value -> fail("Factory cannot be null")
         null != field -> fail("Duplicate factory registration for service '$name': $value")
         else -> {
-          log.info("Registering default factory for service '$name': $value", RuntimeException("Stack trace"))
+          log.debug("Registering default factory for service '{}': {}", name, value, RuntimeException("Stack trace"))
           field = value
         }
       }
@@ -60,7 +60,7 @@ class ServiceKey<T : Any>(
    */
   fun addWrapper(wrapper: (T) -> T) {
     wrappers.add(wrapper)
-    log.info("Registered wrapper for service '$name' (${wrappers.size} total): $wrapper")
+    log.debug("Registered wrapper for service '{}' ({} total): {}", name, wrappers.size, wrapper)
   }
   /** Snapshot of the registered wrappers, in application order. */
   fun getWrappers(): List<(T) -> T> = wrappers.toList()
@@ -132,7 +132,7 @@ class ServiceKey<T : Any>(
     for (wrapper in wrappers) {
       newInstance = wrapper(newInstance)
     }
-    log.info("Created service instance for '$name' (${wrappers.size} wrapper(s)): $newInstance")
+    log.debug("Created service instance for '{}' ({} wrapper(s)): {}", name, wrappers.size, newInstance)
     return newInstance
   }
 

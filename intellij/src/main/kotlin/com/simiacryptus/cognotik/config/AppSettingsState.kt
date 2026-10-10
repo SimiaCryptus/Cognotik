@@ -132,9 +132,10 @@ data class AppSettingsState(
   override fun loadState(state: SimpleEnvelope) {
     state.value ?: return
     val fromJson = try {
-      val jsonNode = ObjectMapper().readTree(state.value)
+      val mapper = JsonUtil.objectMapper()
+      val jsonNode = mapper.readTree(state.value)
       try {
-        fromJson(ObjectMapper().writeValueAsString(jsonNode), AppSettingsState::class.java)
+        fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
       } catch (e: Exception) {
         log.warn("Error parsing settings: $jsonNode", e)
         AppSettingsState()

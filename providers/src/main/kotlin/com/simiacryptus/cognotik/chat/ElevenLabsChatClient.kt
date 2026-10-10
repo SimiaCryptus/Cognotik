@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.platform.model.UsageListener
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.client5.http.classic.methods.HttpPost
 import org.apache.hc.client5.http.impl.classic.HttpClients
@@ -51,7 +52,7 @@ class ElevenLabsChatClient(
   session = session,
 ) {
 
-  private val mapper = ObjectMapper().registerKotlinModule()
+  private val mapper = JsonUtil.objectMapper().registerKotlinModule()
 
   /**
    * Default voice ID. ElevenLabs has many voices available; this is

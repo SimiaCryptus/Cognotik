@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.ChatClientInterface
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -48,7 +49,7 @@ abstract class ProxyProvider(
     get() = this.upstreamProviderNames.joinToString(",") { URLEncoder.encode(it, StandardCharsets.UTF_8) }
 
   private val log = LoggerFactory.getLogger(javaClass)
-  private val mapper: ObjectMapper = ObjectMapper()
+  private val mapper: ObjectMapper = JsonUtil.objectMapper()
     .registerKotlinModule()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 

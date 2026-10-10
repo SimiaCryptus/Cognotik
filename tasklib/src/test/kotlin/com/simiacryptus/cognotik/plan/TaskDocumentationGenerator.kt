@@ -6,6 +6,7 @@ import com.fasterxml.jackson.module.kotlin.KotlinModule
 import com.simiacryptus.cognotik.platform.Description
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.newSettings
+import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.File
 
@@ -20,7 +21,7 @@ object TaskDocumentationGenerator {
     val grouped = taskTypes.groupBy { it.category }.toSortedMap()
 
 
-    val mapper = ObjectMapper()
+    val mapper = JsonUtil.objectMapper()
       .registerModule(KotlinModule.Builder().build())
       .enable(SerializationFeature.INDENT_OUTPUT)
       .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS)
