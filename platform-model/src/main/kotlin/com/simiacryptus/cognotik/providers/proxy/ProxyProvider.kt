@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.ChatClientInterface
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -36,6 +37,7 @@ abstract class ProxyProvider(
   /** The names of the upstream providers that the server should dispatch to. */
   vararg upstreamProviderNames: String
 ) : APIProvider(name, proxyBase) {
+  val createdBy = Thread.currentThread().stackTrace
   /** Ordered, de-duplicated set of upstream providers handled by this proxy. */
   val upstreamProviderNames: Set<String> = upstreamProviderNames.toCollection(LinkedHashSet())
 
@@ -47,8 +49,7 @@ abstract class ProxyProvider(
   val upstreamProviderPath: String
     get() = this.upstreamProviderNames.joinToString(",") { URLEncoder.encode(it, StandardCharsets.UTF_8) }
 
-  private val log = LoggerFactory.getLogger(javaClass)
-  private val mapper: ObjectMapper = ObjectMapper()
+  private val mapper: ObjectMapper = JsonUtil.objectMapper()
     .registerKotlinModule()
     .configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false)
 
@@ -143,7 +144,7 @@ abstract class ProxyProvider(
         val err = runCatching {
           conn.errorStream?.bufferedReader()?.use { it.readText() }
         }.getOrNull() ?: ""
-        log.warn("Proxy models request failed (provider='$upstreamProviderName', code=$code, url=$urlString): $err")
+        log.warn("Proxy models request failed (provider='$upstreamProviderName', code=$code, url=$urlString): $err\n${authCookies.entries.joinToString(", ") { "${it.key}=${it.value}" }}")
         return emptyList()
       }
       val models: List<ChatModel> = conn.inputStream.use { input ->
@@ -195,4 +196,8 @@ abstract class ProxyProvider(
 
   abstract fun getAuthCookies(key: SecureString): Map<String, String?>
 
+
+  companion object {
+    private val log = LoggerFactory.getLogger(ProxyProvider::class.java)
+  }
 }

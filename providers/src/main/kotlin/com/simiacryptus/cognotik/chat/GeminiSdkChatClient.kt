@@ -829,7 +829,7 @@ class GeminiSdkChatClient(
           TokenTypes.Thinking to metadata.thoughtsTokenCount().orElse(0).toLong(),
           TokenTypes.Tools to metadata.toolUsePromptTokenCount().orElse(0).toLong()
         )
-        log.info("Gemini response usage metadata: {}", counts.toJson())
+        log.debug("Gemini response usage metadata: {}", counts.toJson())
         ModelSchema.Usage(
           counts = counts,
           total_tokens = metadata.totalTokenCount().orElse(0).toLong()

@@ -482,23 +482,23 @@ class DiffInstrumentor(
     log.debug("Rendering new file: path={}, lang={}, code length={}", filepath, lang, code.length)
     val codeBlock = "\n```${lang}\n${code.indent("  ")}\n```\n"
     val saveAction: () -> Unit = {
-      log.info("Saving new file: {}", filepath)
+      log.debug("Saving new file: {}", filepath)
       fs.writeText(filepath, code)
       handle(mapOf(filepath to code))
     }
     if (code.isBlank()) {
-      log.warn("Empty code content for new file: {}", filepath)
+      log.info("Empty code content for new file: {}", filepath)
     }
     if (shouldAutoApply(filepath)) {
       if (fs.exists(filepath)) {
-        log.warn("File already exists at {}! Overwriting existing file...", filepath)
+        log.info("File already exists at {}! Overwriting existing file...", filepath)
       } else {
-        log.info("Auto-applying new file: {}", filepath)
+        log.debug("Auto-applying new file: {}", filepath)
       }
       return try {
         fs.writeText(filepath, code)
         handle(mapOf(filepath to code))
-        log.info("Successfully auto-created file: {}", filepath)
+        log.debug("Successfully auto-created file: {}", filepath)
         changes?.add(PendingChange(newFileSummary(filepath, code, applied = true), apply = null))
         codeBlock + "\n" + renderer.renderAutoApplied(
           filepath,

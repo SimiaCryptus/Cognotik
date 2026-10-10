@@ -1,5 +1,7 @@
 package com.simiacryptus.cognotik.platform.h2
 
+import com.google.gson.JsonObject
+import com.google.gson.JsonParser
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
@@ -10,8 +12,8 @@ import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.javatime.timestamp
 import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.selectAll
-import org.jetbrains.exposed.v1.jdbc.update
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
+import org.jetbrains.exposed.v1.jdbc.update
 import org.slf4j.LoggerFactory
 import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
@@ -80,7 +82,7 @@ open class UserSettingsDB : UserSettingsInterface {
         }
       }
       cacheMisses.incrementAndGet()
-      val loaded = loadFromDb(user) ?: UserSettings()
+      val loaded = loadFromDb(user) ?: UserSettings(user = user)
       cache[user] = CacheEntry(loaded, System.nanoTime())
       loaded
     }
@@ -178,10 +180,6 @@ open class UserSettingsDB : UserSettingsInterface {
     log.debug("Invalidated all {} cached user settings entries", size)
   }
 
-  /** Returns a snapshot of cache statistics: (hits, misses, size). */
-  fun cacheStats(): Triple<Long, Long, Int> =
-    Triple(cacheHits.get(), cacheMisses.get(), cache.size)
-
   private fun loadFromDb(user: User): UserSettings? {
     val key = userKey(user)
     return try {
@@ -193,7 +191,9 @@ open class UserSettingsDB : UserSettingsInterface {
           .firstOrNull()
           ?.let { row ->
             try {
-              fromJson<UserSettings>(row[UserSettingsTable.settingsJson], UserSettings::class.java)
+              var jsonTxt = row[UserSettingsTable.settingsJson]
+              jsonTxt = jsonTxt.jsonInjectIfMissing("user") { user.toJson() }
+              fromJson<UserSettings>(jsonTxt, UserSettings::class.java)
             } catch (e: Throwable) {
               log.error(
                 "Failed to deserialize user settings for user: {}; returning defaults",
@@ -229,5 +229,17 @@ open class UserSettingsDB : UserSettingsInterface {
         tables = listOf(UserSettingsTable),
       )
     }
+  }
+}
+
+fun String.jsonInjectIfMissing(propertyName: String, fn: () -> String): String {
+  val genericParse: JsonObject = JsonParser.parseString(this).asJsonObject
+  return when {
+    !genericParse.has(propertyName) -> {
+      val userJson = fn()
+      genericParse.add(propertyName, JsonParser.parseString(userJson))
+      genericParse.toString()
+    }
+    else -> this
   }
 }

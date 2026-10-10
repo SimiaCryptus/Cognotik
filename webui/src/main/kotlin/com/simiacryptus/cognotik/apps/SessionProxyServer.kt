@@ -114,9 +114,11 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
       ServiceRouter as SessionMetadataInterface
     }
 
-    private fun registerSessionOwner(user: User, session: Session) {
+    var WORKER_ID = "localhost" // TODO: Replace with actual worker ID if available
+
+    private fun registerSessionOwner(user: User, session: Session, workerId: String?) {
       try {
-        metadataStorage.setSessionWorker(session=session, user=user)
+        metadataStorage.setSessionWorker(user=user, session=session, workerId = workerId)
       } catch (e: Exception) {
         log.info("Failed to register session owner for session: $session", e)
       }
@@ -124,26 +126,26 @@ open class SessionProxyServer(appname: String = "Cognotik", path: String = "/") 
 
     val agents: MutableMap<UserSession, SocketManager> = object : ConcurrentHashMap<UserSession, SocketManager>() {
       override fun put(key: UserSession, value: SocketManager): SocketManager? {
-        registerSessionOwner(user=key.user, session=key.session)
+        registerSessionOwner(user=key.user, session=key.session, workerId = WORKER_ID)
         return super.put(key, value)
       }
 
       override fun putIfAbsent(key: UserSession, value: SocketManager): SocketManager? {
         val result = super.putIfAbsent(key, value)
-        if (result == null) registerSessionOwner(user=key.user, session=key.session)
+        if (result == null) registerSessionOwner(user=key.user, session=key.session, workerId = WORKER_ID)
         return result
       }
     }
 
     val chats: MutableMap<UserSession, ChatServer> = object : ConcurrentHashMap<UserSession, ChatServer>() {
       override fun put(key: UserSession, value: ChatServer): ChatServer? {
-        registerSessionOwner(user=key.user, session=key.session)
+        registerSessionOwner(user=key.user, session=key.session, workerId = WORKER_ID)
         return super.put(key, value)
       }
 
       override fun putIfAbsent(key: UserSession, value: ChatServer): ChatServer? {
         val result = super.putIfAbsent(key, value)
-        if (result == null) registerSessionOwner(user=key.user, session=key.session)
+        if (result == null) registerSessionOwner(user=key.user, session=key.session, workerId = WORKER_ID)
         return result
       }
     }

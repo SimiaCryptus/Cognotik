@@ -1,12 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.fasterxml.jackson.databind.ObjectMapper
-import com.fasterxml.jackson.module.kotlin.registerKotlinModule
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.service.UsageInterface
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.webui.servlet.ChatApiProxyServlet.ProxyMetrics.Companion.STATIC_KEYS
 import jakarta.servlet.http.HttpServlet
@@ -43,11 +42,9 @@ class ChatApiProxyServlet(
 ) : HttpServlet() {
 
   private val log = LoggerFactory.getLogger(ChatApiProxyServlet::class.java)
-  private val mapper = ObjectMapper().registerKotlinModule()
+  private val mapper = JsonUtil.objectMapper()
   private val workPool = ThreadPoolManager.newCachedThreadPool(Session.NULL)
-
   private val scheduledPool = ThreadPoolManager.newScheduledThreadPool(2, Session.NULL)
-
   private val usageManager = ServiceRouter as UsageInterface
 
   /**
@@ -1025,7 +1022,7 @@ class ChatApiProxyServlet(
     }
 
     companion object {
-      val STATIC_KEYS : MutableMap<APIProvider, SecureString> = mutableMapOf()
+      val STATIC_KEYS: MutableMap<APIProvider, SecureString> = mutableMapOf()
 
       /**
        * Standard tag keys used throughout the proxy. Centralizing these avoids

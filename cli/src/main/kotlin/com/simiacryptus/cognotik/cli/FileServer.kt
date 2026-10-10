@@ -2,12 +2,18 @@ package com.simiacryptus.cognotik.cli
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.cli.CliSupport.defaultUser
+import com.simiacryptus.cognotik.cli.HostedClientSupport.HostedSettingsResult
+import com.simiacryptus.cognotik.cli.HostedClientSupport.fetchHostedUserSettings
+import com.simiacryptus.cognotik.cli.HostedClientSupport.loginProgress
 import com.simiacryptus.cognotik.fileserver.StaticZipServlet
 import com.simiacryptus.cognotik.fileserver.WebUiServlet
 import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.client.UsageClient
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
 import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
@@ -31,13 +37,6 @@ import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerI
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.net.URI
-import java.net.URLEncoder
-import java.net.http.HttpClient
-import java.net.http.HttpRequest
-import java.net.http.HttpResponse
-import java.nio.file.Files
-import java.nio.file.attribute.PosixFilePermissions
-import java.time.Duration
 import java.util.*
 
 open class FileServer {
@@ -118,10 +117,7 @@ open class FileServer {
 
 
   /** Contexts that already had websocket support installed (weakly held). */
-  private val webSocketContexts: MutableSet<ServletContextHandler> =
-    Collections.synchronizedSet(
-      Collections.newSetFromMap(WeakHashMap<ServletContextHandler, Boolean>())
-    )
+  private val webSocketContexts: MutableSet<ServletContextHandler> = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
 
   /**
    * Embedded Jetty does not run `ServletContainerInitializer`s, so a plain
@@ -191,7 +187,7 @@ open class FileServer {
     }
   }
 
-  private fun usage(): String = """
+  fun usage(): String = """
                 Usage: FileServerCli [options] [directory]
 
                   -p, --port <n>     Port to listen on (default 8081, 0 = random free port)
@@ -280,22 +276,6 @@ open class FileServer {
       println(usage())
       return
     }
-    ServiceKey.AUTHORIZATION_MANAGER.factory = {
-      object : AuthorizationInterface {
-        override fun isAuthorized(
-          resource: ResourceRef?,
-          principal: Principal,
-          operationType: OperationType
-        ): Boolean = true
-      }
-    }
-    ServiceKey.USER_RESOLVER.factory = {
-      object : UserProvider {
-        override fun authenticate(
-          request: HttpServletRequest
-        ) = defaultUser
-      }
-    }
     CognotikPlatform.init()
     val globalRoot = DatabaseFacet.root.let { File(it) }
     DatabaseFacet.root = File(".").absolutePath
@@ -316,6 +296,127 @@ open class FileServer {
     server.join()
   }
 
+  open fun userProvider(): UserProvider = object : UserProvider {
+    override fun authenticate(
+      request: HttpServletRequest
+    ) = defaultUser
+  }
+
+  open fun authorizationInterface(): AuthorizationInterface = object : AuthorizationInterface {
+    override fun isAuthorized(
+      resource: ResourceRef?,
+      principal: Principal,
+      operationType: OperationType
+    ): Boolean = true
+  }
+
+  open fun initHostedEnv(globalRoot: File) {
+    val sessionFile = File(globalRoot, "session.json")
+    val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
+    val sessionInfo = getSession(sessionFile, baseUrl)
+    login(baseUrl, sessionInfo, sessionFile)
+    setupServices(sessionInfo)
+  }
+
+  open fun setupServices(sessionInfo: SessionKeyFile) {
+    ServiceKey.USER_SETTINGS.addWrapper { getUserSettings(it, sessionInfo) }
+    ServiceKey.AUTHENTICATION.factory = { getAuthentication(sessionInfo) }
+    ServiceKey.USAGE_DB.factory = { UsageClient() }
+    ServiceKey.AUTHORIZATION_MANAGER.factory = { authorizationInterface() }
+    ServiceKey.USER_RESOLVER.factory = { userProvider() }
+  }
+
+  open fun getAuthentication(sessionInfo: SessionKeyFile): AuthenticationInterface = object : AuthenticationInterface {
+    override fun getUser(accessToken: String?) = defaultUser
+
+    override fun putUser(accessToken: String, user: User) =
+      defaultUser ?: throw IllegalStateException("No default user available")
+
+    override fun listTokens(user: User) = listOf(
+      AuthenticationInterface.TokenMetadata(
+        token = sessionInfo.sessionKey,
+        userId = sessionInfo.userId,
+      )
+    )
+  }
+
+  open fun getUserSettings(
+    inner: UserSettingsInterface,
+    sessionInfo: SessionKeyFile
+  ): UserSettingsInterface = object : UserSettingsInterface by inner {
+    override fun getUserSettings(user: User): UserSettings {
+      return inner.getUserSettings(user).copy(
+        apis = mutableListOf(
+          ApiData(
+            provider = CoreProviders.HostedProxy,
+            key = SecureString(sessionInfo.sessionKey)
+          )
+        )
+      )
+    }
+  }
+
+  open fun getSession(
+    sessionFile: File,
+    baseUrl: String
+  ): SessionKeyFile = (if (sessionFile.exists()) {
+    try {
+      JsonUtil.fromJson<SessionKeyFile>(sessionFile.readText(), SessionKeyFile::class.java)
+    } catch (e: Exception) {
+      log.warn("Could not read session file ${sessionFile.absolutePath}", e)
+      null
+    }
+  } else null)?.takeIf { it.sessionKey.isNotBlank() } ?: this.run {
+    log.info("No usable session at ${sessionFile.absolutePath}; starting device login against $baseUrl")
+    val fresh = HostedClientSupport.deviceLogin(baseUrl)
+    if (fresh != null) {
+      HostedClientSupport.saveSessionFile(sessionFile, fresh)
+      fresh
+    } else {
+      log.warn("Login failed; starting without a session key")
+      SessionKeyFile()
+    }
+  }
+
+  open fun login(
+    baseUrl: String,
+    sessionInfo: SessionKeyFile,
+    sessionFile: File
+  ) {
+    val settingsEmail: String? = when (val result = fetchHostedUserSettings(baseUrl, sessionInfo.sessionKey)) {
+      is HostedSettingsResult.Ok -> result.settings?.user?.email.also {
+        if (it == null) log.info("Hosted user settings did not contain an email; falling back to the login identity")
+      }
+
+      HostedSettingsResult.Unauthorized -> {
+        log.warn("The hosted server rejected the session key")
+        loginProgress("❌ The saved session is no longer valid.")
+        HostedClientSupport.clearSessionFile(sessionFile)
+        null
+      }
+
+      is HostedSettingsResult.Failed -> {
+        log.warn("Could not fetch hosted user settings: {}", result.reason)
+        null
+      }
+    }
+    val email: String = settingsEmail
+      ?: sessionInfo.userId.takeIf { it.contains('@') }
+      ?: sessionInfo.userId.takeIf { it.isNotBlank() }
+      ?: "anonymous@localhost"
+    log.info("Hosted user: {}", email)
+    defaultUser = User(
+      email = email,
+    )
+    try {
+      require(ServiceRouter.getUserBalance(defaultUser!!) > 0.0) { "The default user has no balance; the hosted server will not work." }
+    } catch (e: Exception) {
+      log.error("Could not check user balance; the hosted server may not work.", e)
+      /* The login may have been bad: forget it so the next start performs a fresh device login. */
+      HostedClientSupport.clearSessionFile(sessionFile)
+      throw e
+    }
+  }
   // ---------------------------------------------------------------------------------
   // Parsing & validation
   // ---------------------------------------------------------------------------------
@@ -419,7 +520,7 @@ open class FileServer {
   /** Builds the CLI user (honouring --email), bootstraps the platform and resolves models. */
   fun initializeUser(config: Config) {
     config.email?.let { CliSupport.email = it }
-    val cliUser = CliSupport.defaultUser
+    val cliUser = defaultUser
     CliSupport.bootstrapPlatform(cliUser)
     if (cliUser == null) {
       log.info("No user could be created; the server will start without a user or models.")
@@ -462,7 +563,7 @@ open class FileServer {
     return config.copy(modifyEnabled = modifyOk)
   }
 
-  private fun installTaskActions(config: Config) {
+  fun installTaskActions(config: Config) {
     if (!config.tasksEnabled) return
     ServerTaskActions.install(
       ServerTaskActions.Config(
@@ -482,7 +583,7 @@ open class FileServer {
    *
    * @return true when the patch chat is enabled.
    */
-  private fun installModifyActions(config: Config): Boolean {
+  fun installModifyActions(config: Config): Boolean {
     if (!config.modifyEnabled) return false
     ModifyFilesActions.install(
       ModifyFilesActions.Config(
@@ -498,7 +599,7 @@ open class FileServer {
   }
 
   /** Extraction only reads the classpath and writes under the task root: nothing to bootstrap. */
-  private fun installExtractUtils(config: Config) {
+  fun installExtractUtils(config: Config) {
     if (!config.extractUtilsEnabled) return
     val taskRoot = config.taskRootDir
     ExtractUtilsFsAction.install(
@@ -518,7 +619,7 @@ open class FileServer {
         .onFailure { log.warn("Failed to refresh modify models", it) }
       models = try {
         CliSupport.resolveModels(
-          user = CliSupport.defaultUser ?: throw IllegalStateException("No user available"),
+          user = defaultUser ?: throw IllegalStateException("No user available"),
           smartModel = ModelSelection.smart,
           fastModel = ModelSelection.fast,
           imageModel = config.imageModel,
@@ -534,7 +635,7 @@ open class FileServer {
     }
   }
 
-  private fun installShutdownHook(server: Server) {
+  fun installShutdownHook(server: Server) {
     Runtime.getRuntime().addShutdownHook(Thread {
       println("\nShutting down...")
       try {
@@ -729,7 +830,7 @@ open class FileServer {
     return server
   }
 
-  private fun server(host: String, port: Int): Server {
+  fun server(host: String, port: Int): Server {
     val server = Server()
     val connector = ServerConnector(server).apply {
       this.host = host
@@ -739,7 +840,7 @@ open class FileServer {
     return server
   }
 
-  private fun registerFileServlets(
+  fun registerFileServlets(
     context: ServletContextHandler,
     baseDir: File,
     gitEnabled: Boolean,
@@ -785,7 +886,7 @@ open class FileServer {
    * 'docops' action invokes (see ServerTaskActions.install), so the HTTP endpoint
    * and the action can never drift apart.
    */
-  private fun registerDocOps(context: ServletContextHandler) {
+  fun registerDocOps(context: ServletContextHandler) {
     val servlet = docProcessorServlet ?: return
     val docopsHolder = ServletHolder("docops", servlet)
     docopsHolder.registration.setMultipartConfig(
@@ -800,7 +901,7 @@ open class FileServer {
    * They are read from the classpath (never from the workspace), so they are safe on
    * read-only, --no-ui and --secure mounts alike.
    */
-  private fun registerAssets(context: ServletContextHandler, uiEnabled: Boolean) {
+  fun registerAssets(context: ServletContextHandler, uiEnabled: Boolean) {
     if (uiEnabled) {
       addServletSafely(context, ServletHolder("webui", WebUiServlet()), "${SimpleFileServlet.UI_PREFIX}/*")
     }
@@ -813,7 +914,7 @@ open class FileServer {
    * landing page: it is the only place that explains the mount and lets the user pick
    * models. --ui and --files move the landing page without unmounting anything.
    */
-  private fun registerHome(context: ServletContextHandler) {
+  fun registerHome(context: ServletContextHandler) {
     register(context, ServletHolder("home", StaticResourceServlet()), FileServerCli.HOME_PREFIX)
     /* The overview page is a pure client of this: never let the two drift apart. */
     register(context, ServletHolder("server-info", ServerInfoServlet()), "/serverInfo")
@@ -828,7 +929,7 @@ open class FileServer {
    * gateway instead of Jetty's Default404Servlet. Both specs share one holder so the
    * exact root ("") and the default ("/") resolve to the same instance.
    */
-  private fun registerGateway(context: ServletContextHandler) {
+  fun registerGateway(context: ServletContextHandler) {
     val gatewayHolder = ServletHolder("root-gateway", RootGatewayServlet())
     addServletSafely(context, gatewayHolder, "")
     addServletSafely(context, gatewayHolder, "/")
@@ -852,7 +953,7 @@ open class FileServer {
    * the most informative page that is actually mounted is used, so the gateway can never
    * redirect to a disabled mount.
    */
-  private fun landingPathFor(landing: String?, homeEnabled: Boolean, uiEnabled: Boolean): String = when {
+  fun landingPathFor(landing: String?, homeEnabled: Boolean, uiEnabled: Boolean): String = when {
     landing == "files" -> "${SimpleFileServlet.FILES_PREFIX}/${SimpleFileServlet.ROOT_SEGMENT}/"
     landing == "ui" && uiEnabled -> "${SimpleFileServlet.UI_PREFIX}/"
     landing == "home" && homeEnabled -> "${FileServerCli.HOME_PREFIX}/"
@@ -861,7 +962,7 @@ open class FileServer {
     else -> "${SimpleFileServlet.FILES_PREFIX}/${SimpleFileServlet.ROOT_SEGMENT}/"
   }
 
-  private fun register(
+  fun register(
     context: ServletContextHandler,
     holder: ServletHolder,
     prefix: String
@@ -871,7 +972,7 @@ open class FileServer {
   }
 
   /** True when [pathSpec] is already claimed by a servlet mapping in [context]. */
-  private fun isMapped(context: ServletContextHandler, pathSpec: String): Boolean =
+  fun isMapped(context: ServletContextHandler, pathSpec: String): Boolean =
     context.servletHandler.servletMappings?.any { mapping ->
       mapping.pathSpecs?.any { it == pathSpec } == true
     } == true
@@ -885,7 +986,7 @@ open class FileServer {
    *
    * @return true when the servlet was actually registered.
    */
-  private fun addServletSafely(
+  fun addServletSafely(
     context: ServletContextHandler,
     holder: ServletHolder,
     pathSpec: String
@@ -916,201 +1017,3 @@ open class FileServer {
 }
 
 private val log = LoggerFactory.getLogger(FileServerCli::class.java)
-
-private data class LoginUser(
-  val id: String? = null,
-  val email: String? = null,
-)
-
-/** Union of the responses of the QR/device login endpoint (start + token polling). */
-private data class LoginResponse(
-  val rid: String? = null,
-  val pollSecret: String? = null,
-  val verificationUrl: String? = null,
-  val displayCode: String? = null,
-  val tokenEndpoint: String? = null,
-  val cookieName: String? = null,
-  val status: String? = null,
-  val token: String? = null,
-  val error: String? = null,
-  val interval: Long? = null,
-  val expiresIn: Long? = null,
-  val user: LoginUser? = null,
-)
-
-private val loginHttp: HttpClient by lazy {
-  HttpClient.newBuilder()
-    .followRedirects(HttpClient.Redirect.NEVER)
-    .connectTimeout(Duration.ofSeconds(15))
-    .build()
-}
-
-private fun loginProgress(msg: String) = System.err.println(msg)
-private fun postLoginForm(url: String, params: Map<String, String>): Pair<Int, LoginResponse> {
-  val form = (mapOf("formAction" to "login", "loginMethod" to "qr") + params).entries.joinToString("&") {
-    "${URLEncoder.encode(it.key, Charsets.UTF_8)}=${URLEncoder.encode(it.value, Charsets.UTF_8)}"
-  }
-  val request = HttpRequest.newBuilder(URI(url))
-    .timeout(Duration.ofSeconds(30))
-    .header("Content-Type", "application/x-www-form-urlencoded")
-    .header("Accept", "application/json")
-    .header("User-Agent", "cognotik-qr-login/1.0 (java ${System.getProperty("java.version")})")
-    .POST(HttpRequest.BodyPublishers.ofString(form))
-    .build()
-  val response = loginHttp.send(request, HttpResponse.BodyHandlers.ofString())
-  val type = response.headers().firstValue("content-type").orElse("")
-  if (!type.contains("application/json")) {
-    val location = response.headers().firstValue("location").orElse(null)
-    throw IllegalStateException(
-      "Unexpected response from server (HTTP ${response.statusCode()}" +
-          (if (location != null) ", redirect to $location" else "") +
-          "). Is the QR login method enabled on this server?"
-    )
-  }
-  return response.statusCode() to JsonUtil.fromJson<LoginResponse>(response.body(), LoginResponse::class.java)
-}
-
-private fun tryOpenBrowser(url: String) {
-  try {
-    val os = System.getProperty("os.name").lowercase()
-    val cmd = when {
-      os.contains("mac") -> listOf("open", url)
-      os.contains("win") -> listOf("cmd", "/c", "start", "\"\"", url)
-      else -> listOf("xdg-open", url)
-    }
-    ProcessBuilder(cmd)
-      .redirectErrorStream(true)
-      .redirectOutput(ProcessBuilder.Redirect.DISCARD)
-      .start()
-  } catch (e: Exception) {
-    log.debug("Could not open a browser (the URL is printed anyway)", e)
-  }
-}
-
-/**
- * Device (QR) login, mirroring cognotik-login.mjs: start a request, send the user to the
- * verification URL and poll until the request is approved, denied or expired.
- *
- * @return the session token and user, or null when the login failed.
- */
-private fun deviceLogin(baseUrl: String, openBrowser: Boolean = true): FileServer.SessionKeyFile? {
-  val base = baseUrl.trimEnd('/')
-  val loginEndpoint = "$base/login/"
-  val clientName = "cognotik-cli@" + (try {
-    java.net.InetAddress.getLocalHost().hostName
-  } catch (e: Exception) {
-    "localhost"
-  })
-  try {
-    val (httpStatus, start) = postLoginForm(loginEndpoint, mapOf("qrAction" to "device", "client" to clientName))
-    if (httpStatus != 200 || start.rid == null) {
-      throw IllegalStateException("Failed to start login (HTTP $httpStatus): ${start.error ?: start}")
-    }
-    val tokenEndpoint = start.tokenEndpoint ?: loginEndpoint
-    var interval = maxOf(1L, start.interval ?: 2L)
-    val deadline = System.currentTimeMillis() + (start.expiresIn?.takeIf { it > 0 } ?: 180L) * 1000
-    loginProgress("")
-    loginProgress("To sign in, open this URL in a browser where you are already logged in:")
-    loginProgress("\n    ${start.verificationUrl}\n")
-    loginProgress("and check that it shows the confirmation code:  ${start.displayCode}")
-    loginProgress("")
-    if (openBrowser) start.verificationUrl?.let { tryOpenBrowser(it) }
-    var lastStatus: String? = null
-    while (System.currentTimeMillis() < deadline) {
-      Thread.sleep(interval * 1000)
-      val data = try {
-        postLoginForm(
-          tokenEndpoint,
-          mapOf("qrAction" to "token", "rid" to start.rid, "poll" to (start.pollSecret ?: ""))
-        ).second
-      } catch (e: InterruptedException) {
-        throw e
-      } catch (e: Exception) {
-        loginProgress("Polling error (${e.message}); retrying…")
-        Thread.sleep(interval * 1000)
-        continue
-      }
-      when (data.status) {
-        "pending" -> {}
-        "scanned" -> if (lastStatus != "scanned") loginProgress("Approval page opened, waiting for you to approve…")
-        "slow_down" -> interval = maxOf(interval + 1, data.interval ?: (interval + 1))
-        "approved" -> {
-          val token = data.token ?: throw IllegalStateException("Login approved but no token was returned")
-          val who = data.user?.email ?: "unknown user"
-          loginProgress("✅ Logged in as $who. Token valid for ~${Math.round((data.expiresIn ?: 0L) / 86400.0)} day(s).")
-          return FileServer.SessionKeyFile(
-            userId = data.user?.email ?: data.user?.id ?: "",
-            sessionKey = token
-          )
-        }
-
-        "denied" -> throw IllegalStateException("The login request was denied.")
-        "expired" -> throw IllegalStateException("The login request expired. Please run the command again.")
-        else -> throw IllegalStateException("Unexpected response: $data")
-      }
-      lastStatus = data.status
-    }
-    throw IllegalStateException("Timed out waiting for approval.")
-  } catch (e: InterruptedException) {
-    Thread.currentThread().interrupt()
-    log.warn("Login interrupted")
-    return null
-  } catch (e: Exception) {
-    log.warn("Device login against $base failed", e)
-    loginProgress("❌ ${e.message}")
-    return null
-  }
-}
-
-private fun saveSessionFile(file: File, session: FileServer.SessionKeyFile) {
-  try {
-    file.absoluteFile.parentFile?.mkdirs()
-    file.writeText(JsonUtil.toJson(session))
-    try {
-      Files.setPosixFilePermissions(file.toPath(), PosixFilePermissions.fromString("rw-------"))
-    } catch (e: Exception) {
-      log.debug("Could not restrict permissions on ${file.absolutePath}", e)
-    }
-    loginProgress("   Saved session to ${file.absolutePath}")
-  } catch (e: Exception) {
-    log.warn("Could not save session file ${file.absolutePath}", e)
-  }
-}
-
-fun initHostedEnv(globalRoot: File) {
-  val sessionFile = File(globalRoot, "session.json")
-  val existing = (if (sessionFile.exists()) {
-    try {
-      JsonUtil.fromJson<FileServer.SessionKeyFile>(sessionFile.readText(), FileServer.SessionKeyFile::class.java)
-    } catch (e: Exception) {
-      log.warn("Could not read session file ${sessionFile.absolutePath}", e)
-      null
-    }
-  } else null)?.takeIf { it.sessionKey.isNotBlank() }
-  val sessionInfo = existing ?: run {
-    val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
-    log.info("No usable session at ${sessionFile.absolutePath}; starting device login against $baseUrl")
-    val fresh = deviceLogin(baseUrl)
-    if (fresh != null) {
-      saveSessionFile(sessionFile, fresh)
-      fresh
-    } else {
-      log.warn("Login failed; starting without a session key")
-      FileServer.SessionKeyFile()
-    }
-  }
-  ServiceKey.USER_SETTINGS.addWrapper { inner ->
-    object : UserSettingsInterface by inner {
-      override fun getUserSettings(user: User): UserSettings {
-        return inner.getUserSettings(user).copy(
-          apis = mutableListOf(
-            ApiData(
-              provider = CoreProviders.HostedProxy,
-              key = SecureString(sessionInfo.sessionKey)
-            )
-          )
-        )
-      }
-    }
-  }
-}
