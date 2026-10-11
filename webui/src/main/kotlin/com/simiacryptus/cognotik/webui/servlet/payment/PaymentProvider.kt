@@ -42,6 +42,13 @@ interface PaymentProvider {
       * issuance) reserved for administrators.
       */
      fun isAuthorized(user: User): Boolean = true
+    /**
+     * Whether this provider recognizes the given callback / poll / webhook
+     * request as belonging to it (e.g. Stripe recognizes `session_id=cs_…`).
+     * Used by the servlet to route callbacks that arrive without an explicit
+     * `provider` parameter.  Default: false.
+     */
+    fun canHandleCallback(req: HttpServletRequest): Boolean = false
 
 
     /**

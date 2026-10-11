@@ -51,6 +51,21 @@ open class CreditsServlet(
         }
         return available.first()
     }
+    /**
+     * Resolve the provider for a callback/poll/webhook request.  Prefers an
+     * explicit `provider` parameter, then a provider that recognizes the
+     * request (e.g. by session id format), then the default.
+     */
+    private fun resolveCallbackProvider(req: HttpServletRequest, user: User): PaymentProvider {
+        val available = authorizedProviders(user)
+        if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
+        req.getParameter("provider")?.let { requested ->
+            available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
+        }
+        available.firstOrNull { runCatching { it.canHandleCallback(req) }.getOrDefault(false) }?.let { return it }
+        return available.first()
+    }
+
 
     override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
         val user = ServiceRouter.authenticate(req)
@@ -124,7 +139,8 @@ open class CreditsServlet(
     }
 
     private fun handleProviderCallback(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
-        val provider = resolveProvider(req, user)
+        val provider = resolveCallbackProvider(req, user)
+        val step = req.getParameter("step")?.lowercase()
         when (val result = provider.handleCallback(req, resp, user)) {
             is PaymentProvider.CheckoutResult.Completed -> {
                 log.info(
@@ -150,6 +166,17 @@ open class CreditsServlet(
             }
 
             null -> {
+                // poll/webhook providers write their own response; if nothing was
+                // written, return a machine-readable error instead of an HTML redirect.
+                if (step == "poll" || step == "webhook") {
+                    if (!resp.isCommitted) {
+                        log.warn("Provider ${provider.name} did not handle step=$step for user=${user.email}")
+                        resp.status = HttpServletResponse.SC_OK
+                        resp.contentType = "application/json"
+                        resp.writer.write("""{"status":"pending","message":"provider not resolved"}""")
+                    }
+                    return
+                }
                 log.warn("Provider ${provider.name} returned null from handleCallback for user=${user.email}")
                 resp.sendRedirect("?")
             }
