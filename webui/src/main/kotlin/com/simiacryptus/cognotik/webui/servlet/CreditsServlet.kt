@@ -9,7 +9,10 @@ import com.simiacryptus.cognotik.webui.servlet.payment.PaymentProvider
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
+import jakarta.servlet.http.HttpServletResponseWrapper
+import jakarta.servlet.ServletOutputStream
 import org.slf4j.LoggerFactory
+import java.io.PrintWriter
 import java.time.Instant
 import java.util.*
 
@@ -25,206 +28,249 @@ import java.util.*
  * without any real payment processing (original behaviour).
  */
 open class CreditsServlet(
-    private vararg val providers: PaymentProvider
+  private vararg val providers: PaymentProvider
 ) : HttpServlet() {
 
-    val usageDB: UsageInterface by lazy {
-      ServiceRouter as UsageInterface
+  val usageDB: UsageInterface by lazy {
+    ServiceRouter as UsageInterface
+  }
+
+  private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
+
+  /**
+   * Providers visible to (and usable by) the given user.  Filters out
+   * providers that have explicitly denied authorization for the user,
+   * so the UI never teases admin-only payment methods.
+   */
+  private fun authorizedProviders(user: User): List<PaymentProvider> =
+    providers.filter { it.isAuthorized(user) }
+
+  private fun resolveProvider(req: HttpServletRequest, user: User): PaymentProvider {
+    val available = authorizedProviders(user)
+    if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
+    val requested = req.getParameter("provider")
+    if (requested != null) {
+      available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
     }
+    return available.first()
+  }
 
-    private fun currentBudget(user: User): Double? = runCatching { usageDB.getAvailableBudget(user) }.getOrNull()
-
-    /**
-     * Providers visible to (and usable by) the given user.  Filters out
-     * providers that have explicitly denied authorization for the user,
-     * so the UI never teases admin-only payment methods.
-     */
-    private fun authorizedProviders(user: User): List<PaymentProvider> =
-        providers.filter { it.isAuthorized(user) }
-
-    private fun resolveProvider(req: HttpServletRequest, user: User): PaymentProvider {
-        val available = authorizedProviders(user)
-        if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
-        val requested = req.getParameter("provider")
-        if (requested != null) {
-            available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
-        }
-        return available.first()
+  /**
+   * Resolve the provider for a callback/poll/webhook request.  Prefers an
+   * explicit `provider` parameter, then a provider that recognizes the
+   * request (e.g. by session id format), then the default.
+   */
+  private fun resolveCallbackProvider(req: HttpServletRequest, user: User): PaymentProvider {
+    val available = authorizedProviders(user)
+    if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
+    req.getParameter("provider")?.let { requested ->
+      available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
     }
-    /**
-     * Resolve the provider for a callback/poll/webhook request.  Prefers an
-     * explicit `provider` parameter, then a provider that recognizes the
-     * request (e.g. by session id format), then the default.
-     */
-    private fun resolveCallbackProvider(req: HttpServletRequest, user: User): PaymentProvider {
-        val available = authorizedProviders(user)
-        if (available.isEmpty()) throw RuntimeException("No payment provider available for user ${user.email}")
-        req.getParameter("provider")?.let { requested ->
-            available.firstOrNull { it.name.equals(requested, ignoreCase = true) }?.let { return it }
-        }
-        available.firstOrNull { runCatching { it.canHandleCallback(req) }.getOrDefault(false) }?.let { return it }
-        return available.first()
-    }
+    available.firstOrNull { runCatching { it.canHandleCallback(req) }.getOrDefault(false) }?.let { return it }
+    return available.first()
+  }
 
 
-    override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = ServiceRouter.authenticate(req)
-          ?: throw RuntimeException("User must be authenticated to purchase credits")
-        if (authorizedProviders(user).isEmpty()) {
-            resp.status = HttpServletResponse.SC_FORBIDDEN
-            renderError(resp, "You are not authorized to purchase credits. Please contact support.")
-            return
-        }
-
-
-        when (req.getParameter("step")?.lowercase()) {
-            "review" -> renderReview(req, resp, user)
-            "receipt" -> renderReceipt(req, resp, user)
-            "callback" -> handleProviderCallback(req, resp, user)
-            "poll", "webhook" -> handleProviderCallback(req, resp, user)
-            else -> renderCheckout(resp, user)
-        }
-    }
-
-    override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
-        val user = ServiceRouter.authenticate(req)
-          ?: throw RuntimeException("User must be authenticated to purchase credits")
-        if (authorizedProviders(user).isEmpty()) {
-            resp.status = HttpServletResponse.SC_FORBIDDEN
-            renderError(resp, "You are not authorized to purchase credits. Please contact support.")
-            return
-        }
-
-
-        val amount = parseAmount(req)
-        if (amount == null || amount <= 0.0) {
-            resp.status = HttpServletResponse.SC_BAD_REQUEST
-            renderError(resp, "Invalid amount. Please select a package or enter a positive amount.")
-            return
-        }
-
-        val cappedAmount = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
-        val orderId = UUID.randomUUID().toString().take(8).uppercase()
-
-        val provider = resolveProvider(req, user)
-        if (!provider.isAuthorized(user)) {
-            resp.status = HttpServletResponse.SC_FORBIDDEN
-            renderError(resp, "You are not authorized to use this payment method. Please contact support.")
-            return
-        }
-        when (val result = provider.initiateCheckout(req, resp, user, cappedAmount, orderId)) {
-            is PaymentProvider.CheckoutResult.Completed -> {
-                log.info(
-                    "Credit applied via ${provider.name}: user=${user.email} " +
-                            "amount=${result.amount} order=${result.orderId} newBudget=${result.newBudget}"
-                )
-                resp.sendRedirect(
-                    "?step=receipt" +
-                            "&order=${result.orderId}" +
-                            "&amount=${result.amount}" +
-                            "&balance=${result.newBudget}" +
-                            "&provider=${provider.name}"
-                )
-            }
-
-            is PaymentProvider.CheckoutResult.Redirected -> {
-                // Provider has already redirected the user; nothing more to do.
-            }
-
-            is PaymentProvider.CheckoutResult.Failed -> {
-                resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
-                renderError(resp, result.message)
-            }
-        }
-    }
-
-    private fun handleProviderCallback(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
-        val provider = resolveCallbackProvider(req, user)
-        val step = req.getParameter("step")?.lowercase()
-        when (val result = provider.handleCallback(req, resp, user)) {
-            is PaymentProvider.CheckoutResult.Completed -> {
-                log.info(
-                    "Callback credit applied via ${provider.name}: user=${user.email} " +
-                            "amount=${result.amount} order=${result.orderId} newBudget=${result.newBudget}"
-                )
-                resp.sendRedirect(
-                    "?step=receipt" +
-                            "&order=${result.orderId}" +
-                            "&amount=${result.amount}" +
-                            "&balance=${result.newBudget}" +
-                            "&provider=${provider.name}"
-                )
-            }
-
-            is PaymentProvider.CheckoutResult.Failed -> {
-                resp.status = HttpServletResponse.SC_BAD_GATEWAY
-                renderError(resp, result.message)
-            }
-
-            is PaymentProvider.CheckoutResult.Redirected -> {
-                // Unusual in a callback, but respect it.
-            }
-
-            null -> {
-                // poll/webhook providers write their own response; if nothing was
-                // written, return a machine-readable error instead of an HTML redirect.
-                if (step == "poll" || step == "webhook") {
-                    if (!resp.isCommitted) {
-                        log.warn("Provider ${provider.name} did not handle step=$step for user=${user.email}")
-                        resp.status = HttpServletResponse.SC_OK
-                        resp.contentType = "application/json"
-                        resp.writer.write("""{"status":"pending","message":"provider not resolved"}""")
-                    }
-                    return
-                }
-                log.warn("Provider ${provider.name} returned null from handleCallback for user=${user.email}")
-                resp.sendRedirect("?")
-            }
-        }
+  override fun doGet(req: HttpServletRequest, resp: HttpServletResponse) {
+    val user = ServiceRouter.authenticate(req)
+      ?: throw RuntimeException("User must be authenticated to purchase credits")
+    if (authorizedProviders(user).isEmpty()) {
+      resp.status = HttpServletResponse.SC_FORBIDDEN
+      renderError(resp, "You are not authorized to purchase credits. Please contact support.")
+      return
     }
 
 
-    private fun parseAmount(request: HttpServletRequest): Double? {
-        request.getParameter("package")?.let { pkg ->
-            PACKAGES.firstOrNull { it.id == pkg }?.let { return it.amount }
-        }
-        return request.getParameter("amount")?.toDoubleOrNull()
+    when (req.getParameter("step")?.lowercase()) {
+      "review" -> renderReview(req, resp, user)
+      "receipt" -> renderReceipt(req, resp, user)
+      "callback" -> handleProviderCallback(req, resp, user)
+      "poll", "webhook" -> handleProviderCallback(req, resp, user)
+      else -> renderCheckout(resp, user)
+    }
+  }
+
+  override fun doPost(req: HttpServletRequest, resp: HttpServletResponse) {
+    val user = ServiceRouter.authenticate(req)
+      ?: throw RuntimeException("User must be authenticated to purchase credits")
+    if (authorizedProviders(user).isEmpty()) {
+      resp.status = HttpServletResponse.SC_FORBIDDEN
+      renderError(resp, "You are not authorized to purchase credits. Please contact support.")
+      return
     }
 
 
-    private fun renderCheckout(response: HttpServletResponse, user: User) {
-        val available = authorizedProviders(user)
-        val provider = available.first()
-        response.contentType = "text/html"
-        response.status = HttpServletResponse.SC_OK
+    val amount = parseAmount(req)
+    if (amount == null || amount <= 0.0) {
+      resp.status = HttpServletResponse.SC_BAD_REQUEST
+      renderError(resp, "Invalid amount. Please select a package or enter a positive amount.")
+      return
+    }
 
-        val budget = currentBudget(user)
-        val budgetHtml = if (budget != null) {
-            """<div class="budget">Current balance: <strong>${"%.4f".format(budget)}</strong></div>"""
-        } else ""
-        val paymentNotice = if (available.size > 1) {
-            """
+    val cappedAmount = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
+    val orderId = UUID.randomUUID().toString().take(8).uppercase()
+
+    val provider = resolveProvider(req, user)
+    if (!provider.isAuthorized(user)) {
+      resp.status = HttpServletResponse.SC_FORBIDDEN
+      renderError(resp, "You are not authorized to use this payment method. Please contact support.")
+      return
+    }
+    when (val result = provider.initiateCheckout(req, resp, user, cappedAmount, orderId)) {
+      is PaymentProvider.CheckoutResult.Completed -> {
+        log.info(
+          "Credit applied via ${provider.name}: user=${user.email} " +
+              "amount=${result.amount} order=${result.orderId} newBudget=${result.newBudget}"
+        )
+        resp.sendRedirect(
+          "?step=receipt" +
+              "&order=${result.orderId}" +
+              "&amount=${result.amount}" +
+              "&balance=${result.newBudget}" +
+              "&provider=${provider.name}"
+        )
+      }
+
+      is PaymentProvider.CheckoutResult.Redirected -> {
+        // Provider has already redirected the user; nothing more to do.
+      }
+
+      is PaymentProvider.CheckoutResult.Failed -> {
+        resp.status = HttpServletResponse.SC_INTERNAL_SERVER_ERROR
+        renderError(resp, result.message)
+      }
+    }
+  }
+
+  private fun handleProviderCallback(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
+    val provider = resolveCallbackProvider(req, user)
+    val step = req.getParameter("step")?.lowercase()
+    // Track whether the provider wrote its own body. `resp.isCommitted` is NOT
+    // sufficient: small responses stay buffered (uncommitted), which previously
+    // caused us to append a second JSON object and corrupt the poll response.
+    val tracked = BodyTrackingResponse(resp)
+    when (val result = provider.handleCallback(req, tracked, user)) {
+      is PaymentProvider.CheckoutResult.Completed -> {
+        log.info(
+          "Callback credit applied via ${provider.name}: user=${user.email} " +
+              "amount=${result.amount} order=${result.orderId} newBudget=${result.newBudget}"
+        )
+        resp.sendRedirect(
+          "?step=receipt" +
+              "&order=${result.orderId}" +
+              "&amount=${result.amount}" +
+              "&balance=${result.newBudget}" +
+              "&provider=${provider.name}"
+        )
+      }
+
+      is PaymentProvider.CheckoutResult.Failed -> {
+        resp.status = HttpServletResponse.SC_BAD_GATEWAY
+        renderError(resp, result.message)
+      }
+
+      is PaymentProvider.CheckoutResult.Redirected -> {
+        // Unusual in a callback, but respect it.
+      }
+
+      null -> {
+        // poll/webhook providers write their own response; only if nothing was
+        // written do we return a machine-readable fallback instead of a redirect.
+        val handled = tracked.bodyTouched || resp.isCommitted
+        if (step == "poll" || step == "webhook") {
+          if (!handled) {
+            log.warn("Provider ${provider.name} did not handle step=$step for user=${user.email}")
+            resp.status = HttpServletResponse.SC_OK
+            resp.contentType = "application/json"
+            resp.writer.write("""{"status":"pending","message":"provider not resolved"}""")
+          }
+          return
+        }
+        if (handled) return
+        log.warn("Provider ${provider.name} returned null from handleCallback for user=${user.email}")
+        resp.sendRedirect("?")
+      }
+    }
+  }
+
+  /**
+   * Response wrapper that records whether the body was accessed or a redirect/error
+   * was sent, so we can tell if a provider produced its own response even while the
+   * output is still buffered.
+   */
+  private class BodyTrackingResponse(resp: HttpServletResponse) : HttpServletResponseWrapper(resp) {
+    @Volatile
+    var bodyTouched: Boolean = false
+      private set
+
+    override fun getWriter(): PrintWriter {
+      bodyTouched = true
+      return super.getWriter()
+    }
+
+    override fun getOutputStream(): ServletOutputStream {
+      bodyTouched = true
+      return super.getOutputStream()
+    }
+
+    override fun sendRedirect(location: String?) {
+      bodyTouched = true
+      super.sendRedirect(location)
+    }
+
+    override fun sendError(sc: Int) {
+      bodyTouched = true
+      super.sendError(sc)
+    }
+
+    override fun sendError(sc: Int, msg: String?) {
+      bodyTouched = true
+      super.sendError(sc, msg)
+    }
+  }
+
+
+  private fun parseAmount(request: HttpServletRequest): Double? {
+    request.getParameter("package")?.let { pkg ->
+      PACKAGES.firstOrNull { it.id == pkg }?.let { return it.amount }
+    }
+    return request.getParameter("amount")?.toDoubleOrNull()
+  }
+
+
+  private fun renderCheckout(response: HttpServletResponse, user: User) {
+    val available = authorizedProviders(user)
+    val provider = available.first()
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
+
+    val budget = currentBudget(user)
+    val budgetHtml = if (budget != null) {
+      """<div class="budget">Current balance: <strong>${"%.4f".format(budget)}</strong></div>"""
+    } else ""
+    val paymentNotice = if (available.size > 1) {
+      """
               <div class="notice">
                   <strong>Multiple payment providers available.</strong> Select your preferred method below.
               </div>
               """.trimIndent()
-        } else if (!provider.requiresPayment) {
-            """
+    } else if (!provider.requiresPayment) {
+      """
               <div class="notice">
                   <strong>Notice:</strong> This is a self-service credit top-up.
                   No payment is processed. Credits applied here are governed by
                   your account's budgeting policy and audited via ledger entries.
               </div>
               """.trimIndent()
-        } else {
-            """
+    } else {
+      """
               <div class="notice">
                   <strong>Payment provider:</strong> ${provider.name}.
                   You will be redirected to complete payment before credits are applied.
               </div>
               """.trimIndent()
-        }
-        val licenseNotice = """
+    }
+    val licenseNotice = """
               <div class="notice license-notice">
                   <strong>📄 License Terms:</strong> By purchasing credits, you agree to the
                   <a href="/LICENSE.html" target="_blank" rel="noopener">Cognotik Software License Agreement</a>,
@@ -233,31 +279,31 @@ open class CreditsServlet(
               </div>
               """.trimIndent()
 
-        val providerSelection = if (available.size > 1) {
-            val providerOptions = available.mapIndexed { idx, p ->
-                val checked = if (idx == 0) "checked" else ""
-                val desc = if (p.requiresPayment) "External payment" else "Self-service (no payment)"
-                """
+    val providerSelection = if (available.size > 1) {
+      val providerOptions = available.mapIndexed { idx, p ->
+        val checked = if (idx == 0) "checked" else ""
+        val desc = if (p.requiresPayment) "External payment" else "Self-service (no payment)"
+        """
                      <label class="pkg-card">
                          <input type="radio" name="provider" value="${p.name}" $checked/>
                          <div class="pkg-title">${p.name}</div>
                          <div class="pkg-desc">$desc</div>
                      </label>
                      """.trimIndent()
-            }.joinToString("\n")
-            """
+      }.joinToString("\n")
+      """
                  <h2>Select a payment method</h2>
                  <div class="pkg-grid">
                      $providerOptions
                  </div>
                  """.trimIndent()
-        } else {
-            """<input type="hidden" name="provider" value="${provider.name}"/>"""
-        }
+    } else {
+      """<input type="hidden" name="provider" value="${provider.name}"/>"""
+    }
 
 
-        val packageCards = PACKAGES.joinToString("\n") { pkg ->
-            """
+    val packageCards = PACKAGES.joinToString("\n") { pkg ->
+      """
                 <label class="pkg-card">
                     <input type="radio" name="package" value="${pkg.id}" ${if (pkg.id == "starter") "checked" else ""}/>
                     <div class="pkg-title">${pkg.label}</div>
@@ -265,10 +311,10 @@ open class CreditsServlet(
                     <div class="pkg-desc">${pkg.description}</div>
                 </label>
                 """.trimIndent()
-        }
+    }
 
-        response.writer.write(
-            """
+    response.writer.write(
+      """
                 <html>
                 <head>
                     <title>Buy Credits</title>
@@ -311,43 +357,43 @@ open class CreditsServlet(
                 </body>
                 </html>
                 """.trimIndent()
-        )
+    )
+  }
+
+  private fun renderReview(request: HttpServletRequest, response: HttpServletResponse, user: User) {
+    val provider = resolveProvider(request, user)
+    if (!provider.isAuthorized(user)) {
+      response.status = HttpServletResponse.SC_FORBIDDEN
+      renderError(response, "You are not authorized to use this payment method. Please contact support.")
+      return
     }
+    response.contentType = "text/html"
+    response.status = HttpServletResponse.SC_OK
 
-    private fun renderReview(request: HttpServletRequest, response: HttpServletResponse, user: User) {
-        val provider = resolveProvider(request, user)
-        if (!provider.isAuthorized(user)) {
-            response.status = HttpServletResponse.SC_FORBIDDEN
-            renderError(response, "You are not authorized to use this payment method. Please contact support.")
-            return
-        }
-        response.contentType = "text/html"
-        response.status = HttpServletResponse.SC_OK
+    val amount = parseAmount(request)
+    if (amount == null || amount <= 0.0) {
+      response.sendRedirect("?")
+      return
+    }
+    val capped = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
+    val budget = currentBudget(user)
+    val projected = (budget ?: 0.0) + capped
 
-        val amount = parseAmount(request)
-        if (amount == null || amount <= 0.0) {
-            response.sendRedirect("?")
-            return
-        }
-        val capped = amount.coerceAtMost(MAX_PURCHASE_AMOUNT)
-        val budget = currentBudget(user)
-        val projected = (budget ?: 0.0) + capped
+    val pkgLabel = request.getParameter("package")?.let { id ->
+      PACKAGES.firstOrNull { it.id == id }?.label
+    } ?: "Custom amount"
 
-        val pkgLabel = request.getParameter("package")?.let { id ->
-            PACKAGES.firstOrNull { it.id == id }?.label
-        } ?: "Custom amount"
-
-        val warning = if (amount > MAX_PURCHASE_AMOUNT) {
-            """<div class="warning">Requested amount exceeds the per-purchase cap of ${"%.2f".format(MAX_PURCHASE_AMOUNT)}. The applied amount will be capped.</div>"""
-        } else ""
-        val providerExtras = provider.reviewPageExtras(request, user)
-        val paymentMethodRow = if (provider.requiresPayment) {
-            "<tr><th>Payment method</th><td><em>${provider.name}</em></td></tr>"
-        } else {
-            "<tr><th>Payment method</th><td><em>${provider.name} (self-service)</em></td></tr>"
-        }
-        val confirmLabel = if (provider.requiresPayment) "Proceed to Payment &rarr;" else "Confirm &amp; Apply Credits"
-        val licenseAgreementBlock = """
+    val warning = if (amount > MAX_PURCHASE_AMOUNT) {
+      """<div class="warning">Requested amount exceeds the per-purchase cap of ${"%.2f".format(MAX_PURCHASE_AMOUNT)}. The applied amount will be capped.</div>"""
+    } else ""
+    val providerExtras = provider.reviewPageExtras(request, user)
+    val paymentMethodRow = if (provider.requiresPayment) {
+      "<tr><th>Payment method</th><td><em>${provider.name}</em></td></tr>"
+    } else {
+      "<tr><th>Payment method</th><td><em>${provider.name} (self-service)</em></td></tr>"
+    }
+    val confirmLabel = if (provider.requiresPayment) "Proceed to Payment &rarr;" else "Confirm &amp; Apply Credits"
+    val licenseAgreementBlock = """
               <div class="license-agreement">
                   <h3>License Agreement</h3>
                   <div class="license-summary">
@@ -370,8 +416,8 @@ open class CreditsServlet(
               """.trimIndent()
 
 
-        response.writer.write(
-            """
+    response.writer.write(
+      """
                 <html>
                 <head>
                     <title>Review Purchase</title>
@@ -417,19 +463,19 @@ open class CreditsServlet(
                 </body>
                 </html>
                 """.trimIndent()
-        )
-    }
+    )
+  }
 
-    private fun renderReceipt(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
-        resp.contentType = "text/html"
-        resp.status = HttpServletResponse.SC_OK
+  private fun renderReceipt(req: HttpServletRequest, resp: HttpServletResponse, user: User) {
+    resp.contentType = "text/html"
+    resp.status = HttpServletResponse.SC_OK
 
-        val orderId = req.getParameter("order") ?: "—"
-        val amount = req.getParameter("amount")?.toDoubleOrNull() ?: 0.0
-        val balance = req.getParameter("balance")?.toDoubleOrNull() ?: currentBudget(user) ?: 0.0
+    val orderId = req.getParameter("order") ?: "—"
+    val amount = req.getParameter("amount")?.toDoubleOrNull() ?: 0.0
+    val balance = req.getParameter("balance")?.toDoubleOrNull() ?: currentBudget(user) ?: 0.0
 
-        resp.writer.write(
-            """
+    resp.writer.write(
+      """
                 <html>
                 <head>
                     <title>Receipt</title>
@@ -467,13 +513,13 @@ open class CreditsServlet(
                 </body>
                 </html>
                 """.trimIndent()
-        )
-    }
+    )
+  }
 
-    private fun renderError(resp: HttpServletResponse, message: String) {
-        resp.contentType = "text/html"
-        resp.writer.write(
-            """
+  private fun renderError(resp: HttpServletResponse, message: String) {
+    resp.contentType = "text/html"
+    resp.writer.write(
+      """
                 <html>
                 <head>
                     <title>Error</title>
@@ -488,10 +534,10 @@ open class CreditsServlet(
                 </body>
                 </html>
                 """.trimIndent()
-        )
-    }
+    )
+  }
 
-    private fun commonStyles(): String = """
+  private fun commonStyles(): String = """
             <meta name="color-scheme" content="light dark">
             <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
             <script src="/themes.js"></script>
@@ -593,9 +639,9 @@ open class CreditsServlet(
             </style>
         """.trimIndent()
 
-    private fun navBar(active: String): String {
-        fun cls(name: String) = if (name == active) "active" else ""
-        return """
+  private fun navBar(active: String): String {
+    fun cls(name: String) = if (name == active) "active" else ""
+    return """
             <nav class="nav-bar">
                 <a href="/usage" class="${cls("usage")}">📊 Usage</a>
                 <a href="/credits" class="${cls("credits")}">💳 Buy Credits</a>
@@ -625,31 +671,31 @@ open class CreditsServlet(
                })();
            </script>
         """.trimIndent()
-    }
+  }
 
 
-    private data class CreditPackage(
-        val id: String,
-        val label: String,
-        val amount: Double,
-        val description: String
+  private data class CreditPackage(
+    val id: String,
+    val label: String,
+    val amount: Double,
+    val description: String
+  )
+
+  companion object {
+    private val log = LoggerFactory.getLogger(CreditsServlet::class.java)
+
+    /**
+     * Per-purchase cap. Acts as the failsafe budgeting control: even if a
+     * user attempts to self-issue a large credit, the applied amount is
+     * capped here.
+     */
+    const val MAX_PURCHASE_AMOUNT: Double = 100.0
+
+    private val PACKAGES = listOf(
+      CreditPackage("starter", "Starter", 5.0, "Quick top-up for light usage"),
+      CreditPackage("standard", "Standard", 20.0, "Typical monthly workload"),
+      CreditPackage("pro", "Pro", 50.0, "Heavy usage / multiple projects"),
+      CreditPackage("max", "Max", 100.0, "Maximum allowed per purchase")
     )
-
-    companion object {
-        private val log = LoggerFactory.getLogger(CreditsServlet::class.java)
-
-        /**
-         * Per-purchase cap. Acts as the failsafe budgeting control: even if a
-         * user attempts to self-issue a large credit, the applied amount is
-         * capped here.
-         */
-        const val MAX_PURCHASE_AMOUNT: Double = 100.0
-
-        private val PACKAGES = listOf(
-            CreditPackage("starter", "Starter", 5.0, "Quick top-up for light usage"),
-            CreditPackage("standard", "Standard", 20.0, "Typical monthly workload"),
-            CreditPackage("pro", "Pro", 50.0, "Heavy usage / multiple projects"),
-            CreditPackage("max", "Max", 100.0, "Maximum allowed per purchase")
-        )
-    }
+  }
 }
