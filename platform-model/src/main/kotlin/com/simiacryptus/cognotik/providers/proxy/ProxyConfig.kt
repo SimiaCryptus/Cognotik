@@ -23,10 +23,10 @@ object ProxyConfig {
     const val PROP_POLL_MAX_INTERVAL_MS = "cognotik.proxy.pollMaxIntervalMs"
 
     const val DEFAULT_PROXY_BASE = "http://localhost:12891"
-    const val DEFAULT_CONNECT_TIMEOUT_MS = 30_000
-    const val DEFAULT_CHAT_READ_TIMEOUT_MS = 300_000
-    const val DEFAULT_MODELS_READ_TIMEOUT_MS = 120_000
-    const val DEFAULT_POLL_READ_TIMEOUT_MS = 30_000
+    const val DEFAULT_CONNECT_TIMEOUT_MS = 90_000
+    const val DEFAULT_CHAT_READ_TIMEOUT_MS = 900_000
+    const val DEFAULT_MODELS_READ_TIMEOUT_MS = 380_000
+    const val DEFAULT_POLL_READ_TIMEOUT_MS = 90_000
     const val DEFAULT_POLL_INITIAL_INTERVAL_MS = 500
     const val DEFAULT_POLL_MAX_INTERVAL_MS = 5_000
 
