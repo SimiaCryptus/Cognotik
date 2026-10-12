@@ -3,7 +3,6 @@ package com.simiacryptus.cognotik.platform
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.platform.model.ChatModel.Companion.ON_USAGE
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -41,7 +40,7 @@ class ChatInterface(
         model = model,
         logStreams = logStreams,
         usageHandler = UsageListener.fn(session) { model, usage, data ->
-            ON_USAGE(model, usage, user, session, data)
+            ServiceRouter.incrementUsage(session, user, model, usage, data)
         }
     )
     fun getChildClient(task: ISessionTask) = getChildClient(task.sessionId).apply { logStreams += task.newLogStream() }

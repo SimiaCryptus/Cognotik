@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.platform.model
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.ModelSchema.Usage
@@ -158,22 +159,6 @@ class ChatModel(
     )
 
     companion object {
-        var ON_USAGE: (LLMModel, Usage, User, Session, ModelSchema.UsageData?) -> Unit =
-            { model, usage, user, session, data ->
-                log.info(
-                    "Model: ${model.modelId}, Prompt Tokens: ${
-                        usage.counts.getOrDefault(
-                            TokenTypes.Prompt,
-                            0
-                        )
-                    }, Completion Tokens: ${
-                        usage.counts.getOrDefault(
-                            TokenTypes.Completion,
-                            0
-                        )
-                    }, Total Tokens: ${usage.total_tokens}, User: ${user.id}"
-                )
-            }
         val NULL: ChatModel = ChatModel(
             name = "NULL",
             modelId = "NULL",

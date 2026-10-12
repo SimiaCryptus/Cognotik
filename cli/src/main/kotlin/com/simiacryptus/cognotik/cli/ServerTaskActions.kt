@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.cli
 
+    import com.simiacryptus.cognotik.platform.file.DataStorage
     import com.simiacryptus.cognotik.platform.model.Session
+    import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
     import com.simiacryptus.cognotik.webui.servlet.action.AutoFixRequest
     import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
     import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
@@ -20,7 +22,7 @@ package com.simiacryptus.cognotik.cli
      * All of the machinery lives in stdtools ([DocOpsFsActions], `FsTasks`, `ServerDocOps`).
      * This object only supplies the three things that are CLI-specific:
      *
-     *  1. the **endpoint**: a [CliDocProcessorServlet] bound to the local mount, published
+     *  1. the **endpoint**: a [DocProcessorServlet] bound to the local mount, published
      *     through [DocOpsServlets] (and mounted at `/docops` by [FileServerCli]) so the FS
      *     action and the HTTP endpoint can never drift apart - and so an environment that
      *     swaps in a proxy servlet is honoured automatically;
@@ -52,7 +54,7 @@ package com.simiacryptus.cognotik.cli
       private var config: Config? = null
 
       @Volatile
-      private var docServlet: CliDocProcessorServlet? = null
+      private var docServlet: DocProcessorServlet? = null
 
       /** Idempotent: builds/publishes the endpoint and (re)installs the configuration. */
       @Synchronized
@@ -65,13 +67,7 @@ package com.simiacryptus.cognotik.cli
          * orphan the instance Jetty already mounted, so the servlet reads the live
          * ModelSelection instead of holding model ids of its own.
          */
-        val servlet = docServlet ?: CliDocProcessorServlet(
-          root = cfg.root.canonicalFile,
-          docsFolder = cfg.docsFolder?.canonicalFile,
-          readOnly = cfg.readOnly,
-          mode = cfg.docOpsMode,
-          concurrency = cfg.docOpsConcurrency,
-          monitor = cfg.monitor,
+        val servlet = docServlet ?: DocProcessorServlet(
         ).also {
           docServlet = it
           FileServer.docProcessorServlet = it
@@ -90,10 +86,10 @@ package com.simiacryptus.cognotik.cli
         apply(cfg, servlet)
       }
 
-      private fun apply(cfg: Config, servlet: CliDocProcessorServlet) {
+      private fun apply(cfg: Config, servlet: DocProcessorServlet) {
         DocOpsFsActions.install(
           DocOpsFsActions.Config(
-            root = { servlet.taskRoot },
+            root = { cfg.root },
             user = { CliSupport.defaultUser ?: throw RuntimeException("no default user") },
             readOnly = cfg.readOnly,
             timeoutMinutes = cfg.timeoutMinutes,

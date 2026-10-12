@@ -6,6 +6,9 @@ import com.simiacryptus.cognotik.docops.model.PlannedTask
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.docops.status.DocStatusStore
 import com.simiacryptus.cognotik.docops.status.TaskStatus
+import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import org.slf4j.LoggerFactory
 import java.io.File
 import java.util.*
@@ -200,6 +203,20 @@ class DocTaskRunner<K : DocTaskKind, S : Any>(
               throw CancellationException("Execution cancelled")
             }
             status.set(targetKey, TaskStatus.RUNNING, sessionId = sessionId)
+            val parentSession = config.parentSession
+            val user = config.user
+            when {
+              parentSession != null && user != null -> parentSession.let { parentSession ->
+                log.info("Setting parent session for '$targetKey': $sessionId -> ${parentSession.sessionId}")
+                ServiceRouter.setParentSession(
+                  user = user,
+                  child = Session(sessionId),
+                  parent = parentSession
+                )
+              }
+              user != null -> log.info("No parent session set for '$targetKey' (session $sessionId)")
+              else -> log.info("No user available to set parent session for '$targetKey' (session $sessionId)")
+            }
             onNewSession(session)
             sessions += session
           }

@@ -9,7 +9,7 @@ package com.simiacryptus.cognotik.platform.model
  * @property toolPaths Map of tool providers to their executable paths
  */
 data class UserSettings(
-  val user: User,
+  val user: User = User.NULL,
   val apis: MutableList<ApiData> = mutableListOf(),
   val collectSessionData: Boolean = false,
   val passwordHash: String? = null,
