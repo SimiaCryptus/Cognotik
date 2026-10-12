@@ -12,6 +12,7 @@ import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.platform.model.ApiChatModel
 import com.simiacryptus.cognotik.platform.model.ISessionTask
+import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.io.ByteArrayOutputStream
 import java.io.IOException
@@ -75,7 +76,7 @@ class LanguageServerTask(
     orchestrationConfig: OrchestrationConfig
   ) {
     val transcript = task.newUserFileStream(transcriptFile())
-    val mapper = ObjectMapper()
+    val mapper = JsonUtil.objectMapper()
 
     try {
       val filePath = executionConfig?.file ?: throw IllegalArgumentException("File path is required")

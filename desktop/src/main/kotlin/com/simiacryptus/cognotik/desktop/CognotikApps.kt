@@ -9,6 +9,7 @@ import com.simiacryptus.cognotik.desktop.UpdateManager.checkUpdate
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.platform.CognotikConfig.controllerEndpoint
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.ServiceKey
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
@@ -66,6 +67,7 @@ open class CognotikApps(
 
         @JvmStatic
         fun main(args: Array<String>) {
+            CognotikPlatform.init()
             // Ensure log directory exists before any logging occurs
             val logDir = File(System.getProperty("user.home"), ".cognotik/logs")
             if (!logDir.exists()) logDir.mkdirs()

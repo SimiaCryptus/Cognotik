@@ -202,11 +202,11 @@ class SessionMetadataClient(
     ).workerId
   }
 
-  override fun setSessionWorker(session: Session, user: User) {
+  override fun setSessionWorker(user: User, session: Session, workerId: String?) {
     val ownerId: String? = user?.id
-    log.info("setSessionWorker called with sessionId=${session.sessionId}, ownerId=$ownerId, user=${user}" /*RuntimeException("Stack Trace")*/)
+    log.info("setSessionWorker called with sessionId=${session.sessionId}, ownerId=$ownerId, user=${user}, workerId=$workerId" /*RuntimeException("Stack Trace")*/)
     requireNotNull(user) { "user is required" }
-    post("setSessionWorker", SetSessionWorkerRequest(session.sessionId, ownerId), user.getAuthCookies())
+    post("setSessionWorker", SetSessionWorkerRequest(session.sessionId, workerId), user.getAuthCookies())
   }
 
   override fun getSessionPath(user: User, session: Session): String? =

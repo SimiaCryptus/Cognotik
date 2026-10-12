@@ -1873,7 +1873,7 @@ class CrawlerAgentTask(
         "metadata" to result.metadata
       )
       val metadataJson = try {
-        ObjectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
+        JsonUtil.objectMapper().writerWithDefaultPrettyPrinter().writeValueAsString(metadata)
       } catch (e: JsonProcessingException) {
         log.error("Failed to serialize metadata for URL: $url", e)
         "{}"

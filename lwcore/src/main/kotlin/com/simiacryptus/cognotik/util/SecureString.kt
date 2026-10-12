@@ -11,6 +11,7 @@ import javax.crypto.spec.GCMParameterSpec
 
 class SecureString {
   val data: ByteArray
+  val createdBy = Thread.currentThread().stackTrace
 
   private constructor(data: ByteArray) {
     this.data = data

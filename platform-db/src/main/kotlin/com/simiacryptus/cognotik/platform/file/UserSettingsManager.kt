@@ -34,7 +34,7 @@ open class UserSettingsManager(val root: File) : UserSettingsInterface {
         }
       }
       log.info("User settings file not found for user: ${user.toJson()}. Creating new settings at: ${file}", RuntimeException())
-      return@getOrPut UserSettings()
+      return@getOrPut UserSettings(user = user)
     }
   }
 

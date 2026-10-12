@@ -1,11 +1,11 @@
 package com.simiacryptus.cognotik.webui.servlet
 
-import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface.TokenMetadata
 import com.simiacryptus.cognotik.platform.service.UserProvider
+import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -35,7 +35,7 @@ class ApiKeyServlet : HttpServlet() {
 
   private val authenticationManager: AuthenticationInterface by lazy { ServiceRouter as AuthenticationInterface }
   private val userProvider by lazy { ServiceRouter as UserProvider }
-  private val mapper = ObjectMapper()
+  private val mapper = JsonUtil.objectMapper()
   private val random = SecureRandom()
 
   override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -86,8 +86,10 @@ class ApiKeyServlet : HttpServlet() {
         mapOf("error" to "Revocation is not supported by ${authenticationManager.javaClass.simpleName}")
       )
     } else {
-      writeJson(response, if (revoked) HttpServletResponse.SC_OK else HttpServletResponse.SC_NOT_FOUND,
-        mapOf("revoked" to revoked))
+      writeJson(
+        response, if (revoked) HttpServletResponse.SC_OK else HttpServletResponse.SC_NOT_FOUND,
+        mapOf("revoked" to revoked)
+      )
     }
   }
 

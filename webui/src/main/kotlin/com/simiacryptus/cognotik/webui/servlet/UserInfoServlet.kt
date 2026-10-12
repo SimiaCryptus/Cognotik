@@ -1,7 +1,6 @@
 package com.simiacryptus.cognotik.webui.servlet
 
 import com.simiacryptus.cognotik.platform.ServiceRouter
-import com.simiacryptus.cognotik.platform.service.UserProvider
 import com.simiacryptus.cognotik.util.JsonUtil
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -11,9 +10,10 @@ class UserInfoServlet : HttpServlet() {
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
     response.contentType = "text/json"
     response.status = HttpServletResponse.SC_OK
-    val user =
-      ServiceRouter.authenticate(request)
-        ?: throw IllegalStateException("Authentication failed")
+    val user = ServiceRouter.authenticate(request) ?: run {
+      response.status = HttpServletResponse.SC_UNAUTHORIZED
+      return
+    }
     response.writer.write(JsonUtil.objectMapper().writeValueAsString(user))
   }
 }

@@ -176,7 +176,7 @@ object UpdateManager {
     val currentVersion: Version
         get() {
             val version = System.getProperty("jpackage.app-version", "99.99.99").removePrefix("v")
-            log.info("Current application version: $version")
+            log.debug("Current application version: $version")
             return Version(version)
         }
 

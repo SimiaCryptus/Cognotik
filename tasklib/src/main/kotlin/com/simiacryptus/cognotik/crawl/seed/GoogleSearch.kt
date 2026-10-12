@@ -8,6 +8,7 @@ import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.util.JsonUtil
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -80,7 +81,7 @@ class GoogleSearch : SeedMethodFactory {
         SeedMethod.log.debug("Parsing Google Search API response")
 
         val searchData: Map<String, Any> = try {
-          ObjectMapper().readValue(response.body())
+          JsonUtil.objectMapper().readValue(response.body())
         } catch (e: Exception) {
           SeedMethod.log.error("Failed to parse Google Search API response", e)
           throw RuntimeException("Invalid response from Google Search API", e)

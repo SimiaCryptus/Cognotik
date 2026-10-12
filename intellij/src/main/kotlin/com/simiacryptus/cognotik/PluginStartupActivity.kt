@@ -10,6 +10,7 @@ import com.intellij.openapi.startup.ProjectActivity
 import com.simiacryptus.cognotik.apps.ResourceApps
 import com.simiacryptus.cognotik.config.AppSettingsComponent
 import com.simiacryptus.cognotik.config.AppSettingsState
+import com.simiacryptus.cognotik.config.HostedAutoSetup
 import com.simiacryptus.cognotik.config.StaticAppSettingsConfigurable
 import com.simiacryptus.cognotik.config.instance
 import com.simiacryptus.cognotik.interpreter.CodeRuntimes
@@ -59,6 +60,11 @@ class PluginStartupActivity : ProjectActivity {
             object : AuthenticationInterface {
                 override fun getUser(accessToken: String?) = CognotikConfig.localUser
                 override fun putUser(accessToken: String, user: User) = user
+                 /* In hosted mode the hosted session token identifies the user to the backend (balance, usage). */
+                 override fun listTokens(user: User): List<AuthenticationInterface.TokenMetadata> =
+                     HostedAutoSetup.hostedToken()?.let {
+                         listOf(AuthenticationInterface.TokenMetadata(token = it, userId = user.email ?: ""))
+                     } ?: emptyList()
             }
         }
         ServiceKey.USER_RESOLVER.factory = {
@@ -125,6 +131,11 @@ class PluginStartupActivity : ProjectActivity {
             try {
                 currentThread.contextClassLoader = PluginStartupActivity::class.java.classLoader
                 init(project)
+                 try {
+                     if (HostedAutoSetup.isHosted()) HostedAutoSetup.enableHostedUsage()
+                 } catch (e: Exception) {
+                     log.warn("Could not enable hosted usage tracking", e)
+                 }
                 log.debug("Plugin initialization completed successfully")
             } catch (e: Exception) {
                 log.error("Error during plugin startup", e)

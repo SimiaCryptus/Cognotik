@@ -256,8 +256,9 @@ class MetadataStorageApiServlet(
           val user = currentUser(request)
           val req = readBody(request, SetSessionWorkerRequest::class.java)
           ServiceRouter.setSessionWorker(
+            user = user,
             Session(req.sessionId),
-            user = user
+            workerId = req.workerId
           )
           writeJson(response, StatusResponse())
         }

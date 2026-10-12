@@ -15,6 +15,7 @@ import com.simiacryptus.cognotik.util.ValidatedObject
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.util.JsonUtil
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -170,7 +171,7 @@ class GitHubSearchTask(
   }
 
   private fun formatSearchResults(results: String): String {
-    val mapper = ObjectMapper()
+    val mapper = JsonUtil.objectMapper()
     val searchResults: Map<String, Any> = mapper.readValue(results)
     val effectiveSearchType = this.executionConfig?.search_type ?: GitHubSearchTaskExecutionConfigData().search_type
     return buildString {

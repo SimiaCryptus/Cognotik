@@ -112,8 +112,8 @@ open class Session(
   }
 
   internal open fun validateSessionId() {
-    if (!SESSION_ID_REGEX.matches(sessionId)) {
-      throw IllegalArgumentException("Invalid session ID: $this")
+    if (!sessionId.isValidSession()) {
+      throw IllegalArgumentException("Invalid session ID: $sessionId")
     }
   }
 
@@ -129,4 +129,8 @@ open class Session(
   override fun hashCode(): Int {
     return sessionId.hashCode()
   }
+}
+
+fun String.isValidSession(): Boolean {
+  return Session.SESSION_ID_REGEX.matches(this)
 }

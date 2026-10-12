@@ -24,6 +24,7 @@ class UserSettingsServlet : HttpServlet() {
       val settings =
         ServiceRouter.getUserSettings(user)
       val visibleSettings = UserSettings(
+        user = user,
         apis = settings.apis.map { apiData ->
           ApiData(
             key = when (apiData.key?.decrypt) {
@@ -92,7 +93,7 @@ class UserSettingsServlet : HttpServlet() {
       ServiceRouter.authenticate(request)
         ?: throw IllegalStateException("Authentication failed")
     val data = request.getParameter("settings") ?: request.reader.use { it.readText() }.ifBlank { null }
-    val settings = data?.let { JsonUtil.fromJson<UserSettings>(it, UserSettings::class.java) } ?: UserSettings()
+    val settings = data?.let { JsonUtil.fromJson<UserSettings>(it, UserSettings::class.java) } ?: UserSettings(user = user)
     val userSettingsManager =
       ServiceRouter as UserSettingsInterface
     val prevSettings =
@@ -109,6 +110,7 @@ class UserSettingsServlet : HttpServlet() {
       ).validate()
     }.toMutableList()
     val reconstructedSettings = UserSettings(
+      user = user,
       apis = reconstructedApis,
       collectSessionData = settings.collectSessionData,
       passwordHash = settings.passwordHash,

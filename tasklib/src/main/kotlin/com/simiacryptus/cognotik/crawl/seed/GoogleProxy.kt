@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.crawl.CrawlerAgentTask
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.util.JsonUtil
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -64,7 +65,7 @@ class GoogleProxy : SeedMethodFactory {
         }
 
         val searchData: Map<String, Any> = try {
-          ObjectMapper().readValue(response.body())
+          JsonUtil.objectMapper().readValue(response.body())
         } catch (e: Exception) {
           SeedMethod.log.error("Failed to parse proxy response", e)
           throw RuntimeException("Invalid response from search proxy", e)

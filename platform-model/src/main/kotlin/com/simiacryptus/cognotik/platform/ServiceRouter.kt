@@ -11,7 +11,7 @@ import java.time.LocalDate
 import java.util.concurrent.atomic.AtomicBoolean
 
 /**
-  * Static facade over the services resolved through their [ServiceKey]s.
+ * Static facade over the services resolved through their [ServiceKey]s.
  *
  * Every call resolves its backing service at invocation time, so late or overridden
  * factory registrations are honoured. All interface members — including those with
@@ -26,38 +26,38 @@ import java.util.concurrent.atomic.AtomicBoolean
  * (token usage, credit grants, gift claims, session file transfers). Recording never
  * throws and never affects the result of the intercepted call. Backends must therefore
  * NOT also record these same facts, or they will be double counted.
-  *
-  * Alerting: alert policy management and status are forwarded to the metrics backend;
-  * [notifyAlert] is forwarded to the registered [NotificationsInterface].
+ *
+ * Alerting: alert policy management and status are forwarded to the metrics backend;
+ * [notifyAlert] is forwarded to the registered [NotificationsInterface].
  */
 @Suppress("unused")
 object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageInterface, SessionMetadataInterface,
   UsageInterface, UserSettingsInterface, UserProvider, AuthenticationInterface, GiftedCreditsInterface,
-   MetricsInterface, NotificationsInterface {
+  MetricsInterface, NotificationsInterface {
 
   /* ---------------------------------------------------------------- resolution */
 
-   private val pluginManager: PluginManagerInterface get() = ServiceKey.PLUGIN_MANAGER.get()
-   private val authorization: AuthorizationInterface get() = ServiceKey.AUTHORIZATION_MANAGER.get()
-   private val storage: StorageInterface get() = ServiceKey.DATA_STORAGE.get()
-   private val metadata: SessionMetadataInterface get() = ServiceKey.METADATA_DB.get()
-   private val usage: UsageInterface get() = ServiceKey.USAGE_DB.get()
-   private val userSettings: UserSettingsInterface get() = ServiceKey.USER_SETTINGS.get()
-   private val userResolver: UserProvider get() = ServiceKey.USER_RESOLVER.get()
-   private val authentication: AuthenticationInterface get() = ServiceKey.AUTHENTICATION.get()
-   private val giftedCredits: GiftedCreditsInterface get() = ServiceKey.GIFTED_CREDITS.get()
+  private val pluginManager: PluginManagerInterface get() = ServiceKey.PLUGIN_MANAGER.get()
+  private val authorization: AuthorizationInterface get() = ServiceKey.AUTHORIZATION_MANAGER.get()
+  private val storage: StorageInterface get() = ServiceKey.DATA_STORAGE.get()
+  private val metadata: SessionMetadataInterface get() = ServiceKey.METADATA_DB.get()
+  private val usage: UsageInterface get() = ServiceKey.USAGE_DB.get()
+  private val userSettings: UserSettingsInterface get() = ServiceKey.USER_SETTINGS.get()
+  private val userResolver: UserProvider get() = ServiceKey.USER_RESOLVER.get()
+  private val authentication: AuthenticationInterface get() = ServiceKey.AUTHENTICATION.get()
+  private val giftedCredits: GiftedCreditsInterface get() = ServiceKey.GIFTED_CREDITS.get()
   private val metrics: MetricsInterface
     get() = try {
-       ServiceKey.METRICS.get()
+      ServiceKey.METRICS.get()
     } catch (e: UnsupportedOperationException) {
       NoOpMetrics
     }
-   private val notifications: NotificationsInterface
-     get() = try {
-       ServiceKey.NOTIFICATIONS.get()
-     } catch (e: UnsupportedOperationException) {
-       LoggingNotifications
-     }
+  private val notifications: NotificationsInterface
+    get() = try {
+      ServiceKey.NOTIFICATIONS.get()
+    } catch (e: UnsupportedOperationException) {
+      LoggingNotifications
+    }
 
   /* ---------------------------------------------------------------- metrics interception helpers */
   private val log = LoggerFactory.getLogger(ServiceRouter::class.java)
@@ -76,11 +76,11 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   private inline fun safely(op: String, block: () -> Unit) {
     try {
       block()
-     } catch (e: VirtualMachineError) {
-       throw e
-     } catch (e: Throwable) {
-       // Errors (e.g. AbstractMethodError from an old AIModel without pricing, or a failed
-       // MetricType initialisation) must not escape into the intercepted call.
+    } catch (e: VirtualMachineError) {
+      throw e
+    } catch (e: Throwable) {
+      // Errors (e.g. AbstractMethodError from an old AIModel without pricing, or a failed
+      // MetricType initialisation) must not escape into the intercepted call.
       log.warn("Metrics recording failed: $op", e)
     }
   }
@@ -282,8 +282,8 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
     override fun getSessionOwner(user: User, session: Session): String? =
       metadata.getSessionOwner(user, session)
 
-    override fun setSessionWorker(session: Session, user: User) =
-      metadata.setSessionWorker(session = session, user = user)
+    override fun setSessionWorker(user: User, session: Session, workerId: String?) =
+      metadata.setSessionWorker(user = user, session = session, workerId = workerId)
 
     override fun getSessionWorker(user: User, session: Session): String? =
       metadata.getSessionWorker(user, session)
@@ -523,26 +523,35 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun listMetrics(): List<MetricType> =
     metrics.listMetrics()
-   /* Alerting (optional; unsupported when the backend does not evaluate policies) */
-   override val supportsAlerting: Boolean
-     get() = metrics.supportsAlerting
-   override fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? =
-     metrics.putAlertPolicy(policy)
-   override fun removeAlertPolicy(id: String): Boolean =
-     metrics.removeAlertPolicy(id)
-   override fun getAlertPolicy(id: String): AlertPolicy? =
-     metrics.getAlertPolicy(id)
-   override fun listAlertPolicies(): List<AlertPolicy> =
-     metrics.listAlertPolicies()
-   override fun evaluateAlerts() =
-     safely("evaluateAlerts") { metrics.evaluateAlerts() }
-   override fun listAlerts(query: AlertQuery): List<Alert> =
-     metrics.listAlerts(query)
-   override fun triggeredAlerts(): List<Alert> =
-     metrics.triggeredAlerts()
-   /* ---------------------------------------------------------------- NotificationsInterface */
-   override fun notifyAlert(alert: Alert) =
-     safely("notifyAlert ${alert.id}") { notifications.notifyAlert(alert) }
+
+  /* Alerting (optional; unsupported when the backend does not evaluate policies) */
+  override val supportsAlerting: Boolean
+    get() = metrics.supportsAlerting
+
+  override fun putAlertPolicy(policy: AlertPolicy): AlertPolicy? =
+    metrics.putAlertPolicy(policy)
+
+  override fun removeAlertPolicy(id: String): Boolean =
+    metrics.removeAlertPolicy(id)
+
+  override fun getAlertPolicy(id: String): AlertPolicy? =
+    metrics.getAlertPolicy(id)
+
+  override fun listAlertPolicies(): List<AlertPolicy> =
+    metrics.listAlertPolicies()
+
+  override fun evaluateAlerts() =
+    safely("evaluateAlerts") { metrics.evaluateAlerts() }
+
+  override fun listAlerts(query: AlertQuery): List<Alert> =
+    metrics.listAlerts(query)
+
+  override fun triggeredAlerts(): List<Alert> =
+    metrics.triggeredAlerts()
+
+  /* ---------------------------------------------------------------- NotificationsInterface */
+  override fun notifyAlert(alert: Alert) =
+    safely("notifyAlert ${alert.id}") { notifications.notifyAlert(alert) }
 
 
   /** Shuts down both the plugin manager and the metrics backend (the signatures collide). */
@@ -665,67 +674,67 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
   override fun getSessionName(
     user: User,
     session: Session
-   ): String = metadata.getSessionName(user, session)
+  ): String = metadata.getSessionName(user, session)
 
   override fun setSessionName(
     user: User,
     session: Session,
     name: String
-   ) = metadata.setSessionName(user, session, name)
+  ) = metadata.setSessionName(user, session, name)
 
   override fun getMessageIds(
     user: User,
     session: Session
-   ): List<String> = metadata.getMessageIds(user, session)
+  ): List<String> = metadata.getMessageIds(user, session)
 
   override fun setMessageIds(
     user: User,
     session: Session,
     ids: List<String>
-   ) = metadata.setMessageIds(user, session, ids)
+  ) = metadata.setMessageIds(user, session, ids)
 
   override fun getSessionTimestamp(
     user: User,
     session: Session
-   ): Instant? = metadata.getSessionTimestamp(user, session)
+  ): Instant? = metadata.getSessionTimestamp(user, session)
 
   override fun setSessionTimestamp(
     user: User,
     session: Session,
     time: Instant
-   ) = metadata.setSessionTimestamp(user, session, time)
+  ) = metadata.setSessionTimestamp(user, session, time)
 
   override fun listSessionsByPath(
     user: User,
     path: String
-   ) = metadata.listSessionsByPath(user, path)
+  ) = metadata.listSessionsByPath(user, path)
 
-   override fun listSessionsForUser(user: User) = metadata.listSessionsForUser(user)
+  override fun listSessionsForUser(user: User) = metadata.listSessionsForUser(user)
 
   override fun setSessionOwner(
     session: Session,
     user: User
-   ) = metadata.setSessionOwner(session, user)
+  ) = metadata.setSessionOwner(session, user)
 
   override fun getSessionOwner(
     user: User,
     session: Session
-   ): String? = metadata.getSessionOwner(user, session)
+  ): String? = metadata.getSessionOwner(user, session)
 
   override fun setSessionWorker(
-    session: Session,
-    user: User
-   ) = metadata.setSessionWorker(session, user)
+    user: User,
+    session: Session, workerId: String?
+  ) = metadata.setSessionWorker(user = user, session = session, workerId = workerId)
 
   override fun getSessionWorker(
     user: User,
     session: Session
-   ): String? = metadata.getSessionWorker(user, session)
+  ): String? = metadata.getSessionWorker(user = user, session = session)
 
   override fun deleteSession(
     user: User,
     session: Session
-   ) = metadata.deleteSession(user, session)
+  ) = metadata.deleteSession(user, session)
 
   override fun getSessionPath(user: User, session: Session): String? =
     metadata.getSessionPath(user, session)
@@ -783,7 +792,7 @@ object ServiceRouter : PluginManagerInterface, AuthorizationInterface, StorageIn
 
   override fun getMessageCount(user: User, session: Session): Int =
     metadata.getMessageCount(user, session)
-  
+
   class MeteredOutputStream(delegate: OutputStream, function: (bytes: Long, failed: Boolean) -> Unit) :
     FilterOutputStream(delegate) {
     private var bytesWritten: Long = 0

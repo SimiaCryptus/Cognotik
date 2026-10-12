@@ -26,7 +26,7 @@ import java.time.LocalDate
  *
  * @param baseUrl e.g. `http://host:port/usageStorageApi` (no trailing slash)
  */
-class UsageClient(
+open class UsageClient(
   private val baseUrl: String = controllerEndpoint + "/usageApi",
   private val httpClient: HttpClient = HttpClient.newBuilder()
     .followRedirects(HttpClient.Redirect.NORMAL)
@@ -121,39 +121,59 @@ class UsageClient(
     val trimmed = body.trimStart()
     return trimmed.startsWith("<!DOCTYPE", ignoreCase = true) || trimmed.startsWith("<html", ignoreCase = true)
   }
+   /**
+    * Executes [block], logging and swallowing any exception and returning [default] instead.
+    * Preserves the thread interrupt flag if the failure was caused by an interruption.
+    */
+   private inline fun <T> guarded(operation: String, default: T, block: () -> T): T =
+     try {
+       block()
+     } catch (e: InterruptedException) {
+       Thread.currentThread().interrupt()
+       log.error("UsageClient.{} interrupted; returning default value", operation, e)
+       default
+     } catch (e: Exception) {
+       log.error("UsageClient.{} failed; returning default value", operation, e)
+       default
+     }
 
-  private fun cookieHeader(auth: Map<String, String?>): String? {
+
+  open fun cookieHeader(auth: Map<String, String?>): String?  {
     val entries = auth.filterValues { !it.isNullOrEmpty() }
     if (entries.isEmpty()) return null
     return entries.entries.joinToString("; ") { (k, v) -> "$k=$v" }
   }
 
   override fun getUserUsageSummary(user: User, from: LocalDate, to: LocalDate): Map<String, ModelSchema.Usage> =
-    JsonUtil.fromJson<UsageSummaryResponse>(
-      get("userSummary", mapOf("from" to from.toString(), "to" to to.toString()), user.getAuthCookies()),
-      UsageSummaryResponse::class.java
-    ).summary
+     guarded("getUserUsageSummary", emptyMap()) {
+       JsonUtil.fromJson<UsageSummaryResponse>(
+         get("userSummary", mapOf("from" to from.toString(), "to" to to.toString()), user.getAuthCookies()),
+         UsageSummaryResponse::class.java
+       ).summary
+     }
 
-  override fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage> {
-    requireNotNull(user) { "user is required" }
-    log.info("Fetching usage summary for session={} user={}", session.sessionId, user.toJson())
-    return JsonUtil.fromJson<UsageSummaryResponse>(
-      get("sessionSummary", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
-      UsageSummaryResponse::class.java
-    ).summary
-  }
+   override fun getSessionUsageSummary(user: User, session: Session): Map<String, ModelSchema.Usage> =
+     guarded("getSessionUsageSummary", emptyMap()) {
+       requireNotNull(user) { "user is required" }
+       log.debug("Fetching usage summary for session={} user={}", session.sessionId, user.toJson())
+       JsonUtil.fromJson<UsageSummaryResponse>(
+         get("sessionSummary", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
+         UsageSummaryResponse::class.java
+       ).summary
+     }
 
   override fun getSessionUsageSummaryBulk(
     user: User,
     sessionIds: Collection<Session>
-  ): Map<Session, Map<String, ModelSchema.Usage>> {
-    requireNotNull(user) { "user is required" }
-    val resp = JsonUtil.fromJson<SessionSummaryBulkResponse>(
-      post("sessionSummaryBulk", SessionSummaryBulkRequest(sessionIds.map { it.sessionId }), user.getAuthCookies()),
-      SessionSummaryBulkResponse::class.java
-    )
-    return resp.summary.mapKeys { Session(it.key) }
-  }
+   ): Map<Session, Map<String, ModelSchema.Usage>> =
+     guarded("getSessionUsageSummaryBulk", emptyMap()) {
+       requireNotNull(user) { "user is required" }
+       val resp = JsonUtil.fromJson<SessionSummaryBulkResponse>(
+         post("sessionSummaryBulk", SessionSummaryBulkRequest(sessionIds.map { it.sessionId }), user.getAuthCookies()),
+         SessionSummaryBulkResponse::class.java
+       )
+       resp.summary.mapKeys { Session(it.key) }
+     }
 
   override fun incrementUsage(
     session: Session,
@@ -162,64 +182,82 @@ class UsageClient(
     usage: ModelSchema.Usage,
     data: ModelSchema.UsageData?
   ) {
-    post("increment", IncrementUsageRequest(session.sessionId, model, usage, data), user.getAuthCookies())
+     guarded("incrementUsage", Unit) {
+       post("increment", IncrementUsageRequest(session.sessionId, model, usage, data), user.getAuthCookies())
+     }
   }
 
   override fun clear() {
-    post("clear", null)
+     guarded("clear", Unit) {
+       post("clear", null)
+     }
   }
 
   override fun setParentSession(user: User, child: Session, parent: Session) {
-    log.info("Setting parent session: child={}, parent={}, user={}", child.sessionId, parent.sessionId, user)
-    requireNotNull(user) { "user is required" }
-    post("parentSession", ParentSessionRequest(child.sessionId, parent.sessionId), user.getAuthCookies())
+     guarded("setParentSession", Unit) {
+       log.info("Setting parent session: child={}, parent={}, user={}", child.sessionId, parent.sessionId, user)
+       requireNotNull(user) { "user is required" }
+       post("parentSession", ParentSessionRequest(child.sessionId, parent.sessionId), user.getAuthCookies())
+     }
   }
 
-  override fun getParentSession(user: User, child: Session): Session? {
-    requireNotNull(user) { "user is required" }
-    return JsonUtil.fromJson<ParentSessionResponse>(
-      get("parentSession", mapOf("child" to child.sessionId), user.getAuthCookies()),
-      ParentSessionResponse::class.java
-    ).parent?.let { Session(it) }
-  }
+   override fun getParentSession(user: User, child: Session): Session? =
+     guarded<Session?>("getParentSession", null) {
+       requireNotNull(user) { "user is required" }
+       JsonUtil.fromJson<ParentSessionResponse>(
+         get("parentSession", mapOf("child" to child.sessionId), user.getAuthCookies()),
+         ParentSessionResponse::class.java
+       ).parent?.let { Session(it) }
+     }
 
   override fun getAvailableBudget(user: User): Double =
-    JsonUtil.fromJson<BudgetResponse>(
-      get("budget", emptyMap(), user.getAuthCookies()),
-      BudgetResponse::class.java
-    ).budget
+     guarded("getAvailableBudget", 0.0) {
+       JsonUtil.fromJson<BudgetResponse>(
+         get("budget", emptyMap(), user.getAuthCookies()),
+         BudgetResponse::class.java
+       ).budget
+     }
 
   override fun creditUser(user: User, amount: Double, comment: String?, metadata: Map<String, String>?): Double =
-    JsonUtil.fromJson<CreditResponse>(
-      post("credit", CreditRequest(amount, comment, metadata), user.getAuthCookies()),
-      CreditResponse::class.java
-    ).balance
+     guarded("creditUser", 0.0) {
+       JsonUtil.fromJson<CreditResponse>(
+         post("credit", CreditRequest(amount, comment, metadata), user.getAuthCookies()),
+         CreditResponse::class.java
+       ).balance
+     }
 
   override fun getUserDailyUsage(user: User, from: LocalDate, to: LocalDate): List<UsageInterface.DailyUsage> =
-    JsonUtil.fromJson<DailyUsageResponse>(
-      get("dailyUsage", mapOf("from" to from.toString(), "to" to to.toString()), user.getAuthCookies()),
-      DailyUsageResponse::class.java
-    ).entries
+     guarded("getUserDailyUsage", emptyList()) {
+       JsonUtil.fromJson<DailyUsageResponse>(
+         get("dailyUsage", mapOf("from" to from.toString(), "to" to to.toString()), user.getAuthCookies()),
+         DailyUsageResponse::class.java
+       ).entries
+     }
 
   override fun getUserCredits(user: User, from: LocalDate, to: LocalDate): List<UsageInterface.CreditEntry> =
-    JsonUtil.fromJson<CreditsResponse>(
-      get("credits", mapOf("from" to from.toString(), "to" to to.toString()), user.getAuthCookies()),
-      CreditsResponse::class.java
-    ).entries
+     guarded("getUserCredits", emptyList()) {
+       JsonUtil.fromJson<CreditsResponse>(
+         get("credits", mapOf("from" to from.toString(), "to" to to.toString()), user.getAuthCookies()),
+         CreditsResponse::class.java
+       ).entries
+     }
 
   override fun getUserBalance(user: User): Double =
-    JsonUtil.fromJson<BalanceResponse>(
-      get("balance", emptyMap(), user.getAuthCookies()),
-      BalanceResponse::class.java
-    ).balance
+     guarded("getUserBalance", 0.0) {
+       JsonUtil.fromJson<BalanceResponse>(
+         get("balance", emptyMap(), user.getAuthCookies()),
+         BalanceResponse::class.java
+       ).balance
+     }
 
-  override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> {
-    requireNotNull(user) { "user is required" }
-    return JsonUtil.fromJson<SessionRowsResponse>(
-      get("sessionRows", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
-      SessionRowsResponse::class.java
-    ).rows
-  }
+   override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> =
+     guarded("getSessionUsageRows", emptyList()) {
+       requireNotNull(user) { "user is required" }
+       JsonUtil.fromJson<SessionRowsResponse>(
+         get("sessionRows", mapOf("sessionId" to session.sessionId), user.getAuthCookies()),
+         SessionRowsResponse::class.java
+       ).rows
+     }
 
   companion object {
     private val log = LoggerFactory.getLogger(UsageClient::class.java)

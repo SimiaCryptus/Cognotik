@@ -27,6 +27,7 @@ import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.text.patch.PatchProcessor
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.util.BrowseUtil.BROWSER_INTELLIJ_BUILTIN
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.JsonUtil.fromJson
 import com.simiacryptus.cognotik.util.JsonUtil.toJson
 import com.simiacryptus.cognotik.util.PlanHarness.Companion.initDynamicEnums
@@ -132,9 +133,10 @@ data class AppSettingsState(
   override fun loadState(state: SimpleEnvelope) {
     state.value ?: return
     val fromJson = try {
-      val jsonNode = ObjectMapper().readTree(state.value)
+      val mapper = JsonUtil.objectMapper()
+      val jsonNode = mapper.readTree(state.value)
       try {
-        fromJson(ObjectMapper().writeValueAsString(jsonNode), AppSettingsState::class.java)
+        fromJson(mapper.writeValueAsString(jsonNode), AppSettingsState::class.java)
       } catch (e: Exception) {
         log.warn("Error parsing settings: $jsonNode", e)
         AppSettingsState()
