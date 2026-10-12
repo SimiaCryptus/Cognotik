@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html data-gift-theme="{{themeId}}">
+<head>
+    <title>{{emoji}} Gifted Credits {{emoji}}</title>
+    {{head}}
+</head>
+<body class="gift-page-main">
+<div class="main-container">
+    <h1>{{themeTitle}}</h1>
+    <div class="festive-divider">{{divider}}</div>
+
+    <nav class="nav-bar">
+        <a href="/usage">📊 Usage</a>
+        <a href="/credits">💳 Buy Credits</a>
+        <a href="/gifts/?theme={{themeId}}" class="active">🎁 Gifts</a>
+    </nav>
+
+    <div class="theme-selector">
+        <span class="theme-label">🎨 Theme:</span>
+        {{themeButtons}}
+    </div>
+
+    {{appearanceSelector}}
+
+    <div class="form-container">
+        <h2>🎂 Create Gift</h2>
+        <p class="balance"><strong>💳 Your Current Balance:</strong> {{balance}} credits</p>
+        <p class="muted-text">The total budget will be deducted from your account when the gift is created.</p>
+        <form method="post" action="{{requestUri}}">
+            <input type="hidden" name="action" value="create"/>
+            <input type="hidden" name="theme" value="{{themeId}}"/>
+            <label>💰 Amount Granted: <input type="number" step="0.01" name="amountGranted" required/></label>
+            <label>⏰ Grant Duration (days): <input type="number" step="0.01" name="grantDuration" required/></label>
+            <label>💝 Total Budget: <input type="number" step="0.01" name="totalBudget" required/></label>
+            <label>🎨 Gift Theme:
+                <select name="giftTheme">
+                    {{themeOptions}}
+                </select>
+            </label>
+            <div class="license-notice">
+                <label class="license-check">
+                    <input type="checkbox" name="acceptLicense" required/>
+                    <span>I have read and agree to the <a href="/LICENSE.html" target="_blank" rel="noopener" class="license-link">Cognotik Software License Agreement</a>, including the terms regarding API Credits, gifts, and non-refundability (Section 8.2).</span>
+                </label>
+            </div>
+            <button type="submit">✨ Create Gift ✨</button>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2>{{emoji}} Claim Your Gift {{emoji}}</h2>
+        <form method="post" action="{{requestUri}}">
+            <input type="hidden" name="action" value="claim"/>
+            <input type="hidden" name="theme" value="{{themeId}}"/>
+            <label>🎫 Gift ID: <input type="text" name="giftId" required/></label>
+            <button type="submit">{{emoji}} Claim Now! {{emoji}}</button>
+        </form>
+    </div>
+
+    <h2>{{emoji}} Available Gifts (All) {{emoji}}</h2>
+    <table>
+        <tr class="table-header">
+            <th>🎫 ID</th>
+            <th>💰 Amount Granted</th>
+            <th>⏰ Duration (days)</th>
+            <th>📅 Expires</th>
+            <th>💝 Total Budget</th>
+            <th>💸 Spent Budget</th>
+            <th>👥 Claimants</th>
+            <th>👤 Created By</th>
+            <th>🎨 Theme</th>
+            <th>⚡ Actions</th>
+        </tr>
+        {{giftRows}}
+    </table>
+
+    <h2 id="claims">💌 All Claims{{claimsFilterSuffix}} 💌</h2>
+    <div class="form-container">
+        <form method="get" action="{{requestUri}}#claims">
+            <input type="hidden" name="theme" value="{{themeId}}"/>
+            <label>🎫 Filter by Gift ID: <input type="text" name="filterGiftId" value="{{filterGiftId}}"/></label>
+            <label>👤 Filter by User ID: <input type="text" name="filterUserId" value="{{filterUserId}}"/></label>
+            <button type="submit">🔍 Filter</button>
+            <a class="claim-link clear-link" href="{{requestUri}}?theme={{themeId}}#claims">✖ Clear</a>
+        </form>
+    </div>
+    <table>
+        <tr class="table-header">
+            <th>🎫 Gift ID</th>
+            <th>👤 User ID</th>
+            <th>📅 Claimed At</th>
+        </tr>
+        {{claimRows}}
+    </table>
+
+    <div class="festive-divider">{{divider}}</div>
+    <footer class="license-footer">
+        <p>
+            📜 Use of Cognotik, gifted credits, and the cloud-hosted service is governed by the
+            <a href="/LICENSE.html" target="_blank" rel="noopener" class="license-link">Cognotik Software License Agreement</a>.
+            API Credits and gifts are non-refundable and have no cash value (see Section 8.2).
+        </p>
+    </footer>
+</div>
+</body>
+</html>

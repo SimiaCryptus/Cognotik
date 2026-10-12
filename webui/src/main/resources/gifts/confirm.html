@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html data-gift-theme="{{themeId}}">
+<head>
+    <title>{{emoji}} Confirm Gift Claim {{emoji}}</title>
+    {{head}}
+</head>
+<body class="gift-page-card">
+<div class="gift-card confirm-container">
+    <div class="festive-banner">{{banner}}</div>
+    <div class="card-icon bounce">{{emoji}}</div>
+    <h1>Confirm Gift Claim</h1>
+    <p>You're about to claim the following gift:</p>
+    <div class="details">
+        <p><strong>🎫 Gift ID:</strong> {{giftId}}</p>
+        <p><strong>💰 Amount to be Credited:</strong> {{amount}}</p>
+        <p><strong>👤 Claiming as:</strong> {{claimant}}</p>
+        <p><span class="theme-badge">🎨 {{themeName}}</span></p>
+    </div>
+    <p>Are you sure you want to claim this gift? This action cannot be undone.</p>
+    <p class="muted-text"><em>
+        By claiming, you agree to the
+        <a href="/LICENSE.html" target="_blank" rel="noopener" class="inline-link">Cognotik Software License Agreement</a>.
+        Credits are non-refundable and have no cash value.
+    </em></p>
+    <div class="button-row">
+        <a class="button" href="{{confirmUrl}}">{{emoji}} Yes, Claim It!</a>
+        <a class="button muted" href="{{cancelUrl}}">✖ Cancel</a>
+    </div>
+    <div class="festive-banner">{{banner}}</div>
+    {{appearanceSelector}}
+</div>
+</body>
+</html>
