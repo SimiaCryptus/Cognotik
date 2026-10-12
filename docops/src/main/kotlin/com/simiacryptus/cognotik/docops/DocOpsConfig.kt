@@ -1,6 +1,8 @@
 package com.simiacryptus.cognotik.docops
 
 import com.simiacryptus.cognotik.docops.model.DocSpec
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
 import java.io.File
 import java.time.Duration
 
@@ -18,4 +20,6 @@ class DocOpsConfig(
   val overallTimeoutMinutes: Long = 90,
   val maxPlanningDepth: Int = 10,
   val markdownExtensions: Set<String> = setOf("md", "markdown"),
+  var parentSession: Session? = null,
+  var user: User? = null,
 )

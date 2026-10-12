@@ -233,7 +233,19 @@ open class DocProcessorServlet() : HttpServlet() {
       /* Read-only mounts refuse anything past this point. */
       if (!isMutationAllowed(request, response)) return
 
-      val docRequest = buildRequest(request, user, root, docFile)
+      val docRequest = buildRequest(request, user, root, docFile).let { built ->
+        if (built.session != null) built
+        else {
+          // Subclasses may override resolveSession/buildRequest and drop the session;
+          // never lose a sessionId the caller explicitly supplied.
+          val fallback = requestSession(request)
+          if (fallback != null) {
+            log.info("buildRequest produced no parent session; falling back to request sessionId=$fallback")
+            built.copy(session = fallback)
+          } else built
+        }
+      }
+
       val processor = newProcessor(docRequest)
       if (processor.docOps.loader.load(docFile) == null) {
         log.info("No valid frontmatter found in document '$docPath'")
@@ -249,7 +261,7 @@ open class DocProcessorServlet() : HttpServlet() {
         "DocOps request: root=${root.absolutePath}, doc=$docPath, targets=${docRequest.targets}, " +
             "mode=${docRequest.updateMode}, smartModel=${models.smart.modelId}, fastModel=${models.fast.modelId}, " +
             "imageModel=${models.image.modelId}, audioModel=${models.audio.modelId}, " +
-            "templateVars=${docRequest.templateVars.keys}"
+            "templateVars=${docRequest.templateVars.keys}, parentSession=${docRequest.session}"
       )
       val tasksToRun = plan(docRequest, processor)
       if (tasksToRun.isEmpty) {
@@ -330,8 +342,21 @@ open class DocProcessorServlet() : HttpServlet() {
   }
 
   /** Session the request belongs to, if any (used as the parent of new sessions). */
-  protected open fun resolveSession(request: HttpServletRequest): Session? =
-    request.getParameter("sessionId")?.takeIf { it.isNotBlank() }?.let { Session(it) }
+  protected open fun resolveSession(request: HttpServletRequest): Session? {
+    val session = requestSession(request)
+    if (session != null) log.info("Resolved sessionId from request: $session")
+    else log.warn("No sessionId parameter found in request; new sessions will be root sessions")
+    return session
+  }
+  /**
+   * The session explicitly named by the request (`sessionId`, or `session` as an alias).
+   * Not overridable: used as the fallback when a subclass's [resolveSession] returns null.
+   */
+  protected fun requestSession(request: HttpServletRequest): Session? =
+    (request.getParameter("sessionId")?.trim()?.ifBlank { null }
+      ?: request.getParameter("session")?.trim()?.ifBlank { null })
+      ?.let { Session(it) }
+
 
   protected open fun resolveDocsFolder(request: HttpServletRequest, root: File): File = root
 
@@ -355,9 +380,9 @@ open class DocProcessorServlet() : HttpServlet() {
     val sessionOwner = metadataDB.getSessionOwner(session = session, user=user)
     when {
       null == sessionOwner -> {
-        log.info("Session '$session' not found in metadataDB")
-        writeError(response, HttpServletResponse.SC_NOT_FOUND, "Session not found: $session")
-        return null
+        log.info("Session '$session' not found in metadataDB... assuming new session for user '${user.id}'")
+        metadataDB.setSessionOwner(session = session, user=user)
+        return sessionDir
       }
 
       sessionOwner != user.id -> {

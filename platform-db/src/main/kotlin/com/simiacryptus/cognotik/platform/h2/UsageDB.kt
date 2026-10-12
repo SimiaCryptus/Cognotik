@@ -19,7 +19,9 @@ import org.jetbrains.exposed.v1.core.and
 import org.jetbrains.exposed.v1.core.eq
 import org.jetbrains.exposed.v1.core.greaterEq
 import org.jetbrains.exposed.v1.core.inList
+import org.jetbrains.exposed.v1.core.isNotNull
 import org.jetbrains.exposed.v1.core.less
+import org.jetbrains.exposed.v1.core.or
 import org.jetbrains.exposed.v1.core.plus
 import org.jetbrains.exposed.v1.javatime.date
 import org.jetbrains.exposed.v1.javatime.timestamp
@@ -30,14 +32,20 @@ import org.jetbrains.exposed.v1.jdbc.insert
 import org.jetbrains.exposed.v1.jdbc.insertIgnore
 import org.jetbrains.exposed.v1.jdbc.selectAll
 import org.jetbrains.exposed.v1.jdbc.select
+import org.jetbrains.exposed.v1.jdbc.transactions.TransactionManager
+import org.jetbrains.exposed.v1.jdbc.transactions.inTopLevelTransaction
 import org.jetbrains.exposed.v1.jdbc.transactions.transaction
 import org.jetbrains.exposed.v1.jdbc.update
 import org.slf4j.LoggerFactory
+import java.io.ByteArrayOutputStream
 import java.time.Instant
 import java.time.LocalDate
 import java.time.ZoneOffset
 import java.util.concurrent.ConcurrentHashMap
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicLong
+import java.util.zip.GZIPInputStream
+import java.util.zip.GZIPOutputStream
 import kotlin.let
 
 class UsageDB : UsageInterface {
@@ -51,8 +59,6 @@ class UsageDB : UsageInterface {
     val completionTokens = long("completion_tokens").nullable()
     val cost = double("cost").nullable()
     val datetime = timestamp("datetime").nullable()
-    val inputText = text("input_text", eagerLoading = true).nullable()
-    val outputText = text("output_text", eagerLoading = true).nullable()
     override val primaryKey = PrimaryKey(id)
   }
 
@@ -62,6 +68,33 @@ class UsageDB : UsageInterface {
     val tokenCount = long("token_count")
     override val primaryKey = PrimaryKey(usageId, tokenType)
   }
+   /**
+    * Optional captured prompt/response payloads, stored separately from the
+    * accounting row so that the hot `usage` table stays narrow. Only written
+    * when the user has opted into session data collection. Blobs are
+    * compressed according to [encoding] (currently always "gzip").
+     *
+     * Declared as `binary` (BYTEA / VARBINARY) rather than `blob`: the embedded
+     * H2 server runs in PostgreSQL compatibility mode, which rejects `BLOB`.
+    */
+   object UsagePayloadTable : Table("usage_payload") {
+     val usageId = long("usage_id")
+     val encoding = varchar("encoding", 16).default(PAYLOAD_ENCODING_GZIP)
+      val inputData = binary("input_data").nullable()
+      val outputData = binary("output_data").nullable()
+     val inputChars = integer("input_chars").nullable()
+     val outputChars = integer("output_chars").nullable()
+     override val primaryKey = PrimaryKey(usageId)
+   }
+   /**
+    * View of the legacy inline text columns on `usage`; used only to migrate
+    * existing data into [UsagePayloadTable]. Never registered for schema creation.
+    */
+   private object LegacyUsageTextTable : Table("usage") {
+     val id = long("id")
+     val inputText = text("input_text", eagerLoading = true).nullable()
+     val outputText = text("output_text", eagerLoading = true).nullable()
+   }
 
   object SessionParentsTable : Table("session_parents") {
     val childSessionId = varchar("child_session_id", 255)
@@ -96,6 +129,93 @@ class UsageDB : UsageInterface {
   }
 
   private val database: Database get() = ExposedDatabase.get(facet)
+
+  /**
+   * Runs [block] in an independent, top-level transaction that is committed
+   * on return. A plain `transaction(database)` silently joins any transaction
+   * already bound to the current thread (Exposed's default
+   * useNestedTransactions=false), in which case the write is only committed
+   * when (and if) that outer transaction commits. Writes to usage/budget data
+   * must never depend on an unrelated outer transaction.
+   */
+  private fun <T> writeTransaction(op: String, block: () -> T): T {
+    val outer = TransactionManager.currentOrNull()
+    if (outer != null) {
+      log.warn(
+        "UsageDB.{} invoked while thread '{}' already has an open transaction (db={}); " +
+            "using an independent top-level transaction so the write is committed",
+        op, Thread.currentThread().name, outer.db.url
+      )
+    }
+    return inTopLevelTransaction(db = database) { block() }
+  }
+   private val legacyTextMigrated = AtomicBoolean(false)
+   private val legacyTextMigrationLock = Any()
+   /**
+    * One-time (per instance) migration of legacy inline `usage.input_text` /
+    * `usage.output_text` data into compressed [UsagePayloadTable] rows, after
+    * which the legacy columns are dropped. Safe to call repeatedly; must NOT be
+    * called from inside an open transaction.
+    */
+   private fun ensureLegacyTextMigrated() {
+     if (legacyTextMigrated.get()) return
+     synchronized(legacyTextMigrationLock) {
+       if (legacyTextMigrated.get()) return
+       try {
+         migrateLegacyText()
+       } catch (e: Exception) {
+         log.warn("UsageDB: legacy input/output text migration failed; will retry on next start", e)
+       } finally {
+         legacyTextMigrated.set(true)
+       }
+     }
+   }
+   private fun migrateLegacyText() {
+     val present = transaction(database) { legacyTextColumnsPresent() }
+     if (!present) return
+     log.info("UsageDB: migrating legacy usage.input_text/output_text into compressed usage_payload")
+     var total = 0
+     while (true) {
+       val moved = writeTransaction("migrateLegacyText") {
+         val batch = LegacyUsageTextTable
+           .select(LegacyUsageTextTable.id, LegacyUsageTextTable.inputText, LegacyUsageTextTable.outputText)
+           .where { LegacyUsageTextTable.inputText.isNotNull() or LegacyUsageTextTable.outputText.isNotNull() }
+           .orderBy(LegacyUsageTextTable.id to SortOrder.ASC)
+           .limit(LEGACY_MIGRATION_BATCH)
+           .toList()
+         for (row in batch) {
+           val id = row[LegacyUsageTextTable.id]
+           savePayload(id, row[LegacyUsageTextTable.inputText], row[LegacyUsageTextTable.outputText])
+           LegacyUsageTextTable.update({ LegacyUsageTextTable.id eq id }) {
+             it[LegacyUsageTextTable.inputText] = null
+             it[LegacyUsageTextTable.outputText] = null
+           }
+         }
+         batch.size
+       }
+       total += moved
+       if (moved < LEGACY_MIGRATION_BATCH) break
+     }
+     writeTransaction("dropLegacyTextColumns") {
+       val tx = TransactionManager.current()
+       tx.exec("ALTER TABLE usage DROP COLUMN IF EXISTS input_text")
+       tx.exec("ALTER TABLE usage DROP COLUMN IF EXISTS output_text")
+     }
+     log.info("UsageDB: migrated {} legacy usage text row(s) and dropped inline text columns", total)
+   }
+   /** Must be invoked inside a transaction. */
+   private fun legacyTextColumnsPresent(): Boolean = try {
+     TransactionManager.current().exec(
+       "SELECT COUNT(*) FROM information_schema.columns " +
+           "WHERE LOWER(table_name) = 'usage' " +
+           "AND LOWER(column_name) IN ('input_text', 'output_text') " +
+           "AND LOWER(table_schema) = LOWER(CURRENT_SCHEMA)"
+     ) { rs -> if (rs.next()) rs.getLong(1) > 0 else false } ?: false
+   } catch (e: Exception) {
+     log.debug("UsageDB: unable to detect legacy text columns", e)
+     false
+   }
+
   val userSettingsManager by lazy {
     ServiceRouter as UserSettingsInterface
   }
@@ -132,25 +252,25 @@ class UsageDB : UsageInterface {
 
   /**
    * Invalidate the cached usage summary for [sessionId] and every ancestor.
-    * Must be invoked inside a transaction (it consults SessionParentsTable).
-    * Walks the ancestry level-by-level with one bulk query per level.
+   * Must be invoked inside a transaction (it consults SessionParentsTable).
+   * Walks the ancestry level-by-level with one bulk query per level.
    */
   private fun invalidateSessionAndAncestors(sessionId: String) {
-     val toInvalidate = linkedSetOf(sessionId)
-     var frontier = listOf(sessionId)
-     while (frontier.isNotEmpty()) {
-       val next = mutableListOf<String>()
-       frontier.chunked(IN_LIST_CHUNK).forEach { chunk ->
-         SessionParentsTable
-           .select(SessionParentsTable.parentSessionId)
-           .where { SessionParentsTable.childSessionId inList chunk }
-           .forEach { row ->
-             val parentId = row[SessionParentsTable.parentSessionId]
-             if (toInvalidate.add(parentId)) next.add(parentId)
-           }
-       }
-       frontier = next
-     }
+    val toInvalidate = linkedSetOf(sessionId)
+    var frontier = listOf(sessionId)
+    while (frontier.isNotEmpty()) {
+      val next = mutableListOf<String>()
+      frontier.chunked(IN_LIST_CHUNK).forEach { chunk ->
+        SessionParentsTable
+          .select(SessionParentsTable.parentSessionId)
+          .where { SessionParentsTable.childSessionId inList chunk }
+          .forEach { row ->
+            val parentId = row[SessionParentsTable.parentSessionId]
+            if (toInvalidate.add(parentId)) next.add(parentId)
+          }
+      }
+      frontier = next
+    }
     for (sid in toInvalidate) sessionUsageCache.remove(sid)
   }
 
@@ -180,8 +300,8 @@ class UsageDB : UsageInterface {
       val day = LocalDate.ofInstant(now, ZoneOffset.UTC)
       val usageValues = UsageInterface.UsageValues()
       usageValues.addAndGet(usage, cost)
-      transaction(database) {
-        saveUsageValues(
+      val (insertedId, writtenSchema) = writeTransaction("incrementUsage") {
+        val id = saveUsageValues(
           usageKey = usageKey,
           usageValues = usageValues,
           ts = now,
@@ -195,15 +315,56 @@ class UsageDB : UsageInterface {
         // Invalidate cached usage summaries for this session and any
         // ancestor session that aggregates over it.
         invalidateSessionAndAncestors(session.sessionId)
+        if (log.isDebugEnabled) {
+          val visible = UsageTable.select(UsageTable.id)
+            .where { UsageTable.id eq id }.count()
+          if (visible == 0L) {
+            log.warn("UsageDB: inserted usage id={} not visible within its own transaction", id)
+          }
+        }
+        id to currentSchemaOrNull()
       }
       log.debug(
-        "Usage incremented for session: {}, user: {}, model: {} (cost_scaling_factor={})",
-        session, user.id, model.modelId, cost_scaling_factor
+        "Usage committed id={} db={} table={}.usage for session: {}, user: {}, model: {} (cost_scaling_factor={})",
+        insertedId, database.url, writtenSchema, session, user.id, model.modelId, cost_scaling_factor
       )
+      if (log.isDebugEnabled) verifyCommitted(insertedId, session.sessionId)
     } catch (e: Exception) {
       log.error(
         "Error incrementing usage for session={}, user={}, model={}", session, user.id, model.modelId, e
       )
+    }
+  }
+
+  /**
+   * Diagnostic: re-read a just-committed usage row from an independent
+   * transaction (fresh connection) and log the physical database identity,
+   * so external tools can be pointed at exactly the same database.
+   */
+  private fun verifyCommitted(id: Long, sessionId: String) {
+    try {
+      inTopLevelTransaction(db = database) {
+        val tx = TransactionManager.current()
+        val visible = UsageTable.select(UsageTable.id).where { UsageTable.id eq id }.count()
+        val total = UsageTable.selectAll().count()
+        val maxId = tx.exec("SELECT MAX(id) FROM usage") { rs -> if (rs.next()) rs.getLong(1) else null }
+        val path = if (tx.db.url.startsWith("jdbc:h2:")) {
+          tx.exec("SELECT DATABASE_PATH()") { rs -> if (rs.next()) rs.getString(1) else null }
+        } else null
+        if (visible == 0L) {
+          log.warn(
+            "UsageDB: committed usage id={} (session={}) NOT visible from a new transaction; url={} path={} rows={} maxId={}",
+            id, sessionId, tx.db.url, path, total, maxId
+          )
+        } else {
+          log.debug(
+            "UsageDB: verified usage id={} (session={}) visible from new transaction; url={} path={} rows={} maxId={}",
+            id, sessionId, tx.db.url, path, total, maxId
+          )
+        }
+      }
+    } catch (e: Exception) {
+      log.debug("UsageDB: post-commit verification failed for id={}", id, e)
     }
   }
 
@@ -275,18 +436,22 @@ class UsageDB : UsageInterface {
         return@transaction emptyMap()
       }
       // Fetch usage rows for the relevant sessions.
-       val usageRows = allSessionIds.toList().chunked(IN_LIST_CHUNK).flatMap { chunk ->
-         UsageTable
-           .select(UsageTable.id, UsageTable.model, UsageTable.cost)
-           .where { UsageTable.sessionId inList chunk }
-           .map { row ->
-             Triple(
-               row[UsageTable.id],
-               row[UsageTable.model] ?: "",
-               row[UsageTable.cost] ?: 0.0
-             )
-           }
-       }
+      val usageRows = allSessionIds.toList().chunked(IN_LIST_CHUNK).flatMap { chunk ->
+        UsageTable
+          .select(UsageTable.id, UsageTable.model, UsageTable.cost)
+          .where { UsageTable.sessionId inList chunk }
+          .map { row ->
+            Triple(
+              row[UsageTable.id],
+              row[UsageTable.model] ?: "",
+              row[UsageTable.cost] ?: 0.0
+            )
+          }
+      }
+      log.debug(
+        "Session usage summary for {}: {} usage row(s) across {} session id(s) (db={})",
+        session.sessionId, usageRows.size, allSessionIds.size, database.url
+      )
       if (usageRows.isEmpty()) {
         sessionUsageCache[session.sessionId] =
           SessionUsageCacheEntry(emptyMap(), System.nanoTime())
@@ -295,12 +460,12 @@ class UsageDB : UsageInterface {
       val usageIds = usageRows.map { it.first }
       val usageById = usageRows.associateBy { it.first }
       // Fetch token rows for those usage ids.
-       val tokenRowsByUsageId = usageIds.chunked(IN_LIST_CHUNK).flatMap { chunk ->
-         UsageTokensTable
-           .selectAll()
-           .where { UsageTokensTable.usageId inList chunk }
-           .toList()
-       }.groupBy { it[UsageTokensTable.usageId] }
+      val tokenRowsByUsageId = usageIds.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+        UsageTokensTable
+          .selectAll()
+          .where { UsageTokensTable.usageId inList chunk }
+          .toList()
+      }.groupBy { it[UsageTokensTable.usageId] }
       // Aggregate per-model: token counts summed, cost summed (single source of truth per usage row).
       val counts = linkedMapOf<String, MutableMap<TokenTypes, Long>>()
       val costs = linkedMapOf<String, Double>()
@@ -373,26 +538,26 @@ class UsageDB : UsageInterface {
       // Intentionally does NOT recurse into descendant sessions — this is
       // the listing-page semantics (each row in the listing represents a
       // single session, not a subtree).
-       val usageRows = toLoad.map { it.sessionId }.chunked(IN_LIST_CHUNK).flatMap { chunk ->
-         UsageTable
-           .select(UsageTable.id, UsageTable.sessionId, UsageTable.model, UsageTable.cost)
-           .where { UsageTable.sessionId inList chunk }
-           .map { row ->
-             UsageRowSlim(
-               id = row[UsageTable.id],
-               sessionId = row[UsageTable.sessionId] ?: "",
-               model = row[UsageTable.model] ?: "",
-               cost = row[UsageTable.cost] ?: 0.0,
-             )
-           }
-       }
+      val usageRows = toLoad.map { it.sessionId }.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+        UsageTable
+          .select(UsageTable.id, UsageTable.sessionId, UsageTable.model, UsageTable.cost)
+          .where { UsageTable.sessionId inList chunk }
+          .map { row ->
+            UsageRowSlim(
+              id = row[UsageTable.id],
+              sessionId = row[UsageTable.sessionId] ?: "",
+              model = row[UsageTable.model] ?: "",
+              cost = row[UsageTable.cost] ?: 0.0,
+            )
+          }
+      }
       val tokenRowsByUsageId = if (usageRows.isEmpty()) emptyMap()
-       else usageRows.map { it.id }.chunked(IN_LIST_CHUNK).flatMap { chunk ->
-         UsageTokensTable
-           .selectAll()
-           .where { UsageTokensTable.usageId inList chunk }
-           .toList()
-       }.groupBy { it[UsageTokensTable.usageId] }
+      else usageRows.map { it.id }.chunked(IN_LIST_CHUNK).flatMap { chunk ->
+        UsageTokensTable
+          .selectAll()
+          .where { UsageTokensTable.usageId inList chunk }
+          .toList()
+      }.groupBy { it[UsageTokensTable.usageId] }
       // Per-session, per-model accumulators.
       val countsBySession = linkedMapOf<Session, LinkedHashMap<String, MutableMap<TokenTypes, Long>>>()
       val costsBySession = linkedMapOf<Session, LinkedHashMap<String, Double>>()
@@ -457,10 +622,11 @@ class UsageDB : UsageInterface {
   )
 
   override fun clear() {
-    log.warn("Clearing ALL usage data (usage, usage_tokens, usage_daily, session_parents, user_credits, user_budget)")
+     log.warn("Clearing ALL usage data (usage, usage_tokens, usage_payload, usage_daily, session_parents, user_credits, user_budget)")
     try {
-      transaction(database) {
+      writeTransaction("clear") {
         UsageTokensTable.deleteAll()
+         UsagePayloadTable.deleteAll()
         UsageTable.deleteAll()
         UsageDailyTable.deleteAll()
         SessionParentsTable.deleteAll()
@@ -477,7 +643,7 @@ class UsageDB : UsageInterface {
 
   override fun setParentSession(user: User, child: Session, parent: Session) {
     log.info("Setting parent session: child={}, parent={}", child.sessionId, parent.sessionId)
-    transaction(database) {
+    writeTransaction("setParentSession") {
       // insertIgnore translates to ON CONFLICT DO NOTHING / MERGE depending on dialect.
       SessionParentsTable.insertIgnore {
         it[childSessionId] = child.sessionId
@@ -490,8 +656,8 @@ class UsageDB : UsageInterface {
     }
   }
 
-    override fun getParentSession(user: User, child: Session): Session? {
-      log.debug("Getting parent session for child: {}", child.sessionId)
+  override fun getParentSession(user: User, child: Session): Session? {
+    log.debug("Getting parent session for child: {}", child.sessionId)
     return transaction(database) {
       val row = SessionParentsTable
         .selectAll()
@@ -508,99 +674,101 @@ class UsageDB : UsageInterface {
       }
     }
   }
-   /**
-    * Bulk parent lookup: one `WHERE child IN (...)` query per chunk.
-    * Every requested child is present in the result (null when it has no parent).
-    */
-   override fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> {
-     val distinct = children.toSet()
-     if (distinct.isEmpty()) return emptyMap()
-     val byId = distinct.associateBy { it.sessionId }
-     val out = LinkedHashMap<Session, Session?>()
-     distinct.forEach { out[it] = null }
-     transaction(database) {
-       byId.keys.toList().chunked(IN_LIST_CHUNK).forEach { chunk ->
-         SessionParentsTable
-           .selectAll()
-           .where { SessionParentsTable.childSessionId inList chunk }
-           .forEach { row ->
-             val child = byId[row[SessionParentsTable.childSessionId]] ?: return@forEach
-             if (out[child] != null) return@forEach
-             out[child] = Session.tryParse(row[SessionParentsTable.parentSessionId])
-           }
-       }
-     }
-     return out
-   }
-   override fun listChildSessions(user: User, parent: Session): List<Session> =
-     listChildSessionsBulk(user, listOf(parent))[parent].orEmpty()
-   /**
-    * Bulk child enumeration: one `WHERE parent IN (...)` query per chunk.
-    * Every requested parent is present in the result (empty list when childless).
-    * Malformed child ids are skipped rather than failing the whole call.
-    */
-   override fun listChildSessionsBulk(user: User, parents: Collection<Session>): Map<Session, List<Session>> {
-     val distinct = parents.toSet()
-     if (distinct.isEmpty()) return emptyMap()
-     val byId = distinct.associateBy { it.sessionId }
-     val out = LinkedHashMap<Session, MutableList<Session>>()
-     distinct.forEach { out[it] = mutableListOf() }
-     transaction(database) {
-       byId.keys.toList().chunked(IN_LIST_CHUNK).forEach { chunk ->
-         SessionParentsTable
-           .selectAll()
-           .where { SessionParentsTable.parentSessionId inList chunk }
-           .orderBy(SessionParentsTable.childSessionId to SortOrder.ASC)
-           .forEach { row ->
-             val parent = byId[row[SessionParentsTable.parentSessionId]] ?: return@forEach
-             val child = Session.tryParse(row[SessionParentsTable.childSessionId]) ?: return@forEach
-             out.getValue(parent).add(child)
-           }
-       }
-     }
-     return out
-   }
-   /**
-    * Time-based listing of a user's calls, independent of sessions (includes
-    * ad-hoc calls recorded under [Session.NULL]). Served by idx_usage_user_dt.
-    */
-   override fun getUserUsageRows(
-     user: User,
-     from: Instant,
-     to: Instant,
-     includeText: Boolean
-   ): List<UsageInterface.UsageRow> {
-     require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
-     if (user.id.isEmpty()) return emptyList()
-     log.debug("Getting user usage rows user={} from={} to={} includeText={}", user.id, from, to, includeText)
-     return transaction(database) {
-       val columns = mutableListOf<Expression<*>>(
-         UsageTable.id,
-         UsageTable.sessionId,
-         UsageTable.userId,
-         UsageTable.model,
-         UsageTable.promptTokens,
-         UsageTable.completionTokens,
-         UsageTable.cost,
-         UsageTable.datetime,
-       )
-       if (includeText) {
-         columns.add(UsageTable.inputText)
-         columns.add(UsageTable.outputText)
-       }
-       val rows = UsageTable
-         .select(columns)
-         .where {
-           (UsageTable.userId eq user.id) and
-               (UsageTable.datetime greaterEq from) and
-               (UsageTable.datetime less to)
-         }
-         .orderBy(UsageTable.datetime to SortOrder.ASC)
-         .orderBy(UsageTable.id to SortOrder.ASC)
-         .map { toUsageRow(it, includeText) }
-       attachTokenCounts(rows)
-     }
-   }
+
+  /**
+   * Bulk parent lookup: one `WHERE child IN (...)` query per chunk.
+   * Every requested child is present in the result (null when it has no parent).
+   */
+  override fun getParentSessions(user: User, children: Collection<Session>): Map<Session, Session?> {
+    val distinct = children.toSet()
+    if (distinct.isEmpty()) return emptyMap()
+    val byId = distinct.associateBy { it.sessionId }
+    val out = LinkedHashMap<Session, Session?>()
+    distinct.forEach { out[it] = null }
+    transaction(database) {
+      byId.keys.toList().chunked(IN_LIST_CHUNK).forEach { chunk ->
+        SessionParentsTable
+          .selectAll()
+          .where { SessionParentsTable.childSessionId inList chunk }
+          .forEach { row ->
+            val child = byId[row[SessionParentsTable.childSessionId]] ?: return@forEach
+            if (out[child] != null) return@forEach
+            out[child] = Session.tryParse(row[SessionParentsTable.parentSessionId])
+          }
+      }
+    }
+    return out
+  }
+
+  override fun listChildSessions(user: User, parent: Session): List<Session> =
+    listChildSessionsBulk(user, listOf(parent))[parent].orEmpty()
+
+  /**
+   * Bulk child enumeration: one `WHERE parent IN (...)` query per chunk.
+   * Every requested parent is present in the result (empty list when childless).
+   * Malformed child ids are skipped rather than failing the whole call.
+   */
+  override fun listChildSessionsBulk(user: User, parents: Collection<Session>): Map<Session, List<Session>> {
+    val distinct = parents.toSet()
+    if (distinct.isEmpty()) return emptyMap()
+    val byId = distinct.associateBy { it.sessionId }
+    val out = LinkedHashMap<Session, MutableList<Session>>()
+    distinct.forEach { out[it] = mutableListOf() }
+    transaction(database) {
+      byId.keys.toList().chunked(IN_LIST_CHUNK).forEach { chunk ->
+        SessionParentsTable
+          .selectAll()
+          .where { SessionParentsTable.parentSessionId inList chunk }
+          .orderBy(SessionParentsTable.childSessionId to SortOrder.ASC)
+          .forEach { row ->
+            val parent = byId[row[SessionParentsTable.parentSessionId]] ?: return@forEach
+            val child = Session.tryParse(row[SessionParentsTable.childSessionId]) ?: return@forEach
+            out.getValue(parent).add(child)
+          }
+      }
+    }
+    return out
+  }
+
+  /**
+   * Time-based listing of a user's calls, independent of sessions (includes
+   * ad-hoc calls recorded under [Session.NULL]). Served by idx_usage_user_dt.
+   */
+  override fun getUserUsageRows(
+    user: User,
+    from: Instant,
+    to: Instant,
+    includeText: Boolean
+  ): List<UsageInterface.UsageRow> {
+    require(!to.isBefore(from)) { "'to' must be on or after 'from'" }
+    if (user.id.isEmpty()) return emptyList()
+    log.debug("Getting user usage rows user={} from={} to={} includeText={}", user.id, from, to, includeText)
+     if (includeText) ensureLegacyTextMigrated()
+    return transaction(database) {
+       val columns = listOf<Expression<*>>(
+        UsageTable.id,
+        UsageTable.sessionId,
+        UsageTable.userId,
+        UsageTable.model,
+        UsageTable.promptTokens,
+        UsageTable.completionTokens,
+        UsageTable.cost,
+        UsageTable.datetime,
+      )
+      val rows = UsageTable
+        .select(columns)
+        .where {
+          (UsageTable.userId eq user.id) and
+              (UsageTable.datetime greaterEq from) and
+              (UsageTable.datetime less to)
+        }
+        .orderBy(UsageTable.datetime to SortOrder.ASC)
+        .orderBy(UsageTable.id to SortOrder.ASC)
+         .map { toUsageRow(it) }
+       val withTokens = attachTokenCounts(rows)
+       if (includeText) attachPayloads(withTokens) else withTokens
+    }
+  }
 
 
   override fun getAvailableBudget(user: User): Double {
@@ -621,7 +789,7 @@ class UsageDB : UsageInterface {
     require(user.id.isNotEmpty()) { "User id is required for crediting" }
     log.info("Crediting user {} amount={} comment='{}'", user.id, amount, comment)
     try {
-      transaction(database) {
+      writeTransaction("creditUser") {
         UserCreditsTable.insert {
           it[userId] = user.id
           it[UserCreditsTable.amount] = amount
@@ -738,79 +906,101 @@ class UsageDB : UsageInterface {
 
   override fun getSessionUsageRows(session: Session, user: User): List<UsageInterface.UsageRow> {
 //    log.debug("Getting session usage rows for session: {}", session)
+     ensureLegacyTextMigrated()
     return transaction(database) {
       val allSessionIds = collectSessionIds(session.sessionId)
       if (allSessionIds.isEmpty()) return@transaction emptyList()
-       val rows = allSessionIds.toList().chunked(IN_LIST_CHUNK).flatMap { chunk ->
-         UsageTable
-           .selectAll()
-           .where { UsageTable.sessionId inList chunk }
-           .map { toUsageRow(it, includeText = true) }
-       }.sortedWith(
-         compareBy<UsageInterface.UsageRow, Instant?>(nullsFirst()) { it.datetime }.thenBy { it.id }
-       )
-       attachTokenCounts(rows)
+      val rows = allSessionIds.toList().chunked(IN_LIST_CHUNK).flatMap { chunk ->
+        UsageTable
+          .selectAll()
+          .where { UsageTable.sessionId inList chunk }
+           .map { toUsageRow(it) }
+      }.sortedWith(
+        compareBy<UsageInterface.UsageRow, Instant?>(nullsFirst()) { it.datetime }.thenBy { it.id }
+      )
+       attachPayloads(attachTokenCounts(rows))
     }
   }
-   /** Maps a usage row; text columns are read only when they were selected. */
-   private fun toUsageRow(row: org.jetbrains.exposed.v1.core.ResultRow, includeText: Boolean): UsageInterface.UsageRow {
-     // Legacy fallback for rows predating usage_tokens; replaced by attachTokenCounts when present.
-     val legacy = LinkedHashMap<TokenTypes, Long>()
-     row[UsageTable.promptTokens]?.takeIf { it != 0L }?.let { legacy[TokenTypes.Prompt] = it }
-     row[UsageTable.completionTokens]?.takeIf { it != 0L }?.let { legacy[TokenTypes.Completion] = it }
-     return UsageInterface.UsageRow(
-       id = row[UsageTable.id],
-       sessionId = row[UsageTable.sessionId],
-       userId = row[UsageTable.userId],
-       model = row[UsageTable.model],
-       datetime = row[UsageTable.datetime],
-       tokenCounts = legacy,
-       cost = row[UsageTable.cost] ?: 0.0,
-       inputText = if (includeText) row[UsageTable.inputText] else null,
-       outputText = if (includeText) row[UsageTable.outputText] else null,
-     )
-   }
-   /** Fills per-type token counts with chunked bulk lookups. Must be invoked inside a transaction. */
-   private fun attachTokenCounts(rows: List<UsageInterface.UsageRow>): List<UsageInterface.UsageRow> {
+
+   /** Maps a usage row; captured text lives in [UsagePayloadTable] and is attached via [attachPayloads]. */
+   private fun toUsageRow(row: org.jetbrains.exposed.v1.core.ResultRow): UsageInterface.UsageRow {
+    // Legacy fallback for rows predating usage_tokens; replaced by attachTokenCounts when present.
+    val legacy = LinkedHashMap<TokenTypes, Long>()
+    row[UsageTable.promptTokens]?.takeIf { it != 0L }?.let { legacy[TokenTypes.Prompt] = it }
+    row[UsageTable.completionTokens]?.takeIf { it != 0L }?.let { legacy[TokenTypes.Completion] = it }
+    return UsageInterface.UsageRow(
+      id = row[UsageTable.id],
+      sessionId = row[UsageTable.sessionId],
+      userId = row[UsageTable.userId],
+      model = row[UsageTable.model],
+      datetime = row[UsageTable.datetime],
+      tokenCounts = legacy,
+      cost = row[UsageTable.cost] ?: 0.0,
+       inputText = null,
+       outputText = null,
+    )
+  }
+   /** Fills captured input/output text from [UsagePayloadTable]. Must be invoked inside a transaction. */
+   private fun attachPayloads(rows: List<UsageInterface.UsageRow>): List<UsageInterface.UsageRow> {
      if (rows.isEmpty()) return rows
-     val tokensById = HashMap<Long, MutableMap<TokenTypes, Long>>()
+     val byId = HashMap<Long, Pair<String?, String?>>()
      rows.map { it.id }.chunked(IN_LIST_CHUNK).forEach { chunk ->
-       UsageTokensTable
+       UsagePayloadTable
          .selectAll()
-         .where { UsageTokensTable.usageId inList chunk }
-         .forEach { tr ->
-           val parsed = runCatching { TokenTypes.valueOf(tr[UsageTokensTable.tokenType]) }.getOrNull()
-             ?: return@forEach
-           val count = tr[UsageTokensTable.tokenCount]
-           if (count == 0L) return@forEach
-           tokensById.getOrPut(tr[UsageTokensTable.usageId]) { mutableMapOf() }
-             .merge(parsed, count) { a, b -> a + b }
+         .where { UsagePayloadTable.usageId inList chunk }
+         .forEach { pr ->
+           val id = pr[UsagePayloadTable.usageId]
+           val enc = pr[UsagePayloadTable.encoding]
+            byId[id] = decodePayload(pr[UsagePayloadTable.inputData], enc, id) to
+                decodePayload(pr[UsagePayloadTable.outputData], enc, id)
          }
      }
-     return rows.map { r -> tokensById[r.id]?.let { r.copy(tokenCounts = it.toMap()) } ?: r }
+     return rows.map { r ->
+       byId[r.id]?.let { (input, output) -> r.copy(inputText = input, outputText = output) } ?: r
+     }
    }
+
+  /** Fills per-type token counts with chunked bulk lookups. Must be invoked inside a transaction. */
+  private fun attachTokenCounts(rows: List<UsageInterface.UsageRow>): List<UsageInterface.UsageRow> {
+    if (rows.isEmpty()) return rows
+    val tokensById = HashMap<Long, MutableMap<TokenTypes, Long>>()
+    rows.map { it.id }.chunked(IN_LIST_CHUNK).forEach { chunk ->
+      UsageTokensTable
+        .selectAll()
+        .where { UsageTokensTable.usageId inList chunk }
+        .forEach { tr ->
+          val parsed = runCatching { TokenTypes.valueOf(tr[UsageTokensTable.tokenType]) }.getOrNull()
+            ?: return@forEach
+          val count = tr[UsageTokensTable.tokenCount]
+          if (count == 0L) return@forEach
+          tokensById.getOrPut(tr[UsageTokensTable.usageId]) { mutableMapOf() }
+            .merge(parsed, count) { a, b -> a + b }
+        }
+    }
+    return rows.map { r -> tokensById[r.id]?.let { r.copy(tokenCounts = it.toMap()) } ?: r }
+  }
 
 
   /**
-    * Collect the session and all descendant session IDs, level-by-level with one
-    * bulk query per tree level. Must be invoked inside a transaction.
+   * Collect the session and all descendant session IDs, level-by-level with one
+   * bulk query per tree level. Must be invoked inside a transaction.
    */
   private fun collectSessionIds(sessionId: String): Set<String> {
-     val visited = linkedSetOf(sessionId)
-     var frontier = listOf(sessionId)
-     while (frontier.isNotEmpty()) {
-       val next = mutableListOf<String>()
-       frontier.chunked(IN_LIST_CHUNK).forEach { chunk ->
-         SessionParentsTable
-           .select(SessionParentsTable.childSessionId)
-           .where { SessionParentsTable.parentSessionId inList chunk }
-           .forEach { row ->
-             val childId = row[SessionParentsTable.childSessionId]
-             if (visited.add(childId)) next.add(childId)
-           }
-       }
-       frontier = next
-     }
+    val visited = linkedSetOf(sessionId)
+    var frontier = listOf(sessionId)
+    while (frontier.isNotEmpty()) {
+      val next = mutableListOf<String>()
+      frontier.chunked(IN_LIST_CHUNK).forEach { chunk ->
+        SessionParentsTable
+          .select(SessionParentsTable.childSessionId)
+          .where { SessionParentsTable.parentSessionId inList chunk }
+          .forEach { row ->
+            val childId = row[SessionParentsTable.childSessionId]
+            if (visited.add(childId)) next.add(childId)
+          }
+      }
+      frontier = next
+    }
     return visited
   }
 
@@ -820,7 +1010,7 @@ class UsageDB : UsageInterface {
     ts: Instant,
     inputText: String? = null,
     outputText: String? = null
-  ) {
+  ): Long {
     log.debug(
       "Saving usage values for session: {}, user: {}, model: {}",
       usageKey.session,
@@ -840,8 +1030,6 @@ class UsageDB : UsageInterface {
       it[completionTokens] = completionTotal
       it[cost] = usageValues.cost.get()
       it[datetime] = ts
-      it[UsageTable.inputText] = if (inputText != null) truncateForClob(inputText) else null
-      it[UsageTable.outputText] = if (outputText != null) truncateForClob(outputText) else null
     }
     val insertedId: Long = insertStatement[UsageTable.id]
     if (tokenSnapshots.isNotEmpty()) {
@@ -851,7 +1039,45 @@ class UsageDB : UsageInterface {
         this[UsageTokensTable.tokenCount] = count
       }
     }
+     savePayload(insertedId, inputText, outputText)
+    return insertedId
   }
+   /**
+    * Persist captured text for [usageId] as compressed blobs. No-op when both
+    * texts are null. Must be invoked inside a transaction.
+    */
+   private fun savePayload(usageId: Long, inputText: String?, outputText: String?) {
+     if (inputText == null && outputText == null) return
+     val input = inputText?.let { truncateForClob(it) }
+     val output = outputText?.let { truncateForClob(it) }
+     UsagePayloadTable.insertIgnore {
+       it[UsagePayloadTable.usageId] = usageId
+       it[UsagePayloadTable.encoding] = PAYLOAD_ENCODING_GZIP
+        it[UsagePayloadTable.inputData] = input?.let { s -> gzip(s) }
+        it[UsagePayloadTable.outputData] = output?.let { s -> gzip(s) }
+       it[UsagePayloadTable.inputChars] = input?.length
+       it[UsagePayloadTable.outputChars] = output?.length
+     }
+   }
+   private fun gzip(text: String): ByteArray {
+     val bos = ByteArrayOutputStream()
+     GZIPOutputStream(bos).use { it.write(text.toByteArray(Charsets.UTF_8)) }
+     return bos.toByteArray()
+   }
+   private fun decodePayload(bytes: ByteArray?, encoding: String, usageId: Long): String? {
+     if (bytes == null) return null
+     return try {
+       when (encoding.lowercase()) {
+         PAYLOAD_ENCODING_GZIP -> GZIPInputStream(bytes.inputStream()).use { it.readBytes() }
+           .toString(Charsets.UTF_8)
+         "none", "identity" -> bytes.toString(Charsets.UTF_8)
+         else -> throw IllegalStateException("Unsupported payload encoding '$encoding'")
+       }
+     } catch (e: Exception) {
+       log.warn("Failed to decode usage payload for usage_id={} (encoding={})", usageId, encoding, e)
+       null
+     }
+   }
 
   private fun upsertDailyUsage(
     usageKey: UsageInterface.UsageKey, usageValues: UsageInterface.UsageValues, day: LocalDate
@@ -915,6 +1141,17 @@ class UsageDB : UsageInterface {
     }
   }
 
+  /** Returns the schema the current transaction resolves unqualified names against. */
+  private fun currentSchemaOrNull(): String? = try {
+    TransactionManager.current().exec("SELECT CURRENT_SCHEMA") { rs ->
+      if (rs.next()) rs.getString(1) else null
+    }
+  } catch (e: Exception) {
+    log.debug("Unable to determine current schema", e)
+    null
+  }
+
+
   /**
    * Truncate text for CLOB/TEXT storage to prevent runaway memory/storage usage.
    */
@@ -938,9 +1175,15 @@ class UsageDB : UsageInterface {
     init {
       CognotikPlatform.init()
     }
+
     private val log = LoggerFactory.getLogger(UsageDB::class.java)
-     /** Max ids per IN (...) list; keeps well below driver bind-parameter limits. */
-     private const val IN_LIST_CHUNK = 1000
+
+    /** Max ids per IN (...) list; keeps well below driver bind-parameter limits. */
+    private const val IN_LIST_CHUNK = 1000
+     /** Rows per transaction when migrating legacy inline text into usage_payload. */
+     private const val LEGACY_MIGRATION_BATCH = 500
+     /** Compression encoding for usage_payload blobs. */
+     const val PAYLOAD_ENCODING_GZIP = "gzip"
 
 
     var cost_scaling_factor: Double = 1.0
@@ -977,9 +1220,12 @@ class UsageDB : UsageInterface {
       DatabaseFacet(
         name = "usage",
         schema = { provider ->
-          val largeText = when (provider) {
-            "postgresql" -> "TEXT"
-            else -> "CLOB"
+            // The embedded H2 server runs with MODE=PostgreSQL, which rejects
+            // BLOB ("Unknown data type"). BYTEA is accepted by H2 in every mode
+            // and is the native PostgreSQL binary type.
+           val largeBinary = when (provider) {
+              "postgresql", "h2" -> "BYTEA"
+             else -> "BLOB"
           }
           listOf(
             """
@@ -991,9 +1237,7 @@ class UsageDB : UsageInterface {
                           prompt_tokens BIGINT,
                           completion_tokens BIGINT,
                           cost DOUBLE PRECISION,
-                          datetime TIMESTAMP,
-                           input_text $largeText,
-                           output_text $largeText
+                           datetime TIMESTAMP
                       )
                       """,
             "CREATE INDEX IF NOT EXISTS idx_usage_session ON usage(session_id)",
@@ -1005,8 +1249,18 @@ class UsageDB : UsageInterface {
             // Index supporting model-scoped aggregations and analytics that
             // group by model across users/sessions.
             "CREATE INDEX IF NOT EXISTS idx_usage_model ON usage(model)",
-            "ALTER TABLE usage ADD COLUMN IF NOT EXISTS input_text $largeText",
-            "ALTER TABLE usage ADD COLUMN IF NOT EXISTS output_text $largeText",
+             // Captured prompt/response text, compressed, kept out of the hot usage table.
+             // Legacy inline usage.input_text/output_text columns are migrated here at runtime.
+             """
+                       CREATE TABLE IF NOT EXISTS usage_payload (
+                           usage_id BIGINT PRIMARY KEY,
+                           encoding VARCHAR(16) DEFAULT 'gzip',
+                           input_data $largeBinary,
+                           output_data $largeBinary,
+                           input_chars INTEGER,
+                           output_chars INTEGER
+                       )
+                       """,
             """
                        CREATE TABLE IF NOT EXISTS usage_tokens (
                            usage_id BIGINT,
@@ -1068,6 +1322,7 @@ class UsageDB : UsageInterface {
         tables = listOf(
           UsageTable,
           UsageTokensTable,
+           UsagePayloadTable,
           SessionParentsTable,
           UsageDailyTable,
           UserCreditsTable,

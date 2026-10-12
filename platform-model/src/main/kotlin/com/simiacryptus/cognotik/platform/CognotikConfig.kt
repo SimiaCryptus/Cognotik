@@ -47,9 +47,21 @@ object CognotikConfig {
     email = "user@localhost"
   )
 
-  @JvmField
   @Volatile
-  var controllerEndpoint = "https://hosted.cognotik.com"
+  var controllerEndpoint: String = "https://hosted.cognotik.com"
+    get() {
+      require(field.isNotBlank()) { "Controller endpoint is not configured" }
+      return field
+    }
+    set(value) {
+      require(!isLocked) { "CognotikConfig is locked" }
+      require(value.isNotBlank()) { "Controller endpoint cannot be blank" }
+      log.info("Setting controller endpoint to {}", value)
+      field = value
+    }
+
+  val log = org.slf4j.LoggerFactory.getLogger(CognotikConfig::class.java)
+
 
 
   val defaultUser: User get() = localUser

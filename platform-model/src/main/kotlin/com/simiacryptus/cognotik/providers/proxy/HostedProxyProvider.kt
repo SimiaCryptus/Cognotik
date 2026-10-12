@@ -13,13 +13,9 @@ class HostedProxyProvider(
 ) : ProxyProvider("Cognotik", url, *upstreamProviderNames) {
   override val base: String get() = controllerEndpoint + "/api-proxy"
 
-  override fun getAuthCookies(key: SecureString): Map<String, String?> {
-    log.info("Providing auth cookies for key created by: \n\t{}", key.createdBy.joinToString("\n\t") { it.toString() },
-      RuntimeException("Stack trace for key creation"))
-    return mapOf(
-      AuthenticationInterface.AUTH_COOKIE to key.decrypt,
-    )
-  }
+  override fun getAuthCookies(key: SecureString) = mapOf(
+    AuthenticationInterface.AUTH_COOKIE to key.decrypt,
+  )
 
   companion object {
     private val log = LoggerFactory.getLogger(HostedProxyProvider::class.java)
