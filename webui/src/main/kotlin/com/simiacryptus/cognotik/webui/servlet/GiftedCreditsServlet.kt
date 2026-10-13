@@ -4,8 +4,11 @@ import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
 import com.simiacryptus.cognotik.platform.model.Claim
+import com.simiacryptus.cognotik.platform.model.Credits
 import com.simiacryptus.cognotik.platform.model.Gift
+import com.simiacryptus.cognotik.platform.model.GiftStatus
 import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.service.GiftedCreditsInterface
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -13,6 +16,7 @@ import org.slf4j.LoggerFactory
 import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
+import java.time.Instant
 import java.util.concurrent.ConcurrentHashMap
 
 /**
@@ -22,6 +26,14 @@ import java.util.concurrent.ConcurrentHashMap
  * Any GET that is not an API call or a known static asset is answered with the UI,
  * so legacy links such as `/gifts/?action=claim&giftId=...&theme=...` keep working
  * (the UI interprets the query string client-side).
+ *
+ * API:
+ *  - `GET  /api/session`, `GET /api/themes`
+ *  - `GET  /api/gifts[?mine=1]`, `GET /api/gifts/{id}`
+ *  - `GET  /api/claims[?giftId=&userId=]`
+ *  - `POST /api/gifts` – create (`description`, `message` optional)
+ *  - `POST /api/gifts/{id}/claim`
+ *  - `POST /api/gifts/{id}/cancel` – creator only; refunds unclaimed escrow
  */
 class GiftedCreditsServlet : HttpServlet() {
 
@@ -64,13 +76,15 @@ class GiftedCreditsServlet : HttpServlet() {
 
       seg == listOf("gifts") -> {
         if (user == null) return unauthorized(response)
-        sendJson(response, HttpServletResponse.SC_OK, manager.listGifts().map(::giftDto))
+        val mineOnly = truthy(request.getParameter("mine"))
+        val gifts = manager.listGifts().map(::withExtras).filter { !mineOnly || it.createdBy == user }
+        sendJson(response, HttpServletResponse.SC_OK, gifts.map { giftDto(it, user) })
       }
 
       seg.size == 2 && seg[0] == "gifts" -> {
-        val gift = manager.getGift(seg[1])
+        val gift = loadGift(seg[1])
           ?: return sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: ${seg[1]}")
-        sendJson(response, HttpServletResponse.SC_OK, if (user == null) publicGiftDto(gift) else giftDto(gift))
+        sendJson(response, HttpServletResponse.SC_OK, if (user == null) publicGiftDto(gift) else giftDto(gift, user))
       }
 
       seg == listOf("claims") -> {
@@ -92,6 +106,7 @@ class GiftedCreditsServlet : HttpServlet() {
     when {
       seg == listOf("gifts") -> createGift(user, readBody(request), response)
       seg.size == 3 && seg[0] == "gifts" && seg[2] == "claim" -> claimGift(user, seg[1], response)
+      seg.size == 3 && seg[0] == "gifts" && seg[2] == "cancel" -> cancelGift(user, seg[1], response)
       else -> sendError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown API endpoint")
     }
   }
@@ -113,55 +128,176 @@ class GiftedCreditsServlet : HttpServlet() {
     if (amountGranted <= 0 || grantDurationDays <= 0 || totalBudget <= 0) {
       return sendError(response, HttpServletResponse.SC_BAD_REQUEST, "Values must be positive")
     }
+    if (totalBudget < amountGranted) {
+      return sendError(response, HttpServletResponse.SC_BAD_REQUEST, "Total budget must be at least the amount granted")
+    }
+    val description = text(body["description"], MAX_DESCRIPTION, "Description")
+    val message = text(body["message"], MAX_MESSAGE, "Message")
+    val hasExtras = description != null || message != null
     val themeId = (body["theme"] as? String)?.takeIf { it.isNotBlank() }?.let { GiftThemes.byId(it).id }
     log.info(
-      "Creating gift by user={} amount={} duration={}d budget={} theme={}",
-      user, amountGranted, grantDurationDays, totalBudget, themeId
+      "Creating gift by user={} amount={} duration={}d budget={} theme={} hasDescription={} hasMessage={}",
+      user, amountGranted, grantDurationDays, totalBudget, themeId, description != null, message != null
     )
-    try {
+    val knownIds = if (hasExtras) manager.listGifts().map { it.id }.toSet() else emptySet()
+    val created: Any? = try {
       manager.createGift(
         user, amountGranted, Duration.ofMillis((grantDurationDays * 86400000).toLong()), totalBudget, themeId
       )
     } catch (e: IllegalArgumentException) {
       log.warn("Gift creation rejected for user={}: {}", user, e.message)
       return sendError(response, HttpServletResponse.SC_BAD_REQUEST, e.message ?: "Invalid gift parameters")
+    } catch (e: IllegalStateException) {
+      log.warn("Gift creation rejected for user={}: {}", user, e.message)
+      return sendError(response, HttpServletResponse.SC_BAD_REQUEST, e.message ?: "Unable to create gift")
     }
-    sendJson(response, HttpServletResponse.SC_CREATED, mapOf("created" to true, "balance" to balanceOf(user)))
+    val giftId = (created as? Gift)?.id
+      ?: manager.listGifts().filter { it.id !in knownIds && it.createdBy == user }.singleOrNull()?.id
+    if (hasExtras) {
+      if (giftId != null) {
+        extras.update(giftId) { it.copy(description = description, message = message) }
+      } else {
+        log.warn("Gift created by user={} but its id could not be determined; description/message not saved", user)
+      }
+    }
+    sendJson(
+      response, HttpServletResponse.SC_CREATED,
+      mapOf("created" to true, "giftId" to giftId, "balance" to balanceOf(user))
+    )
   }
 
   private fun claimGift(user: User, giftId: String, response: HttpServletResponse) {
-    val gift = manager.getGift(giftId)
-      ?: return sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: $giftId")
-    if (!manager.claimGift(user, giftId)) {
-      log.info("Claim failed (exhausted/already claimed) for user={} giftId={}", user, giftId)
-      return sendError(
-        response, HttpServletResponse.SC_CONFLICT,
-        "Failed to claim gift. It may be exhausted or already claimed."
+    if (manager.getGift(giftId) == null) {
+      return sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: $giftId")
+    }
+    withGiftLock(giftId) {
+      val gift = loadGift(giftId)
+        ?: return@withGiftLock sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: $giftId")
+      inactiveReason(gift)?.let { (status, reason) ->
+        log.info("Claim rejected ({}) for user={} giftId={}", status, user, giftId)
+        return@withGiftLock sendError(response, status, reason)
+      }
+      if (!manager.claimGift(user, giftId)) {
+        log.info("Claim failed (exhausted/already claimed) for user={} giftId={}", user, giftId)
+        return@withGiftLock sendError(
+          response, HttpServletResponse.SC_CONFLICT,
+          "Failed to claim gift. It may be exhausted or already claimed."
+        )
+      }
+      ServiceRouter.creditUser(user = user, amount = gift.amountGranted, comment = "Claimed gift $giftId")
+      log.info("Gift claimed by user={} giftId={} amount={}", user, giftId, gift.amountGranted)
+      sendJson(
+        response, HttpServletResponse.SC_OK, mapOf(
+          "giftId" to giftId,
+          "amountGranted" to gift.amountGranted,
+          "theme" to GiftThemes.byId(gift.theme).id,
+          "message" to gift.message,
+          "balance" to balanceOf(user)
+        )
       )
     }
-    ServiceRouter.creditUser(user = user, amount = gift.amountGranted, comment = "Claimed gift $giftId")
-    log.info("Gift claimed by user={} giftId={} amount={}", user, giftId, gift.amountGranted)
-    sendJson(
-      response, HttpServletResponse.SC_OK, mapOf(
-        "giftId" to giftId,
-        "amountGranted" to gift.amountGranted,
-        "theme" to GiftThemes.byId(gift.theme).id,
-        "balance" to balanceOf(user)
+  }
+
+  private fun cancelGift(user: User, giftId: String, response: HttpServletResponse) {
+    if (manager.getGift(giftId) == null) {
+      return sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: $giftId")
+    }
+    withGiftLock(giftId) {
+      val gift = loadGift(giftId)
+        ?: return@withGiftLock sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: $giftId")
+      val creator = gift.createdBy
+      if (creator == null || creator != user) {
+        log.warn("Cancel rejected: user={} is not the creator of giftId={}", user, giftId)
+        return@withGiftLock sendError(response, HttpServletResponse.SC_FORBIDDEN, "Only the creator of a gift can cancel it")
+      }
+      if (gift.isCancelled) {
+        return@withGiftLock sendError(response, HttpServletResponse.SC_CONFLICT, "This gift has already been cancelled")
+      }
+      if (gift.revoked) {
+        return@withGiftLock sendError(response, HttpServletResponse.SC_CONFLICT, "This gift has been revoked and cannot be cancelled")
+      }
+
+      val refund = gift.escrowCredits
+      val backend = (manager as Any) as? GiftedCreditsInterface
+      val delegated = try {
+        backend?.cancelGift(gift.giftId, user)
+      } catch (e: UnsupportedOperationException) {
+        null
+      }
+
+      val refunded: Credits = if (delegated != null) {
+        // Backend stopped claims and refunded atomically; just record it for display.
+        extras.markCancelled(giftId, delegated.cancelledAt, user.id, delegated.refunded.toDouble())
+        delegated.refunded
+      } else {
+        // Record the cancellation first so no claim can slip in, then refund the escrow.
+        extras.markCancelled(giftId, Instant.now(), user.id, 0.0)
+        try {
+          if (refund.isPositive) {
+            ServiceRouter.creditUser(
+              user = user, amount = refund.toDouble(), comment = "Refund of cancelled gift $giftId"
+            )
+          }
+        } catch (e: Exception) {
+          log.error("Refund failed for cancelled giftId={}; reverting cancellation", giftId, e)
+          extras.clearCancellation(giftId)
+          throw e
+        }
+        extras.setRefunded(giftId, refund.toDouble())
+        refund
+      }
+
+      log.info("Gift cancelled by user={} giftId={} refunded={}", user, giftId, refunded)
+      sendJson(
+        response, HttpServletResponse.SC_OK, mapOf(
+          "giftId" to giftId,
+          "cancelled" to true,
+          "refunded" to refunded.toDouble(),
+          "balance" to balanceOf(user),
+          "gift" to loadGift(giftId)?.let { giftDto(it, user) }
+        )
       )
-    )
+    }
   }
 
   /** Backward compatibility: `GET /gifts/` with `Accept: application/json`. */
   private fun legacyJson(request: HttpServletRequest, response: HttpServletResponse) {
-    if (authenticateOrNull(request) == null) return unauthorized(response)
+    val user = authenticateOrNull(request) ?: return unauthorized(response)
     if (request.getParameter("view") == "claims") {
       val giftId = request.getParameter("filterGiftId")?.takeIf { it.isNotBlank() }
       val userId = request.getParameter("filterUserId")?.takeIf { it.isNotBlank() }
       sendJson(response, HttpServletResponse.SC_OK, manager.listClaims(giftId, userId).map(::claimDto))
     } else {
-      sendJson(response, HttpServletResponse.SC_OK, manager.listGifts().map(::giftDto))
+      sendJson(response, HttpServletResponse.SC_OK, manager.listGifts().map(::withExtras).map { giftDto(it, user) })
     }
   }
+
+  // --------------------------------------------------------------- gifts
+
+  /** Overlays servlet-side extras (description, message, cancellation) onto a DB gift. */
+  private fun withExtras(gift: Gift): Gift {
+    val x = extras[gift.id] ?: return gift
+    return gift.copy(
+      description = gift.description ?: x.description,
+      message = gift.message ?: x.message,
+      cancelledAt = gift.cancelledAt ?: x.cancelledAt,
+      refundedBudget = if (gift.refundedBudget > 0) gift.refundedBudget else (x.refunded ?: 0.0)
+    )
+  }
+
+  private fun loadGift(id: String): Gift? = manager.getGift(id)?.let(::withExtras)
+
+  /** HTTP status + message explaining why a gift cannot be claimed, or null if it can. */
+  private fun inactiveReason(gift: Gift): Pair<Int, String>? = when (gift.status()) {
+    GiftStatus.CANCELLED -> HttpServletResponse.SC_GONE to "This gift has been cancelled by its creator."
+    GiftStatus.REVOKED -> HttpServletResponse.SC_GONE to "This gift has been revoked."
+    GiftStatus.EXPIRED -> HttpServletResponse.SC_GONE to "This gift has expired."
+    GiftStatus.EXHAUSTED -> HttpServletResponse.SC_CONFLICT to "This gift has been fully claimed."
+    GiftStatus.ACTIVE -> null
+  }
+
+  private inline fun <T> withGiftLock(giftId: String, block: () -> T): T =
+    synchronized(giftLocks.computeIfAbsent(giftId) { Any() }) { block() }
 
   // ----------------------------------------------------------------- DTOs
 
@@ -191,22 +327,40 @@ class GiftedCreditsServlet : HttpServlet() {
     }
   )
 
-  private fun giftDto(gift: Gift): Map<String, Any?> = linkedMapOf(
-    "id" to gift.id,
-    "amountGranted" to gift.amountGranted,
-    "grantDurationDays" to gift.grantDuration.toMillis() / 86400000.0,
-    "totalBudget" to gift.totalBudget,
-    "spentBudget" to gift.spentBudget,
-    "claimants" to gift.claimants.toString(),
-    "createdBy" to gift.createdBy,
-    "theme" to GiftThemes.byId(gift.theme).id
-  )
+  private fun giftDto(gift: Gift, viewer: User?): Map<String, Any?> {
+    val now = Instant.now()
+    val mine = viewer != null && gift.createdBy == viewer
+    return linkedMapOf(
+      "id" to gift.id,
+      "amountGranted" to gift.amountGranted,
+      "grantDurationDays" to gift.grantDuration.toMillis() / 86400000.0,
+      "totalBudget" to gift.totalBudget,
+      "spentBudget" to gift.spentBudget,
+      "claimants" to gift.claimants.toString(),
+      "claimCount" to gift.claimants,
+      "createdBy" to gift.createdBy?.name,
+      "theme" to GiftThemes.byId(gift.theme).id,
+      "status" to gift.status(now).wireName,
+      "deliveredCredits" to gift.deliveredCredits.toDouble(),
+      "escrowCredits" to gift.escrowCredits.toDouble(),
+      "refundedCredits" to gift.refundedBudgetCredits.toDouble(),
+      "remainingClaims" to gift.remainingClaims(now),
+      "expiresAt" to gift.expiresAt?.toString(),
+      "cancelledAt" to gift.cancelledAt?.toString(),
+      "message" to gift.message,
+      "description" to if (mine) gift.description else null,
+      "mine" to mine,
+      "canCancel" to (mine && gift.isCancelable())
+    )
+  }
 
   /** What an unauthenticated visitor holding a gift link may see. */
   private fun publicGiftDto(gift: Gift): Map<String, Any?> = linkedMapOf(
     "id" to gift.id,
     "amountGranted" to gift.amountGranted,
-    "theme" to GiftThemes.byId(gift.theme).id
+    "theme" to GiftThemes.byId(gift.theme).id,
+    "status" to gift.status().wireName,
+    "message" to gift.message
   )
 
   private fun claimDto(claim: Claim): Map<String, Any?> = linkedMapOf(
@@ -269,6 +423,13 @@ class GiftedCreditsServlet : HttpServlet() {
     else -> null
   }?.takeIf { it.isFinite() }
 
+  /** Optional free text: trimmed, null when blank; throws IllegalArgumentException (400) when too long. */
+  private fun text(v: Any?, max: Int, field: String): String? {
+    val s = (v as? String)?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+    require(s.length <= max) { "$field must be at most $max characters" }
+    return s
+  }
+
   private fun truthy(v: Any?): Boolean = when (v) {
     is Boolean -> v
     is Number -> v.toInt() == 1
@@ -308,7 +469,12 @@ class GiftedCreditsServlet : HttpServlet() {
   companion object {
     val log = LoggerFactory.getLogger(GiftedCreditsServlet::class.java)!!
     val manager = GiftedCreditsDB()
+    val extras: GiftExtrasStore by lazy { GiftExtrasStore.default() }
     private val mapper = ObjectMapper()
+    private val giftLocks = ConcurrentHashMap<String, Any>()
+
+    const val MAX_DESCRIPTION = 200
+    const val MAX_MESSAGE = 1000
 
     private const val RESOURCE_BASE = "/gifts/"
     private val STATIC_ASSETS = mapOf(

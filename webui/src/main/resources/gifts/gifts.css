@@ -691,3 +691,214 @@ html[data-scheme="dark"] .theme-badge {
     background: color-mix(in srgb, var(--color-brand) 25%, var(--color-surface));
     color: var(--color-text);
 }
+/* ------------------------------------------------- descriptions/messages */
+.form-container textarea {
+     display: block;
+     margin: 6px 0 10px;
+     padding: 10px 12px;
+     width: 100%;
+     max-width: 520px;
+     border: 2px solid #ddd;
+     border-radius: 8px;
+     font-family: var(--gift-font);
+     font-size: 14px;
+     resize: vertical;
+     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-container textarea:focus {
+     outline: none;
+     border-color: var(--gift-primary);
+     box-shadow: 0 0 0 3px var(--gift-accent-light);
+}
+.label-hint {
+     font-weight: 400;
+     font-size: 0.85em;
+     color: #888;
+}
+.gift-message {
+     margin: 20px 0;
+     padding: 16px 20px;
+     border-left: 5px solid var(--gift-primary);
+     border-radius: 10px;
+     background: var(--gift-card-accent);
+     text-align: left;
+}
+.gift-message-label {
+     display: block;
+     font-weight: 700;
+     font-size: 0.85em;
+     color: var(--gift-primary-dark);
+     margin-bottom: 6px;
+}
+.gift-message-text {
+     display: block;
+     white-space: pre-wrap;
+     font-style: italic;
+     font-size: 1.1em;
+     color: var(--gift-text);
+}
+/* ------------------------------------------------------- my-gift summary */
+.summary-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+     gap: 12px;
+     margin: 10px 0 15px;
+}
+.summary-tile {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+     padding: 14px 16px;
+     border-radius: 12px;
+     background: var(--gift-card-bg);
+     border: 2px solid var(--gift-accent-light);
+     border-top-width: 5px;
+}
+.summary-tile.tile-delivered { border-top-color: #43a047; }
+.summary-tile.tile-escrow { border-top-color: var(--gift-primary); }
+.summary-tile.tile-refunded { border-top-color: #90a4ae; }
+.summary-label {
+     font-size: 0.85em;
+     font-weight: 600;
+     color: var(--gift-primary-dark);
+}
+.summary-value {
+     font-size: 1.6em;
+     font-weight: 700;
+     color: var(--gift-text);
+}
+/* ------------------------------------------------------ gift status table */
+.table-scroll {
+     overflow-x: auto;
+     margin-bottom: 30px;
+}
+.table-scroll table { margin-bottom: 0; }
+.table-toolbar {
+     display: flex;
+     flex-wrap: wrap;
+     justify-content: space-between;
+     align-items: center;
+     gap: 10px;
+     margin: 10px 0;
+}
+.inline-check {
+     display: inline-flex;
+     align-items: center;
+     gap: 6px;
+     font-weight: 600;
+     color: var(--gift-primary-dark);
+     cursor: pointer;
+}
+.budget-legend {
+     font-size: 0.85em;
+     color: var(--gift-text);
+}
+.legend-swatch {
+     display: inline-block;
+     width: 12px;
+     height: 12px;
+     border-radius: 3px;
+     margin: 0 4px 0 10px;
+     vertical-align: middle;
+}
+.seg-delivered { background: #43a047; }
+.seg-escrow { background: var(--gift-primary); }
+.seg-refunded { background: #90a4ae; }
+.status-badge {
+     display: inline-block;
+     padding: 3px 10px;
+     border-radius: 12px;
+     font-size: 0.85em;
+     font-weight: 700;
+     white-space: nowrap;
+}
+.status-badge.status-active { background: #e8f5e9; color: #1b5e20; }
+.status-badge.status-exhausted { background: #eceff1; color: #37474f; }
+.status-badge.status-expired { background: #fff8e1; color: #8d6e00; }
+.status-badge.status-cancelled,
+.status-badge.status-revoked { background: #ffebee; color: #b71c1c; }
+.status-badge.status-unknown { background: #eee; color: #555; }
+.budget-bar {
+     display: flex;
+     min-width: 120px;
+     height: 8px;
+     margin-top: 8px;
+     border-radius: 4px;
+     overflow: hidden;
+     background: rgba(0, 0, 0, 0.08);
+}
+.budget-bar > span { display: block; height: 100%; }
+.status-detail {
+     display: block;
+     margin-top: 4px;
+     font-size: 0.8em;
+     color: #777;
+}
+.gift-cell > span { display: block; }
+.gift-desc {
+     font-weight: 600;
+     margin-top: 4px;
+     color: var(--gift-text);
+}
+.gift-msg-snippet {
+     max-width: 260px;
+     overflow: hidden;
+     text-overflow: ellipsis;
+     white-space: nowrap;
+     font-style: italic;
+     font-size: 0.85em;
+     color: #777;
+}
+.gift-theme-tag { font-size: 0.8em; color: #888; margin-top: 2px; }
+.gift-cell > .mine-tag {
+     display: inline-block;
+     margin-top: 4px;
+     padding: 1px 8px;
+     border-radius: 10px;
+     font-size: 0.75em;
+     font-weight: 700;
+     background: var(--gift-accent-light);
+     color: var(--gift-primary-dark);
+}
+tr.row-cancelled td,
+tr.row-revoked td,
+tr.row-expired td { opacity: 0.75; }
+td.num-escrow { font-weight: 700; color: var(--gift-primary-dark); }
+td.num-delivered { color: #2e7d32; font-weight: 600; }
+.actions-cell a {
+     display: block;
+     margin: 3px 0;
+     white-space: nowrap;
+}
+a.claim-link.danger-link { color: #c62828; }
+a.claim-link.danger-link:hover { color: #8e0000; }
+/* dark-scheme overlay for the additions */
+html[data-scheme="dark"] .gift-message,
+html[data-scheme="dark"] .summary-tile {
+     background: var(--color-surface);
+     border-color: var(--color-border);
+}
+html[data-scheme="dark"] .summary-tile.tile-delivered { border-top-color: #43a047; }
+html[data-scheme="dark"] .summary-tile.tile-escrow { border-top-color: var(--color-brand); }
+html[data-scheme="dark"] .summary-tile.tile-refunded { border-top-color: #90a4ae; }
+html[data-scheme="dark"] .gift-message-text,
+html[data-scheme="dark"] .summary-value,
+html[data-scheme="dark"] .summary-label,
+html[data-scheme="dark"] .gift-desc,
+html[data-scheme="dark"] .inline-check,
+html[data-scheme="dark"] .budget-legend,
+html[data-scheme="dark"] td.num-escrow {
+     color: var(--color-text);
+}
+html[data-scheme="dark"] .gift-msg-snippet,
+html[data-scheme="dark"] .status-detail,
+html[data-scheme="dark"] .gift-theme-tag,
+html[data-scheme="dark"] .label-hint {
+     color: var(--color-text-muted);
+}
+html[data-scheme="dark"] .form-container textarea {
+     background: var(--color-surface);
+     color: var(--color-text);
+     border-color: var(--color-border-strong);
+}
+html[data-scheme="dark"] .budget-bar { background: var(--color-surface-alt); }

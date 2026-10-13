@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.ClaimResult
 import com.simiacryptus.cognotik.platform.model.Credits
 import com.simiacryptus.cognotik.platform.model.Gift
+import com.simiacryptus.cognotik.platform.model.GiftCancellation
 import com.simiacryptus.cognotik.platform.model.GiftId
 import com.simiacryptus.cognotik.platform.model.GiftStats
 import com.simiacryptus.cognotik.platform.model.Page
@@ -24,6 +25,9 @@ import java.time.Instant
  * Validation contract: implementations MUST reject non-positive `amountGranted`,
  * `totalBudget < amountGranted`, non-positive `grantDuration`, and insufficient creator
  * balance with [IllegalArgumentException] (or [IllegalStateException] for balance).
+  *
+  * Cancellation contract: [cancelGift] atomically stops further claims and refunds the
+  * gift's unclaimed escrow ([Gift.escrowCredits]) to the creator's account.
  */
 
 interface GiftedCreditsInterface {
@@ -72,7 +76,7 @@ interface GiftedCreditsInterface {
   @Suppress("DEPRECATION")
   fun claim(user: User, giftId: String, idempotencyKey: String? = null): ClaimResult {
     val gift = getGift(giftId) ?: return ClaimResult.GiftNotFound
-    if (gift.revoked) return ClaimResult.GiftRevoked
+    if (gift.revoked || gift.isCancelled) return ClaimResult.GiftRevoked
     if (gift.isExpired()) return ClaimResult.GiftExpired
     if (!gift.canGrantAnother()) return ClaimResult.BudgetExhausted
     return if (claim(user, giftId) is ClaimResult.Granted) {
@@ -114,6 +118,16 @@ interface GiftedCreditsInterface {
    */
   fun revokeGift(giftId: GiftId): Boolean =
     throw UnsupportedOperationException("revokeGift is not implemented by ${this.javaClass.name}")
+  /**
+   * Cancels a gift on behalf of its creator: no further claims are accepted and the
+   * unclaimed escrow is refunded to the creator. Existing claims are unaffected.
+   *
+   * @param cancelledBy the acting user (normally the creator), for auditing
+   * @return the cancellation outcome, or null if the gift does not exist
+   */
+  fun cancelGift(giftId: GiftId, cancelledBy: User? = null): GiftCancellation? =
+    throw UnsupportedOperationException("cancelGift is not implemented by ${this.javaClass.name}")
+
 
   /**
    * Marks a gift as expired as of now, refunding unspent budget to the creator.

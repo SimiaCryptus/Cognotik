@@ -55,10 +55,15 @@
     <h1 data-login-unknown>🎁 Claim Your Gift</h1>
     <p data-login-found>Someone has sent you credits on Cognotik! Sign in to add them to your account.</p>
     <p data-login-unknown>Sign in to your Cognotik account to claim your gift.</p>
+    <blockquote class="gift-message" hidden>
+        <span class="gift-message-label">💌 A message from the sender</span>
+        <span class="gift-message-text" data-b="message"></span>
+    </blockquote>
     <div class="details" id="login-details-found" hidden>
         <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
         <p><strong>💰 Amount to be Credited:</strong> <span data-b="amount"></span> credits</p>
         <p><span class="theme-badge">🎨 <span data-t="name"></span></span></p>
+        <p class="warning" id="login-inactive" hidden></p>
     </div>
     <div class="details" id="login-details-missing" hidden>
         <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
@@ -80,6 +85,10 @@
     <div class="card-icon bounce" data-t="emoji"></div>
     <h1>Confirm Gift Claim</h1>
     <p>You're about to claim the following gift:</p>
+    <blockquote class="gift-message" hidden>
+        <span class="gift-message-label">💌 A message from the sender</span>
+        <span class="gift-message-text" data-b="message"></span>
+    </blockquote>
     <div class="details">
         <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
         <p><strong>💰 Amount to be Credited:</strong> <span data-b="amount"></span></p>
@@ -107,6 +116,10 @@
     <div class="card-icon spin" data-t="emoji"></div>
     <h1>🎉 Gift Claimed! <span data-t="emoji"></span></h1>
     <p data-t="subtitle"></p>
+    <blockquote class="gift-message" hidden>
+        <span class="gift-message-label">💌 A message from the sender</span>
+        <span class="gift-message-text" data-b="message"></span>
+    </blockquote>
     <div class="details">
         <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
         <p><strong>💰 Amount Credited:</strong> <span data-b="amount"></span></p>
@@ -117,7 +130,7 @@
         <a class="button secondary" href="/usage">📊 View Usage</a>
         <a class="button secondary" href="/credits">💳 Buy More Credits</a>
     </div>
-    <p class="redirect-note">🕐 You will be redirected automatically in <span id="success-countdown">5</span> seconds...</p>
+    <p class="redirect-note" id="success-redirect">🕐 You will be redirected automatically in <span id="success-countdown">5</span> seconds...</p>
     <p class="fine-print">
         📜 Use of credits is governed by the
         <a href="/LICENSE.html" target="_blank" rel="noopener" class="inline-link">Cognotik License Agreement</a>.
@@ -156,14 +169,47 @@
     <div class="appearance-slot"></div>
 
     <div class="form-container">
+        <h2>📦 My Gifts</h2>
+        <div class="summary-grid">
+            <div class="summary-tile">
+                <span class="summary-label">🟢 Active / Total</span>
+                <span class="summary-value" id="sum-active">0 / 0</span>
+            </div>
+            <div class="summary-tile tile-delivered">
+                <span class="summary-label">✅ Delivered</span>
+                <span class="summary-value" id="sum-delivered">0.00</span>
+            </div>
+            <div class="summary-tile tile-escrow">
+                <span class="summary-label">🔒 In Escrow</span>
+                <span class="summary-value" id="sum-escrow">0.00</span>
+            </div>
+            <div class="summary-tile tile-refunded">
+                <span class="summary-label">↩️ Refunded</span>
+                <span class="summary-value" id="sum-refunded">0.00</span>
+            </div>
+        </div>
+        <p class="muted-text">
+            <strong>Delivered</strong> credits have been claimed by recipients.
+            Credits <strong>in escrow</strong> are reserved from your balance for future claims.
+            Cancelling a gift stops further claims and refunds its escrow to your balance.
+        </p>
+    </div>
+
+    <div class="form-container">
         <h2>🎂 Create Gift</h2>
         <p class="balance"><strong>💳 Your Current Balance:</strong> <span id="balance">0.00</span> credits</p>
-        <p class="muted-text">The total budget will be deducted from your account when the gift is created.</p>
+        <p class="muted-text">The total budget is held in escrow (deducted from your account) when the gift is created.
+            Any unclaimed escrow is refunded if you cancel the gift.</p>
         <form id="create-form">
-            <label>💰 Amount Granted: <input type="number" step="0.01" min="0.01" name="amountGranted" required/></label>
+            <label>💰 Amount Granted (per claim): <input type="number" step="0.01" min="0.01" name="amountGranted" required/></label>
             <label>⏰ Grant Duration (days): <input type="number" step="0.01" min="0.01" name="grantDuration" required/></label>
             <label>💝 Total Budget: <input type="number" step="0.01" min="0.01" name="totalBudget" required/></label>
+            <p class="muted-text" id="create-preview"></p>
             <label>🎨 Gift Theme: <select name="giftTheme" id="create-theme"></select></label>
+            <label>📝 Description <span class="label-hint">(private — only you see this)</span>:
+                <input type="text" name="description" maxlength="200" placeholder="e.g. Hackathon attendees, March"/></label>
+            <label>💌 Message to Recipients <span class="label-hint">(shown when they claim)</span>:
+                <textarea name="message" maxlength="1000" rows="3" placeholder="e.g. Thanks for joining us — enjoy some credits on us!"></textarea></label>
             <div class="license-notice">
                 <label class="license-check">
                     <input type="checkbox" name="acceptLicense" required/>
@@ -183,24 +229,36 @@
         </form>
     </div>
 
-    <h2><span data-t="emoji"></span> Available Gifts (All) <span data-t="emoji"></span></h2>
-    <table>
-        <thead>
-        <tr class="table-header">
-            <th>🎫 ID</th>
-            <th>💰 Amount Granted</th>
-            <th>⏰ Duration (days)</th>
-            <th>📅 Expires</th>
-            <th>💝 Total Budget</th>
-            <th>💸 Spent Budget</th>
-            <th>👥 Claimants</th>
-            <th>👤 Created By</th>
-            <th>🎨 Theme</th>
-            <th>⚡ Actions</th>
-        </tr>
-        </thead>
-        <tbody id="gift-rows"></tbody>
-    </table>
+    <h2><span data-t="emoji"></span> Gifts <span data-t="emoji"></span></h2>
+    <div class="table-toolbar">
+        <label class="inline-check"><input type="checkbox" id="mine-only"/> Show only my gifts</label>
+        <span class="budget-legend">
+            <span class="legend-swatch seg-delivered"></span> Delivered
+            <span class="legend-swatch seg-escrow"></span> In escrow
+            <span class="legend-swatch seg-refunded"></span> Refunded
+        </span>
+    </div>
+    <p class="status-msg" id="gifts-status" hidden></p>
+    <div class="table-scroll">
+        <table>
+            <thead>
+            <tr class="table-header">
+                <th>🎫 Gift</th>
+                <th>🚦 Status</th>
+                <th>💰 Per Claim</th>
+                <th>👥 Claims</th>
+                <th>✅ Delivered</th>
+                <th>🔒 In Escrow</th>
+                <th>↩️ Refunded</th>
+                <th>💝 Total Budget</th>
+                <th>⏰ Credit Validity (days)</th>
+                <th>👤 Created By</th>
+                <th>⚡ Actions</th>
+            </tr>
+            </thead>
+            <tbody id="gift-rows"></tbody>
+        </table>
+    </div>
 
     <h2 id="claims">💌 All Claims<span id="claims-suffix"></span> 💌</h2>
     <div class="form-container">
@@ -255,8 +313,17 @@
     var BASE = (document.querySelector('meta[name="gifts-base"]') || {}).content || '/gifts';
     if (BASE.indexOf('{{') === 0) BASE = '/gifts';
     var API = BASE + '/api';
+    var GIFT_COLS = 11;
     var params = new URLSearchParams(location.search);
-    var state = { themes: [], themeMap: {}, defaultTheme: null, theme: null, session: null, title: 'Gifted Credits' };
+    var state = { themes: [], themeMap: {}, defaultTheme: null, theme: null, session: null, title: 'Gifted Credits', gifts: [] };
+
+    var STATUS = {
+        active: { icon: '🟢', label: 'Active' },
+        exhausted: { icon: '✅', label: 'Fully claimed' },
+        expired: { icon: '⌛', label: 'Expired' },
+        cancelled: { icon: '🚫', label: 'Cancelled' },
+        revoked: { icon: '⛔', label: 'Revoked' }
+    };
 
     // ------------------------------------------------------------ utilities
     function $(sel, root) { return (root || document).querySelector(sel); }
@@ -292,11 +359,30 @@
         });
     }
 
+    function showMessage(view, message) {
+        var quote = $('.gift-message', view);
+        if (!quote) return;
+        quote.hidden = !message;
+        bind(view, { message: message || '' });
+    }
+
     function setStatus(node, text, ok) {
         if (!text) { node.hidden = true; node.textContent = ''; return; }
         node.hidden = false;
         node.textContent = text;
         node.className = 'status-msg ' + (ok ? 'ok' : 'error');
+    }
+
+    function statusInfo(s) { return STATUS[s] || { icon: '❔', label: s || 'Unknown' }; }
+
+    function inactiveMessage(status) {
+        switch (status) {
+            case 'cancelled': return 'This gift has been cancelled by its creator and can no longer be claimed.';
+            case 'revoked': return 'This gift has been revoked and can no longer be claimed.';
+            case 'expired': return 'This gift has expired and can no longer be claimed.';
+            case 'exhausted': return 'This gift has been fully claimed — no credits remain.';
+            default: return null;
+        }
     }
 
     function pageUrl(values) {
@@ -391,10 +477,16 @@
             $('#login-details-missing').hidden = !missing;
             show('view-login', 'gift-page-card', "You've Received a Gift!");
         }
+        showMessage(view, null);
         if (!giftId) return Promise.resolve(render(false, false));
         return api('/gifts/' + encodeURIComponent(giftId)).then(function (gift) {
             applyTheme(themeOf(gift.theme));
             bind(view, { giftId: gift.id, amount: fmt(gift.amountGranted) });
+            showMessage(view, gift.message);
+            var inactive = inactiveMessage(gift.status);
+            var note = $('#login-inactive');
+            note.hidden = !inactive;
+            note.textContent = inactive ? '⚠️ ' + inactive : '';
             render(true, false);
         }, function () {
             bind(view, { giftId: giftId });
@@ -411,6 +503,7 @@
             amount: fmt(gift.amountGranted),
             claimant: state.session.email || state.session.userId
         });
+        showMessage(view, gift.message);
         var yes = $('#confirm-yes');
         var status = $('#confirm-status');
         setStatus(status, null);
@@ -433,11 +526,13 @@
         var theme = themeOf(result.theme);
         applyTheme(theme);
         bind(view, { giftId: result.giftId, amount: fmt(result.amountGranted) });
+        showMessage(view, result.message);
         var target = pageUrl({ theme: theme.id });
         $('#success-return').href = target;
         history.replaceState(null, '', target);
         show('view-success', 'gift-page-card gift-page-success', 'Gift Claimed Successfully!');
-        var remaining = 5;
+        // Give recipients time to read a personal message before redirecting.
+        var remaining = result.message ? 20 : 5;
         var counter = $('#success-countdown');
         counter.textContent = remaining;
         var timer = setInterval(function () {
@@ -455,6 +550,8 @@
         };
     }
 
+    function mineOnly() { return $('#mine-only').checked; }
+
     function renderThemeControls() {
         var buttons = $('#theme-buttons');
         buttons.textContent = '';
@@ -462,7 +559,7 @@
             var f = filters();
             buttons.appendChild(el('a', {
                 'class': 'theme-btn' + (t.id === state.theme.id ? ' active' : ''),
-                href: pageUrl({ theme: t.id, filterGiftId: f.giftId, filterUserId: f.userId }),
+                href: pageUrl({ theme: t.id, filterGiftId: f.giftId, filterUserId: f.userId, mine: mineOnly() ? '1' : null }),
                 title: t.displayName,
                 onclick: function (e) {
                     e.preventDefault();
@@ -488,34 +585,138 @@
         }, text);
     }
 
-    function loadGifts() {
-        var body = $('#gift-rows');
-        return api('/gifts').then(function (gifts) {
-            body.textContent = '';
-            if (!gifts || !gifts.length) { body.appendChild(messageRow(10, 'No gifts found.')); return; }
-            gifts.forEach(function (g) {
-                var t = themeOf(g.theme);
-                var expires = new Date(Date.now() + (Number(g.grantDurationDays) || 0) * 86400000);
-                body.appendChild(el('tr', null,
-                    el('td', null, el('a', {
-                        'class': 'claim-link',
-                        href: pageUrl({ action: 'claim', giftId: g.id, theme: t.id }),
-                        title: 'Click to claim this gift (Theme: ' + t.displayName + ')'
-                    }, g.id)),
-                    el('td', null, fmt(g.amountGranted)),
-                    el('td', null, fmt(g.grantDurationDays)),
-                    el('td', null, fmtDate(expires)),
-                    el('td', null, fmt(g.totalBudget)),
-                    el('td', null, fmt(g.spentBudget)),
-                    el('td', null, g.claimants),
-                    el('td', null, g.createdBy || '-'),
-                    el('td', null, t.emoji + ' ' + t.displayName),
-                    el('td', null, filterLink('🔍 View Claims', 'View claims for this gift', g.id, null))
-                ));
-            });
+    function statusBadge(status) {
+        var info = statusInfo(status);
+        return el('span', { 'class': 'status-badge status-' + (status || 'unknown') }, info.icon + ' ' + info.label);
+    }
+
+    function budgetBar(g) {
+        var total = Number(g.totalBudget) || 0;
+        function pct(v) {
+            return total > 0 ? Math.max(0, Math.min(100, (Number(v) || 0) / total * 100)) + '%' : '0%';
+        }
+        return el('div', {
+                'class': 'budget-bar',
+                title: 'Delivered ' + fmt(g.deliveredCredits) + ' · In escrow ' + fmt(g.escrowCredits) +
+                    ' · Refunded ' + fmt(g.refundedCredits) + ' of ' + fmt(total)
+            },
+            el('span', { 'class': 'seg-delivered', style: 'width:' + pct(g.deliveredCredits) }),
+            el('span', { 'class': 'seg-escrow', style: 'width:' + pct(g.escrowCredits) }),
+            el('span', { 'class': 'seg-refunded', style: 'width:' + pct(g.refundedCredits) }));
+    }
+
+    function claimUrl(g, t) {
+        return location.origin + pageUrl({ action: 'claim', giftId: g.id, theme: t.id });
+    }
+
+    function copyLink(g, t) {
+        var url = claimUrl(g, t);
+        var status = $('#gifts-status');
+        var done = function () { setStatus(status, '🔗 Claim link for ' + g.id + ' copied to clipboard.', true); };
+        var manual = function () { window.prompt('Copy this claim link:', url); };
+        if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(done, manual);
+        else manual();
+    }
+
+    function cancelGift(g) {
+        var label = g.description ? '"' + g.description + '" (' + g.id + ')' : g.id;
+        var ok = window.confirm(
+            'Cancel gift ' + label + '?\n\n' +
+            'No further claims will be accepted. ' + fmt(g.escrowCredits) +
+            ' unclaimed credits held in escrow will be refunded to your balance.\n\n' +
+            'Credits already delivered to recipients (' + fmt(g.deliveredCredits) + ') are not affected. ' +
+            'This cannot be undone.');
+        if (!ok) return;
+        var status = $('#gifts-status');
+        setStatus(status, null);
+        api('/gifts/' + encodeURIComponent(g.id) + '/cancel', { method: 'POST', body: {} }).then(function (res) {
+            setStatus(status, '🚫 Gift ' + g.id + ' cancelled. ' + fmt(res && res.refunded) + ' credits refunded to your balance.', true);
+            refreshBalance(res && res.balance);
+            return loadGifts();
         }).catch(function (err) {
+            setStatus(status, 'Could not cancel gift: ' + err.message, false);
+        });
+    }
+
+    function renderSummary() {
+        var mine = state.gifts.filter(function (g) { return g.mine; });
+        function sum(k) { return mine.reduce(function (a, g) { return a + (Number(g[k]) || 0); }, 0); }
+        var active = mine.filter(function (g) { return g.status === 'active'; }).length;
+        $('#sum-active').textContent = active + ' / ' + mine.length;
+        $('#sum-delivered').textContent = fmt(sum('deliveredCredits'));
+        $('#sum-escrow').textContent = fmt(sum('escrowCredits'));
+        $('#sum-refunded').textContent = fmt(sum('refundedCredits'));
+    }
+
+    function renderGifts() {
+        var body = $('#gift-rows');
+        var onlyMine = mineOnly();
+        var gifts = state.gifts.filter(function (g) { return !onlyMine || g.mine; });
+        renderSummary();
+        body.textContent = '';
+        if (!gifts.length) {
+            body.appendChild(messageRow(GIFT_COLS, onlyMine ? "You haven't created any gifts yet." : 'No gifts found.'));
+            return;
+        }
+        gifts.forEach(function (g) {
+            var t = themeOf(g.theme);
+            var claims = g.claimCount != null ? g.claimCount : g.claimants;
+            var giftCell = el('td', { 'class': 'gift-cell' },
+                el('a', {
+                    'class': 'claim-link',
+                    href: pageUrl({ action: 'claim', giftId: g.id, theme: t.id }),
+                    title: 'Click to claim this gift (Theme: ' + t.displayName + ')'
+                }, g.id),
+                g.description ? el('span', { 'class': 'gift-desc', title: 'Private description' }, '📝 ' + g.description) : null,
+                g.message ? el('span', { 'class': 'gift-msg-snippet', title: g.message }, '💌 ' + g.message) : null,
+                el('span', { 'class': 'gift-theme-tag' }, t.emoji + ' ' + t.displayName),
+                g.mine ? el('span', { 'class': 'mine-tag' }, 'Yours') : null);
+
+            var statusDetail = null;
+            if (g.status === 'active') {
+                statusDetail = el('small', { 'class': 'status-detail' },
+                    g.remainingClaims + ' claim' + (g.remainingClaims === 1 ? '' : 's') + ' left');
+            } else if (g.status === 'cancelled' && g.cancelledAt) {
+                statusDetail = el('small', { 'class': 'status-detail' }, 'on ' + fmtDate(g.cancelledAt));
+            }
+            var statusCell = el('td', { 'class': 'status-cell' }, statusBadge(g.status), budgetBar(g), statusDetail);
+
+            var actions = el('td', { 'class': 'actions-cell' },
+                g.status === 'active' ? el('a', {
+                    'class': 'claim-link', href: '#', title: 'Copy a shareable claim link',
+                    onclick: function (e) { e.preventDefault(); copyLink(g, t); }
+                }, '🔗 Copy Link') : null,
+                filterLink('🔍 Claims', 'View claims for this gift', g.id, null),
+                g.canCancel ? el('a', {
+                    'class': 'claim-link danger-link', href: '#',
+                    title: 'Stop claims and refund ' + fmt(g.escrowCredits) + ' credits from escrow',
+                    onclick: function (e) { e.preventDefault(); cancelGift(g); }
+                }, '🚫 Cancel & Refund') : null);
+
+            body.appendChild(el('tr', { 'class': 'gift-row row-' + (g.status || 'unknown') },
+                giftCell,
+                statusCell,
+                el('td', null, fmt(g.amountGranted)),
+                el('td', null, String(claims == null ? 0 : claims)),
+                el('td', { 'class': 'num-delivered' }, fmt(g.deliveredCredits)),
+                el('td', { 'class': 'num-escrow' }, fmt(g.escrowCredits)),
+                el('td', { 'class': 'num-refunded' }, fmt(g.refundedCredits)),
+                el('td', null, fmt(g.totalBudget)),
+                el('td', null, fmt(g.grantDurationDays)),
+                el('td', null, g.createdBy || '-'),
+                actions
+            ));
+        });
+    }
+
+    function loadGifts() {
+        return api('/gifts').then(function (gifts) {
+            state.gifts = gifts || [];
+            renderGifts();
+        }).catch(function (err) {
+            var body = $('#gift-rows');
             body.textContent = '';
-            body.appendChild(messageRow(10, 'Failed to load gifts: ' + err.message));
+            body.appendChild(messageRow(GIFT_COLS, 'Failed to load gifts: ' + err.message));
         });
     }
 
@@ -558,6 +759,19 @@
         api('/session').then(function (s) { if (s && s.authenticated) $('#balance').textContent = fmt(s.balance); });
     }
 
+    function updateCreatePreview(form) {
+        var amount = Number(form.amountGranted.value);
+        var budget = Number(form.totalBudget.value);
+        var preview = $('#create-preview');
+        if (!(amount > 0) || !(budget > 0)) { preview.textContent = ''; return; }
+        if (budget < amount) { preview.textContent = '⚠️ Total budget must be at least the amount granted.'; return; }
+        var n = Math.floor(budget / amount + 1e-9);
+        var leftover = budget - n * amount;
+        preview.textContent = '🔒 ' + fmt(budget) + ' credits will be held in escrow, funding up to ' + n +
+            ' claim' + (n === 1 ? '' : 's') + ' of ' + fmt(amount) + '.' +
+            (leftover > 0.0049 ? ' (' + fmt(leftover) + ' cannot fund a full claim and is refundable on cancel.)' : '');
+    }
+
     function showMain() {
         var select = $('#create-theme');
         select.textContent = '';
@@ -566,11 +780,21 @@
         });
         $('#filter-gift-id').value = params.get('filterGiftId') || '';
         $('#filter-user-id').value = params.get('filterUserId') || '';
+        $('#mine-only').checked = params.get('mine') === '1';
         $('#balance').textContent = fmt(state.session.balance);
         renderThemeControls();
 
+        $('#mine-only').addEventListener('change', function () {
+            updateUrl({ mine: mineOnly() ? '1' : null });
+            renderThemeControls();
+            renderGifts();
+        });
+
         var createForm = $('#create-form');
         var createStatus = $('#create-status');
+        ['input', 'change'].forEach(function (evt) {
+            createForm.addEventListener(evt, function () { updateCreatePreview(createForm); });
+        });
         createForm.addEventListener('submit', function (e) {
             e.preventDefault();
             var button = $('button[type="submit"]', createForm);
@@ -579,13 +803,17 @@
                 grantDurationDays: createForm.grantDuration.value,
                 totalBudget: createForm.totalBudget.value,
                 theme: createForm.giftTheme.value,
+                description: createForm.description.value.trim(),
+                message: createForm.message.value.trim(),
                 acceptLicense: createForm.acceptLicense.checked
             };
             button.disabled = true;
             setStatus(createStatus, null);
             api('/gifts', { method: 'POST', body: body }).then(function (res) {
-                setStatus(createStatus, '🎉 Gift created!', true);
+                setStatus(createStatus, '🎉 Gift created!' + (res && res.giftId ? ' ID: ' + res.giftId +
+                    ' — use “Copy Link” in the table below to share it.' : ''), true);
                 createForm.reset();
+                updateCreatePreview(createForm);
                 select.value = state.theme.id;
                 refreshBalance(res && res.balance);
                 return loadGifts();
@@ -636,7 +864,14 @@
     function claimFlow(giftId) {
         if (!state.session.authenticated) return showLogin(giftId);
         if (!giftId) return showError('giftId parameter is required');
-        return api('/gifts/' + encodeURIComponent(giftId)).then(showConfirm, function (err) {
+        return api('/gifts/' + encodeURIComponent(giftId)).then(function (gift) {
+            var inactive = inactiveMessage(gift.status);
+            if (inactive) {
+                applyTheme(themeOf(gift.theme));
+                return showError(inactive);
+            }
+            showConfirm(gift);
+        }, function (err) {
             showError(err.status === 404 ? 'Gift not found: ' + giftId : err.message);
         });
     }
