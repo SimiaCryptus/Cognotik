@@ -13,23 +13,23 @@ import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class ChatModel(
-    val name: String = "",
-    modelId: String = name,
-    maxTotalTokens: Int = -1,
-    maxOutTokens: Int = maxTotalTokens,
-    provider: APIProvider? = null,
-    /**
+  var name: String = "",
+  modelId: String = name,
+  maxTotalTokens: Int = -1,
+  maxOutTokens: Int = maxTotalTokens,
+  provider: APIProvider? = null,
+  /**
      * Pricing per 1k tokens, keyed by token type.
      * Any token type not present in this map will be treated as having an average price
      * (computed from the prices that are present) when encountered in usage.
      */
     val tokenPricingPerK: Map<TokenTypes, Double> = emptyMap(),
-    val supportsTemperature: Boolean = true,
-    val supportsReasoning: Boolean = false,
-    val deprecated: Boolean = false,
-    val inputModalities: Set<ChatMessageModality>,
-    val outputModalities: Set<ChatMessageModality>,
-    val reasoningLevel: ReasoningLevel? = null,
+  val supportsTemperature: Boolean = true,
+  val supportsReasoning: Boolean = false,
+  val deprecated: Boolean = false,
+  val inputModalities: Set<ChatMessageModality>,
+  val outputModalities: Set<ChatMessageModality>,
+  var reasoningLevel: ReasoningLevel? = null,
 ) : LLMModel(
     modelId = modelId,
     maxTotalTokens = maxTotalTokens,

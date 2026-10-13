@@ -4,6 +4,8 @@ import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.JsonUtil
+import com.simiacryptus.cognotik.util.SecureString
+import com.simiacryptus.cognotik.util.copy
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -33,7 +35,7 @@ class ApiProviderServlet : HttpServlet() {
   data class ModelInfo(
     val name: String,
     val inputModalities: Set<String> = emptySet(),
-    val outputModalities: Set<String> = emptySet()
+    val outputModalities: Set<String> = emptySet(),
   )
 
   public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
@@ -269,58 +271,9 @@ class ApiProviderServlet : HttpServlet() {
       // Get all registered API providers
       APIProvider.values().forEach { provider ->
         try {
-          // Find matching API configuration for this provider
-          val apiConfig = apis.find {
-            it.provider?.name == provider.name
-          }
-
-          if (apiConfig != null && !apiConfig.key?.decrypt.isNullOrEmpty()) {
-            val models = try {
-              (provider.getChatModels(
-                key = apiConfig.key!!,
-                baseUrl = apiConfig.apiBase
-              ) ?: emptyList())
-                .filter { !it.deprecated }
-                /*
-                 * A provider can expose several enum constants that resolve to the
-                 * same wire-level modelId (aliases / dated snapshots / "latest").
-                 * Keep only the first occurrence of each modelId.
-                 */
-                .distinctBy { it.modelId }
-            } catch (e: Exception) {
-              log.warn("Failed to fetch models for provider ${provider.name}", e)
-              emptyList()
-            }
-
-            providers.add(
-              ProviderInfo(
-                name = provider.name,
-                baseUrl = apiConfig.apiBase,
-                models = models.map { model ->
-                  ModelInfo(
-                    name = model.modelId,
-                    inputModalities = model.inputModalities.map { it.name }.toSet(),
-                    outputModalities = model.outputModalities.map { it.name }.toSet(),
-                  )
-                }.distinctBy { it.name }.sortedBy { it.name },
-                supportsChat = models.isNotEmpty(),
-                supportsEmbedding = try {
-                  provider.getEmbeddingClient(
-                    key = apiConfig.key!!,
-                    base = apiConfig.apiBase,
-                    workPool = ThreadPoolManager.newCachedThreadPool(Session.NULL),
-                    scheduledPool = ThreadPoolManager.newScheduledThreadPool(1, Session.NULL)
-
-                  )
-                  true
-                } catch (e: UnsupportedOperationException) {
-                  false
-                } catch (e: Exception) {
-                  log.warn("Error checking embedding support for ${provider.name}", e)
-                  false
-                }
-              )
-            )
+          val config = apis.find { it.provider?.name == provider.name }
+          if (config != null && !config.key?.decrypt.isNullOrEmpty()) {
+            providers.add(providerInfo(provider, config, chatModels(provider, config.key, config), config.key))
           }
         } catch (e: Exception) {
           log.error("Error processing provider ${provider.name}", e)
@@ -328,6 +281,69 @@ class ApiProviderServlet : HttpServlet() {
       }
       return providers
     }
+
+    private fun chatModels(
+      provider: APIProvider,
+      key: SecureString?,
+      apiConfig: ApiData
+    ): List<ChatModel> = try {
+      val chatModels = provider.getChatModels(
+        key = key!!,
+        baseUrl = apiConfig.apiBase
+      )
+      chatModels
+        .filter { !it.deprecated }
+        .distinctBy { it.modelId }
+        .flatMap { chatModel: ChatModel ->
+          when {
+            chatModel.supportsReasoning -> ChatModel.ReasoningLevel.entries.map { level ->
+              chatModel.copy {
+                reasoningLevel = level
+                name = "${name} (${level.name})"
+                modelId = "${modelId}-${level.name.lowercase()}"
+              }
+            }
+
+            else -> listOf(chatModel)
+          }
+        }
+    } catch (e: Exception) {
+      log.warn("Failed to fetch models for provider ${provider.name}", e)
+      emptyList()
+    }
+
+    private fun providerInfo(
+      provider: APIProvider,
+      apiConfig: ApiData,
+      models: List<ChatModel>,
+      key: SecureString?
+    ): ProviderInfo = ProviderInfo(
+      name = provider.name,
+      baseUrl = apiConfig.apiBase,
+      models = models.map { model ->
+        ModelInfo(
+          name = model.modelId,
+          inputModalities = model.inputModalities.map { it.name }.toSet(),
+          outputModalities = model.outputModalities.map { it.name }.toSet(),
+        )
+      }.distinctBy { it.name }.sortedBy { it.name },
+      supportsChat = models.isNotEmpty(),
+      supportsEmbedding = try {
+        provider.getEmbeddingClient(
+          key = key!!,
+          base = apiConfig.apiBase,
+          workPool = ThreadPoolManager.newCachedThreadPool(Session.NULL),
+          scheduledPool = ThreadPoolManager.newScheduledThreadPool(1, Session.NULL)
+
+        )
+        true
+      } catch (e: UnsupportedOperationException) {
+        false
+      } catch (e: Exception) {
+        log.warn("Error checking embedding support for ${provider.name}", e)
+        false
+      }
+    )
 
     fun User.userSettings(): UserSettings =
       ServiceRouter.getUserSettings(this)

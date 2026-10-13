@@ -1,3 +1,4 @@
+#!/usr/bin/env node
 /**
  * cognotik-client — a dependency-free client library for the Cognotik API proxy.
  *
