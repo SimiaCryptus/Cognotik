@@ -1,0 +1,666 @@
+<!DOCTYPE html>
+<html data-gift-theme="pink-party">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="color-scheme" content="light dark">
+    <meta name="gifts-base" content="{{base}}">
+    <title>🎁 Gifted Credits 🎁</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg"/>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Pacifico&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link href="/themes.css" id="theme-stylesheet" rel="stylesheet">
+    <script src="/themes.js"></script>
+    <script src="/modules/theme.js"></script>
+    <link href="{{base}}/gifts.css" rel="stylesheet">
+    <style>
+        [hidden] { display: none !important; }
+        .status-msg { font-weight: 600; margin: 10px 0 0; }
+        .status-msg.ok { color: #2e7d32; }
+        .status-msg.error { color: #b00; }
+        .form-container button[disabled], a.button[aria-disabled="true"] { opacity: 0.6; pointer-events: none; }
+    </style>
+</head>
+<body class="gift-page-card">
+
+<!-- ============================================================ loading -->
+<div id="view-loading" class="gift-card" data-view>
+    <div class="card-icon bounce">🎁</div>
+    <p>Loading…</p>
+</div>
+
+<!-- ============================================================ welcome -->
+<div id="view-welcome" class="gift-card wide" data-view hidden>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="card-icon bounce" data-t="emoji"></div>
+    <h1>Welcome to Cognotik Gifts</h1>
+    <p>Sign in to view, create, and claim gifted credits.</p>
+    <p>If someone shared a gift link with you, signing in will let you claim it.</p>
+    <a class="button large" data-login href="/login/">🔐 Sign In</a>
+    <p class="hint">You'll be returned to this page after signing in. After signing in, you'll also have access to
+        <strong>📊 Usage</strong> tracking and <strong>💳 Credit purchases</strong>.</p>
+    <p class="fine-print">
+        📜 Use of Cognotik is governed by the
+        <a href="/LICENSE.html" target="_blank" rel="noopener" class="inline-link">Cognotik Software License Agreement</a>.
+    </p>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="appearance-slot"></div>
+</div>
+
+<!-- ===================================================== login (claim) -->
+<div id="view-login" class="gift-card wide" data-view hidden>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="card-icon wiggle">🎁</div>
+    <h1 data-login-found>🎁 You've Received a Gift!</h1>
+    <h1 data-login-unknown>🎁 Claim Your Gift</h1>
+    <p data-login-found>Someone has sent you credits on Cognotik! Sign in to add them to your account.</p>
+    <p data-login-unknown>Sign in to your Cognotik account to claim your gift.</p>
+    <div class="details" id="login-details-found" hidden>
+        <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
+        <p><strong>💰 Amount to be Credited:</strong> <span data-b="amount"></span> credits</p>
+        <p><span class="theme-badge">🎨 <span data-t="name"></span></span></p>
+    </div>
+    <div class="details" id="login-details-missing" hidden>
+        <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
+        <p class="warning">⚠️ This gift could not be found right now. You may still log in and try again.</p>
+    </div>
+    <a class="button large" data-login href="/login/">🔐 Sign In to Claim</a>
+    <p class="note">After signing in, you'll be returned here to complete your claim.</p>
+    <p class="fine-print">
+        📜 By signing in and claiming, you agree to the
+        <a href="/LICENSE.html" target="_blank" rel="noopener" class="inline-link">Cognotik License Agreement</a>.
+    </p>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="appearance-slot"></div>
+</div>
+
+<!-- ============================================================ confirm -->
+<div id="view-confirm" class="gift-card" data-view hidden>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="card-icon bounce" data-t="emoji"></div>
+    <h1>Confirm Gift Claim</h1>
+    <p>You're about to claim the following gift:</p>
+    <div class="details">
+        <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
+        <p><strong>💰 Amount to be Credited:</strong> <span data-b="amount"></span></p>
+        <p><strong>👤 Claiming as:</strong> <span data-b="claimant"></span></p>
+        <p><span class="theme-badge">🎨 <span data-t="name"></span></span></p>
+    </div>
+    <p>Are you sure you want to claim this gift? This action cannot be undone.</p>
+    <p class="muted-text"><em>
+        By claiming, you agree to the
+        <a href="/LICENSE.html" target="_blank" rel="noopener" class="inline-link">Cognotik Software License Agreement</a>.
+        Credits are non-refundable and have no cash value.
+    </em></p>
+    <p class="status-msg error" id="confirm-status" hidden></p>
+    <div class="button-row">
+        <a class="button" href="#" id="confirm-yes"><span data-t="emoji"></span> Yes, Claim It!</a>
+        <a class="button muted" href="#" id="confirm-cancel">✖ Cancel</a>
+    </div>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="appearance-slot"></div>
+</div>
+
+<!-- ============================================================ success -->
+<div id="view-success" class="gift-card" data-view hidden>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="card-icon spin" data-t="emoji"></div>
+    <h1>🎉 Gift Claimed! <span data-t="emoji"></span></h1>
+    <p data-t="subtitle"></p>
+    <div class="details">
+        <p><strong>🎫 Gift ID:</strong> <span data-b="giftId"></span></p>
+        <p><strong>💰 Amount Credited:</strong> <span data-b="amount"></span></p>
+        <p><span class="theme-badge">🎨 <span data-t="name"></span></span></p>
+    </div>
+    <div class="button-row">
+        <a class="button" href="#" id="success-return">🏠 Return to Gifts Page</a>
+        <a class="button secondary" href="/usage">📊 View Usage</a>
+        <a class="button secondary" href="/credits">💳 Buy More Credits</a>
+    </div>
+    <p class="redirect-note">🕐 You will be redirected automatically in <span id="success-countdown">5</span> seconds...</p>
+    <p class="fine-print">
+        📜 Use of credits is governed by the
+        <a href="/LICENSE.html" target="_blank" rel="noopener" class="inline-link">Cognotik License Agreement</a>.
+    </p>
+    <div class="festive-banner" data-t="banner"></div>
+    <div class="appearance-slot"></div>
+</div>
+
+<!-- ============================================================== error -->
+<div id="view-error" class="gift-card" data-view hidden>
+    <div class="card-icon">⚠️</div>
+    <h1>Something went wrong</h1>
+    <p class="warning" id="error-message"></p>
+    <div class="button-row">
+        <a class="button" href="#" id="error-back">🏠 Back to Gifts</a>
+    </div>
+    <div class="appearance-slot"></div>
+</div>
+
+<!-- ========================================================== dashboard -->
+<div id="view-main" class="main-container" data-view hidden>
+    <h1 data-t="title"></h1>
+    <div class="festive-divider" data-t="divider"></div>
+
+    <nav class="nav-bar">
+        <a href="/usage">📊 Usage</a>
+        <a href="/credits">💳 Buy Credits</a>
+        <a href="#" id="nav-gifts" class="active">🎁 Gifts</a>
+    </nav>
+
+    <div class="theme-selector">
+        <span class="theme-label">🎨 Theme:</span>
+        <span id="theme-buttons"></span>
+    </div>
+
+    <div class="appearance-slot"></div>
+
+    <div class="form-container">
+        <h2>🎂 Create Gift</h2>
+        <p class="balance"><strong>💳 Your Current Balance:</strong> <span id="balance">0.00</span> credits</p>
+        <p class="muted-text">The total budget will be deducted from your account when the gift is created.</p>
+        <form id="create-form">
+            <label>💰 Amount Granted: <input type="number" step="0.01" min="0.01" name="amountGranted" required/></label>
+            <label>⏰ Grant Duration (days): <input type="number" step="0.01" min="0.01" name="grantDuration" required/></label>
+            <label>💝 Total Budget: <input type="number" step="0.01" min="0.01" name="totalBudget" required/></label>
+            <label>🎨 Gift Theme: <select name="giftTheme" id="create-theme"></select></label>
+            <div class="license-notice">
+                <label class="license-check">
+                    <input type="checkbox" name="acceptLicense" required/>
+                    <span>I have read and agree to the <a href="/LICENSE.html" target="_blank" rel="noopener" class="license-link">Cognotik Software License Agreement</a>, including the terms regarding API Credits, gifts, and non-refundability (Section 8.2).</span>
+                </label>
+            </div>
+            <button type="submit">✨ Create Gift ✨</button>
+            <p class="status-msg" id="create-status" hidden></p>
+        </form>
+    </div>
+
+    <div class="form-container">
+        <h2><span data-t="emoji"></span> Claim Your Gift <span data-t="emoji"></span></h2>
+        <form id="claim-form">
+            <label>🎫 Gift ID: <input type="text" name="giftId" required/></label>
+            <button type="submit"><span data-t="emoji"></span> Claim Now! <span data-t="emoji"></span></button>
+        </form>
+    </div>
+
+    <h2><span data-t="emoji"></span> Available Gifts (All) <span data-t="emoji"></span></h2>
+    <table>
+        <thead>
+        <tr class="table-header">
+            <th>🎫 ID</th>
+            <th>💰 Amount Granted</th>
+            <th>⏰ Duration (days)</th>
+            <th>📅 Expires</th>
+            <th>💝 Total Budget</th>
+            <th>💸 Spent Budget</th>
+            <th>👥 Claimants</th>
+            <th>👤 Created By</th>
+            <th>🎨 Theme</th>
+            <th>⚡ Actions</th>
+        </tr>
+        </thead>
+        <tbody id="gift-rows"></tbody>
+    </table>
+
+    <h2 id="claims">💌 All Claims<span id="claims-suffix"></span> 💌</h2>
+    <div class="form-container">
+        <form id="filter-form">
+            <label>🎫 Filter by Gift ID: <input type="text" name="filterGiftId" id="filter-gift-id"/></label>
+            <label>👤 Filter by User ID: <input type="text" name="filterUserId" id="filter-user-id"/></label>
+            <button type="submit">🔍 Filter</button>
+            <a class="claim-link clear-link" href="#" id="filter-clear">✖ Clear</a>
+        </form>
+    </div>
+    <table>
+        <thead>
+        <tr class="table-header">
+            <th>🎫 Gift ID</th>
+            <th>👤 User ID</th>
+            <th>📅 Claimed At</th>
+        </tr>
+        </thead>
+        <tbody id="claim-rows"></tbody>
+    </table>
+
+    <div class="festive-divider" data-t="divider"></div>
+    <footer class="license-footer">
+        <p>
+            📜 Use of Cognotik, gifted credits, and the cloud-hosted service is governed by the
+            <a href="/LICENSE.html" target="_blank" rel="noopener" class="license-link">Cognotik Software License Agreement</a>.
+            API Credits and gifts are non-refundable and have no cash value (see Section 8.2).
+        </p>
+    </footer>
+</div>
+
+<!-- ============================================ shared appearance selector -->
+<div class="site-theme-selector" id="appearance">
+    <span id="site-palette-group">
+        <label for="site-palette-selector">🎨 Palette:</label>
+        <select id="site-palette-selector"></select>
+    </span>
+    <span>
+        <label for="site-theme-selector">🌓 Site Mode:</label>
+        <select id="site-theme-selector">
+            <option value="auto">🌗 Auto (System)</option>
+            <option value="light">☀️ Light</option>
+            <option value="dark">🌙 Dark</option>
+        </select>
+    </span>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    var BASE = (document.querySelector('meta[name="gifts-base"]') || {}).content || '/gifts';
+    if (BASE.indexOf('{{') === 0) BASE = '/gifts';
+    var API = BASE + '/api';
+    var params = new URLSearchParams(location.search);
+    var state = { themes: [], themeMap: {}, defaultTheme: null, theme: null, session: null, title: 'Gifted Credits' };
+
+    // ------------------------------------------------------------ utilities
+    function $(sel, root) { return (root || document).querySelector(sel); }
+    function $all(sel, root) { return Array.prototype.slice.call((root || document).querySelectorAll(sel)); }
+
+    function el(tag, attrs) {
+        var node = document.createElement(tag);
+        if (attrs) Object.keys(attrs).forEach(function (k) {
+            var v = attrs[k];
+            if (v == null || v === false) return;
+            if (k === 'class') node.className = v;
+            else if (k.indexOf('on') === 0) node.addEventListener(k.slice(2), v);
+            else node.setAttribute(k, v === true ? '' : v);
+        });
+        for (var i = 2; i < arguments.length; i++) {
+            var c = arguments[i];
+            if (c == null) continue;
+            node.appendChild(c instanceof Node ? c : document.createTextNode(String(c)));
+        }
+        return node;
+    }
+
+    function fmt(n) { return (Number(n) || 0).toFixed(2); }
+    function fmtDate(d) {
+        if (!d) return '-';
+        var date = d instanceof Date ? d : new Date(d);
+        return isNaN(date.getTime()) ? String(d) : date.toLocaleString();
+    }
+
+    function bind(root, values) {
+        Object.keys(values).forEach(function (k) {
+            $all('[data-b="' + k + '"]', root).forEach(function (n) { n.textContent = values[k] == null ? '' : values[k]; });
+        });
+    }
+
+    function setStatus(node, text, ok) {
+        if (!text) { node.hidden = true; node.textContent = ''; return; }
+        node.hidden = false;
+        node.textContent = text;
+        node.className = 'status-msg ' + (ok ? 'ok' : 'error');
+    }
+
+    function pageUrl(values) {
+        var p = new URLSearchParams();
+        Object.keys(values || {}).forEach(function (k) {
+            if (values[k] != null && values[k] !== '') p.set(k, values[k]);
+        });
+        var qs = p.toString();
+        return BASE + '/' + (qs ? '?' + qs : '');
+    }
+
+    function updateUrl(changes) {
+        var p = new URLSearchParams(location.search);
+        Object.keys(changes).forEach(function (k) {
+            if (changes[k] == null || changes[k] === '') p.delete(k); else p.set(k, changes[k]);
+        });
+        var qs = p.toString();
+        history.replaceState(null, '', BASE + '/' + (qs ? '?' + qs : '') + location.hash);
+    }
+
+    function loginUrl() {
+        return '/login/?target=' + encodeURIComponent(location.pathname + location.search);
+    }
+
+    function api(path, opts) {
+        opts = opts || {};
+        var init = { method: opts.method || 'GET', headers: { 'Accept': 'application/json' }, credentials: 'same-origin' };
+        if (opts.body !== undefined) {
+            init.headers['Content-Type'] = 'application/json';
+            init.body = JSON.stringify(opts.body);
+        }
+        return fetch(API + path, init).then(function (res) {
+            return res.text().then(function (text) {
+                var data = null;
+                try { data = text ? JSON.parse(text) : null; } catch (e) { /* non-JSON */ }
+                if (!res.ok) {
+                    var err = new Error((data && data.error) || ('Request failed (HTTP ' + res.status + ')'));
+                    err.status = res.status;
+                    throw err;
+                }
+                return data;
+            });
+        });
+    }
+
+    // --------------------------------------------------------------- themes
+    function themeOf(id) { return state.themeMap[id] || state.defaultTheme; }
+
+    function applyTheme(t) {
+        state.theme = t;
+        document.documentElement.setAttribute('data-gift-theme', t.id);
+        var values = { emoji: t.emoji, banner: t.banner, divider: t.divider, title: t.title, name: t.displayName, subtitle: t.subtitle };
+        Object.keys(values).forEach(function (k) {
+            $all('[data-t="' + k + '"]').forEach(function (n) { n.textContent = values[k] || ''; });
+        });
+        refreshTitle();
+    }
+
+    function refreshTitle() {
+        var e = (state.theme && state.theme.emoji) || '🎁';
+        document.title = e + ' ' + state.title + ' ' + e;
+    }
+
+    // ---------------------------------------------------------------- views
+    function show(id, bodyClass, title) {
+        $all('[data-view]').forEach(function (v) { v.hidden = v.id !== id; });
+        document.body.className = bodyClass;
+        var view = document.getElementById(id);
+        var slot = $('.appearance-slot', view);
+        if (slot) slot.appendChild(document.getElementById('appearance'));
+        $all('[data-login]', view).forEach(function (a) { a.href = loginUrl(); });
+        state.title = title;
+        refreshTitle();
+    }
+
+    function showError(message) {
+        $('#error-message').textContent = message;
+        $('#error-back').href = pageUrl({ theme: state.theme && state.theme.id });
+        show('view-error', 'gift-page-card', 'Gifted Credits');
+    }
+
+    function showWelcome() {
+        show('view-welcome', 'gift-page-card', 'Cognotik Gifted Credits');
+    }
+
+    function showLogin(giftId) {
+        var view = $('#view-login');
+        function render(found, missing) {
+            $all('[data-login-found]', view).forEach(function (n) { n.hidden = !found; });
+            $all('[data-login-unknown]', view).forEach(function (n) { n.hidden = found; });
+            $('#login-details-found').hidden = !found;
+            $('#login-details-missing').hidden = !missing;
+            show('view-login', 'gift-page-card', "You've Received a Gift!");
+        }
+        if (!giftId) return Promise.resolve(render(false, false));
+        return api('/gifts/' + encodeURIComponent(giftId)).then(function (gift) {
+            applyTheme(themeOf(gift.theme));
+            bind(view, { giftId: gift.id, amount: fmt(gift.amountGranted) });
+            render(true, false);
+        }, function () {
+            bind(view, { giftId: giftId });
+            render(false, true);
+        });
+    }
+
+    function showConfirm(gift) {
+        var view = $('#view-confirm');
+        var theme = themeOf(gift.theme);
+        applyTheme(theme);
+        bind(view, {
+            giftId: gift.id,
+            amount: fmt(gift.amountGranted),
+            claimant: state.session.email || state.session.userId
+        });
+        var yes = $('#confirm-yes');
+        var status = $('#confirm-status');
+        setStatus(status, null);
+        $('#confirm-cancel').href = pageUrl({ theme: theme.id });
+        yes.onclick = function (e) {
+            e.preventDefault();
+            yes.setAttribute('aria-disabled', 'true');
+            api('/gifts/' + encodeURIComponent(gift.id) + '/claim', { method: 'POST', body: {} })
+                .then(showSuccess)
+                .catch(function (err) {
+                    setStatus(status, err.message, false);
+                    yes.removeAttribute('aria-disabled');
+                });
+        };
+        show('view-confirm', 'gift-page-card', 'Confirm Gift Claim');
+    }
+
+    function showSuccess(result) {
+        var view = $('#view-success');
+        var theme = themeOf(result.theme);
+        applyTheme(theme);
+        bind(view, { giftId: result.giftId, amount: fmt(result.amountGranted) });
+        var target = pageUrl({ theme: theme.id });
+        $('#success-return').href = target;
+        history.replaceState(null, '', target);
+        show('view-success', 'gift-page-card gift-page-success', 'Gift Claimed Successfully!');
+        var remaining = 5;
+        var counter = $('#success-countdown');
+        counter.textContent = remaining;
+        var timer = setInterval(function () {
+            remaining -= 1;
+            counter.textContent = Math.max(remaining, 0);
+            if (remaining <= 0) { clearInterval(timer); location.href = target; }
+        }, 1000);
+    }
+
+    // ------------------------------------------------------------ dashboard
+    function filters() {
+        return {
+            giftId: $('#filter-gift-id').value.trim(),
+            userId: $('#filter-user-id').value.trim()
+        };
+    }
+
+    function renderThemeControls() {
+        var buttons = $('#theme-buttons');
+        buttons.textContent = '';
+        state.themes.forEach(function (t) {
+            var f = filters();
+            buttons.appendChild(el('a', {
+                'class': 'theme-btn' + (t.id === state.theme.id ? ' active' : ''),
+                href: pageUrl({ theme: t.id, filterGiftId: f.giftId, filterUserId: f.userId }),
+                title: t.displayName,
+                onclick: function (e) {
+                    e.preventDefault();
+                    applyTheme(t);
+                    updateUrl({ theme: t.id });
+                    renderThemeControls();
+                }
+            }, t.emoji + ' ' + t.displayName));
+        });
+        $('#create-theme').value = state.theme.id;
+        $('#nav-gifts').href = pageUrl({ theme: state.theme.id });
+    }
+
+    function messageRow(colspan, text) {
+        return el('tr', null, el('td', { colspan: String(colspan) }, text));
+    }
+
+    function filterLink(text, title, giftId, userId) {
+        return el('a', {
+            'class': 'claim-link', href: pageUrl({ theme: state.theme.id, filterGiftId: giftId, filterUserId: userId }) + '#claims',
+            title: title,
+            onclick: function (e) { e.preventDefault(); applyClaimFilter(giftId || '', userId || ''); }
+        }, text);
+    }
+
+    function loadGifts() {
+        var body = $('#gift-rows');
+        return api('/gifts').then(function (gifts) {
+            body.textContent = '';
+            if (!gifts || !gifts.length) { body.appendChild(messageRow(10, 'No gifts found.')); return; }
+            gifts.forEach(function (g) {
+                var t = themeOf(g.theme);
+                var expires = new Date(Date.now() + (Number(g.grantDurationDays) || 0) * 86400000);
+                body.appendChild(el('tr', null,
+                    el('td', null, el('a', {
+                        'class': 'claim-link',
+                        href: pageUrl({ action: 'claim', giftId: g.id, theme: t.id }),
+                        title: 'Click to claim this gift (Theme: ' + t.displayName + ')'
+                    }, g.id)),
+                    el('td', null, fmt(g.amountGranted)),
+                    el('td', null, fmt(g.grantDurationDays)),
+                    el('td', null, fmtDate(expires)),
+                    el('td', null, fmt(g.totalBudget)),
+                    el('td', null, fmt(g.spentBudget)),
+                    el('td', null, g.claimants),
+                    el('td', null, g.createdBy || '-'),
+                    el('td', null, t.emoji + ' ' + t.displayName),
+                    el('td', null, filterLink('🔍 View Claims', 'View claims for this gift', g.id, null))
+                ));
+            });
+        }).catch(function (err) {
+            body.textContent = '';
+            body.appendChild(messageRow(10, 'Failed to load gifts: ' + err.message));
+        });
+    }
+
+    function loadClaims() {
+        var body = $('#claim-rows');
+        var f = filters();
+        var qs = new URLSearchParams();
+        if (f.giftId) qs.set('giftId', f.giftId);
+        if (f.userId) qs.set('userId', f.userId);
+        $('#claims-suffix').textContent = (f.giftId || f.userId) ? ' (filtered)' : '';
+        return api('/claims' + (qs.toString() ? '?' + qs : '')).then(function (claims) {
+            body.textContent = '';
+            if (!claims || !claims.length) { body.appendChild(messageRow(3, 'No claims found.')); return; }
+            claims.forEach(function (c) {
+                body.appendChild(el('tr', null,
+                    el('td', null, filterLink(c.giftId, 'Filter by this gift', c.giftId, null)),
+                    el('td', null, filterLink(c.userId, 'Filter by this user', null, c.userId)),
+                    el('td', null, fmtDate(c.claimedAt))
+                ));
+            });
+        }).catch(function (err) {
+            body.textContent = '';
+            body.appendChild(messageRow(3, 'Failed to load claims: ' + err.message));
+        });
+    }
+
+    function applyClaimFilter(giftId, userId) {
+        $('#filter-gift-id').value = giftId;
+        $('#filter-user-id').value = userId;
+        updateUrl({ filterGiftId: giftId, filterUserId: userId });
+        renderThemeControls();
+        loadClaims().then(function () {
+            var h = document.getElementById('claims');
+            if (h) h.scrollIntoView({ behavior: 'smooth' });
+        });
+    }
+
+    function refreshBalance(balance) {
+        if (balance != null) { $('#balance').textContent = fmt(balance); return; }
+        api('/session').then(function (s) { if (s && s.authenticated) $('#balance').textContent = fmt(s.balance); });
+    }
+
+    function showMain() {
+        var select = $('#create-theme');
+        select.textContent = '';
+        state.themes.forEach(function (t) {
+            select.appendChild(el('option', { value: t.id }, t.emoji + ' ' + t.displayName));
+        });
+        $('#filter-gift-id').value = params.get('filterGiftId') || '';
+        $('#filter-user-id').value = params.get('filterUserId') || '';
+        $('#balance').textContent = fmt(state.session.balance);
+        renderThemeControls();
+
+        var createForm = $('#create-form');
+        var createStatus = $('#create-status');
+        createForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            var button = $('button[type="submit"]', createForm);
+            var body = {
+                amountGranted: createForm.amountGranted.value,
+                grantDurationDays: createForm.grantDuration.value,
+                totalBudget: createForm.totalBudget.value,
+                theme: createForm.giftTheme.value,
+                acceptLicense: createForm.acceptLicense.checked
+            };
+            button.disabled = true;
+            setStatus(createStatus, null);
+            api('/gifts', { method: 'POST', body: body }).then(function (res) {
+                setStatus(createStatus, '🎉 Gift created!', true);
+                createForm.reset();
+                select.value = state.theme.id;
+                refreshBalance(res && res.balance);
+                return loadGifts();
+            }).catch(function (err) {
+                setStatus(createStatus, err.message, false);
+            }).then(function () { button.disabled = false; });
+        });
+
+        $('#claim-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var giftId = e.target.giftId.value.trim();
+            if (giftId) location.href = pageUrl({ action: 'claim', giftId: giftId, theme: state.theme.id });
+        });
+
+        $('#filter-form').addEventListener('submit', function (e) {
+            e.preventDefault();
+            var f = filters();
+            applyClaimFilter(f.giftId, f.userId);
+        });
+        $('#filter-clear').addEventListener('click', function (e) {
+            e.preventDefault();
+            applyClaimFilter('', '');
+        });
+
+        show('view-main', 'gift-page-main', 'Gifted Credits');
+        loadGifts();
+        loadClaims().then(function () {
+            if (location.hash === '#claims') {
+                var h = document.getElementById('claims');
+                if (h) h.scrollIntoView();
+            }
+        });
+    }
+
+    // ----------------------------------------------------------- bootstrap
+    function bindAppearance() {
+        try {
+            var palette = document.getElementById('site-palette-selector');
+            if (window.ThemeManager && window.CognotikThemes) {
+                ThemeManager.bindPaletteSelector(palette);
+            } else {
+                document.getElementById('site-palette-group').style.display = 'none';
+            }
+            if (window.ThemeManager) ThemeManager.bindSelector(document.getElementById('site-theme-selector'));
+        } catch (e) { console.warn('ThemeManager selector binding failed', e); }
+    }
+
+    function claimFlow(giftId) {
+        if (!state.session.authenticated) return showLogin(giftId);
+        if (!giftId) return showError('giftId parameter is required');
+        return api('/gifts/' + encodeURIComponent(giftId)).then(showConfirm, function (err) {
+            showError(err.status === 404 ? 'Gift not found: ' + giftId : err.message);
+        });
+    }
+
+    function init() {
+        bindAppearance();
+        Promise.all([api('/themes'), api('/session')]).then(function (results) {
+            var themes = results[0], session = results[1];
+            state.themes = themes.themes || [];
+            state.themes.forEach(function (t) { state.themeMap[t.id] = t; });
+            state.defaultTheme = state.themeMap[themes['default']] || state.themes[0];
+            state.session = session || { authenticated: false };
+            applyTheme(themeOf(params.get('theme')));
+
+            if (params.get('action') === 'claim') return claimFlow(params.get('giftId'));
+            if (!state.session.authenticated) return showWelcome();
+            showMain();
+        }).catch(function (err) {
+            showError(err.message || 'Failed to load gifts.');
+        });
+    }
+
+    init();
+})();
+</script>
+</body>
+</html>

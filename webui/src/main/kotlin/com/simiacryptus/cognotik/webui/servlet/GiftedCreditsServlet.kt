@@ -1,547 +1,326 @@
 package com.simiacryptus.cognotik.webui.servlet
 
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.h2.GiftedCreditsDB
+import com.simiacryptus.cognotik.platform.model.Claim
 import com.simiacryptus.cognotik.platform.model.Gift
 import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.util.toJson
-import com.simiacryptus.cognotik.webui.servlet.GiftTemplates.escape
-import com.simiacryptus.cognotik.webui.servlet.GiftTemplates.render
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
 import org.slf4j.LoggerFactory
-import java.net.URLEncoder
+import java.net.URLDecoder
 import java.nio.charset.StandardCharsets
 import java.time.Duration
-import java.time.Instant
-import java.time.ZoneId
-import java.time.format.DateTimeFormatter
+import java.util.concurrent.ConcurrentHashMap
 
+/**
+ * Gifted credits: a JSON API under `/gifts/api/` plus a single-page HTML UI
+ * (`/gifts/index.html`, classpath resource) that talks to it.
+ *
+ * Any GET that is not an API call or a known static asset is answered with the UI,
+ * so legacy links such as `/gifts/?action=claim&giftId=...&theme=...` keep working
+ * (the UI interprets the query string client-side).
+ */
 class GiftedCreditsServlet : HttpServlet() {
 
-    public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
-        val remoteAddr = request.remoteAddr
-        val requestUri = request.requestURI
-        log.debug("Handling GET request from {} for {}", remoteAddr, requestUri)
-        try {
-            response.status = HttpServletResponse.SC_OK
-            val user = try {
-                ServiceRouter.authenticate(request)
-            } catch (e: Exception) {
-                log.warn("Authentication error during GET from {}: {}", remoteAddr, e.message, e)
-                null
-            }
-            log.debug("GET authenticated user: {}", user)
-
-            val theme = GiftThemes.byId(request.getParameter("theme"))
-
-            if (request.getParameter("action") == "claim") {
-                handleGetClaim(request, response, user, theme)
-                return
-            }
-
-            if (user == null) {
-                log.info("Unauthenticated visit to gifts page from {} - showing welcome/login page", remoteAddr)
-                showLoginWelcomePage(request, response, theme)
-                return
-            }
-
-            val gifts = try {
-                manager.listGifts()
-            } catch (e: Exception) {
-                log.error("Failed to list gifts for request from {}", remoteAddr, e)
-                response.sendError(
-                    HttpServletResponse.SC_INTERNAL_SERVER_ERROR,
-                    "Failed to retrieve gifts: ${e.message}"
-                )
-                return
-            }
-            log.debug("Retrieved {} gifts", gifts.size)
-            val filterGiftId = request.getParameter("filterGiftId")?.takeIf { it.isNotBlank() }
-            val filterUserId = request.getParameter("filterUserId")?.takeIf { it.isNotBlank() }
-            val claims = try {
-                manager.listClaims(filterGiftId, filterUserId)
-            } catch (e: Exception) {
-                log.error("Failed to list claims for request from {}", remoteAddr, e)
-                emptyList()
-            }
-            log.debug("Retrieved {} claims (filterGiftId={}, filterUserId={})", claims.size, filterGiftId, filterUserId)
-
-            if ((request.getHeader("Accept") ?: "").contains("application/json")) {
-                response.contentType = "application/json"
-                try {
-                    if (request.getParameter("view") == "claims") {
-                        response.writer.write(claims.toJson())
-                    } else {
-                        response.writer.write(gifts.toJson())
-                    }
-                } catch (e: Exception) {
-                    log.error("Failed to serialize gifts to JSON", e)
-                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Failed to serialize response")
-                }
-                return
-            }
-
-            val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss z").withZone(ZoneId.systemDefault())
-
-            val currentBalance = try {
-                ServiceRouter.getUserBalance(user)
-            } catch (e: Exception) {
-                log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
-                0.0
-            }
-
-            val themeButtons = GiftThemes.ALL.joinToString("\n") { t ->
-                render(
-                    "theme-button.html", mapOf(
-                        "href" to escape(
-                            requestUri + query(
-                                "theme" to t.id,
-                                "filterGiftId" to filterGiftId,
-                                "filterUserId" to filterUserId
-                            )
-                        ),
-                        "activeClass" to if (t.id == theme.id) " active" else "",
-                        "emoji" to t.emoji,
-                        "name" to escape(t.displayName)
-                    )
-                )
-            }
-
-            val themeOptions = GiftThemes.ALL.joinToString("\n") { t ->
-                render(
-                    "theme-option.html", mapOf(
-                        "id" to t.id,
-                        "selected" to if (t.id == theme.id) " selected" else "",
-                        "emoji" to t.emoji,
-                        "name" to escape(t.displayName)
-                    )
-                )
-            }
-
-            val giftRows = if (gifts.isEmpty()) messageRow(10, "No gifts found.") else gifts.joinToString("\n") { gift ->
-                try {
-                    val giftTheme = resolveGiftTheme(gift)
-                    render(
-                        "gift-row.html", mapOf(
-                            // Gift claim links always use the gift's assigned theme
-                            "claimUrl" to escape(
-                                requestUri + query("action" to "claim", "giftId" to gift.id, "theme" to giftTheme.id)
-                            ),
-                            "viewClaimsUrl" to escape(
-                                requestUri + query("filterGiftId" to gift.id, "theme" to theme.id) + "#claims"
-                            ),
-                            "giftId" to escape(gift.id),
-                            "amountGranted" to "%.2f".format(gift.amountGranted),
-                            "durationDays" to "%.2f".format(gift.grantDuration.toMillis() / 86400000.0),
-                            "expires" to dateFormatter.format(Instant.now().plus(gift.grantDuration)),
-                            "totalBudget" to "%.2f".format(gift.totalBudget),
-                            "spentBudget" to "%.2f".format(gift.spentBudget),
-                            "claimants" to escape(gift.claimants),
-                            "createdBy" to escape(gift.createdBy ?: "-"),
-                            "giftThemeEmoji" to giftTheme.emoji,
-                            "giftThemeName" to escape(giftTheme.displayName)
-                        )
-                    )
-                } catch (e: Exception) {
-                    log.warn("Failed to render gift row for giftId={}", gift.id, e)
-                    messageRow(10, "Error rendering gift ${gift.id}")
-                }
-            }
-
-            val claimRows = if (claims.isEmpty()) messageRow(3, "No claims found.") else claims.joinToString("\n") { claim ->
-                try {
-                    render(
-                        "claim-row.html", mapOf(
-                            "giftFilterUrl" to escape(
-                                requestUri + query("filterGiftId" to claim.giftId, "theme" to theme.id) + "#claims"
-                            ),
-                            "userFilterUrl" to escape(
-                                requestUri + query("filterUserId" to claim.userId, "theme" to theme.id) + "#claims"
-                            ),
-                            "giftId" to escape(claim.giftId),
-                            "userId" to escape(claim.userId),
-                            "claimedAt" to (claim.claimedAt?.let { dateFormatter.format(it) } ?: "-")
-                        )
-                    )
-                } catch (e: Exception) {
-                    log.warn("Failed to render claim row for giftId={} userId={}", claim.giftId, claim.userId, e)
-                    messageRow(3, "Error rendering claim")
-                }
-            }
-
-            renderPage(
-                response, "main.html", theme, mapOf(
-                    "requestUri" to escape(requestUri),
-                    "themeButtons" to themeButtons,
-                    "themeOptions" to themeOptions,
-                    "balance" to "%.2f".format(currentBalance),
-                    "giftRows" to giftRows,
-                    "claimRows" to claimRows,
-                    "filterGiftId" to escape(filterGiftId),
-                    "filterUserId" to escape(filterUserId),
-                    "claimsFilterSuffix" to if (filterGiftId != null || filterUserId != null) " (filtered)" else ""
-                )
-            )
-        } catch (e: Exception) {
-            log.error("Unhandled exception in doGet from {}", remoteAddr, e)
-            try {
-                if (!response.isCommitted) {
-                    response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, "Internal server error")
-                }
-            } catch (ioe: Exception) {
-                log.error("Failed to send error response", ioe)
-            }
-        }
+  public override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
+    val path = subPath(request)
+    log.debug("GET {} from {}", path, request.remoteAddr)
+    try {
+      when {
+        isApi(path) -> apiGet(request, response, segments(path))
+        STATIC_ASSETS.containsKey(path) -> serveStatic(request, response, path)
+        path == "/" && prefersJson(request) -> legacyJson(request, response)
+        else -> serveStatic(request, response, "/index.html")
+      }
+    } catch (e: Exception) {
+      fail(response, "GET $path", e)
     }
+  }
 
-    private fun handleGetClaim(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        user: User?,
-        theme: GiftTheme
-    ) {
-        val remoteAddr = request.remoteAddr
-        val requestUri = request.requestURI
-        val giftId = request.getParameter("giftId")
-        val confirmed = request.getParameter("confirm")?.equals("true", ignoreCase = true) == true
-        log.info("Claim action via GET from user={} giftId={} confirmed={}", user, giftId, confirmed)
-        if (user == null) {
-            log.info(
-                "Unauthenticated claim attempt from {} for giftId={} - showing login redirect page",
-                remoteAddr, giftId
-            )
-            val gift = if (!giftId.isNullOrBlank()) {
-                try {
-                    manager.getGift(giftId)
-                } catch (e: Exception) {
-                    log.warn("Failed to retrieve gift {} for unauthenticated user: {}", giftId, e.message)
-                    null
-                }
-            } else null
-            showLoginRedirectForGift(request, response, giftId, gift, gift?.let { resolveGiftTheme(it) } ?: theme)
-            return
-        }
-        if (giftId.isNullOrBlank()) {
-            log.warn("Claim attempt with missing giftId by user={}", user)
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, "giftId parameter is required")
-            return
-        }
-        try {
-            val gift = manager.getGift(giftId)
-            if (gift == null) {
-                log.warn("Claim attempt for non-existent giftId={} by user={}", giftId, user)
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Gift not found: $giftId")
-                return
-            }
-            val giftTheme = resolveGiftTheme(gift)
-            if (!confirmed) {
-                log.debug("Showing claim confirmation page for user={} giftId={}", user, giftId)
-                showClaimConfirmation(user, giftId, gift, response, requestUri, giftTheme)
-                return
-            }
-            if (!manager.claimGift(user, giftId)) {
-                log.info("Claim failed (exhausted/already claimed) for user={} giftId={}", user, giftId)
-                response.sendError(
-                    HttpServletResponse.SC_BAD_REQUEST,
-                    "Failed to claim gift. It may be exhausted or already claimed."
-                )
-                return
-            }
-            log.info("Gift claimed successfully by user={} giftId={}", user, giftId)
-            claimSuccess(user, giftId, manager.getGift(giftId)!!, response, giftTheme)
-        } catch (e: IllegalArgumentException) {
-            log.warn("Invalid claim request user={} giftId={}: {}", user, giftId, e.message, e)
-            response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.message ?: "Invalid claim request")
-        } catch (e: Exception) {
-            log.error("Error claiming gift user={} giftId={}", user, giftId, e)
-            response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.message ?: "Internal server error")
-        }
+  public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
+    val path = subPath(request)
+    log.debug("POST {} from {}", path, request.remoteAddr)
+    try {
+      if (!isApi(path)) {
+        return sendError(response, HttpServletResponse.SC_METHOD_NOT_ALLOWED, "Use the JSON API under /api/")
+      }
+      apiPost(request, response, segments(path))
+    } catch (e: Exception) {
+      fail(response, "POST $path", e)
     }
+  }
 
-    public override fun doPost(request: HttpServletRequest, response: HttpServletResponse) {
-        val remoteAddr = request.remoteAddr
-        val requestUri = request.requestURI
-        val action = request.getParameter("action")
-        val themeParam = request.getParameter("theme")
-        val theme = GiftThemes.byId(themeParam)
-        log.debug("Handling POST request from {} for {} action={}", remoteAddr, requestUri, action)
+  // ------------------------------------------------------------------ API
 
-        val user = try {
-            ServiceRouter.authenticate(request)
-        } catch (e: Exception) {
-            log.warn("Authentication error during POST from {}: {}", remoteAddr, e.message, e)
-            if (!response.isCommitted) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication failed")
-            }
-            return
-        }
-        if (user == null) {
-            log.warn("Unauthenticated POST request from {} action={}", remoteAddr, action)
-            if (!response.isCommitted) {
-                response.sendError(HttpServletResponse.SC_UNAUTHORIZED, "Authentication required")
-            }
-            return
-        }
+  private fun apiGet(request: HttpServletRequest, response: HttpServletResponse, seg: List<String>) {
+    val user = authenticateOrNull(request)
+    when {
+      seg == listOf("session") -> sendJson(response, HttpServletResponse.SC_OK, sessionDto(user))
 
-        try {
-            when (action) {
-                "create" -> {
-                    val amountGrantedStr = request.getParameter("amountGranted")
-                    val grantDurationStr = request.getParameter("grantDuration")
-                    val totalBudgetStr = request.getParameter("totalBudget")
-                    val giftThemeId = request.getParameter("giftTheme")?.takeIf { it.isNotBlank() }
-                    val acceptLicense = request.getParameter("acceptLicense")
-                    if (acceptLicense.isNullOrBlank() || !(acceptLicense.equals("on", ignoreCase = true) ||
-                                acceptLicense.equals("true", ignoreCase = true) ||
-                                acceptLicense == "1")
-                    ) {
-                        log.warn("Gift creation rejected: license not accepted by user={}", user)
-                        response.sendError(
-                            HttpServletResponse.SC_BAD_REQUEST,
-                            "You must accept the Cognotik Software License Agreement to create a gift. See /LICENSE.html"
-                        )
-                        return
-                    }
-                    if (amountGrantedStr.isNullOrBlank() || grantDurationStr.isNullOrBlank() || totalBudgetStr.isNullOrBlank()) {
-                        log.warn(
-                            "Create gift missing parameters by user={} (amount={}, duration={}, budget={})",
-                            user, amountGrantedStr, grantDurationStr, totalBudgetStr
-                        )
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing required parameters")
-                        return
-                    }
-                    val amountGranted = amountGrantedStr.toDoubleOrNull() ?: run {
-                        log.warn("Invalid amountGranted '{}' by user={}", amountGrantedStr, user)
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid amountGranted: $amountGrantedStr")
-                        return
-                    }
-                    val grantDurationDays = grantDurationStr.toDoubleOrNull() ?: run {
-                        log.warn("Invalid grantDuration '{}' by user={}", grantDurationStr, user)
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid grantDuration: $grantDurationStr")
-                        return
-                    }
-                    val totalBudget = totalBudgetStr.toDoubleOrNull() ?: run {
-                        log.warn("Invalid totalBudget '{}' by user={}", totalBudgetStr, user)
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Invalid totalBudget: $totalBudgetStr")
-                        return
-                    }
-                    if (amountGranted <= 0 || grantDurationDays <= 0 || totalBudget <= 0) {
-                        log.warn(
-                            "Create gift with non-positive values by user={} amount={} duration={} budget={}",
-                            user, amountGranted, grantDurationDays, totalBudget
-                        )
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Values must be positive")
-                        return
-                    }
-                    val grantDuration = Duration.ofMillis((grantDurationDays * 86400000).toLong())
-                    log.info(
-                        "Creating gift by user={} amount={} duration={}d budget={} theme={}",
-                        user, amountGranted, grantDurationDays, totalBudget, giftThemeId
-                    )
-                    try {
-                        manager.createGift(user, amountGranted, grantDuration, totalBudget, giftThemeId)
-                    } catch (e: IllegalArgumentException) {
-                        log.warn("Gift creation rejected for user={}: {}", user, e.message)
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.message ?: "Invalid gift parameters")
-                        return
-                    }
-                    log.info("Gift created successfully by user={}", user)
-                }
+      seg == listOf("themes") -> sendJson(response, HttpServletResponse.SC_OK, themesDto())
 
-                "claim" -> {
-                    val giftId = request.getParameter("giftId")
-                    if (giftId.isNullOrBlank()) {
-                        log.warn("Claim attempt with missing giftId by user={}", user)
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "giftId parameter is required")
-                        return
-                    }
-                    log.info("Claim action via POST by user={} giftId={}", user, giftId)
-                    val gift = manager.getGift(giftId)
-                    if (gift == null) {
-                        log.warn("Claim attempt for non-existent giftId={} by user={}", giftId, user)
-                        response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Gift not found: $giftId")
-                        return
-                    }
-                    val giftTheme = resolveGiftTheme(gift).let {
-                        if (it.id == GiftThemes.DEFAULT.id && themeParam != null) theme else it
-                    }
-                    if (!manager.claimGift(user, giftId)) {
-                        log.info("Claim failed (exhausted/already claimed) for user={} giftId={}", user, giftId)
-                        response.sendError(
-                            HttpServletResponse.SC_BAD_REQUEST,
-                            "Failed to claim gift. It may be exhausted or already claimed."
-                        )
-                    } else {
-                        claimSuccess(user, giftId, gift, response, giftTheme)
-                    }
-                    return
-                }
+      seg == listOf("gifts") -> {
+        if (user == null) return unauthorized(response)
+        sendJson(response, HttpServletResponse.SC_OK, manager.listGifts().map(::giftDto))
+      }
 
-                null -> {
-                    log.warn("POST request without action parameter from user={}", user)
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Missing 'action' parameter")
-                    return
-                }
+      seg.size == 2 && seg[0] == "gifts" -> {
+        val gift = manager.getGift(seg[1])
+          ?: return sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: ${seg[1]}")
+        sendJson(response, HttpServletResponse.SC_OK, if (user == null) publicGiftDto(gift) else giftDto(gift))
+      }
 
-                else -> {
-                    log.warn("Unknown action '{}' from user={}", action, user)
-                    response.sendError(HttpServletResponse.SC_BAD_REQUEST, "Unknown action: $action")
-                    return
-                }
-            }
-            response.sendRedirect(requestUri + query("theme" to theme.id))
-        } catch (e: IllegalArgumentException) {
-            log.warn("Invalid argument in POST action={} user={}: {}", action, user, e.message, e)
-            if (!response.isCommitted) {
-                response.sendError(HttpServletResponse.SC_BAD_REQUEST, e.message ?: "Invalid request")
-            }
-        } catch (e: Exception) {
-            log.error("Error processing POST action={} user={}", action, user, e)
-            if (!response.isCommitted) {
-                response.sendError(HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.message ?: "Internal server error")
-            }
-        }
+      seg == listOf("claims") -> {
+        if (user == null) return unauthorized(response)
+        val giftId = request.getParameter("giftId")?.takeIf { it.isNotBlank() }
+        val userId = request.getParameter("userId")?.takeIf { it.isNotBlank() }
+        sendJson(response, HttpServletResponse.SC_OK, manager.listClaims(giftId, userId).map(::claimDto))
+      }
+
+      else -> sendError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown API endpoint")
     }
+  }
 
-    // ---------------------------------------------------------------- pages
-
-    private fun showLoginRedirectForGift(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        giftId: String?,
-        gift: Gift?,
-        theme: GiftTheme
-    ) {
-        val giftDetails = when {
-            gift != null -> render(
-                "login-gift-details.html", mapOf(
-                    "giftId" to escape(giftId ?: "(unknown)"),
-                    "amount" to "%.2f".format(gift.amountGranted),
-                    "themeName" to escape(theme.displayName)
-                )
-            )
-            !giftId.isNullOrBlank() -> render("login-gift-missing.html", mapOf("giftId" to escape(giftId)))
-            else -> ""
-        }
-        renderPage(
-            response, "login-redirect.html", theme, mapOf(
-                "found" to if (gift != null) "found" else "unknown",
-                "giftDetails" to giftDetails,
-                "loginUrl" to escape(loginUrl(request))
-            )
-        )
+  private fun apiPost(request: HttpServletRequest, response: HttpServletResponse, seg: List<String>) {
+    val user = authenticateOrNull(request) ?: return unauthorized(response)
+    if (request.contentType?.lowercase()?.startsWith("application/json") != true) {
+      return sendError(response, HttpServletResponse.SC_UNSUPPORTED_MEDIA_TYPE, "Content-Type must be application/json")
     }
-
-    private fun showLoginWelcomePage(
-        request: HttpServletRequest,
-        response: HttpServletResponse,
-        theme: GiftTheme
-    ) {
-        renderPage(response, "welcome.html", theme, mapOf("loginUrl" to escape(loginUrl(request))))
+    when {
+      seg == listOf("gifts") -> createGift(user, readBody(request), response)
+      seg.size == 3 && seg[0] == "gifts" && seg[2] == "claim" -> claimGift(user, seg[1], response)
+      else -> sendError(response, HttpServletResponse.SC_NOT_FOUND, "Unknown API endpoint")
     }
+  }
 
-    private fun showClaimConfirmation(
-        userinfo: User,
-        giftId: String,
-        gift: Gift,
-        response: HttpServletResponse,
-        requestUri: String?,
-        theme: GiftTheme = GiftThemes.DEFAULT
-    ) {
-        val base = requestUri ?: ""
-        renderPage(
-            response, "confirm.html", theme, mapOf(
-                "giftId" to escape(giftId),
-                "amount" to "%.2f".format(gift.amountGranted),
-                "claimant" to escape(userinfo.email ?: userinfo.id),
-                "confirmUrl" to escape(
-                    base + query("action" to "claim", "giftId" to giftId, "confirm" to "true", "theme" to theme.id)
-                ),
-                "cancelUrl" to escape(base + query("theme" to theme.id))
-            )
-        )
+  private fun createGift(user: User, body: Map<String, Any?>, response: HttpServletResponse) {
+    if (!truthy(body["acceptLicense"])) {
+      log.warn("Gift creation rejected: license not accepted by user={}", user)
+      return sendError(
+        response, HttpServletResponse.SC_BAD_REQUEST,
+        "You must accept the Cognotik Software License Agreement to create a gift. See /LICENSE.html"
+      )
     }
-
-    private fun claimSuccess(
-        userinfo: User,
-        giftId: String,
-        gift: Gift,
-        response: HttpServletResponse,
-        theme: GiftTheme = GiftThemes.DEFAULT
-    ) {
-        log.info(
-            "Gift claimed successfully by user={} giftId={} amountGranted={} theme={}",
-            userinfo, giftId, gift.amountGranted, theme.id
-        )
-        ServiceRouter.creditUser(
-            user = userinfo,
-            amount = gift.amountGranted,
-            comment = "Claimed gift $giftId",
-        )
-        renderPage(
-            response, "success.html", theme, mapOf(
-                "giftId" to escape(giftId),
-                "amount" to "%.2f".format(gift.amountGranted),
-                "redirectUri" to escape("/" + query("theme" to theme.id))
-            )
-        )
+    val amountGranted = number(body["amountGranted"])
+    val grantDurationDays = number(body["grantDurationDays"] ?: body["grantDuration"])
+    val totalBudget = number(body["totalBudget"])
+    if (amountGranted == null || grantDurationDays == null || totalBudget == null) {
+      return sendError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing or invalid parameters")
     }
-
-    // -------------------------------------------------------------- helpers
-
-    /**
-     * Renders a page template with the common variables every page uses.
-     */
-    private fun renderPage(
-        response: HttpServletResponse,
-        template: String,
-        theme: GiftTheme,
-        vars: Map<String, Any?>
-    ) {
-        response.contentType = "text/html;charset=UTF-8"
-        response.status = HttpServletResponse.SC_OK
-        val common = mapOf(
-            "head" to headHtml,
-            "appearanceSelector" to GiftTemplates.resource("appearance-selector.html"),
-            "themeId" to theme.id,
-            "themeName" to escape(theme.displayName),
-            "emoji" to theme.emoji,
-            "banner" to theme.bannerContent,
-            "divider" to theme.dividerContent,
-            "themeTitle" to theme.title,
-            "subtitle" to theme.subtitle
-        )
-        response.writer.write(render(template, common + vars))
+    if (amountGranted <= 0 || grantDurationDays <= 0 || totalBudget <= 0) {
+      return sendError(response, HttpServletResponse.SC_BAD_REQUEST, "Values must be positive")
     }
-
-    private fun messageRow(colspan: Int, message: String) =
-        render("message-row.html", mapOf("colspan" to colspan, "message" to escape(message)))
-
-    private fun resolveGiftTheme(gift: Gift): GiftTheme = GiftThemes.byId(gift.theme)
-
-    private fun loginUrl(request: HttpServletRequest): String =
-        "/login/" + query("target" to buildReturnTarget(request))
-
-    private fun buildReturnTarget(request: HttpServletRequest): String {
-        val uri = request.requestURI ?: "/"
-        val qs = request.queryString
-        return if (qs.isNullOrBlank()) uri else "$uri?$qs"
+    val themeId = (body["theme"] as? String)?.takeIf { it.isNotBlank() }?.let { GiftThemes.byId(it).id }
+    log.info(
+      "Creating gift by user={} amount={} duration={}d budget={} theme={}",
+      user, amountGranted, grantDurationDays, totalBudget, themeId
+    )
+    try {
+      manager.createGift(
+        user, amountGranted, Duration.ofMillis((grantDurationDays * 86400000).toLong()), totalBudget, themeId
+      )
+    } catch (e: IllegalArgumentException) {
+      log.warn("Gift creation rejected for user={}: {}", user, e.message)
+      return sendError(response, HttpServletResponse.SC_BAD_REQUEST, e.message ?: "Invalid gift parameters")
     }
+    sendJson(response, HttpServletResponse.SC_CREATED, mapOf("created" to true, "balance" to balanceOf(user)))
+  }
 
-    /** Builds a `?k=v&...` query string, URL-encoding values and skipping nulls. */
-    private fun query(vararg params: Pair<String, String?>): String =
-        params.filter { it.second != null }
-            .joinToString("&", prefix = "?") { (k, v) -> "$k=${urlEncode(v!!)}" }
-
-    private fun urlEncode(value: String): String = URLEncoder.encode(value, StandardCharsets.UTF_8)
-
-    companion object {
-        val log = LoggerFactory.getLogger(GiftedCreditsServlet::class.java)!!
-        val manager = GiftedCreditsDB()
-        private val headHtml: String by lazy {
-            render("head.html", mapOf("css" to GiftTemplates.resource("gifts.css")))
-        }
+  private fun claimGift(user: User, giftId: String, response: HttpServletResponse) {
+    val gift = manager.getGift(giftId)
+      ?: return sendError(response, HttpServletResponse.SC_NOT_FOUND, "Gift not found: $giftId")
+    if (!manager.claimGift(user, giftId)) {
+      log.info("Claim failed (exhausted/already claimed) for user={} giftId={}", user, giftId)
+      return sendError(
+        response, HttpServletResponse.SC_CONFLICT,
+        "Failed to claim gift. It may be exhausted or already claimed."
+      )
     }
+    ServiceRouter.creditUser(user = user, amount = gift.amountGranted, comment = "Claimed gift $giftId")
+    log.info("Gift claimed by user={} giftId={} amount={}", user, giftId, gift.amountGranted)
+    sendJson(
+      response, HttpServletResponse.SC_OK, mapOf(
+        "giftId" to giftId,
+        "amountGranted" to gift.amountGranted,
+        "theme" to GiftThemes.byId(gift.theme).id,
+        "balance" to balanceOf(user)
+      )
+    )
+  }
+
+  /** Backward compatibility: `GET /gifts/` with `Accept: application/json`. */
+  private fun legacyJson(request: HttpServletRequest, response: HttpServletResponse) {
+    if (authenticateOrNull(request) == null) return unauthorized(response)
+    if (request.getParameter("view") == "claims") {
+      val giftId = request.getParameter("filterGiftId")?.takeIf { it.isNotBlank() }
+      val userId = request.getParameter("filterUserId")?.takeIf { it.isNotBlank() }
+      sendJson(response, HttpServletResponse.SC_OK, manager.listClaims(giftId, userId).map(::claimDto))
+    } else {
+      sendJson(response, HttpServletResponse.SC_OK, manager.listGifts().map(::giftDto))
+    }
+  }
+
+  // ----------------------------------------------------------------- DTOs
+
+  private fun sessionDto(user: User?): Map<String, Any?> = if (user == null) {
+    mapOf("authenticated" to false)
+  } else {
+    mapOf(
+      "authenticated" to true,
+      "userId" to user.id,
+      "email" to user.email,
+      "balance" to balanceOf(user)
+    )
+  }
+
+  private fun themesDto(): Map<String, Any?> = mapOf(
+    "default" to GiftThemes.DEFAULT.id,
+    "themes" to GiftThemes.ALL.map {
+      mapOf(
+        "id" to it.id,
+        "displayName" to it.displayName,
+        "emoji" to it.emoji,
+        "banner" to it.bannerContent,
+        "divider" to it.dividerContent,
+        "title" to it.title,
+        "subtitle" to it.subtitle
+      )
+    }
+  )
+
+  private fun giftDto(gift: Gift): Map<String, Any?> = linkedMapOf(
+    "id" to gift.id,
+    "amountGranted" to gift.amountGranted,
+    "grantDurationDays" to gift.grantDuration.toMillis() / 86400000.0,
+    "totalBudget" to gift.totalBudget,
+    "spentBudget" to gift.spentBudget,
+    "claimants" to gift.claimants.toString(),
+    "createdBy" to gift.createdBy,
+    "theme" to GiftThemes.byId(gift.theme).id
+  )
+
+  /** What an unauthenticated visitor holding a gift link may see. */
+  private fun publicGiftDto(gift: Gift): Map<String, Any?> = linkedMapOf(
+    "id" to gift.id,
+    "amountGranted" to gift.amountGranted,
+    "theme" to GiftThemes.byId(gift.theme).id
+  )
+
+  private fun claimDto(claim: Claim): Map<String, Any?> = linkedMapOf(
+    "giftId" to claim.giftId,
+    "userId" to claim.userId,
+    "claimedAt" to claim.claimedAt?.toString()
+  )
+
+
+  // -------------------------------------------------------------- helpers
+
+  private fun serveStatic(request: HttpServletRequest, response: HttpServletResponse, path: String) {
+    val contentType = STATIC_ASSETS[path] ?: return sendError(response, HttpServletResponse.SC_NOT_FOUND, "Not found")
+    var body = resource(path.removePrefix("/"))
+    if (path == "/index.html") body = body.replace("{{base}}", htmlEscape(request.contextPath ?: ""))
+    response.status = HttpServletResponse.SC_OK
+    response.contentType = contentType
+    response.setHeader("Cache-Control", "no-cache")
+    response.writer.write(body)
+  }
+
+  private fun subPath(request: HttpServletRequest): String =
+    (request.requestURI ?: "/").removePrefix(request.contextPath ?: "").ifEmpty { "/" }
+
+  private fun isApi(path: String) = path == "/api" || path.startsWith("/api/")
+
+  private fun segments(path: String): List<String> =
+    path.removePrefix("/api").split('/').filter { it.isNotEmpty() }
+      .map { URLDecoder.decode(it, StandardCharsets.UTF_8) }
+
+  private fun prefersJson(request: HttpServletRequest): Boolean {
+    val accept = request.getHeader("Accept") ?: return false
+    return accept.contains("application/json") && !accept.contains("text/html")
+  }
+
+  private fun authenticateOrNull(request: HttpServletRequest): User? = try {
+    ServiceRouter.authenticate(request)
+  } catch (e: Exception) {
+    log.warn("Authentication error from {}: {}", request.remoteAddr, e.message)
+    null
+  }
+
+  private fun balanceOf(user: User): Double = try {
+    ServiceRouter.getUserBalance(user)
+  } catch (e: Exception) {
+    log.warn("Failed to retrieve balance for user={}: {}", user.id, e.message)
+    0.0
+  }
+
+  @Suppress("UNCHECKED_CAST")
+  private fun readBody(request: HttpServletRequest): Map<String, Any?> {
+    val text = request.reader.readText()
+    if (text.isBlank()) return emptyMap()
+    return mapper.readValue(text, Map::class.java) as Map<String, Any?>
+  }
+
+  private fun number(v: Any?): Double? = when (v) {
+    is Number -> v.toDouble()
+    is String -> v.trim().toDoubleOrNull()
+    else -> null
+  }?.takeIf { it.isFinite() }
+
+  private fun truthy(v: Any?): Boolean = when (v) {
+    is Boolean -> v
+    is Number -> v.toInt() == 1
+    is String -> v.equals("true", true) || v.equals("on", true) || v == "1"
+    else -> false
+  }
+
+  private fun sendJson(response: HttpServletResponse, status: Int, body: Any?) {
+    response.status = status
+    response.contentType = "application/json;charset=UTF-8"
+    response.setHeader("Cache-Control", "no-store")
+    response.writer.write(mapper.writeValueAsString(body))
+  }
+
+  private fun sendError(response: HttpServletResponse, status: Int, message: String) {
+    if (response.isCommitted) return
+    sendJson(response, status, mapOf("error" to message))
+  }
+
+  private fun unauthorized(response: HttpServletResponse) =
+    sendError(response, HttpServletResponse.SC_UNAUTHORIZED, "Authentication required")
+
+  private fun fail(response: HttpServletResponse, what: String, e: Exception) {
+    if (e is IllegalArgumentException) {
+      log.warn("Bad request in {}: {}", what, e.message)
+      sendError(response, HttpServletResponse.SC_BAD_REQUEST, e.message ?: "Invalid request")
+    } else {
+      log.error("Unhandled exception in {}", what, e)
+      sendError(response, HttpServletResponse.SC_INTERNAL_SERVER_ERROR, e.message ?: "Internal server error")
+    }
+  }
+
+  private fun htmlEscape(s: String): String = s
+    .replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    .replace("\"", "&quot;").replace("'", "&#39;")
+
+  companion object {
+    val log = LoggerFactory.getLogger(GiftedCreditsServlet::class.java)!!
+    val manager = GiftedCreditsDB()
+    private val mapper = ObjectMapper()
+
+    private const val RESOURCE_BASE = "/gifts/"
+    private val STATIC_ASSETS = mapOf(
+      "/index.html" to "text/html;charset=UTF-8",
+      "/gifts.css" to "text/css;charset=UTF-8"
+    )
+    private val cache = ConcurrentHashMap<String, String>()
+
+    private fun resource(name: String): String = cache.computeIfAbsent(name) { n ->
+      GiftedCreditsServlet::class.java.getResourceAsStream(RESOURCE_BASE + n)?.use {
+        String(it.readAllBytes(), StandardCharsets.UTF_8)
+      } ?: throw IllegalStateException("Missing resource $RESOURCE_BASE$n")
+    }
+  }
 }
