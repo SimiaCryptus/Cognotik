@@ -22,11 +22,11 @@ import com.intellij.ui.dsl.builder.selected
 import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.config.AppSettingsState
 import com.simiacryptus.cognotik.docops.DocProcessor
-import com.simiacryptus.cognotik.docops.DocProcessor.Companion.newProcessor
 import com.simiacryptus.cognotik.docops.PlatformTaskKind
 import com.simiacryptus.cognotik.docops.UpdateModes
 import com.simiacryptus.cognotik.docops.model.WorkPlan
 import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
@@ -330,7 +330,7 @@ class DocProcessorAction : BaseAction() {
 
       docProcessor.runAll(
         plan = plan,
-        pool = newProcessor(user = CognotikConfig.localUser),
+        pool = FixedConcurrencyProcessor(ThreadPoolManager.newCachedThreadPool(session = Session.newUserID(), user = CognotikConfig.localUser), 5),
         cancelFlag = cancelFlag,
       ) { session ->
         sessions += session
