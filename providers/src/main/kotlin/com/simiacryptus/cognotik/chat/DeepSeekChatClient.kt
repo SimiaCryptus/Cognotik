@@ -6,6 +6,7 @@ import com.simiacryptus.cognotik.chat.model.DeepSeekModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.ChatModel.ReasoningLevel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -66,7 +67,8 @@ class DeepSeekChatClient(
             )
           }
         }
-      }
+       }.flatMap { ReasoningVariants.expand(it) }
+         .distinctBy { it.modelId }
       // Cache the result
       modelsCache[apiBase] = models
       models
@@ -94,7 +96,9 @@ class DeepSeekChatClient(
     logStreams: MutableList<BufferedOutputStream>,
     usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
-    val deepSeekRequest = toDeepSeek(chatRequest)
+     val rawModelId = chatRequest.model ?: model.modelId
+     val reasoningLevel = model.reasoningLevel ?: ReasoningVariants.levelFromModelId(rawModelId)
+     val deepSeekRequest = toDeepSeek(chatRequest, ReasoningVariants.stem(rawModelId), reasoningLevel)
     val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
       .writeValueAsString(deepSeekRequest)
     // Pass the model so AI_ERROR metrics can be broken down by model
@@ -126,9 +130,13 @@ class DeepSeekChatClient(
       val data: List<ModelInfo> = emptyList()
     )
 
-    fun toDeepSeek(chatRequest: ModelSchema.ChatRequest): Map<String, Any> {
+     fun toDeepSeek(
+       chatRequest: ModelSchema.ChatRequest,
+       modelId: String? = chatRequest.model?.let { ReasoningVariants.stem(it) },
+       reasoningLevel: ReasoningLevel? = null
+     ): Map<String, Any> {
       val request = mutableMapOf<String, Any>(
-        "model" to (chatRequest.model ?: throw RuntimeException("Model not specified")),
+         "model" to (modelId ?: throw RuntimeException("Model not specified")),
         "messages" to chatRequest.messages.map { message ->
           mapOf(
             "role" to message.role.toString(),
@@ -137,7 +145,12 @@ class DeepSeekChatClient(
         },
         "stream" to false
       )
-      chatRequest.temperature.let { request["temperature"] = it }
+       if (reasoningLevel != null) {
+         // DeepSeek thinking mode is a binary switch; temperature is not supported while thinking
+         request["thinking"] = mapOf("type" to "enabled")
+       } else {
+         chatRequest.temperature.let { request["temperature"] = it }
+       }
       chatRequest.max_tokens?.let { request["max_tokens"] = it }
 //            chatRequest.top_p?.let { request["top_p"] = it }
 //            chatRequest.frequency_penalty?.let { request["frequency_penalty"] = it }

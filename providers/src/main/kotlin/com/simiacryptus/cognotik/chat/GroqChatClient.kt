@@ -1,12 +1,14 @@
 package com.simiacryptus.cognotik.chat
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.core.type.TypeReference
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.GroqModels
 import com.simiacryptus.cognotik.exceptions.ErrorUtil
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.ChatModel.ReasoningLevel
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -55,6 +57,13 @@ class GroqChatClient(
       max_tokens = chatRequest.max_tokens,
       temperature = chatRequest.temperature,
     )
+     /** Maps a reasoning level to Groq's `reasoning_effort` parameter. */
+     fun reasoningEffort(level: ReasoningLevel): String = when (level) {
+       ReasoningLevel.Low -> "low"
+       ReasoningLevel.Medium -> "medium"
+       ReasoningLevel.High -> "high"
+       ReasoningLevel.X -> "high"
+     }
   }
 
   @JsonIgnoreProperties(ignoreUnknown = true)
@@ -105,7 +114,8 @@ class GroqChatClient(
         } else {
           null
         }
-      }
+     }.flatMap { ReasoningVariants.expand(it) }
+       .distinctBy { it.modelId }
       // Cache the result
       modelsCache[apiBase] = models
       models
@@ -133,9 +143,17 @@ class GroqChatClient(
   ): ModelSchema.ChatResponse {
     log.info("Starting Groq chat with model: ${model.modelId}")
     return withPerformanceLogging {
-      val groqRequest = toGroq(chatRequest)
-      val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
-        .writeValueAsString(groqRequest)
+       val rawModelId = chatRequest.model ?: model.modelId
+       val reasoningLevel = model.reasoningLevel ?: ReasoningVariants.levelFromModelId(rawModelId)
+       val groqRequest = toGroq(chatRequest)
+       val requestMap: MutableMap<String, Any?> = JsonUtil.objectMapper().convertValue(
+         groqRequest,
+         object : TypeReference<LinkedHashMap<String, Any?>>() {}
+       )
+       requestMap["model"] = ReasoningVariants.stem(rawModelId)
+       reasoningLevel?.let { requestMap["reasoning_effort"] = reasoningEffort(it) }
+       val json = JsonUtil.objectMapper().writerWithDefaultPrettyPrinter()
+         .writeValueAsString(requestMap.filterValues { it != null })
       // Pass the model so AI_ERROR metrics can be broken down by model
       val result = post("${apiBase}/chat/completions", json, model = model.modelId)
       // post() only reports embedded API errors; we must throw them ourselves
