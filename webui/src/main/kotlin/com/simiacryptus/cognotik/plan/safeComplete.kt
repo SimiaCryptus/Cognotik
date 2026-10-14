@@ -46,7 +46,8 @@ fun ChatModel.toApiChatModel(user: User): ApiChatModel {
   val apis =
     ServiceRouter.getUserSettings(user).apis
   return ApiChatModel(
-    model = this, provider = ApiData(
+    model = this,
+    provider = ApiData(
       key = apis.find { it.provider == this.provider }?.key
         ?: throw IllegalArgumentException("No API Key for ${this.provider?.name}"),
       baseUrl = apis.find { it.provider == this.provider }?.baseUrl ?: this.provider?.base ?: "",

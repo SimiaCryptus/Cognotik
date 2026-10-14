@@ -71,9 +71,26 @@ class ProxyChatClient(
     logStreams: MutableList<BufferedOutputStream>,
     usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
-    val token = submitAsyncJob(chatRequest, model)
+    val token = submitAsyncJob(withReasoningModelId(chatRequest, model), model)
     return pollForResult(token, model)
   }
+  /**
+   * Ensures the model id sent to the proxy encodes the reasoning effort of
+   * [model], so the server can route it without relying on out-of-band state.
+   */
+  private fun withReasoningModelId(
+    chatRequest: ModelSchema.ChatRequest,
+    model: ChatModel
+  ): ModelSchema.ChatRequest {
+    val requested = chatRequest.model?.takeIf { it.isNotBlank() } ?: model.modelId
+    val level = model.reasoningLevel
+    val effective =
+      if (level != null && ReasoningVariants.levelFromModelId(requested) == null)
+        ReasoningVariants.withLevel(requested, level)
+      else requested
+    return if (effective == chatRequest.model) chatRequest else chatRequest.copy(model = effective)
+  }
+
 
   /**
    * Submits the chat request and returns the async job token from the server.
@@ -376,11 +393,12 @@ class ProxyChatClient(
         log.warn("Proxy models request failed (provider='$upstreamProviderName', code=$code, url=$urlString): $err")
         return emptyList()
       }
-      return conn.inputStream.use { input ->
+      val models: List<ChatModel> = conn.inputStream.use { input ->
         mapper.readValue(
           input, mapper.typeFactory.constructCollectionType(List::class.java, ChatModel::class.java)
         )
       }
+      return ReasoningVariants.expandAll(models)
     } catch (e: SocketTimeoutException) {
       log.warn("Timeout fetching models from proxy (provider='$upstreamProviderName', url=$urlString): ${e.message}")
       return emptyList()

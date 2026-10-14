@@ -19,7 +19,7 @@ import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.util.FileSelectionUtils.getAvailableFiles
 import com.simiacryptus.cognotik.platform.model.ISessionTask
 import com.simiacryptus.cognotik.platform.ServiceRouter
-import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.model.ChatModel
 import java.io.File
 import java.util.Locale.getDefault
 import kotlin.io.path.Path
@@ -53,24 +53,45 @@ class OrchestrationConfig(
   @get:JsonIgnore
   val defaultSmart: ChatInterface
       get() {
-        val instance = smartModel?.instance(user)
+        if (smartModel == null) {
+          throw IllegalStateException("Default model not set")
+        }
+        val chatModels = user.chatModels()
+        val instance = smartModel?.let { smartModel ->
+          chatModels.firstOrNull { it.modelId == smartModel }?.toApiChatModel(user)
+        }
         if (instance == null) {
-            throw IllegalStateException("Default model not set")
+            throw IllegalStateException("Default model not found: $smartModel; available models: ${chatModels.joinToString(", ") { it.modelId }}")
         }
         return (instance).instance(user)
       }
 
   @get:JsonIgnore
-  val defaultFast get() = ((fastModel ?: smartModel)?.instance(user)
-    ?: throw IllegalStateException("Parsing model not set")).instance(user)
+  val defaultFast: ChatInterface
+    get() {
+      val string = fastModel ?: smartModel
+      val instance =
+        string?.let { string -> user.chatModels().firstOrNull { it.modelId == string }?.toApiChatModel(user) }
+      if (instance == null) throw IllegalStateException("Parsing model not set") else instance
+      return instance.instance(user)
+    }
 
   @get:JsonIgnore
-  val defaultImage get() = (imageModel?.instance(user)
-    ?: throw IllegalStateException("Image chat model not set")).instance(user)
+  val defaultImage: ChatInterface
+    get() {
+      if (imageModel == null) throw IllegalStateException("Image chat model not set")
+      val instance = imageModel?.let { imageModel ->
+        user.chatModels().firstOrNull { it.modelId == imageModel }?.toApiChatModel(user)
+      }
+      if (instance == null) throw IllegalStateException("Image chat model not set")
+      return instance.instance(user)
+    }
 
   @get:JsonIgnore
   val defaultAudio
-    get() = (audioModel?.instance(user)
+    get() = (audioModel?.let { audioModel ->
+      user.chatModels().firstOrNull { it.modelId == audioModel }?.toApiChatModel(user)
+    }
       ?: throw IllegalStateException("Audio chat model not set")).instance(user)
 
 
@@ -210,15 +231,12 @@ class OrchestrationConfig(
   fun getTaskConfigs(taskType: TaskType<*, *>): List<TaskTypeConfig> {
     return taskSettings.filter { it.value.task_type == taskType.name }.values.toList()
   }
-
 }
 
-fun String.instance(user: User): ApiChatModel? {
-  val userSettings = ServiceRouter.getUserSettings(user)
-  val chatModel = userSettings.apis
+fun User.chatModels(): List<ChatModel> {
+  val userSettings = ServiceRouter.getUserSettings(this)
+  val chatModels = userSettings.apis
     .filter { it.provider != null && it.key != null }
     .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl ?: it.provider?.base!!) }
-    .firstOrNull { it.modelId == this }
-  val toApiChatModel = chatModel?.toApiChatModel(user)
-  return toApiChatModel
+  return chatModels
 }

@@ -5,7 +5,6 @@ import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
-import com.simiacryptus.cognotik.util.copy
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
 import jakarta.servlet.http.HttpServletResponse
@@ -291,22 +290,12 @@ class ApiProviderServlet : HttpServlet() {
         key = key!!,
         baseUrl = apiConfig.apiBase
       )
-      chatModels
-        .filter { !it.deprecated }
-        .distinctBy { it.modelId }
-        .flatMap { chatModel: ChatModel ->
-          when {
-            chatModel.supportsReasoning -> ChatModel.ReasoningLevel.entries.map { level ->
-              chatModel.copy {
-                reasoningLevel = level
-                name = "${name} (${level.name})"
-                modelId = "${modelId}-${level.name.lowercase()}"
-              }
-            }
 
-            else -> listOf(chatModel)
-          }
-        }
+      ReasoningVariants.expandAll(
+        chatModels
+          .filter { !it.deprecated }
+          .distinctBy { it.modelId }
+      )
     } catch (e: Exception) {
       log.warn("Failed to fetch models for provider ${provider.name}", e)
       emptyList()

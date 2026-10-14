@@ -9,7 +9,8 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
 import com.simiacryptus.cognotik.plan.TaskContextYamlDescriber
 import com.simiacryptus.cognotik.plan.TaskOrchestrator
-import com.simiacryptus.cognotik.plan.instance
+import com.simiacryptus.cognotik.plan.chatModels
+import com.simiacryptus.cognotik.plan.toApiChatModel
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
 import com.simiacryptus.cognotik.plan.tools.TaskType
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.getImpl
@@ -19,7 +20,6 @@ import com.simiacryptus.cognotik.ui.Discussable
 import com.simiacryptus.cognotik.ui.TabbedDisplay
 import com.simiacryptus.cognotik.util.*
 import com.simiacryptus.cognotik.platform.model.ISessionTask
-import com.simiacryptus.cognotik.webui.session.getChildClient
 import org.slf4j.LoggerFactory.getLogger
 import java.io.File
 import java.io.OutputStream
@@ -48,8 +48,14 @@ open class ConversationalMode(
 ) {
 
     init {
-        require(orchestrationConfig.smartModel?.instance(orchestrationConfig.user) != null) { "Default model must be specified in orchestration config" }
-        require(orchestrationConfig.fastModel?.instance(orchestrationConfig.user) != null) { "Parsing model must be specified in orchestration config" }
+        require(orchestrationConfig.smartModel?.let { smartModel ->
+          orchestrationConfig.user.chatModels().firstOrNull { it.modelId == smartModel }
+            ?.toApiChatModel(orchestrationConfig.user)
+        } != null) { "Default model must be specified in orchestration config" }
+        require(orchestrationConfig.fastModel?.let { fastModel ->
+          orchestrationConfig.user.chatModels().firstOrNull { it.modelId == fastModel }
+            ?.toApiChatModel(orchestrationConfig.user)
+        } != null) { "Parsing model must be specified in orchestration config" }
     }
 
     private val messagesLock = Any()
