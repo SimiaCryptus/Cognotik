@@ -125,6 +125,7 @@ export function boot(options = {}) {
     });
     bus.on(Events.MESSAGES_RENDERED, () => composer.updateVisibility());
      bus.on(Events.PENDING_CHANGED, (event) => composer.setPending(event.detail?.pending || 0));
+    transport.on('input-visibility', (event) => composer.setInputVisible(event.detail));
 
     // 5. open the socket
     transport.connect(sessionId);

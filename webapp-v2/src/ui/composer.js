@@ -38,6 +38,8 @@ export class Composer {
         this.connected = false;
         this.collapsed = false;
         this.previewOpen = false;
+        /** Server-imposed visibility (ISessionTask.show/hideInput); null = inputCnt rules. */
+        this.inputForced = null;
         this._build();
         this._updateState();
     }
@@ -239,11 +241,21 @@ export class Composer {
      }
 
 
+    /** Imperative show/hide from the server control frame. */
+    setInputVisible(visible) {
+        this.inputForced = typeof visible === 'boolean' ? visible : null;
+        log.debug('Input visibility forced', {visible: this.inputForced});
+        this.updateVisibility();
+        if (this.inputForced === true) this.focus();
+    }
+
     /** §11.2 conditional hiding for single-shot apps. */
     updateVisibility() {
         const {inputCnt, stickyInput} = getAppConfig();
         const rendered = this.store.renderedCount();
-        const hidden = inputCnt > 0 && rendered > inputCnt;
+        const hidden = this.inputForced !== null
+            ? !this.inputForced
+            : inputCnt > 0 && rendered > inputCnt;
         this.rootEl.hidden = hidden;
         this.rootEl.classList.toggle('sticky', stickyInput !== false);
     }

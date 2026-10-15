@@ -16,9 +16,16 @@ class CorsFilter : Filter {
 
   @Throws(IOException::class, ServletException::class)
   override fun doFilter(request: ServletRequest?, response: ServletResponse, chain: FilterChain) {
-    if (!(request as HttpServletRequest).requestURI.endsWith("/ws")) {
+    val httpRequest = request as HttpServletRequest
+    if (!httpRequest.requestURI.endsWith("/ws")) {
       val httpServletResponse = response as HttpServletResponse
-      httpServletResponse.setHeader("Access-Control-Allow-Origin", "*")
+      val origin = httpRequest.getHeader("Origin")
+      if (origin != null && isAllowedOrigin(origin)) {
+        httpServletResponse.setHeader("Access-Control-Allow-Origin", origin)
+        httpServletResponse.setHeader("Access-Control-Allow-Credentials", "true")
+      } else {
+        httpServletResponse.setHeader("Access-Control-Allow-Origin", "*")
+      }
       httpServletResponse.setHeader("Access-Control-Allow-Methods", "POST, GET, OPTIONS, DELETE, PUT")
       httpServletResponse.setHeader("Access-Control-Max-Age", "3600")
       httpServletResponse.setHeader(
@@ -40,5 +47,13 @@ class CorsFilter : Filter {
 
   companion object {
     private val log = LoggerFactory.getLogger(CorsFilter::class.java)
+    private val allowedOrigins = setOf(
+      "https://hosted.cognotik.com",
+      "https://hosted.cognotik.com/api-proxy",
+      "https://hosted.cognotik.com/api-proxy/"
+    )
+    private fun isAllowedOrigin(origin: String): Boolean {
+      return allowedOrigins.contains(origin) || origin.endsWith(".cognotik.com")
+    }
   }
 }

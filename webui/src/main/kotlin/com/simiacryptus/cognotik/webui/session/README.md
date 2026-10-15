@@ -25,6 +25,8 @@ features like query expansion and history summarization.
     - Error reporting with stack traces
     - Progress indicators (spinners)
     - Interactive elements like links and text inputs
+    - Imperative control of the bottom input prompt (`showInput()` / `hideInput()`), delivered as a
+      `{"type":"input","visible":...}` control frame and replayed to reconnecting clients
 
 ### Chat Logic
 

@@ -586,6 +586,37 @@ abstract class SocketManager(
   }
 
   fun linkToSession(label: String): String = sessionId.linkToSession(label)
+  /** Last imperative input-prompt state; null = client decides (inputCnt rules). */
+  @Volatile
+  var inputVisible: Boolean? = null
+    private set
+  /** Shows/hides the user input prompt on every connected client (and future reconnects). */
+  fun setInputVisible(visible: Boolean?) {
+    inputVisible = visible
+    trafficLog.debug("Setting input visibility: {}", visible)
+    sendControl(inputControlFrame(visible))
+  }
+  /** Control frames that must be re-sent to a (re)connecting socket. */
+  fun getControlReplay(): List<String> = listOfNotNull(inputVisible?.let { inputControlFrame(it) })
+  /** Sends a raw JSON control frame, bypassing the versioned message store. */
+  private fun sendControl(frame: String) {
+    sockets.keys.forEach { chatSocket ->
+      try {
+        sendQueues.computeIfAbsent(chatSocket) { ConcurrentLinkedDeque() }.add(frame)
+        if (queueProcessing.add(chatSocket)) {
+          try {
+            ioPool.submit { processQueue(chatSocket) }
+          } catch (e: Exception) {
+            log.error("Failed to submit control frame for socket: {}", chatSocket, e)
+            queueProcessing.remove(chatSocket)
+          }
+        }
+      } catch (e: Exception) {
+        log.error("Error queueing control frame for socket: {}", chatSocket, e)
+      }
+    }
+  }
+
 
   private val idGenerator = AtomicLong(0)
 
@@ -613,6 +644,7 @@ abstract class SocketManager(
 
     private val range1 = ('a'..'y').toList().toTypedArray()
     private val range2 = range1 + 'z'
+    fun inputControlFrame(visible: Boolean?) = """{"type":"input","visible":$visible}"""
 
 
     fun getUser(session: org.eclipse.jetty.websocket.api.Session): User {

@@ -37,6 +37,13 @@ class ChatSocket(
           trafficLog.error("Failed to replay message to ${session.remoteAddress}: ${e.message}")
         }
       }
+      ui.getControlReplay().forEach {
+        try {
+          remote.sendString(it)
+        } catch (e: Exception) {
+          log.warn("Error replaying control frame to ${session.remoteAddress}", e)
+        }
+      }
     } catch (e: Exception) {
       log.warn("Error during WebSocket connection setup", e)
       trafficLog.error("WebSocket connection error from ${session.remoteAddress}: ${e.message}", e)
