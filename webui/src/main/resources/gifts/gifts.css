@@ -1,0 +1,904 @@
+/* =====================================================================
+   Gifted Credits styles.
+   Themes are selected with <html data-gift-theme="...">; each theme only
+   overrides the custom properties below. Dark-scheme rules at the bottom
+   integrate with the central ThemeManager (html[data-scheme="dark"]).
+   ===================================================================== */
+
+/* ---------------------------------------------------------- theme tokens */
+:root,
+[data-gift-theme="pink-party"] {
+    --gift-font: 'Quicksand', 'Arial', sans-serif;
+    --gift-heading-font: 'Pacifico', cursive;
+    --gift-gradient-start: #ff4d8d;
+    --gift-gradient-mid: #ff85a2;
+    --gift-gradient-end: #ffb6c1;
+    --gift-gradient-extra: #ff4d8d;
+    --gift-primary: #e91e63;
+    --gift-primary-dark: #c2185b;
+    --gift-accent: #ff85a2;
+    --gift-accent-light: #ffd1dc;
+    --gift-text: #2c2c2c;
+    --gift-card-bg: rgba(255, 255, 255, 0.97);
+    --gift-card-accent: #fff0f5;
+    --gift-table-even: #fff0f5;
+    --gift-table-hover: #ffe0ec;
+    --gift-emoji: "💖";
+    --gift-rain: "💖 💗 💕 💞 💘 💝 💖 💗 💕 💞 💘 💝 💖 💗 💕 💞 💘 💝 💖 💗 💕 💞 💘 💝";
+}
+
+[data-gift-theme="ocean"] {
+    --gift-gradient-start: #006994;
+    --gift-gradient-mid: #0099cc;
+    --gift-gradient-end: #66d9ef;
+    --gift-gradient-extra: #006994;
+    --gift-primary: #0277bd;
+    --gift-primary-dark: #01579b;
+    --gift-accent: #4fc3f7;
+    --gift-accent-light: #b3e5fc;
+    --gift-text: #1a3a4a;
+    --gift-card-bg: rgba(255, 255, 255, 0.97);
+    --gift-card-accent: #e1f5fe;
+    --gift-table-even: #e1f5fe;
+    --gift-table-hover: #b3e5fc;
+    --gift-emoji: "🌊";
+    --gift-rain: "🌊 🐚 🐬 🐠 💧 🐳 🌊 🐚 🐬 🐠 💧 🐳 🌊 🐚 🐬 🐠 💧 🐳 🌊 🐚 🐬 🐠 💧 🐳";
+}
+
+[data-gift-theme="forest"] {
+    --gift-gradient-start: #1b5e20;
+    --gift-gradient-mid: #388e3c;
+    --gift-gradient-end: #81c784;
+    --gift-gradient-extra: #1b5e20;
+    --gift-primary: #2e7d32;
+    --gift-primary-dark: #1b5e20;
+    --gift-accent: #66bb6a;
+    --gift-accent-light: #c8e6c9;
+    --gift-text: #1a2e1a;
+    --gift-card-bg: rgba(255, 255, 255, 0.97);
+    --gift-card-accent: #e8f5e9;
+    --gift-table-even: #e8f5e9;
+    --gift-table-hover: #c8e6c9;
+    --gift-emoji: "🌲";
+    --gift-rain: "🌲 🍃 🌿 🌳 🍀 🌱 🦋 🐿️ 🌲 🍃 🌿 🌳 🌲 🍃 🌿 🌳 🍀 🌱 🦋 🐿️ 🌲 🍃 🌿 🌳";
+}
+
+[data-gift-theme="sunset"] {
+    --gift-gradient-start: #ff6e40;
+    --gift-gradient-mid: #ff9100;
+    --gift-gradient-end: #ffd54f;
+    --gift-gradient-extra: #ff6e40;
+    --gift-primary: #e65100;
+    --gift-primary-dark: #bf360c;
+    --gift-accent: #ffab40;
+    --gift-accent-light: #ffe0b2;
+    --gift-text: #3e2723;
+    --gift-card-bg: rgba(255, 255, 255, 0.97);
+    --gift-card-accent: #fff3e0;
+    --gift-table-even: #fff3e0;
+    --gift-table-hover: #ffe0b2;
+    --gift-emoji: "🌅";
+    --gift-rain: "🌅 ☀️ 🔥 🌇 🌄 🌞 🦩 🌅 ☀️ 🔥 🌇 🌄 🌅 ☀️ 🔥 🌇 🌄 🌞 🦩 🌅 ☀️ 🔥 🌇 🌄";
+}
+
+[data-gift-theme="midnight"] {
+    --gift-gradient-start: #0d1b2a;
+    --gift-gradient-mid: #1b263b;
+    --gift-gradient-end: #415a77;
+    --gift-gradient-extra: #0d1b2a;
+    --gift-primary: #7e57c2;
+    --gift-primary-dark: #5e35b1;
+    --gift-accent: #9575cd;
+    --gift-accent-light: #d1c4e9;
+    --gift-text: #e8e8f0;
+    --gift-card-bg: rgba(30, 30, 50, 0.97);
+    --gift-card-accent: #2a2a4a;
+    --gift-table-even: #252540;
+    --gift-table-hover: #3a3a5a;
+    --gift-emoji: "🌙";
+    --gift-rain: "🌙 ⭐ ✨ 🌟 💫 🌌 🛸 🪐 🌙 ⭐ ✨ 🌟 🌙 ⭐ ✨ 🌟 💫 🌌 🛸 🪐 🌙 ⭐ ✨ 🌟";
+}
+
+[data-gift-theme="candy"] {
+    --gift-gradient-start: #ff1493;
+    --gift-gradient-mid: #9c27b0;
+    --gift-gradient-end: #00bcd4;
+    --gift-gradient-extra: #ff1493;
+    --gift-primary: #d81b60;
+    --gift-primary-dark: #880e4f;
+    --gift-accent: #ba68c8;
+    --gift-accent-light: #e1bee7;
+    --gift-text: #2c2c2c;
+    --gift-card-bg: rgba(255, 255, 255, 0.97);
+    --gift-card-accent: #f3e5f5;
+    --gift-table-even: #f3e5f5;
+    --gift-table-hover: #e1bee7;
+    --gift-emoji: "🍭";
+    --gift-rain: "🍭 🍬 🍫 🧁 🍰 🎂 🍩 🍪 🍭 🍬 🍫 🧁 🍭 🍬 🍫 🧁 🍰 🎂 🍩 🍪 🍭 🍬 🍫 🧁";
+}
+
+/* ------------------------------------------------------------ animations */
+@keyframes partyGradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+@keyframes heartfall {
+    0% { transform: translateY(-100px); }
+    100% { transform: translateY(100vh); }
+}
+@keyframes bounceSmall {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-5px); }
+}
+@keyframes bounceBig {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+@keyframes popIn {
+    0% { transform: scale(0.5); opacity: 0; }
+    70% { transform: scale(1.05); }
+    100% { transform: scale(1); opacity: 1; }
+}
+@keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-10deg); }
+    75% { transform: rotate(10deg); }
+}
+@keyframes spin {
+    0%, 100% { transform: rotate(0deg) scale(1); }
+    50% { transform: rotate(360deg) scale(1.2); }
+}
+@keyframes confetti1 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(180deg); }
+}
+@keyframes confetti2 {
+    0%, 100% { transform: translateY(0) rotate(0deg); }
+    50% { transform: translateY(-30px) rotate(-180deg); }
+}
+
+/* ------------------------------------------------------------------ base */
+* { box-sizing: border-box; }
+
+body {
+    font-family: var(--gift-font);
+    margin: 0;
+    padding: 20px;
+    min-height: 100vh;
+    color: var(--gift-text);
+    background-image: linear-gradient(135deg, var(--gift-gradient-start) 0%, var(--gift-gradient-mid) 50%, var(--gift-gradient-end) 100%);
+    background-size: 400% 400%;
+    animation: partyGradient 15s ease infinite;
+}
+
+/* Full dashboard page */
+body.gift-page-main {
+    background-image: linear-gradient(135deg, var(--gift-gradient-start) 0%, var(--gift-gradient-mid) 35%, var(--gift-gradient-end) 70%, var(--gift-gradient-extra) 100%);
+    position: relative;
+    overflow-x: hidden;
+}
+body.gift-page-main::before {
+    content: var(--gift-rain);
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    color: rgba(255, 255, 255, 0.35);
+    font-size: 24px;
+    word-spacing: 30px;
+    line-height: 80px;
+    pointer-events: none;
+    z-index: 0;
+    animation: heartfall 20s linear infinite;
+}
+
+/* Single-card pages (welcome, login redirect, confirm, success) */
+body.gift-page-card {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+body.gift-page-success {
+    overflow: hidden;
+    position: relative;
+    animation-duration: 10s;
+}
+body.gift-page-success::before,
+body.gift-page-success::after {
+    content: var(--gift-emoji);
+    position: absolute;
+    font-size: 40px;
+}
+body.gift-page-success::before {
+    top: 10%;
+    left: 10%;
+    animation: confetti1 3s ease-in-out infinite;
+}
+body.gift-page-success::after {
+    top: 15%;
+    right: 10%;
+    animation: confetti2 3s ease-in-out infinite;
+}
+
+/* ------------------------------------------------------------ containers */
+.main-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    background: var(--gift-card-bg);
+    border-radius: 20px;
+    padding: 40px;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 4px var(--gift-accent-light),
+                0 0 0 8px var(--gift-primary),
+                0 0 0 12px var(--gift-accent-light);
+    position: relative;
+    z-index: 1;
+}
+
+.gift-card {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 50px 40px;
+    border-radius: 20px;
+    background: var(--gift-card-bg);
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3),
+                0 0 0 4px var(--gift-accent-light),
+                0 0 0 8px var(--gift-primary),
+                0 0 0 12px var(--gift-accent-light);
+    text-align: center;
+    position: relative;
+    z-index: 1;
+    animation: popIn 0.6s ease-out;
+}
+.gift-card.wide { max-width: 640px; }
+
+/* -------------------------------------------------------------- headings */
+.main-container h1 {
+    font-family: var(--gift-heading-font);
+    color: var(--gift-primary);
+    text-align: center;
+    font-size: 3.5em;
+    margin: 0 0 30px 0;
+    text-shadow: 3px 3px 0 var(--gift-accent-light), 6px 6px 10px rgba(0, 0, 0, 0.2);
+    letter-spacing: 2px;
+    animation: bounceSmall 2s ease-in-out infinite;
+}
+.main-container h2 {
+    font-family: var(--gift-heading-font);
+    color: var(--gift-primary-dark);
+    font-size: 2em;
+    border-bottom: 3px dashed var(--gift-accent);
+    padding-bottom: 10px;
+    margin-top: 30px;
+}
+.gift-card h1 {
+    font-family: var(--gift-heading-font);
+    color: var(--gift-primary);
+    font-size: 2.8em;
+    margin: 10px 0;
+    text-shadow: 2px 2px 0 var(--gift-accent-light), 4px 4px 10px rgba(0, 0, 0, 0.2);
+}
+.gift-card p {
+    color: var(--gift-primary-dark);
+    font-size: 1.2em;
+    font-weight: 500;
+}
+
+/* ---------------------------------------------------------- card pieces */
+.card-icon {
+    font-size: 80px;
+    margin-bottom: 20px;
+    display: inline-block;
+}
+.card-icon.wiggle { font-size: 96px; animation: wiggle 2s ease-in-out infinite; }
+.card-icon.bounce { animation: bounceBig 2s ease-in-out infinite; }
+.card-icon.spin { animation: spin 2s ease-in-out infinite; }
+
+.details {
+    background: linear-gradient(135deg, var(--gift-card-accent) 0%, var(--gift-card-bg) 100%);
+    padding: 20px;
+    border-radius: 12px;
+    margin: 25px 0;
+    text-align: left;
+    border: 2px dashed var(--gift-accent);
+}
+.gift-card .details p { margin: 8px 0; font-size: 1.1em; }
+.details strong { color: var(--gift-primary); font-weight: 700; }
+
+.theme-badge {
+    display: inline-block;
+    padding: 4px 12px;
+    background: var(--gift-accent-light);
+    color: var(--gift-primary-dark);
+    border-radius: 12px;
+    font-size: 0.85em;
+    font-weight: 600;
+    margin-top: 10px;
+}
+
+.festive-banner {
+    font-size: 24px;
+    letter-spacing: 8px;
+    margin: 15px 0;
+}
+.festive-divider {
+    text-align: center;
+    font-size: 24px;
+    margin: 20px 0;
+    letter-spacing: 10px;
+}
+
+.button-row {
+    display: flex;
+    gap: 12px;
+    justify-content: center;
+    flex-wrap: wrap;
+    margin-top: 20px;
+}
+a.button {
+    display: inline-block;
+    padding: 14px 32px;
+    color: white;
+    text-decoration: none;
+    border-radius: 30px;
+    margin-top: 10px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+    background: linear-gradient(135deg, var(--gift-gradient-start) 0%, var(--gift-primary-dark) 100%);
+}
+a.button.large { padding: 16px 40px; font-size: 1.1em; }
+a.button.secondary { background: linear-gradient(135deg, var(--gift-accent) 0%, var(--gift-primary) 100%); }
+a.button.muted { background: linear-gradient(135deg, #888 0%, #555 100%); }
+a.button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 25px rgba(0, 0, 0, 0.5);
+}
+
+.gift-card p.note,
+.gift-card p.hint,
+.gift-card p.redirect-note {
+    color: #777;
+    font-size: 0.95em;
+    margin-top: 20px;
+    font-style: italic;
+}
+.gift-card p.fine-print,
+.fine-print {
+    color: #888;
+    font-size: 0.85em;
+    margin-top: 10px;
+}
+.gift-card p.muted-text,
+.muted-text {
+    font-size: 0.9em;
+    color: #666;
+}
+.gift-card p.warning,
+.warning {
+    color: #b00;
+    font-weight: 600;
+}
+.inline-link {
+    color: var(--gift-primary);
+    font-weight: 600;
+}
+
+/* ------------------------------------------------------------ navigation */
+.nav-bar {
+    display: flex;
+    gap: 10px;
+    padding: 12px 16px;
+    background: rgba(255, 255, 255, 0.9);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+.nav-bar a,
+.theme-btn {
+    color: var(--gift-primary-dark);
+    text-decoration: none;
+    border-radius: 20px;
+    font-weight: 600;
+    background: var(--gift-card-accent);
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+.nav-bar a { padding: 8px 18px; font-size: 15px; }
+.theme-btn { display: inline-block; padding: 8px 16px; margin: 4px; font-size: 14px; }
+.nav-bar a:hover,
+.theme-btn:hover {
+    background: var(--gift-accent-light);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+}
+.nav-bar a.active,
+.theme-btn.active {
+    background: linear-gradient(135deg, var(--gift-primary) 0%, var(--gift-primary-dark) 100%);
+    color: white;
+    border-color: var(--gift-accent-light);
+}
+
+.theme-selector {
+    background: rgba(255, 255, 255, 0.85);
+    padding: 15px 20px;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    text-align: center;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+.theme-label {
+    font-weight: 700;
+    margin-right: 10px;
+    color: var(--gift-primary-dark);
+}
+
+.site-theme-selector {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    align-items: center;
+    justify-content: center;
+    margin: 20px 0;
+    padding: 10px 15px;
+    border-radius: 12px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.85);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+.site-theme-selector > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+}
+.site-theme-selector label {
+    font-weight: 700;
+    margin: 0;
+    color: var(--gift-primary-dark);
+}
+.site-theme-selector select {
+    padding: 6px 12px;
+    border-radius: 8px;
+    border: 2px solid var(--gift-accent);
+    background: var(--gift-card-accent);
+    color: var(--gift-primary-dark);
+    font-family: var(--gift-font);
+    font-weight: 600;
+    cursor: pointer;
+}
+
+/* ----------------------------------------------------------------- forms */
+.form-container {
+    margin-bottom: 30px;
+    padding: 25px;
+    border: 3px solid var(--gift-accent);
+    border-radius: 15px;
+    background: linear-gradient(135deg, var(--gift-card-accent) 0%, var(--gift-card-bg) 100%);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.15);
+    position: relative;
+}
+.form-container::before {
+    content: var(--gift-emoji);
+    position: absolute;
+    top: -15px;
+    left: 20px;
+    font-size: 28px;
+    background: var(--gift-card-bg);
+    padding: 0 10px;
+}
+.form-container label {
+    display: block;
+    margin-bottom: 12px;
+    font-weight: 600;
+    color: var(--gift-primary-dark);
+}
+.form-container input,
+.form-container select {
+    margin-bottom: 10px;
+    padding: 10px 12px;
+    width: 250px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-family: var(--gift-font);
+    font-size: 14px;
+    transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-container input:focus,
+.form-container select:focus {
+    outline: none;
+    border-color: var(--gift-primary);
+    box-shadow: 0 0 0 3px var(--gift-accent-light);
+}
+.form-container button {
+    padding: 12px 28px;
+    cursor: pointer;
+    background: linear-gradient(135deg, var(--gift-gradient-start) 0%, var(--gift-primary-dark) 100%);
+    color: white;
+    border: none;
+    border-radius: 25px;
+    font-family: var(--gift-font);
+    font-weight: 700;
+    font-size: 15px;
+    letter-spacing: 0.5px;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+.form-container button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.5);
+}
+.form-container .balance { margin-top: -5px; }
+.form-container label.license-check {
+    display: flex;
+    align-items: flex-start;
+    gap: 8px;
+    font-weight: 500;
+    font-size: 0.95em;
+}
+.form-container label.license-check input {
+    width: auto;
+    margin-top: 4px;
+}
+.clear-link { margin-left: 10px; }
+
+/* ---------------------------------------------------------------- tables */
+table {
+    width: 100%;
+    border-collapse: separate;
+    border-spacing: 0;
+    margin-bottom: 30px;
+    border-radius: 12px;
+    overflow: hidden;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.15);
+}
+th, td {
+    border: none;
+    padding: 14px 12px;
+    text-align: left;
+}
+td {
+    border-bottom: 1px solid var(--gift-accent-light);
+    color: var(--gift-text);
+}
+tr:nth-child(even) { background-color: var(--gift-table-even); }
+tr:nth-child(odd) { background-color: var(--gift-card-bg); }
+tr:hover td {
+    background-color: var(--gift-table-hover);
+    transition: background-color 0.3s ease;
+}
+.table-header {
+    background: linear-gradient(135deg, var(--gift-gradient-start) 0%, var(--gift-primary-dark) 100%) !important;
+    color: white;
+}
+.table-header th {
+    font-weight: 600;
+    letter-spacing: 0.5px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+    color: white;
+}
+
+a.claim-link {
+    color: var(--gift-primary);
+    text-decoration: none;
+    font-weight: 700;
+    transition: all 0.3s ease;
+}
+a.claim-link:hover {
+    color: var(--gift-primary-dark);
+    text-decoration: underline;
+    text-shadow: 0 0 8px var(--gift-accent-light);
+}
+
+/* --------------------------------------------------------------- license */
+.license-notice {
+    background: var(--gift-card-accent);
+    border: 2px dashed var(--gift-accent);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 15px 0;
+}
+.license-link {
+    color: var(--gift-primary);
+    font-weight: 700;
+    text-decoration: underline;
+}
+.license-link:hover { color: var(--gift-primary-dark); }
+.license-footer {
+    margin-top: 30px;
+    padding: 20px;
+    background: var(--gift-card-accent);
+    border-radius: 12px;
+    text-align: center;
+    border-top: 3px solid var(--gift-accent);
+}
+.license-footer p {
+    margin: 0;
+    color: var(--gift-primary-dark);
+    font-size: 0.95em;
+    line-height: 1.5;
+}
+
+/* ------------------------------------------- central dark-scheme overlay */
+html[data-scheme="dark"] .main-container,
+html[data-scheme="dark"] .gift-card {
+    background: color-mix(in srgb, var(--color-surface) 97%, transparent);
+    color: var(--color-text);
+}
+html[data-scheme="dark"] p,
+html[data-scheme="dark"] h2,
+html[data-scheme="dark"] td,
+html[data-scheme="dark"] label,
+html[data-scheme="dark"] .theme-label,
+html[data-scheme="dark"] .gift-card p {
+    color: var(--color-text);
+}
+html[data-scheme="dark"] .gift-card p.note,
+html[data-scheme="dark"] .gift-card p.hint,
+html[data-scheme="dark"] .gift-card p.redirect-note,
+html[data-scheme="dark"] .fine-print,
+html[data-scheme="dark"] .muted-text {
+    color: var(--color-text-muted) !important;
+}
+html[data-scheme="dark"] .nav-bar,
+html[data-scheme="dark"] .theme-selector,
+html[data-scheme="dark"] .site-theme-selector {
+    background: color-mix(in srgb, var(--color-surface) 90%, transparent);
+}
+html[data-scheme="dark"] .nav-bar a:not(.active),
+html[data-scheme="dark"] .theme-btn:not(.active) {
+    background: var(--color-surface-alt);
+    color: var(--color-text);
+}
+html[data-scheme="dark"] .nav-bar a:not(.active):hover,
+html[data-scheme="dark"] .theme-btn:not(.active):hover {
+    background: color-mix(in srgb, var(--color-brand) 25%, var(--color-surface-alt));
+}
+html[data-scheme="dark"] .site-theme-selector select,
+html[data-scheme="dark"] .form-container input,
+html[data-scheme="dark"] .form-container select {
+    background: var(--color-surface);
+    color: var(--color-text);
+    border-color: var(--color-border-strong);
+}
+html[data-scheme="dark"] .form-container input:focus,
+html[data-scheme="dark"] .form-container select:focus {
+    border-color: var(--color-brand);
+    box-shadow: 0 0 0 3px color-mix(in srgb, var(--color-brand) 30%, transparent);
+}
+html[data-scheme="dark"] .form-container,
+html[data-scheme="dark"] .details,
+html[data-scheme="dark"] .license-notice,
+html[data-scheme="dark"] .license-footer {
+    background: var(--color-surface-alt);
+}
+html[data-scheme="dark"] .form-container::before { background: var(--color-surface); }
+html[data-scheme="dark"] tr:nth-child(even) { background-color: var(--color-surface-alt); }
+html[data-scheme="dark"] tr:nth-child(odd) { background-color: var(--color-surface); }
+html[data-scheme="dark"] td { border-bottom-color: var(--color-border); }
+html[data-scheme="dark"] tr:hover td {
+    background-color: color-mix(in srgb, var(--color-brand) 20%, var(--color-surface));
+}
+html[data-scheme="dark"] a.claim-link,
+html[data-scheme="dark"] a.license-link,
+html[data-scheme="dark"] a.inline-link {
+    color: var(--color-link);
+}
+html[data-scheme="dark"] .theme-badge {
+    background: color-mix(in srgb, var(--color-brand) 25%, var(--color-surface));
+    color: var(--color-text);
+}
+/* ------------------------------------------------- descriptions/messages */
+.form-container textarea {
+     display: block;
+     margin: 6px 0 10px;
+     padding: 10px 12px;
+     width: 100%;
+     max-width: 520px;
+     border: 2px solid #ddd;
+     border-radius: 8px;
+     font-family: var(--gift-font);
+     font-size: 14px;
+     resize: vertical;
+     transition: border-color 0.3s ease, box-shadow 0.3s ease;
+}
+.form-container textarea:focus {
+     outline: none;
+     border-color: var(--gift-primary);
+     box-shadow: 0 0 0 3px var(--gift-accent-light);
+}
+.label-hint {
+     font-weight: 400;
+     font-size: 0.85em;
+     color: #888;
+}
+.gift-message {
+     margin: 20px 0;
+     padding: 16px 20px;
+     border-left: 5px solid var(--gift-primary);
+     border-radius: 10px;
+     background: var(--gift-card-accent);
+     text-align: left;
+}
+.gift-message-label {
+     display: block;
+     font-weight: 700;
+     font-size: 0.85em;
+     color: var(--gift-primary-dark);
+     margin-bottom: 6px;
+}
+.gift-message-text {
+     display: block;
+     white-space: pre-wrap;
+     font-style: italic;
+     font-size: 1.1em;
+     color: var(--gift-text);
+}
+/* ------------------------------------------------------- my-gift summary */
+.summary-grid {
+     display: grid;
+     grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+     gap: 12px;
+     margin: 10px 0 15px;
+}
+.summary-tile {
+     display: flex;
+     flex-direction: column;
+     gap: 4px;
+     padding: 14px 16px;
+     border-radius: 12px;
+     background: var(--gift-card-bg);
+     border: 2px solid var(--gift-accent-light);
+     border-top-width: 5px;
+}
+.summary-tile.tile-delivered { border-top-color: #43a047; }
+.summary-tile.tile-escrow { border-top-color: var(--gift-primary); }
+.summary-tile.tile-refunded { border-top-color: #90a4ae; }
+.summary-label {
+     font-size: 0.85em;
+     font-weight: 600;
+     color: var(--gift-primary-dark);
+}
+.summary-value {
+     font-size: 1.6em;
+     font-weight: 700;
+     color: var(--gift-text);
+}
+/* ------------------------------------------------------ gift status table */
+.table-scroll {
+     overflow-x: auto;
+     margin-bottom: 30px;
+}
+.table-scroll table { margin-bottom: 0; }
+.table-toolbar {
+     display: flex;
+     flex-wrap: wrap;
+     justify-content: space-between;
+     align-items: center;
+     gap: 10px;
+     margin: 10px 0;
+}
+.inline-check {
+     display: inline-flex;
+     align-items: center;
+     gap: 6px;
+     font-weight: 600;
+     color: var(--gift-primary-dark);
+     cursor: pointer;
+}
+.budget-legend {
+     font-size: 0.85em;
+     color: var(--gift-text);
+}
+.legend-swatch {
+     display: inline-block;
+     width: 12px;
+     height: 12px;
+     border-radius: 3px;
+     margin: 0 4px 0 10px;
+     vertical-align: middle;
+}
+.seg-delivered { background: #43a047; }
+.seg-escrow { background: var(--gift-primary); }
+.seg-refunded { background: #90a4ae; }
+.status-badge {
+     display: inline-block;
+     padding: 3px 10px;
+     border-radius: 12px;
+     font-size: 0.85em;
+     font-weight: 700;
+     white-space: nowrap;
+}
+.status-badge.status-active { background: #e8f5e9; color: #1b5e20; }
+.status-badge.status-exhausted { background: #eceff1; color: #37474f; }
+.status-badge.status-expired { background: #fff8e1; color: #8d6e00; }
+.status-badge.status-cancelled,
+.status-badge.status-revoked { background: #ffebee; color: #b71c1c; }
+.status-badge.status-unknown { background: #eee; color: #555; }
+.budget-bar {
+     display: flex;
+     min-width: 120px;
+     height: 8px;
+     margin-top: 8px;
+     border-radius: 4px;
+     overflow: hidden;
+     background: rgba(0, 0, 0, 0.08);
+}
+.budget-bar > span { display: block; height: 100%; }
+.status-detail {
+     display: block;
+     margin-top: 4px;
+     font-size: 0.8em;
+     color: #777;
+}
+.gift-cell > span { display: block; }
+.gift-desc {
+     font-weight: 600;
+     margin-top: 4px;
+     color: var(--gift-text);
+}
+.gift-msg-snippet {
+     max-width: 260px;
+     overflow: hidden;
+     text-overflow: ellipsis;
+     white-space: nowrap;
+     font-style: italic;
+     font-size: 0.85em;
+     color: #777;
+}
+.gift-theme-tag { font-size: 0.8em; color: #888; margin-top: 2px; }
+.gift-cell > .mine-tag {
+     display: inline-block;
+     margin-top: 4px;
+     padding: 1px 8px;
+     border-radius: 10px;
+     font-size: 0.75em;
+     font-weight: 700;
+     background: var(--gift-accent-light);
+     color: var(--gift-primary-dark);
+}
+tr.row-cancelled td,
+tr.row-revoked td,
+tr.row-expired td { opacity: 0.75; }
+td.num-escrow { font-weight: 700; color: var(--gift-primary-dark); }
+td.num-delivered { color: #2e7d32; font-weight: 600; }
+.actions-cell a {
+     display: block;
+     margin: 3px 0;
+     white-space: nowrap;
+}
+a.claim-link.danger-link { color: #c62828; }
+a.claim-link.danger-link:hover { color: #8e0000; }
+/* dark-scheme overlay for the additions */
+html[data-scheme="dark"] .gift-message,
+html[data-scheme="dark"] .summary-tile {
+     background: var(--color-surface);
+     border-color: var(--color-border);
+}
+html[data-scheme="dark"] .summary-tile.tile-delivered { border-top-color: #43a047; }
+html[data-scheme="dark"] .summary-tile.tile-escrow { border-top-color: var(--color-brand); }
+html[data-scheme="dark"] .summary-tile.tile-refunded { border-top-color: #90a4ae; }
+html[data-scheme="dark"] .gift-message-text,
+html[data-scheme="dark"] .summary-value,
+html[data-scheme="dark"] .summary-label,
+html[data-scheme="dark"] .gift-desc,
+html[data-scheme="dark"] .inline-check,
+html[data-scheme="dark"] .budget-legend,
+html[data-scheme="dark"] td.num-escrow {
+     color: var(--color-text);
+}
+html[data-scheme="dark"] .gift-msg-snippet,
+html[data-scheme="dark"] .status-detail,
+html[data-scheme="dark"] .gift-theme-tag,
+html[data-scheme="dark"] .label-hint {
+     color: var(--color-text-muted);
+}
+html[data-scheme="dark"] .form-container textarea {
+     background: var(--color-surface);
+     color: var(--color-text);
+     border-color: var(--color-border-strong);
+}
+html[data-scheme="dark"] .budget-bar { background: var(--color-surface-alt); }

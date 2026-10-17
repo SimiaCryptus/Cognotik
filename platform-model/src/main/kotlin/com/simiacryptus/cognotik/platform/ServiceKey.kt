@@ -224,12 +224,5 @@ class ServiceKey<T : Any>(
     /** Snapshot of all declared service keys. */
     fun all(): List<ServiceKey<*>> = all.toList()
 
-    init {
-      // Route through the router so that usage interception (token metrics) applies to model calls.
-      USAGE_DB.onInstance {
-        ChatModel.ON_USAGE =
-          { model, u, user, session, data -> ServiceRouter.incrementUsage(session, user, model, u, data) }
-      }
-    }
   }
 }

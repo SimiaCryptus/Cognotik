@@ -184,6 +184,12 @@ interface ISessionTask {
   fun textInput(handler: Consumer<String>): String
   fun linkToSession(label: String): String
   fun newSession() = Session.newUserID()
+  @Description("Imperatively shows (true) or hides (false) the user input prompt; null returns control to the client.")
+  fun setInputVisible(visible: Boolean?) {}
+  @Description("Shows the user input prompt at the bottom of the UI.")
+  fun showInput() = setInputVisible(true)
+  @Description("Hides the user input prompt at the bottom of the UI.")
+  fun hideInput() = setInputVisible(false)
 
   companion object {
     val spinner: String = """<div class="spinner-border" role="status"><span class="sr-only">Loading...</span></div>"""

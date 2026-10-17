@@ -60,7 +60,8 @@ export function parseControlFrame(raw) {
     return null;
 }
 
-export const CONTROL_TYPES = Object.freeze({PING: 'ping', PONG: 'pong', CONNECT: 'connect'});
+/** INPUT: `{"type":"input","visible":true|false|null}` — server-driven composer visibility. */
+export const CONTROL_TYPES = Object.freeze({PING: 'ping', PONG: 'pong', CONNECT: 'connect', INPUT: 'input'});
 
 export function encodePing() {
     return JSON.stringify({type: CONTROL_TYPES.PING, timestamp: Date.now()});

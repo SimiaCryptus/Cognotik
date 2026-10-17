@@ -705,6 +705,19 @@ a:hover {
 .close:hover {
     color: #333;
 }
+/* "Open in new tab" link shown in iframe dialog headers */
+.modal-newtab-link {
+    float: right;
+    margin: 8px 14px 0 0;
+    font-size: 0.85em;
+    font-weight: 500;
+    white-space: nowrap;
+    color: var(--color-link);
+    text-decoration: none;
+}
+.modal-newtab-link:hover {
+    text-decoration: underline;
+}
 
 /* ===== Wizard (inside pipeline modal) ===== */
 .wizard-nav {

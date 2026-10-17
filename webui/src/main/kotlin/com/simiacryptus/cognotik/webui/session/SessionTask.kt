@@ -394,6 +394,7 @@ Stack Trace:
   override val sessionId: Session get() = ui.sessionId
 
   override fun linkToSession(label: String): String = sessionId.linkToSession(label)
+  override fun setInputVisible(visible: Boolean?) = ui.setInputVisible(visible)
 }
 
 val Throwable.stackTraceTxt: String

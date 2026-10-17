@@ -128,7 +128,7 @@ open class AuthenticationDB : AuthenticationInterface {
     val cachedEntry = cache[accessToken]
     val entry = if (cachedEntry != null) {
       cacheHits.incrementAndGet()
-      log.debug("Cache hit for access token (user={}) access token ${accessToken}", cachedEntry.user)
+      log.debug("Cache hit for access token (user={}) access token ${accessToken.mask()}", cachedEntry.user)
       cachedEntry
     } else {
       synchronized(cache) {
@@ -137,13 +137,13 @@ open class AuthenticationDB : AuthenticationInterface {
           recheckedEntry
         } else {
           cacheMisses.incrementAndGet()
-          log.info("Cache miss for access token; loading from database: access token ${accessToken}")
+          log.info("Cache miss for access token; loading from database: access token ${accessToken.mask()}")
           val loadedEntry = loadFromDb(accessToken)
           if (loadedEntry != null) {
             cache[accessToken] = loadedEntry
-            log.info("Loaded session from database for user: {} access token ${accessToken}", loadedEntry.user)
+            log.info("Loaded session from database for user: {} access token ${accessToken.mask()}", loadedEntry.user)
           } else {
-            log.info("No session found in database for access token ${accessToken}")
+            log.info("No session found in database for access token ${accessToken.mask()}")
           }
           loadedEntry
         }
@@ -160,12 +160,12 @@ open class AuthenticationDB : AuthenticationInterface {
     if (isExpired) {
       cache.remove(accessToken, entry)
       deleteToken(accessToken)
-      log.debug("Rejected expired access token for user: {} access token ${accessToken}", entry.user)
+      log.debug("Rejected expired access token for user: {} access token ${accessToken.mask()}", entry.user)
       return null
     }
 
     touch(accessToken, entry, now)
-    log.debug("Resolved access token to user: {} access token ${accessToken}", entry.user)
+    log.debug("Resolved access token to user: {} access token ${accessToken.mask()}", entry.user)
     return entry.user
   }
 
@@ -512,4 +512,11 @@ open class AuthenticationDB : AuthenticationInterface {
       )
     }
   }
+}
+
+private fun String.mask(): String {
+  if (this.length <= 8) return "****"
+  val prefix = this.take(4)
+  val suffix = this.takeLast(4)
+  return "$prefix****$suffix"
 }

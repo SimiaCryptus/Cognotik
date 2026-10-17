@@ -22,6 +22,7 @@ import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
 import com.simiacryptus.cognotik.webui.servlet.ApiKeyServlet
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
+import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
 import com.simiacryptus.cognotik.webui.servlet.UserSettingsServlet
 import com.simiacryptus.cognotik.webui.servlet.action.ExtractUtilsFsAction
 import jakarta.servlet.MultipartConfigElement
@@ -1006,7 +1007,7 @@ open class FileServer {
 
   companion object {
     @Volatile
-    var docProcessorServlet: CliDocProcessorServlet? = null
+    var docProcessorServlet: DocProcessorServlet? = null
     var available: Map<String, ChatModel> = emptyMap()
     var models: CliSupport.Models? = null
 

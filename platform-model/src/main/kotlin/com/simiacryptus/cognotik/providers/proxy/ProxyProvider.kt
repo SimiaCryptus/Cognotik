@@ -7,6 +7,7 @@ import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.platform.model.APIProvider
 import com.simiacryptus.cognotik.platform.model.ChatClientInterface
 import com.simiacryptus.cognotik.platform.model.ChatModel
+import com.simiacryptus.cognotik.platform.model.ReasoningVariants
 import com.simiacryptus.cognotik.platform.model.Session
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
@@ -157,7 +158,8 @@ abstract class ProxyProvider(
         "Proxy '{}' returned {} model(s) for upstream={}",
         name, models.size, upstreamProviderNames
       )
-      return models.map {
+      /* Expose effort-suffixed ids (e.g. "model-high") for clients that select by id only. */
+      return ReasoningVariants.expandAll(models.map {
         ChatModel(
           name = it.name,
           modelId = it.modelId,
@@ -172,7 +174,7 @@ abstract class ProxyProvider(
           outputModalities = it.outputModalities,
           reasoningLevel = it.reasoningLevel
         )
-      }
+      })
     } catch (e: SocketTimeoutException) {
       log.warn("Timeout fetching models from proxy (provider='$upstreamProviderName', url=$urlString): ${e.message}")
       return emptyList()

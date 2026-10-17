@@ -69,24 +69,8 @@ class AnthropicChatClient(
               outputModalities = setOf(ChatMessageModality.TEXT) // TODO: Set actual pricing if known
             )
           }
-        }.let { chatModel ->
-          if (chatModel.supportsReasoning) {
-            ReasoningLevel.entries.map { level ->
-              ChatModel(
-                name = "${chatModel.name} (${level})",
-                modelId = chatModel.modelId,
-                maxTotalTokens = chatModel.maxTotalTokens,
-                maxOutTokens = chatModel.maxOutTokens,
-                provider = chatModel.provider,
-                outputTokenPricePerK = chatModel.outputTokenPricePerK,
-                inputModalities = chatModel.inputModalities,
-                outputModalities = chatModel.outputModalities,
-                reasoningLevel = level
-              )
-            } + listOf(chatModel)
-          } else listOf(chatModel)
-        }
-      }
+        }.let { chatModel -> ReasoningVariants.expand(chatModel) }
+      }.distinctBy { it.modelId }
       // Cache the result
       modelsCache[apiBase] = models
       models
@@ -134,10 +118,11 @@ class AnthropicChatClient(
         val chatMessages = chatRequest.messages
         require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
         require(model.modelId.isNotBlank() == true) { "Model name cannot be blank" }
-        val reasoningLevel = model.reasoningLevel
+         val rawModelId = chatRequest.model ?: model.modelId
+         val reasoningLevel = model.reasoningLevel ?: reasoningLevelFromSuffix(rawModelId)
         val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
         var temperature: Double? = if (model.supportsTemperature) chatRequest.temperature else null
-        val model = chatRequest.model ?: model.modelId
+         val model = stemModelId(rawModelId)
         val system = chatMessages
           .firstOrNull { it.role == ModelSchema.Role.system }
           ?.content
@@ -358,6 +343,11 @@ class AnthropicChatClient(
   companion object {
     private val log = getLogger(AnthropicChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+     /** Returns the reasoning level encoded as a suffix on the model id, if any. */
+     fun reasoningLevelFromSuffix(modelId: String): ReasoningLevel? =
+       ReasoningVariants.levelFromModelId(modelId)
+     /** Strips a reasoning level suffix (e.g. "-high") from the model id, if present. */
+     fun stemModelId(modelId: String): String = ReasoningVariants.stem(modelId)
 
     data class AnthropicChatRequest(
       val model: String? = null,

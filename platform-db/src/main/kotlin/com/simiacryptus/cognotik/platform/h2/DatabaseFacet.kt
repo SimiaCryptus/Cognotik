@@ -386,7 +386,16 @@ class DatabaseFacet(
         // A file-backed embedded database that cannot be opened is not
         // fatal: degrade to an in-memory database that is retained for
         // the lifetime of the application and retry against it.
-        if (localDbName != null && !isMemoryBacked(localDbName)) {
+        //
+        // Only do this after repeated failures. Demotion is process-wide and
+        // permanent; doing it on a single transient error silently splits the
+        // app between the file DB (handles opened earlier) and a fresh empty
+        // in-memory DB (everything opened afterwards).
+        if (localDbName != null && !isMemoryBacked(localDbName) && attempt >= DEMOTE_AFTER_ATTEMPTS) {
+          log.warn(
+            "JDBC $name connection to file-backed database '$localDbName' failed $attempt times; demoting to in-memory",
+            e
+          )
           demoteToMemory(localDbName, e)
           currentUrl = buildLocalJdbcUrl(localDbName)
         }
@@ -567,6 +576,8 @@ class DatabaseFacet(
 
   companion object {
     private val log = LoggerFactory.getLogger(DatabaseFacet::class.java)
+    /** Consecutive failed attempts before a file-backed DB is demoted to memory. */
+    private const val DEMOTE_AFTER_ATTEMPTS = 3
 
     var root: String = System.getProperty("cognotik.db.root")
       ?: File(System.getProperty("user.home", ".")).resolve(".cognotik").absolutePath

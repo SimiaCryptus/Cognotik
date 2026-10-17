@@ -71,6 +71,7 @@ abstract class SingleTaskApp(
     socketManager: SocketManager,
   ) {
     if (null != instanceFn) OrchestrationConfig.instanceFn = instanceFn
+
     val orchestrationConfig = getOrchestrationConfig(session, user)
     socketManager.newTask(cancelable = false, root = true).expandable(
       "Session Info", """

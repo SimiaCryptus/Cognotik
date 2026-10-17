@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.platform.model
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.platform.ChatInterface
+import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.ModelSchema.Usage
@@ -12,23 +13,23 @@ import java.io.BufferedOutputStream
 import java.util.concurrent.ExecutorService
 
 class ChatModel(
-    val name: String = "",
-    modelId: String = name,
-    maxTotalTokens: Int = -1,
-    maxOutTokens: Int = maxTotalTokens,
-    provider: APIProvider? = null,
-    /**
+  var name: String = "",
+  modelId: String = name,
+  maxTotalTokens: Int = -1,
+  maxOutTokens: Int = maxTotalTokens,
+  provider: APIProvider? = null,
+  /**
      * Pricing per 1k tokens, keyed by token type.
      * Any token type not present in this map will be treated as having an average price
      * (computed from the prices that are present) when encountered in usage.
      */
     val tokenPricingPerK: Map<TokenTypes, Double> = emptyMap(),
-    val supportsTemperature: Boolean = true,
-    val supportsReasoning: Boolean = false,
-    val deprecated: Boolean = false,
-    val inputModalities: Set<ChatMessageModality>,
-    val outputModalities: Set<ChatMessageModality>,
-    val reasoningLevel: ReasoningLevel? = null,
+  val supportsTemperature: Boolean = true,
+  val supportsReasoning: Boolean = false,
+  val deprecated: Boolean = false,
+  val inputModalities: Set<ChatMessageModality>,
+  val outputModalities: Set<ChatMessageModality>,
+  var reasoningLevel: ReasoningLevel? = null,
 ) : LLMModel(
     modelId = modelId,
     maxTotalTokens = maxTotalTokens,
@@ -158,22 +159,6 @@ class ChatModel(
     )
 
     companion object {
-        var ON_USAGE: (LLMModel, Usage, User, Session, ModelSchema.UsageData?) -> Unit =
-            { model, usage, user, session, data ->
-                log.info(
-                    "Model: ${model.modelId}, Prompt Tokens: ${
-                        usage.counts.getOrDefault(
-                            TokenTypes.Prompt,
-                            0
-                        )
-                    }, Completion Tokens: ${
-                        usage.counts.getOrDefault(
-                            TokenTypes.Completion,
-                            0
-                        )
-                    }, Total Tokens: ${usage.total_tokens}, User: ${user.id}"
-                )
-            }
         val NULL: ChatModel = ChatModel(
             name = "NULL",
             modelId = "NULL",

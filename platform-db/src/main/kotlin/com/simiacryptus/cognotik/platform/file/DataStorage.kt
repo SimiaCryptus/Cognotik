@@ -15,8 +15,8 @@ import java.time.Instant
 
 class DataStorage(
   private val dataDir: File,
-  override val metadataStorage: SessionMetadataInterface = ServiceRouter as SessionMetadataInterface
 ) : StorageInterface {
+  override val metadataStorage: SessionMetadataInterface = ServiceRouter as SessionMetadataInterface
 
   init {
     log.info("Data storage directory: ${dataDir.absolutePath}")

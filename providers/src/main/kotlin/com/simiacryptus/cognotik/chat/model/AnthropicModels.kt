@@ -69,6 +69,29 @@ object AnthropicModels {
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
   }
+  @JvmStatic
+  val Claude55Haiku by lazy {
+    ChatModel(
+      name = "Claude Haiku 5.5",
+      modelId = "claude-haiku-5-5",
+      maxTotalTokens = 1000000,
+      maxOutTokens = 128000,
+      provider = CoreProviders.Anthropic,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.10 / 1000.0,
+        TokenTypes.Completion to 0.50 / 1000.0,
+        TokenTypes.CacheWrite5m to 0.125 / 1000.0,
+        TokenTypes.CacheWrite1h to 0.20 / 1000.0,
+        TokenTypes.Cached to 0.01 / 1000.0,
+        TokenTypes.Thinking to 0.50 / 1000.0,
+      ),
+      supportsTemperature = false,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT),
+    )
+  }
+
 
   @Deprecated("Model deprecated by Anthropic", replaceWith = ReplaceWith("Claude4Sonnet"))
 
@@ -488,6 +511,7 @@ object AnthropicModels {
       "ClaudeHaiku3" to ClaudeHaiku3,
       "Claude35Haiku" to Claude35Haiku,
       "Claude45Haiku" to Claude45Haiku,
+      "Claude55Haiku" to Claude55Haiku,
       "Claude37Sonnet" to Claude4Sonnet,
       "Claude4Sonnet" to Claude4Sonnet,
       "Claude45Sonnet" to Claude45Sonnet,

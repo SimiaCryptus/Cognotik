@@ -341,6 +341,7 @@ function setupIframeModal({buttonId, modalId, iframeId, closeBtnId, url, loading
     const closeBtn = closeBtnId ? document.getElementById(closeBtnId) : null;
     const loadingOverlay = loadingOverlayId ? document.getElementById(loadingOverlayId) : null;
     if (!btn || !modal || !iframe) return;
+    const newTabLink = modal.querySelector('.modal-newtab-link');
     const close = () => {
         modal.style.display = 'none';
         iframe.src = 'about:blank';
@@ -350,6 +351,7 @@ function setupIframeModal({buttonId, modalId, iframeId, closeBtnId, url, loading
         // (Re)load each time it's opened so data is fresh
         if (loadingOverlay) loadingOverlay.style.display = 'flex';
         iframe.src = url;
+        if (newTabLink) newTabLink.href = url;
         modal.style.display = 'block';
     });
     if (loadingOverlay) {
@@ -407,6 +409,15 @@ function ensureDynamicIframeModal({modalId, iframeId, closeBtnId, title: titleTe
         'padding:8px 14px;border-bottom:1px solid var(--color-border, #ddd);';
     const title = document.createElement('strong');
     title.textContent = titleText;
+    title.style.flex = '1';
+    const newTabLink = document.createElement('a');
+    newTabLink.className = 'modal-newtab-link';
+    newTabLink.href = '#';
+    newTabLink.target = '_blank';
+    newTabLink.rel = 'noopener noreferrer';
+    newTabLink.title = 'Open in new tab';
+    newTabLink.textContent = '↗ Open in new tab';
+    newTabLink.style.margin = '0 14px 0 0';
     const closeBtn = document.createElement('button');
     closeBtn.id = closeBtnId;
     closeBtn.type = 'button';
@@ -415,6 +426,7 @@ function ensureDynamicIframeModal({modalId, iframeId, closeBtnId, title: titleTe
     closeBtn.style.cssText = 'background:transparent;border:none;font-size:24px;' +
         'line-height:1;cursor:pointer;color:inherit;';
     header.appendChild(title);
+    header.appendChild(newTabLink);
     header.appendChild(closeBtn);
     const iframe = document.createElement('iframe');
     iframe.id = iframeId;
@@ -462,6 +474,26 @@ function setupWorkersManageButton() {
         iframeId: 'workers-manage-iframe',
         closeBtnId: 'close-workers-manage-modal',
         url: '/workers/manage'
+    });
+}
+// ===== "Open in new tab" links for every iframe dialog =====
+// Any `.modal-newtab-link` inside a modal that contains an iframe opens the
+// iframe's currently loaded URL in a new browser tab.
+function setupNewTabLinks() {
+    document.querySelectorAll('.modal .modal-newtab-link').forEach(link => {
+        if (link.__newTabWired) return;
+        link.__newTabWired = true;
+        const modal = link.closest('.modal');
+        link.addEventListener('click', e => {
+            const iframe = modal && modal.querySelector('iframe');
+            const raw = iframe ? iframe.getAttribute('src') : null;
+            if (raw && raw !== 'about:blank') {
+                link.href = iframe.src;
+            } else {
+                // Nothing loaded yet: nothing sensible to open.
+                e.preventDefault();
+            }
+        });
     });
 }
 
@@ -589,6 +621,7 @@ document.addEventListener('DOMContentLoaded', function () {
     setupUsageGraphButton();
     setupWorkersManageButton();
     setupBudgetButton();
+    setupNewTabLinks();
     applyLocalhostRestrictions();
     if (typeof setupAuthBanner === 'function') setupAuthBanner();
     if (typeof updateAuthBanner === 'function') {

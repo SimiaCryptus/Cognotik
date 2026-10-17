@@ -316,6 +316,12 @@ export class Transport extends EventTarget {
                 case CONTROL_TYPES.PING:
                     this.send(encodePong());
                     return;
+                case CONTROL_TYPES.INPUT: {
+                    const visible = typeof control.visible === 'boolean' ? control.visible : null;
+                    log.debug('Input visibility control frame', {visible});
+                    this._emit('input-visibility', visible);
+                    return;
+                }
                 default:
                     log.debug('Ignoring unknown control frame', {type: control.type});
                     return;

@@ -11,6 +11,7 @@ import com.simiacryptus.cognotik.agents.CodeAgent.Companion.indent
 import com.simiacryptus.cognotik.chat.model.GeminiModels
 import com.simiacryptus.cognotik.exceptions.*
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.ChatModel.ReasoningLevel
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
@@ -128,7 +129,9 @@ class GeminiSdkChatClient(
           log.warn("Failed to process model entry, skipping: {}", e.message, e)
           null
         }
-      }.toList()
+     }.toList()
+       .flatMap { ReasoningVariants.expand(it) }
+       .distinctBy { it.modelId }
     } catch (e: java.net.SocketTimeoutException) {
       log.warn("Timeout while fetching Gemini models from {}: {}", apiBase, e.message)
       null
@@ -157,7 +160,9 @@ class GeminiSdkChatClient(
     val startTime = System.currentTimeMillis()
     log.debug("Starting Gemini chat request {} for model {}", requestID, model.modelId)
     try {
-      val supportsSystemInstruction = modelSupportsSystemInstruction(model.modelId)
+       val reasoningLevel = model.reasoningLevel ?: ReasoningVariants.levelFromModelId(model.modelId)
+       val apiModelId = ReasoningVariants.stem(model.modelId)
+       val supportsSystemInstruction = modelSupportsSystemInstruction(apiModelId)
       log.debug(
         "Request {}: model {} supportsSystemInstruction={}",
         requestID,
@@ -165,7 +170,7 @@ class GeminiSdkChatClient(
         supportsSystemInstruction
       )
       val config = try {
-        buildGenerateContentConfig(chatRequest, supportsSystemInstruction)
+         buildGenerateContentConfig(chatRequest, supportsSystemInstruction, reasoningLevel)
       } catch (e: Exception) {
         log.error("Request {}: Failed to build GenerateContentConfig: {}", requestID, e.message, e)
         throw IllegalStateException("Failed to build Gemini generation config for request $requestID", e)
@@ -186,13 +191,13 @@ class GeminiSdkChatClient(
         logStreams
       )
       val response = try {
-        client.models.generateContent(model.modelId, contents, config)
+         client.models.generateContent(apiModelId, contents, config)
       } catch (e: ApiException) {
         log.error(
           "Request {}: Gemini API error for model {} (code={}, status={}): {}",
           requestID, model.modelId, e.code(), e.status(), e.message
         )
-        throw translateApiException(e, model.modelId)
+         throw translateApiException(e, apiModelId)
       } catch (e: java.net.SocketTimeoutException) {
         log.error("Request {}: Timeout calling Gemini API for model {}: {}", requestID, model.modelId, e.message)
         throw e
@@ -447,7 +452,8 @@ class GeminiSdkChatClient(
 
   private fun buildGenerateContentConfig(
     chatRequest: ModelSchema.ChatRequest,
-    supportsSystemInstruction: Boolean = true
+     supportsSystemInstruction: Boolean = true,
+     reasoningLevel: ReasoningLevel? = null
   ): GenerateContentConfig? {
     val builder = GenerateContentConfig.builder()
     try {
@@ -462,6 +468,27 @@ class GeminiSdkChatClient(
         log.warn("Failed to set max output tokens ({}): {}", it, e.message)
       }
     }
+     // Configure thinking (reasoning) budget
+     reasoningLevel?.let { level ->
+       try {
+         var budget = when (level) {
+           ReasoningLevel.Low -> 1024
+           ReasoningLevel.Medium -> 8192
+           ReasoningLevel.High -> 16384
+           ReasoningLevel.X -> 24576
+         }
+         // Thinking tokens count against maxOutputTokens; leave room for the answer
+         chatRequest.max_tokens?.let { max -> budget = budget.coerceAtMost(max / 2).coerceAtLeast(128) }
+         log.debug("Configuring Gemini thinking budget {} for reasoning level {}", budget, level)
+         builder.thinkingConfig(
+           ThinkingConfig.builder()
+             .thinkingBudget(budget)
+             .build()
+         )
+       } catch (e: Exception) {
+         log.warn("Failed to configure thinking config ({}): {}", level, e.message, e)
+       }
+     }
     // Configure response modalities (e.g., for TTS audio output)
     chatRequest.modalities?.let { modalities ->
       val mapped = modalities.mapNotNull { modality ->

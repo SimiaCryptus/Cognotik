@@ -87,22 +87,28 @@ class DocProcessor(
   var showMenubar: Boolean = true,
 ) : DocOpsHost<PlatformTaskKind, Session> {
 
-  val config: DocOpsConfig = DocOpsConfig(
-    root = root,
-    docsFolder = docsFolder,
-    updateMode = updateMode,
-    additionalContext = additionalContext,
-    urlCacheDir = urlCacheDir,
-    templateVarOverrides = templateVarOverrides,
-  )
+  val config: DocOpsConfig by lazy {
+    DocOpsConfig(
+      root = root,
+      docsFolder = docsFolder,
+      updateMode = updateMode,
+      additionalContext = additionalContext,
+      urlCacheDir = urlCacheDir,
+      templateVarOverrides = templateVarOverrides,
+      parentSession = parentSession,
+      user = user,
+    )
+  }
 
-  val docOps: DocOps<PlatformTaskKind, Session> = DocOps(
+  val docOps: DocOps<PlatformTaskKind, Session> by lazy {
+    DocOps(
     config = config,
     host = this,
     statusStore = JsonFileDocStatusStore(
       root = root,
     )
   )
+  }
 
   /*
    * ------------------------------------------------------------------
@@ -266,14 +272,5 @@ class DocProcessor(
 
     fun listTemplateVarKeys(files: Iterable<File>): Map<String, String> = TemplateEngine.listKeys(files)
 
-    fun newProcessor(
-      session: Session = Session.newUserID(), concurrency: Int = 4, user: User
-    ): FixedConcurrencyProcessor =
-      FixedConcurrencyProcessor(
-        ThreadPoolManager.getPool(
-          session,
-          user
-        ), concurrency
-      )
   }
 }
