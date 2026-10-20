@@ -8,9 +8,6 @@ of smaller, ordered operations. It can optionally:
 - emit patch files, and
 - write the result as a branch with one commit per item.
 
-The CLI lives in the **test** source set (`../../../../../../../../../Cognotik-Private/worker/src/test/kotlin`). It is meant for
-development, debugging and manual exercising of the task. It is not a shipped end-user tool.
-
 ---
 
 ## Quick start
@@ -21,6 +18,7 @@ CommitAnalyzerTaskCli
 
 # Analyze a specific commit in another repo, with locally configured API keys
 CommitAnalyzerTaskCli --local --repo /path/to/repo --commit <rev>
+
 
 # Explode the combined change of a range of commits
 CommitAnalyzerTaskCli --commit main..feature
