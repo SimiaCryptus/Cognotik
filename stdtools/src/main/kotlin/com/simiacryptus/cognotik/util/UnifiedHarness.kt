@@ -44,7 +44,8 @@ open class UnifiedHarness(
   val openBrowser: Boolean = false,
   val captureMessages: Boolean = serverless,
   val redirectData: Boolean = serverless,
-  val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { model, session, user ->
+   val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { rawModel, session, user ->
+     val model = withResolvedKey(rawModel, user)
     val api = model.provider
     if (api == null) {
       throw IllegalArgumentException("No API found for model: ${model.toJson()}")
