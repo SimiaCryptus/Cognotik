@@ -176,30 +176,9 @@ object ElevenLabsModels {
       outputModalities = setOf(ChatMessageModality.AUDIO),
     )
 
-  /**
-   * Scribe v2 Medical - Speech recognition fine-tuned for clinical audio.
-   * 35% fewer transcription errors on clinical audio than Scribe v2.
-   * HIPAA-eligible, with BAA and Zero Retention Mode support.
-   * Supports 90+ languages.
-   * Pricing: $0.22 per hour of audio (base); entity detection +$0.07/hr;
-   * keyterm prompting +$0.05/hr.
-   * Note: inputTokenPricePerK here represents cost per audio hour.
-   * Input: AUDIO → Output: TEXT
-   */
-  val ScribeV2Medical by lazy {
-    ChatModel(
-      name = "ScribeV2Medical",
-      modelId = "scribe_v2_medical",
-      maxTotalTokens = Int.MAX_VALUE,
-      maxOutTokens = Int.MAX_VALUE,
-      provider = CoreProviders.ElevenLabs,
-      inputTokenPricePerK = 0.22,
-      outputTokenPricePerK = 0.0,
-      supportsTemperature = false,
-      inputModalities = setOf(ChatMessageModality.AUDIO),
-      outputModalities = setOf(ChatMessageModality.TEXT),
-    )
-  }    // -------------------------------------------------------------------------
+  }
+
+  // -------------------------------------------------------------------------
   // Speech-to-Speech Models
   // -------------------------------------------------------------------------
   /**
