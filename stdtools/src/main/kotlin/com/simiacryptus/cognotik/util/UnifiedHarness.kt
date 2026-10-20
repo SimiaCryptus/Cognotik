@@ -233,7 +233,8 @@ open class UnifiedHarness(
       taskConfig = executionConfig,
       user = user,
     ) {
-      override fun instance(model: ApiChatModel) = modelInstanceFn(model, session, user)
+       override fun instance(model: ApiChatModel) =
+         modelInstanceFn(withResolvedKey(model, user), session, user)
 
       override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
