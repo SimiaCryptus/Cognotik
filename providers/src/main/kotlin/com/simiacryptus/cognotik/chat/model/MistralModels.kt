@@ -451,6 +451,8 @@ object MistralModels {
       "Leanstral" to Leanstral,
       "labs-leanstral-2603" to Leanstral,
       "Codestral" to Codestral,
+      "codestral-2508" to Codestral,
+      "codestral-latest" to Codestral,
       "Devstral2" to Devstral2,
       "DevstralSmall2" to DevstralSmall2,
       // Other
