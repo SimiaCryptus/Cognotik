@@ -14,6 +14,7 @@
 #   docops           -> com.simiacryptus.cognotik.cli.DocOpsCli
 #   autofix          -> com.simiacryptus.cognotik.cli.AutoFixCli
 #   session          -> com.simiacryptus.cognotik.cli.SessionServerCli
+#   commit           -> com.simiacryptus.cognotik.cli.CommitAnalyzerTaskCli
 #
 # Options:
 #   --build      Force a rebuild (:cli:shadowJar). Source checkout only.
@@ -82,7 +83,8 @@ case "$ACTION" in
    docops)        MAIN_CLASS="com.simiacryptus.cognotik.cli.DocOpsCli" ;;
    autofix)       MAIN_CLASS="com.simiacryptus.cognotik.cli.AutoFixCli" ;;
    session)       MAIN_CLASS="com.simiacryptus.cognotik.cli.SessionServerCli" ;;
-   *) die "unknown action: '$ACTION' (expected: fileserver|fs, keys, docops, autofix, session)" ;;
+   commit) MAIN_CLASS="com.simiacryptus.cognotik.cli.CommitAnalyzerTaskCli" ;;
+   *) die "unknown action: '$ACTION' (expected: fileserver|fs, keys, docops, autofix, session, commit)" ;;
 esac
 
 
