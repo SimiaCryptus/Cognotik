@@ -316,9 +316,18 @@ open class FileServer {
   open fun initHostedEnv(globalRoot: File) {
     val sessionFile = File(globalRoot, "session.json")
     val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
-    val sessionInfo = getSession(sessionFile, baseUrl)
-    login(baseUrl, sessionInfo, sessionFile)
-    setupServices(sessionInfo)
+    var sessionInfo = getSession(sessionFile, baseUrl)
+    try {
+      login(baseUrl, sessionInfo, sessionFile)
+    } catch (e: SessionRejectedException) {
+      /* The cached key is dead (already cleared): log in again right now instead of failing. */
+      log.info("Saved session rejected; starting a fresh device login against $baseUrl")
+      val fresh = HostedClientSupport.deviceLogin(baseUrl)
+        ?: throw IllegalStateException("Device login failed; cannot continue in hosted mode", e)
+      HostedClientSupport.saveSessionFile(sessionFile, fresh)
+      sessionInfo = fresh
+      login(baseUrl, sessionInfo, sessionFile)
+    }
   }
 
   open fun setupServices(sessionInfo: SessionKeyFile) {
