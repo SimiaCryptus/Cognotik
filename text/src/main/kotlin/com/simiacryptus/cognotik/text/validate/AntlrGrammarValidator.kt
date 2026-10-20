@@ -110,6 +110,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
 
       "ruleset" to SymbolKind.RULE,
       "knownruleset" to SymbolKind.RULE,
+       "parserrulespec" to SymbolKind.RULE,
+       "lexerrulespec" to SymbolKind.RULE,
     )
   }
 
