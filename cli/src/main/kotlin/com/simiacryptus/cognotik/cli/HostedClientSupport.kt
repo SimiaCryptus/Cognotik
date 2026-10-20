@@ -1,4 +1,5 @@
 package com.simiacryptus.cognotik.cli
+import com.simiacryptus.cognotik.platform.model.User
 
 import com.simiacryptus.cognotik.platform.model.UserSettings
 import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
