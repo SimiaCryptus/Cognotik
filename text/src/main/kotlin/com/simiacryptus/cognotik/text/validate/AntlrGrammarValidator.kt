@@ -96,6 +96,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       "methoddefinition" to SymbolKind.FUNCTION,
       "funcdef" to SymbolKind.FUNCTION,
       "async_funcdef" to SymbolKind.FUNCTION,
+      "theoremdeclaration" to SymbolKind.FUNCTION,
+      "instancedeclaration" to SymbolKind.FUNCTION,
       "constructordeclaration" to SymbolKind.CONSTRUCTOR,
       "secondaryconstructor" to SymbolKind.CONSTRUCTOR,
 
