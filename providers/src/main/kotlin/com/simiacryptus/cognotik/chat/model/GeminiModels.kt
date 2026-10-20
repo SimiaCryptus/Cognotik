@@ -1289,6 +1289,10 @@ object GeminiModels {
       "GeminiOmniFlash_Preview" to GeminiOmniFlash_Preview,
       "GeminiOmniFlash" to GeminiOmniFlash,
       "gemini-omni-flash" to GeminiOmniFlash,
+      // Gemini 4 models
+      "Gemini4_Argon" to Gemini4_Argon,
+      "Gemini_4_Argon" to Gemini4_Argon,
+      "gemini-4-argon" to Gemini4_Argon,
       // Specialized models
       "GeminiRobotics_2_Preview" to GeminiRobotics_2_Preview,
       "GeminiRobotics_2_Streaming_Preview" to GeminiRobotics_2_Streaming_Preview,
