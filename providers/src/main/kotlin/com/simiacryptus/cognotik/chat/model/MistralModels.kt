@@ -440,6 +440,8 @@ object MistralModels {
       "ministral-8b-2512" to Ministral3_8B,
       "ministral-3-8b-25-12" to Ministral3_8B,
       "Ministral3_3B" to Ministral3_3B,
+      "ministral-3b-2512" to Ministral3_3B,
+      "ministral-3-3b-25-12" to Ministral3_3B,
       "MagistralMedium1_2" to MagistralMedium1_2,
       "MagistralSmall1_2" to MagistralSmall1_2,
       // Specialist
