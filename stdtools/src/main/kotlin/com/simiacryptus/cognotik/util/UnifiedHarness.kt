@@ -459,7 +459,10 @@ fun ApiChatModel.providerName(): String? =
 
 
 fun ApiChatModel.findApi(user: User): ApiData? {
-  val userSettings =
-    ServiceRouter.getUserSettings(user)
-  return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
+   val wanted = providerName() ?: return null
+   val userSettings = ServiceRouter.getUserSettings(user)
+   val candidates = userSettings.apis.filter { api ->
+     (api.provider?.name ?: api.name) == wanted || api.name == wanted
+   }
+   return candidates.firstOrNull { it.key?.decrypt?.isNotBlank() == true } ?: candidates.firstOrNull()
 }
