@@ -228,7 +228,7 @@ open class UnifiedHarness(
     val singleTaskApp = object : SingleTaskApp(
       path = "/test",
       taskType = taskType,
-      instanceFn = { model, user -> modelInstanceFn(model, session, user) },
+       instanceFn = { model, user -> modelInstanceFn(withResolvedKey(model, user), session, user) },
       message = message,
       taskConfig = executionConfig,
       user = user,
