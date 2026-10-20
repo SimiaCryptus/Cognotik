@@ -1268,6 +1268,9 @@ object GeminiModels {
       "GeminiFlash_31_Image" to GeminiFlash_31_Image,
       "GeminiFlash_31_Image_Preview" to GeminiFlash_31_Image_Preview,
       "GeminiFlash_31_Lite_Image" to GeminiFlash_31_Lite_Image,
+      "GeminiNanoBanana_21" to GeminiNanoBanana_21,
+      "GeminiNanoBanana_2_1" to GeminiNanoBanana_21,
+      "gemini-nano-banana-2.1" to GeminiNanoBanana_21,
       "GeminiFlash_31_Live_Preview" to GeminiFlash_31_Live_Preview,
       "GeminiFlash_31_TTS_Preview" to GeminiFlash_31_TTS_Preview,
       // 3.5 / 3.6 models
