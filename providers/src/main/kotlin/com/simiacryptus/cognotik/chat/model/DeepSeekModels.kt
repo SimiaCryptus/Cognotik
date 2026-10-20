@@ -136,6 +136,7 @@ object DeepSeekModels {
     mapOf(
       "DeepSeekFlash" to DeepSeekFlash,
       "DeepSeekV4Flash" to DeepSeekV4Flash,
+      "DeepSeekV4FlashVisionExp" to DeepSeekV4FlashVisionExp,
       "DeepSeekV4Pro" to DeepSeekV4Pro,
       "DeepSeekChat" to DeepSeekChat,
       "DeepSeekReasoner" to DeepSeekReasoner,
