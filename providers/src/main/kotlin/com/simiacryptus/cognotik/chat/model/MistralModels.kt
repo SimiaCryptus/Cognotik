@@ -423,6 +423,7 @@ object MistralModels {
       "mistral-large-4-0" to MistralLarge4,
       "mistral-large-latest" to MistralLarge4,
       "MistralMedium3_5" to MistralMedium3_5,
+      "mistral-medium-2604" to MistralMedium3_5,
       "MistralSmall4" to MistralSmall4,
       "ZaiGlm5_3" to ZaiGlm5_3,
       "zai-glm-5-3" to ZaiGlm5_3,
