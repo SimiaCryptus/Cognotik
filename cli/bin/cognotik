@@ -14,6 +14,7 @@
 #   docops           -> com.simiacryptus.cognotik.cli.DocOpsCli
 #   autofix          -> com.simiacryptus.cognotik.cli.AutoFixCli
 #   session          -> com.simiacryptus.cognotik.cli.SessionServerCli
+#   commit           -> com.simiacryptus.cognotik.cli.CommitAnalyzerTaskCli
 #
 # Options:
 #   --build      Force a rebuild (:cli:shadowJar). Source checkout only.
