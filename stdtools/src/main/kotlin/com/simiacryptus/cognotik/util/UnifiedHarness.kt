@@ -50,15 +50,7 @@ open class UnifiedHarness(
     if (api == null) {
       throw IllegalArgumentException("No API found for model: ${model.toJson()}")
     }
-    val model = model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
-    model.instance(
-      key = (if (api.key != null) api.key else {
-        throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}")
-      })!!,
-      base = api.apiBase,
-      session = session,
-      user = user,
-    )
+    model.instance(user = user,)
   },
   val smartModel: ChatModel,
   val fastModel: ChatModel = smartModel,
