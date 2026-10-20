@@ -399,6 +399,31 @@ open class UnifiedHarness(
       val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
       return sdf.format(System.currentTimeMillis())
     }
+     /**
+      * If the model's provider entry carries no key (e.g. the hosted 'Cognotik' proxy,
+      * whose session key is only injected via the user-settings wrapper), look the
+      * provider up in the user's settings and use that entry's key.
+      */
+     @JvmStatic
+     fun withResolvedKey(model: ApiChatModel, user: User): ApiChatModel {
+       if (model.provider?.key?.decrypt?.isNotBlank() == true) return model
+       val api = try {
+         model.findApi(user)
+       } catch (e: Exception) {
+         log.debug("Could not look up API settings for {}", model.providerName(), e)
+         null
+       } ?: return model
+       if (api.key == null) return model
+       val baseUrl = model.provider?.baseUrl?.takeIf { it.isNotBlank() }
+         ?: api.baseUrl?.takeIf { it.isNotBlank() }
+         ?: runCatching { api.apiBase }.getOrNull()
+       val merged = api.copy(
+         name = model.provider?.name ?: api.name,
+         baseUrl = baseUrl,
+         provider = model.provider?.provider ?: api.provider ?: model.model?.provider,
+       )
+       return model.copy(provider = merged)
+     }
 
 
     @JvmStatic
