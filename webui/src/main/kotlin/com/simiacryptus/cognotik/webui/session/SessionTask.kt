@@ -331,7 +331,7 @@ Stack Trace:
       showMenubar = false,
     )
     val newSession = linkedManager
-    val task = newSession.newTask()
+    val task = newSession.newTask().apply { this.hideInput() }
     val linkToSession = task.linkToSession(label)
     val str = renderFn(linkToSession)
     add(str)

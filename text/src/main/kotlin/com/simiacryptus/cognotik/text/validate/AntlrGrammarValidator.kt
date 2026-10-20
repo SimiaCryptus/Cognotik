@@ -39,7 +39,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
 
     private val TYPE_KEYWORDS = setOf(
       "class", "interface", "enum", "record", "struct", "trait", "object",
-      "union", "module", "mod", "namespace", "annotation", "type", "typealias"
+      "union", "module", "mod", "namespace", "annotation", "type", "typealias",
+      "structure", "inductive", "coinductive", "abbrev", "theorem", "lemma", "def", "instance", "axiom", "opaque"
     )
 
     /** Kinds whose bodies may declare further public symbols. */
@@ -71,17 +72,21 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       "annotationtypedeclaration" to SymbolKind.ANNOTATION,
       "enumdeclaration" to SymbolKind.ENUM,
       "enumeration" to SymbolKind.ENUM,
+      "inductivedeclaration" to SymbolKind.ENUM,
       "objectdeclaration" to SymbolKind.OBJECT,
       "struct_" to SymbolKind.STRUCT,
       "structstruct" to SymbolKind.STRUCT,
       "tuplestruct" to SymbolKind.STRUCT,
       "union_" to SymbolKind.STRUCT,
+      "structuredeclaration" to SymbolKind.STRUCT,
       "trait_" to SymbolKind.TRAIT,
       "traitdeclaration" to SymbolKind.TRAIT,
       "module" to SymbolKind.MODULE,
       "namespacedeclaration" to SymbolKind.MODULE,
+      "namespacedecl" to SymbolKind.MODULE,
       "typealias" to SymbolKind.TYPE_ALIAS,
       "typealiasdeclaration" to SymbolKind.TYPE_ALIAS,
+      "abbrevdeclaration" to SymbolKind.TYPE_ALIAS,
 
       "functiondeclaration" to SymbolKind.FUNCTION,
       "functiondefinition" to SymbolKind.FUNCTION,
@@ -91,6 +96,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       "methoddefinition" to SymbolKind.FUNCTION,
       "funcdef" to SymbolKind.FUNCTION,
       "async_funcdef" to SymbolKind.FUNCTION,
+      "theoremdeclaration" to SymbolKind.FUNCTION,
+      "instancedeclaration" to SymbolKind.FUNCTION,
       "constructordeclaration" to SymbolKind.CONSTRUCTOR,
       "secondaryconstructor" to SymbolKind.CONSTRUCTOR,
 
@@ -103,6 +110,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
 
       "ruleset" to SymbolKind.RULE,
       "knownruleset" to SymbolKind.RULE,
+       "parserrulespec" to SymbolKind.RULE,
+       "lexerrulespec" to SymbolKind.RULE,
     )
   }
 
@@ -114,6 +123,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
 
   /** Rule-name (lower case) to symbol kind mapping; override to tune per language. */
   protected open val symbolRules: Map<String, SymbolKind> get() = DEFAULT_SYMBOL_RULES
+   /** Tokens that terminate a declaration header (i.e. start the body). */
+   protected open val bodyStartTokens: Set<String> get() = BODY_START_TOKENS
 
   override fun validateGrammar(code: String): List<ValidationError> {
     return try {
@@ -241,7 +252,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       when {
         token.type == Token.EOF -> false
         symbolic in LINE_BREAK_TOKENS -> false
-        token.text in BODY_START_TOKENS -> false
+         token.text in bodyStartTokens -> false
         else -> {
           out.add(token)
           out.size < MAX_HEADER_TOKENS
