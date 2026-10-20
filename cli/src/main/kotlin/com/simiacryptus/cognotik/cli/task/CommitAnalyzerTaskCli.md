@@ -47,8 +47,8 @@ cognotik commit -- --help
 
 ## Running with the `cognotik` launcher
 
-`cognotik` (located at `cli/bin/cognotik`) is a single launcher for all Cognotik CLI tools.
-The `commit` action runs `com.simiacryptus.cognotik.cli.CommitAnalyzerTaskCli` from the
+`cognotik` (located at `../../../../../../../../bin/cognotik`) is a single launcher for all Cognotik CLI tools.
+The `commit` action runs `com.simiacryptus.cognotik.cli.task.CommitAnalyzerTaskCli` from the
 `cli` fat jar (`*-all.jar`). The launcher locates or obtains that jar, picks a JVM, and then
 `exec`s Java with everything after the launcher options passed straight through to this CLI.
 
@@ -72,7 +72,7 @@ It can also be copied anywhere as a standalone file. In that case it downloads a
 | Standalone (no checkout found)                 | Uses the newest cached jar in `${COGNOTIK_HOME:-${XDG_CACHE_HOME:-~/.cache}/cognotik}/jars`. If none exists, downloads it from GitHub releases. |
 
 A source checkout is detected by walking up from the script's location until a directory contains
-`cli/` and a `settings.gradle(.kts)` file.
+`../../../../../../../..` and a `settings.gradle(.kts)` file.
 
 > **Tip:** Run `cognotik commit --where` to see which mode, jar and Java binary would be used,
 > without running anything.
@@ -140,7 +140,7 @@ local data and session state to live. `--repo` is independent of this and can po
 ### Running without the launcher
 
 If you prefer not to use the launcher, run the `main` method of
-`com.simiacryptus.cognotik.cli.CommitAnalyzerTaskCli` directly, either from an IDE run
+`com.simiacryptus.cognotik.cli.task.CommitAnalyzerTaskCli` directly, either from an IDE run
 configuration, from a Gradle `JavaExec` setup that includes the needed classes on the classpath,
 or with the fat jar:
 

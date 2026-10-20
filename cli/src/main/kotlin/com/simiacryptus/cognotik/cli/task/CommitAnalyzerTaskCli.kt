@@ -1,7 +1,9 @@
-package com.simiacryptus.cognotik.cli
+package com.simiacryptus.cognotik.cli.task
 
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.GeminiModels
+import com.simiacryptus.cognotik.cli.CliSupport
+import com.simiacryptus.cognotik.cli.FileServer
 import com.simiacryptus.cognotik.plan.tools.TaskType.Companion.registerTaskType
 import com.simiacryptus.cognotik.plan.tools.TaskTypeConfig
 import com.simiacryptus.cognotik.plan.tools.file.CommitAnalyzerTask
