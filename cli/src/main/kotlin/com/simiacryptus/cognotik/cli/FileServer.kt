@@ -278,6 +278,8 @@ open class FileServer {
       return
     }
     CognotikPlatform.init()
+     /* Providers must be registered before the hosted login deserializes settings/ApiData. */
+     CoreProviders.init()
     val globalRoot = DatabaseFacet.root.let { File(it) }
     DatabaseFacet.root = File(".").absolutePath
     if (!parsed.local) {
