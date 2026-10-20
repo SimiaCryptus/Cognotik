@@ -409,7 +409,8 @@ open class FileServer {
         log.warn("The hosted server rejected the session key")
         loginProgress("❌ The saved session is no longer valid.")
         HostedClientSupport.clearSessionFile(sessionFile)
-        null
+        /* Never continue with a rejected key: the balance check would fail misleadingly. */
+        throw SessionRejectedException("The hosted server rejected the session key")
       }
 
       is HostedSettingsResult.Failed -> {
