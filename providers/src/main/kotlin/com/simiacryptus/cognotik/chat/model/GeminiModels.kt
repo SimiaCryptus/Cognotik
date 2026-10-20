@@ -671,6 +671,32 @@ object GeminiModels {
     )
   }
 
+  /** Nano Banana 2.1 (GA). */
+  @JvmStatic
+  val GeminiNanoBanana_21 by lazy {
+    ChatModel(
+      name = "GeminiNanoBanana_21",
+      modelId = "gemini-nano-banana-2.1",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 32768,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.0015,     // $1.50/1M text/image/video
+        TokenTypes.Completion to 0.0075, // $7.50/1M text and thinking output
+        TokenTypes.Thinking to 0.0075,
+        TokenTypes.Image to 0.03,        // $30/1M image output tokens
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
+    )
+  }
+
+
   @JvmStatic
   val GeminiFlash_31_Live_Preview by lazy {
     ChatModel(
