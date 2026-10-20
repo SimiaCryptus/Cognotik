@@ -215,7 +215,21 @@ object HostedClientSupport {
 
         status != 200 -> HostedSettingsResult.Failed("HTTP $status from $url")
         !type.contains("application/json") -> HostedSettingsResult.Failed("non-JSON response ($type) from $url")
-        else -> HostedSettingsResult.Ok(JsonUtil.fromJson<UserSettings>(response.body(), Any::class.java))
+        else -> {
+          val body = response.body()
+          val settings = try {
+            JsonUtil.fromJson<UserSettings>(body, UserSettings::class.java)
+          } catch (e: Exception) {
+            log.debug("Hosted user settings did not map onto UserSettings; searching for an email", e)
+            val email = try {
+              findEmail(JsonUtil.fromJson<Any>(body, Any::class.java))
+            } catch (e2: Exception) {
+              null
+            }
+            email?.let { UserSettings(user = User(email = it)) }
+          }
+          HostedSettingsResult.Ok(settings)
+        }
       }
     } catch (e: InterruptedException) {
       Thread.currentThread().interrupt()
