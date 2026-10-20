@@ -671,6 +671,32 @@ object GeminiModels {
     )
   }
 
+  /** Nano Banana 2.1 (GA). */
+  @JvmStatic
+  val GeminiNanoBanana_21 by lazy {
+    ChatModel(
+      name = "GeminiNanoBanana_21",
+      modelId = "gemini-nano-banana-2.1",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 32768,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.0015,     // $1.50/1M text/image/video
+        TokenTypes.Completion to 0.0075, // $7.50/1M text and thinking output
+        TokenTypes.Thinking to 0.0075,
+        TokenTypes.Image to 0.03,        // $30/1M image output tokens
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
+    )
+  }
+
+
   @JvmStatic
   val GeminiFlash_31_Live_Preview by lazy {
     ChatModel(
@@ -1024,6 +1050,37 @@ object GeminiModels {
     )
   }
 
+  // =========================================================
+  // Gemini 4 models
+  // =========================================================
+  @JvmStatic
+  val Gemini4_Argon by lazy {
+    ChatModel(
+      name = "Gemini4_Argon",
+      modelId = "gemini-4-argon",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 1048576,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.002,      // $2.00/1M through Nov 30, 2026 ($4.00 starting Dec 1, 2026)
+        TokenTypes.Completion to 0.01,   // $10.00/1M through Nov 30, 2026 ($20.00 starting Dec 1, 2026)
+        TokenTypes.Thinking to 0.01,     // thinking tokens billed at output rate
+        TokenTypes.Cached to 0.0001,     // $0.10/1M through Nov 30, 2026 ($0.20 starting Dec 1, 2026)
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.AUDIO,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
+  @JvmStatic
+  val Gemini_4_Argon by lazy { Gemini4_Argon }
+
 
   // =========================================================
   // Specialized / Tool & Agent models
@@ -1211,6 +1268,9 @@ object GeminiModels {
       "GeminiFlash_31_Image" to GeminiFlash_31_Image,
       "GeminiFlash_31_Image_Preview" to GeminiFlash_31_Image_Preview,
       "GeminiFlash_31_Lite_Image" to GeminiFlash_31_Lite_Image,
+      "GeminiNanoBanana_21" to GeminiNanoBanana_21,
+      "GeminiNanoBanana_2_1" to GeminiNanoBanana_21,
+      "gemini-nano-banana-2.1" to GeminiNanoBanana_21,
       "GeminiFlash_31_Live_Preview" to GeminiFlash_31_Live_Preview,
       "GeminiFlash_31_TTS_Preview" to GeminiFlash_31_TTS_Preview,
       // 3.5 / 3.6 models
@@ -1229,6 +1289,10 @@ object GeminiModels {
       "GeminiOmniFlash_Preview" to GeminiOmniFlash_Preview,
       "GeminiOmniFlash" to GeminiOmniFlash,
       "gemini-omni-flash" to GeminiOmniFlash,
+      // Gemini 4 models
+      "Gemini4_Argon" to Gemini4_Argon,
+      "Gemini_4_Argon" to Gemini4_Argon,
+      "gemini-4-argon" to Gemini4_Argon,
       // Specialized models
       "GeminiRobotics_2_Preview" to GeminiRobotics_2_Preview,
       "GeminiRobotics_2_Streaming_Preview" to GeminiRobotics_2_Streaming_Preview,

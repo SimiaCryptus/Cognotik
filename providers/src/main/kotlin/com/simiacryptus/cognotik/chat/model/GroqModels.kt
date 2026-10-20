@@ -45,7 +45,7 @@ object GroqModels {
       provider = CoreProviders.Groq,
       inputTokenPricePerK = 0.15 / 1000.0,
       outputTokenPricePerK = 0.60 / 1000.0,
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
+      inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
@@ -131,8 +131,8 @@ object GroqModels {
       maxTotalTokens = 4000,
       maxOutTokens = 50000,
       provider = CoreProviders.Groq,
-      inputTokenPricePerK = 40.00,
-      outputTokenPricePerK = 40.00,
+      inputTokenPricePerK = 40.00 / 1000.0,
+      outputTokenPricePerK = 40.00 / 1000.0,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO)
     )
@@ -145,8 +145,8 @@ object GroqModels {
       maxTotalTokens = 4000,
       maxOutTokens = 50000,
       provider = CoreProviders.Groq,
-      inputTokenPricePerK = 22.00,
-      outputTokenPricePerK = 22.00,
+      inputTokenPricePerK = 22.00 / 1000.0,
+      outputTokenPricePerK = 22.00 / 1000.0,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO)
     )
