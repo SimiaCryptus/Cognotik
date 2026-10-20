@@ -123,6 +123,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
 
   /** Rule-name (lower case) to symbol kind mapping; override to tune per language. */
   protected open val symbolRules: Map<String, SymbolKind> get() = DEFAULT_SYMBOL_RULES
+   /** Tokens that terminate a declaration header (i.e. start the body). */
+   protected open val bodyStartTokens: Set<String> get() = BODY_START_TOKENS
 
   override fun validateGrammar(code: String): List<ValidationError> {
     return try {
