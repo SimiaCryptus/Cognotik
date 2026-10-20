@@ -431,21 +431,25 @@ open class UnifiedHarness(
       log.info("Configuring platform for user: {}", user, /*RuntimeException("Stack Trace")*/)
       PlanHarness.initDynamicEnums()
       CognotikPlatform.init()
-      ServiceKey.AUTHENTICATION.factory = {
-        object : AuthenticationInterface {
-          override fun getUser(accessToken: String?) = user
-          override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-        }
-      }
-      ServiceKey.AUTHORIZATION_MANAGER.factory = {
-        object : AuthorizationManager() {
-          override fun isAuthorized(
-            applicationClass: Class<*>?,
-            user: User?,
-            operationType: OperationType
-          ): Boolean = true
-        }
-      }
+       if (ServiceKey.AUTHENTICATION.factory == null) {
+         ServiceKey.AUTHENTICATION.factory = {
+           object : AuthenticationInterface {
+             override fun getUser(accessToken: String?) = user
+             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+           }
+         }
+       }
+       if (ServiceKey.AUTHORIZATION_MANAGER.factory == null) {
+         ServiceKey.AUTHORIZATION_MANAGER.factory = {
+           object : AuthorizationManager() {
+             override fun isAuthorized(
+               applicationClass: Class<*>?,
+               user: User?,
+               operationType: OperationType
+             ): Boolean = true
+           }
+         }
+       }
     }
   }
 }
