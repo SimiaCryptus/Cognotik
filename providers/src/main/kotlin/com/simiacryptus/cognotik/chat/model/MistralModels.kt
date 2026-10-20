@@ -430,6 +430,7 @@ object MistralModels {
       "zai-glm-5-3" to ZaiGlm5_3,
       // Frontier Generalist
       "MistralLarge3" to MistralLarge3,
+      "mistral-large-2512" to MistralLarge3,
       "MistralMedium3_1" to MistralMedium3_1,
       "MistralSmall3_2" to MistralSmall3_2,
       "Ministral3_14B" to Ministral3_14B,
