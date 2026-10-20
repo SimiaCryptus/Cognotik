@@ -75,7 +75,8 @@ usage() {
 case "${1:-}" in
    -h|--help) usage; exit 0 ;;
 esac
-[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix, session)"; }
+[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix, session, commit)"; }
+[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix, session, commit)"; }
 ACTION="$1"; shift
 case "$ACTION" in
    fileserver|fs) MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli" ;;
@@ -112,26 +113,7 @@ else
   JAVA_BIN="$(command -v java)"
 fi
 
-# --- Are we inside a Cognotik source checkout? ---------------------------------
-find_project_root() {
-  local dir="$SCRIPT_DIR"
-  while :; do
-    if [[ -d "$dir/cli" ]] \
-       && { [[ -f "$dir/settings.gradle.kts" ]] || [[ -f "$dir/settings.gradle" ]]; }; then
-      printf '%s\n' "$dir"; return 0
-    fi
-    [[ "$dir" == "/" ]] && return 1
-    dir="$(dirname -- "$dir")"
-  done
-}
 
-PROJECT_ROOT=""
-if PROJECT_ROOT="$(find_project_root)"; then
-  LIBS_DIR="$PROJECT_ROOT/cli/build/libs"
-else
-  PROJECT_ROOT=""
-  LIBS_DIR="$CACHE_DIR"
-fi
 
 # --- Build (source checkout only) ----------------------------------------------
 build() {
