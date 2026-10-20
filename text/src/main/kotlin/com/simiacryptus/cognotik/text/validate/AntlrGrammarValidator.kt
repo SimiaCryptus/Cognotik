@@ -252,7 +252,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       when {
         token.type == Token.EOF -> false
         symbolic in LINE_BREAK_TOKENS -> false
-        token.text in BODY_START_TOKENS -> false
+         token.text in bodyStartTokens -> false
         else -> {
           out.add(token)
           out.size < MAX_HEADER_TOKENS
