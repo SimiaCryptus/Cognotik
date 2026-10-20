@@ -78,6 +78,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       "structstruct" to SymbolKind.STRUCT,
       "tuplestruct" to SymbolKind.STRUCT,
       "union_" to SymbolKind.STRUCT,
+      "structuredeclaration" to SymbolKind.STRUCT,
       "trait_" to SymbolKind.TRAIT,
       "traitdeclaration" to SymbolKind.TRAIT,
       "module" to SymbolKind.MODULE,
