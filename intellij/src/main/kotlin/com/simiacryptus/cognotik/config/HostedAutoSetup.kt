@@ -40,11 +40,7 @@ object HostedAutoSetup {
   private val log = LoggerFactory.getLogger(HostedAutoSetup::class.java)
 
   private val userSettings: UserSettings
-    get() {
-      // Status bar widgets may query this before PluginStartupActivity has registered service factories.
-      CognotikPlatform.init()
-      return ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser)
-    }
+    get() = ServiceKey.USER_SETTINGS.get().getUserSettings(CognotikConfig.localUser)
 
   /** True when at least one provider with a non-blank key is configured. */
   fun hasConfiguredProvider(settings: UserSettings = userSettings): Boolean = try {
