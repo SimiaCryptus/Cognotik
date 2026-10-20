@@ -72,6 +72,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       "annotationtypedeclaration" to SymbolKind.ANNOTATION,
       "enumdeclaration" to SymbolKind.ENUM,
       "enumeration" to SymbolKind.ENUM,
+      "inductivedeclaration" to SymbolKind.ENUM,
       "objectdeclaration" to SymbolKind.OBJECT,
       "struct_" to SymbolKind.STRUCT,
       "structstruct" to SymbolKind.STRUCT,
