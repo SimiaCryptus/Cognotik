@@ -23,6 +23,8 @@ object FileValidators {
       "json", "json5" -> Json5GrammarValidator()
       "css" -> CssGrammarValidator()
       "html", "htm", "xhtml" -> HtmlGrammarValidator()
+      "lean" -> LeanGrammarValidator()
+       "g4" -> Antlr4GrammarValidator()
       else -> null
     }
   }, { _ -> ParenMatchingValidator() })

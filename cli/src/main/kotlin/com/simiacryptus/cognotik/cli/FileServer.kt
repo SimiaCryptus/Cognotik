@@ -278,6 +278,8 @@ open class FileServer {
       return
     }
     CognotikPlatform.init()
+     /* Providers must be registered before the hosted login deserializes settings/ApiData. */
+     CoreProviders.init()
     val globalRoot = DatabaseFacet.root.let { File(it) }
     DatabaseFacet.root = File(".").absolutePath
     if (!parsed.local) {
@@ -314,10 +316,21 @@ open class FileServer {
   open fun initHostedEnv(globalRoot: File) {
     val sessionFile = File(globalRoot, "session.json")
     val baseUrl = System.getenv("COGNOTIK_URL")?.takeIf { it.isNotBlank() } ?: "https://hosted.cognotik.com"
-    val sessionInfo = getSession(sessionFile, baseUrl)
-    login(baseUrl, sessionInfo, sessionFile)
-    setupServices(sessionInfo)
+    var sessionInfo = getSession(sessionFile, baseUrl)
+    try {
+      login(baseUrl, sessionInfo, sessionFile)
+    } catch (e: SessionRejectedException) {
+      /* The cached key is dead (already cleared): log in again right now instead of failing. */
+      log.info("Saved session rejected; starting a fresh device login against $baseUrl")
+      val fresh = HostedClientSupport.deviceLogin(baseUrl)
+        ?: throw IllegalStateException("Device login failed; cannot continue in hosted mode", e)
+      HostedClientSupport.saveSessionFile(sessionFile, fresh)
+      sessionInfo = fresh
+      login(baseUrl, sessionInfo, sessionFile)
+    }
   }
+  /** Thrown by [login] when the hosted server rejects the session key. */
+  class SessionRejectedException(message: String) : IllegalStateException(message)
 
   open fun setupServices(sessionInfo: SessionKeyFile) {
     ServiceKey.USER_SETTINGS.addWrapper { getUserSettings(it, sessionInfo) }
@@ -346,14 +359,17 @@ open class FileServer {
     sessionInfo: SessionKeyFile
   ): UserSettingsInterface = object : UserSettingsInterface by inner {
     override fun getUserSettings(user: User): UserSettings {
-      return inner.getUserSettings(user).copy(
-        apis = mutableListOf(
-          ApiData(
-            provider = CoreProviders.HostedProxy,
-            key = SecureString(sessionInfo.sessionKey)
-          )
-        )
-      )
+       val base = inner.getUserSettings(user)
+       if (sessionInfo.sessionKey.isBlank()) return base
+       /* Resolve at call time so we always use the currently registered provider instance. */
+       val hosted = CoreProviders.HostedProxy
+       val others = base.apis.filter { it.provider?.name != hosted.name }
+       return base.copy(
+         apis = (others + ApiData(
+           provider = hosted,
+           key = SecureString(sessionInfo.sessionKey)
+         )).toMutableList()
+       )
     }
   }
 
@@ -393,7 +409,8 @@ open class FileServer {
         log.warn("The hosted server rejected the session key")
         loginProgress("❌ The saved session is no longer valid.")
         HostedClientSupport.clearSessionFile(sessionFile)
-        null
+        /* Never continue with a rejected key: the balance check would fail misleadingly. */
+        throw SessionRejectedException("The hosted server rejected the session key")
       }
 
       is HostedSettingsResult.Failed -> {
@@ -409,6 +426,11 @@ open class FileServer {
     defaultUser = User(
       email = email,
     )
+    /*
+     * Install the hosted services (UsageClient, proxied settings) BEFORE the balance
+     * check: otherwise the check hits the fresh local H2 usage DB, which always says 0.
+     */
+    setupServices(sessionInfo)
     try {
       require(ServiceRouter.getUserBalance(defaultUser!!) > 0.0) { "The default user has no balance; the hosted server will not work." }
     } catch (e: Exception) {

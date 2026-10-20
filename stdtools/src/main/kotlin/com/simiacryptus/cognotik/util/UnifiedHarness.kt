@@ -4,6 +4,7 @@ import com.simiacryptus.cognotik.apps.SessionProxyServer
 import com.simiacryptus.cognotik.apps.SinglePlanApp
 import com.simiacryptus.cognotik.apps.SingleTaskApp
 import com.simiacryptus.cognotik.plan.OrchestrationConfig
+import com.simiacryptus.cognotik.plan.OrchestrationConfig.Companion.instance
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveMode
 import com.simiacryptus.cognotik.plan.cognitive.CognitiveModeConfig
 import com.simiacryptus.cognotik.plan.tools.TaskExecutionConfig
@@ -43,20 +44,13 @@ open class UnifiedHarness(
   val openBrowser: Boolean = false,
   val captureMessages: Boolean = serverless,
   val redirectData: Boolean = serverless,
-  val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { model, session, user ->
+   val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { rawModel, session, user ->
+     val model = withResolvedKey(rawModel, user)
     val api = model.provider
     if (api == null) {
       throw IllegalArgumentException("No API found for model: ${model.toJson()}")
     }
-    val model = model.model ?: throw IllegalArgumentException("No model found for provider: ${model.provider?.name}")
-    model.instance(
-      key = (if (api.key != null) api.key else {
-        throw IllegalArgumentException("No API key found for provider: ${model.provider?.name}")
-      })!!,
-      base = api.apiBase,
-      session = session,
-      user = user,
-    )
+    model.instance(user = user,)
   },
   val smartModel: ChatModel,
   val fastModel: ChatModel = smartModel,
@@ -234,12 +228,13 @@ open class UnifiedHarness(
     val singleTaskApp = object : SingleTaskApp(
       path = "/test",
       taskType = taskType,
-      instanceFn = { model, user -> modelInstanceFn(model, session, user) },
+       instanceFn = { model, user -> modelInstanceFn(withResolvedKey(model, user), session, user) },
       message = message,
       taskConfig = executionConfig,
       user = user,
     ) {
-      override fun instance(model: ApiChatModel) = modelInstanceFn(model, session, user)
+       override fun instance(model: ApiChatModel) =
+         modelInstanceFn(withResolvedKey(model, user), session, user)
 
       override fun getOrchestrationConfig(session: Session, user: User) = initSettings(session)
 
@@ -404,6 +399,31 @@ open class UnifiedHarness(
       val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
       return sdf.format(System.currentTimeMillis())
     }
+     /**
+      * If the model's provider entry carries no key (e.g. the hosted 'Cognotik' proxy,
+      * whose session key is only injected via the user-settings wrapper), look the
+      * provider up in the user's settings and use that entry's key.
+      */
+     @JvmStatic
+     fun withResolvedKey(model: ApiChatModel, user: User): ApiChatModel {
+       if (model.provider?.key?.decrypt?.isNotBlank() == true) return model
+       val api = try {
+         model.findApi(user)
+       } catch (e: Exception) {
+         log.debug("Could not look up API settings for {}", model.providerName(), e)
+         null
+       } ?: return model
+       if (api.key == null) return model
+       val baseUrl = model.provider?.baseUrl?.takeIf { it.isNotBlank() }
+         ?: api.baseUrl?.takeIf { it.isNotBlank() }
+         ?: runCatching { api.apiBase }.getOrNull()
+       val merged = api.copy(
+         name = model.provider?.name ?: api.name,
+         baseUrl = baseUrl,
+         provider = model.provider?.provider ?: api.provider ?: model.model?.provider,
+       )
+       return model.copy(provider = merged)
+     }
 
 
     @JvmStatic
@@ -411,27 +431,38 @@ open class UnifiedHarness(
       log.info("Configuring platform for user: {}", user, /*RuntimeException("Stack Trace")*/)
       PlanHarness.initDynamicEnums()
       CognotikPlatform.init()
-      ServiceKey.AUTHENTICATION.factory = {
-        object : AuthenticationInterface {
-          override fun getUser(accessToken: String?) = user
-          override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
-        }
-      }
-      ServiceKey.AUTHORIZATION_MANAGER.factory = {
-        object : AuthorizationManager() {
-          override fun isAuthorized(
-            applicationClass: Class<*>?,
-            user: User?,
-            operationType: OperationType
-          ): Boolean = true
-        }
-      }
+       if (ServiceKey.AUTHENTICATION.factory == null) {
+         ServiceKey.AUTHENTICATION.factory = {
+           object : AuthenticationInterface {
+             override fun getUser(accessToken: String?) = user
+             override fun putUser(accessToken: String, user: User) = throw UnsupportedOperationException()
+           }
+         }
+       }
+       if (ServiceKey.AUTHORIZATION_MANAGER.factory == null) {
+         ServiceKey.AUTHORIZATION_MANAGER.factory = {
+           object : AuthorizationManager() {
+             override fun isAuthorized(
+               applicationClass: Class<*>?,
+               user: User?,
+               operationType: OperationType
+             ): Boolean = true
+           }
+         }
+       }
     }
   }
 }
+/** Effective provider name: the APIProvider's name, falling back to the ApiData display name. */
+fun ApiChatModel.providerName(): String? =
+   provider?.provider?.name ?: model?.provider?.name ?: provider?.name
+
 
 fun ApiChatModel.findApi(user: User): ApiData? {
-  val userSettings =
-    ServiceRouter.getUserSettings(user)
-  return (userSettings.apis.find { api -> api.provider?.name == provider?.name })
+   val wanted = providerName() ?: return null
+   val userSettings = ServiceRouter.getUserSettings(user)
+   val candidates = userSettings.apis.filter { api ->
+     (api.provider?.name ?: api.name) == wanted || api.name == wanted
+   }
+   return candidates.firstOrNull { it.key?.decrypt?.isNotBlank() == true } ?: candidates.firstOrNull()
 }
