@@ -329,6 +329,8 @@ open class FileServer {
       login(baseUrl, sessionInfo, sessionFile)
     }
   }
+  /** Thrown by [login] when the hosted server rejects the session key. */
+  class SessionRejectedException(message: String) : IllegalStateException(message)
 
   open fun setupServices(sessionInfo: SessionKeyFile) {
     ServiceKey.USER_SETTINGS.addWrapper { getUserSettings(it, sessionInfo) }
