@@ -86,6 +86,7 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
       "namespacedecl" to SymbolKind.MODULE,
       "typealias" to SymbolKind.TYPE_ALIAS,
       "typealiasdeclaration" to SymbolKind.TYPE_ALIAS,
+      "abbrevdeclaration" to SymbolKind.TYPE_ALIAS,
 
       "functiondeclaration" to SymbolKind.FUNCTION,
       "functiondefinition" to SymbolKind.FUNCTION,
