@@ -85,7 +85,7 @@ object DeepSeekModels {
 
   // supports both thinking and non-thinking modes (thinking is default).
   // Concurrency limit: 500. Supports JSON output, tool calls, responses API,
-  // Anthropic API, and chat prefix completion (beta).
+  // Anthropic API, chat prefix completion (beta), and FIM completion (beta, non-thinking only).
 
   val DeepSeekV4Pro by lazy {
     ChatModel(
