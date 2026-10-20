@@ -66,6 +66,22 @@ object DeepSeekModels {
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
+  // Retired legacy name for deepseek-flash; served by DeepSeek-V4.1-Flash.
+  val DeepSeekV4FlashVisionExp by lazy {
+    ChatModel(
+      name = "DeepSeekV4FlashVisionExp",
+      modelId = "deepseek-v4-flash-vision-exp",
+      maxTotalTokens = 1_000_000,
+      maxOutTokens = 384_000,
+      provider = CoreProviders.DeepSeek,
+      tokenPricingPerK = flashPricing,
+      supportsReasoning = true,
+      deprecated = true,
+      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+  // deepseek-v4-pro: DeepSeek-V4-Pro-0813, 1M context, 384K max output,
 
   // supports both thinking and non-thinking modes (thinking is default).
   // Concurrency limit: 500. Supports JSON output, tool calls, responses API,
