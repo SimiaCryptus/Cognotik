@@ -1,0 +1,731 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Commit Analysis Viewer</title>
+<!--
+  Commit Analysis Viewer
+
+  Query parameters:
+    src   - URL (relative to this page) of the analysis graph JSON.
+            Default: commit_analysis_97071b66e6_graph.json
+    base  - Base path (relative to this page) used to fetch repository source files.
+            Default: ../../..
+
+  Patch files referenced by items ("diff" field) are resolved relative to the JSON file.
+  Deep links: #tab=ops&op=op3&item=i7   (tabs: ops, graph, files, raw)
+-->
+<style>
+  :root {
+    --bg: #f6f8fa; --panel: #ffffff; --fg: #1f2328; --muted: #656d76; --border: #d0d7de;
+    --accent: #0969da; --sel: #ddf4ff; --warn: #cf222e; --warn-bg: #ffebe9;
+    --add-bg: #e6ffec; --add-num: #ccffd8; --del-bg: #ffebe9; --del-num: #ffd7d5;
+    --hunk-bg: #ddf4ff; --meta: #8250df; --hl: #fff8c5;
+    --mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #0d1117; --panel: #161b22; --fg: #e6edf3; --muted: #8d96a0; --border: #30363d;
+      --accent: #4493f8; --sel: #1f2d3d; --warn: #f85149; --warn-bg: #3a1d1f;
+      --add-bg: #12261e; --add-num: #1b4721; --del-bg: #25171c; --del-num: #542426;
+      --hunk-bg: #121d2f; --meta: #a371f7; --hl: #3b3417;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { font: 14px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Helvetica, Arial, sans-serif;
+         background: var(--bg); color: var(--fg); display: flex; flex-direction: column; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code, .mono { font-family: var(--mono); font-size: 12.5px; }
+  button { font: inherit; font-size: 12.5px; padding: 3px 10px; border: 1px solid var(--border);
+           background: var(--panel); color: var(--fg); border-radius: 6px; cursor: pointer; }
+  button:hover { border-color: var(--accent); }
+  input, select { font: inherit; font-size: 13px; padding: 4px 8px; border: 1px solid var(--border);
+                  border-radius: 6px; background: var(--panel); color: var(--fg); }
+
+  header { background: var(--panel); border-bottom: 1px solid var(--border); padding: 10px 16px; }
+  header h1 { font-size: 17px; margin: 0 0 4px; }
+  .hdr-meta { display: flex; flex-wrap: wrap; gap: 6px 16px; color: var(--muted); font-size: 12.5px; align-items: center; }
+  .hdr-form { display: flex; gap: 6px; align-items: center; margin-left: auto; }
+  .hdr-form input { width: 260px; font-family: var(--mono); font-size: 12px; }
+
+  #layout { flex: 1; display: flex; min-height: 0; }
+  aside { width: 340px; min-width: 260px; border-right: 1px solid var(--border); background: var(--panel);
+          display: flex; flex-direction: column; min-height: 0; }
+  .filters { padding: 10px; border-bottom: 1px solid var(--border); display: flex; flex-direction: column; gap: 6px; }
+  .filters .row { display: flex; gap: 6px; align-items: center; }
+  .filters input[type=search] { flex: 1; }
+  .stats { font-size: 12px; color: var(--muted); }
+  #oplist { list-style: none; margin: 0; padding: 0; overflow: auto; flex: 1; }
+  #oplist li { padding: 8px 10px; border-bottom: 1px solid var(--border); cursor: pointer; display: flex; gap: 8px; }
+  #oplist li:hover { background: var(--bg); }
+  #oplist li.sel { background: var(--sel); box-shadow: inset 3px 0 0 var(--accent); }
+  #oplist .idx { color: var(--muted); font-family: var(--mono); font-size: 12px; min-width: 18px; text-align: right; }
+  #oplist .nm { font-weight: 600; font-size: 13px; }
+  #oplist .sub { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 3px; align-items: center; }
+
+  main { flex: 1; overflow: auto; min-width: 0; }
+  .tabs { position: sticky; top: 0; z-index: 2; background: var(--bg); display: flex; gap: 2px;
+          padding: 8px 16px 0; border-bottom: 1px solid var(--border); }
+  .tabs a { padding: 6px 14px; border: 1px solid transparent; border-bottom: none; border-radius: 6px 6px 0 0;
+            color: var(--muted); margin-bottom: -1px; }
+  .tabs a.active { background: var(--panel); border-color: var(--border); color: var(--fg); font-weight: 600; }
+  .tabs a:hover { text-decoration: none; color: var(--fg); }
+  .content { padding: 16px; max-width: 1400px; }
+
+  .card { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; margin-bottom: 14px; }
+  .card h2 { margin: 0 0 6px; font-size: 18px; }
+  .card h3 { margin: 0 0 8px; font-size: 14px; }
+  .muted { color: var(--muted); }
+  .badge { display: inline-block; font-size: 11px; padding: 1px 7px; border-radius: 10px; border: 1px solid var(--border);
+           font-weight: 600; white-space: nowrap; }
+  .badge.warn { background: var(--warn-bg); color: var(--warn); border-color: var(--warn); }
+  .badge.ok { color: #1a7f37; border-color: #1a7f37; }
+  .badge.bad { color: var(--warn); border-color: var(--warn); }
+  .chip { display: inline-block; font-family: var(--mono); font-size: 11.5px; padding: 0 6px; border-radius: 4px;
+          background: var(--bg); border: 1px solid var(--border); }
+  .suspicious-box { background: var(--warn-bg); border: 1px solid var(--warn); color: var(--warn);
+                    padding: 8px 12px; border-radius: 6px; margin: 8px 0; }
+  .err { background: var(--warn-bg); border: 1px solid var(--warn); color: var(--warn); padding: 8px 12px;
+         border-radius: 6px; white-space: pre-wrap; font-family: var(--mono); font-size: 12px; }
+  table.kv { border-collapse: collapse; font-size: 13px; }
+  table.kv td { padding: 3px 14px 3px 0; vertical-align: top; }
+  table.kv td:first-child { color: var(--muted); white-space: nowrap; }
+  table.list { border-collapse: collapse; width: 100%; font-size: 13px; }
+  table.list th, table.list td { text-align: left; padding: 5px 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  table.list th { color: var(--muted); font-weight: 600; font-size: 12px; }
+  .filelist { margin: 0; padding-left: 18px; }
+  .filelist li { margin: 2px 0; }
+
+  details.item { border: 1px solid var(--border); border-radius: 6px; margin-bottom: 8px; background: var(--panel); }
+  details.item > summary { padding: 7px 10px; cursor: pointer; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; list-style: none; }
+  details.item > summary::-webkit-details-marker { display: none; }
+  details.item > summary::before { content: "▸"; color: var(--muted); width: 10px; }
+  details.item[open] > summary::before { content: "▾"; }
+  details.item[open] > summary { border-bottom: 1px solid var(--border); }
+  details.item.flash { box-shadow: 0 0 0 2px var(--accent); }
+  .item-toolbar { display: flex; gap: 6px; padding: 6px 10px; border-bottom: 1px solid var(--border); align-items: center; flex-wrap: wrap; }
+  .diff-body { overflow-x: auto; }
+
+  table.diff { border-collapse: collapse; width: 100%; font-family: var(--mono); font-size: 12.5px; }
+  table.diff td { padding: 0 8px; white-space: pre; vertical-align: top; }
+  table.diff td.n { width: 1%; min-width: 42px; text-align: right; color: var(--muted); user-select: none; border-right: 1px solid var(--border); }
+  table.diff td.s { width: 1%; user-select: none; padding-right: 0; }
+  table.diff tr.add td { background: var(--add-bg); }
+  table.diff tr.add td.n { background: var(--add-num); }
+  table.diff tr.del td { background: var(--del-bg); }
+  table.diff tr.del td.n { background: var(--del-num); }
+  table.diff tr.hunk td { background: var(--hunk-bg); color: var(--muted); }
+  table.diff tr.meta td { color: var(--meta); }
+  table.diff tr.note td { color: var(--muted); font-style: italic; }
+
+  #modal { position: fixed; inset: 0; background: rgba(0,0,0,.45); display: none; z-index: 10; padding: 30px; }
+  #modal.open { display: flex; }
+  #modal .box { background: var(--panel); border: 1px solid var(--border); border-radius: 8px; flex: 1; display: flex;
+                flex-direction: column; min-height: 0; max-width: 1300px; margin: 0 auto; }
+  #modal .bar { padding: 8px 12px; border-bottom: 1px solid var(--border); display: flex; gap: 10px; align-items: center; }
+  #modal .bar .title { font-family: var(--mono); font-size: 13px; font-weight: 600; flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #modal .body { overflow: auto; flex: 1; }
+  #modal .body tr.hl td { background: var(--hl); }
+
+  svg text { fill: var(--fg); font-size: 12px; }
+  svg .node { cursor: pointer; }
+  svg .node rect { stroke: var(--border); stroke-width: 1.5; }
+  svg .node.sel rect { stroke: var(--accent); stroke-width: 3; }
+  svg .node.sus rect { stroke: var(--warn); stroke-dasharray: 5 3; }
+  svg .edge { fill: none; stroke: var(--muted); stroke-width: 1.6; }
+  svg .edge:hover { stroke: var(--accent); stroke-width: 2.5; }
+  .graph-wrap { overflow: auto; }
+  kbd { font-family: var(--mono); font-size: 11px; border: 1px solid var(--border); border-radius: 4px; padding: 0 4px; background: var(--bg); }
+</style>
+</head>
+<body>
+<header id="hdr"><h1>Loading…</h1></header>
+<div id="layout">
+  <aside>
+    <div class="filters">
+      <div class="row">
+        <input type="search" id="q" placeholder="Filter operations, files, items…">
+      </div>
+      <div class="row">
+        <select id="cat"><option value="">All categories</option></select>
+        <label class="muted" style="font-size:12.5px"><input type="checkbox" id="susOnly"> suspicious only</label>
+      </div>
+      <div class="stats" id="stats"></div>
+    </div>
+    <ul id="oplist"></ul>
+  </aside>
+  <main id="main">
+    <nav class="tabs" id="tabs"></nav>
+    <div class="content" id="content"></div>
+  </main>
+</div>
+
+<div id="modal">
+  <div class="box">
+    <div class="bar">
+      <span class="title" id="mTitle"></span>
+      <a id="mRaw" target="_blank" rel="noopener">raw</a>
+      <button id="mClose" title="Close (Esc)">✕</button>
+    </div>
+    <div class="body" id="mBody"></div>
+  </div>
+</div>
+<script id="viewer-config">
+window.COMMIT_ANALYZER_CONFIG = /*CONFIG_START*/{}/*CONFIG_END*/;
+</script>
+
+<script>
+(() => {
+  'use strict';
+
+  // ---------- Parameters & URL resolution ----------
+  const params = new URLSearchParams(location.search);
+const CFG = (window.COMMIT_ANALYZER_CONFIG && typeof window.COMMIT_ANALYZER_CONFIG === 'object') ? window.COMMIT_ANALYZER_CONFIG : {};
+const SRC = params.get('src') || CFG.src || 'commit_analysis_97071b66e6_graph.json';
+const BASE = params.get('base') || CFG.base || '../../..';
+const EMBEDDED = !params.get('src') && CFG.data && typeof CFG.data === 'object' ? CFG.data : null;
+if (CFG.title) document.title = CFG.title;
+  const srcUrl = new URL(SRC, location.href);
+  const baseUrl = new URL(BASE.replace(/\/*$/, '/'), location.href);
+
+  const encPath = p => String(p).split('/').map(encodeURIComponent).join('/');
+  const fileUrl = path => new URL(encPath(path.replace(/^\/+/, '')), baseUrl).href;
+  const patchUrl = item => new URL(item.diff, srcUrl).href;
+
+  // ---------- Helpers ----------
+  const $ = id => document.getElementById(id);
+  const esc = s => String(s ?? '').replace(/[&<>"']/g, c =>
+    ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const short = h => h ? String(h).slice(0, 10) : '';
+  const basename = p => String(p || '').split('/').pop();
+
+  const CAT_COLORS = {
+    formatting: '#8c959f', feature: '#2da44e', cleanup: '#1b9aaa', config: '#d4a72c',
+    build: '#0969da', refactor: '#8250df', fix: '#cf222e', test: '#bf3989', docs: '#57606a'
+  };
+  const catColor = c => CAT_COLORS[c] || '#8250df';
+  const catBadge = c => `<span class="badge" style="color:${catColor(c)};border-color:${catColor(c)}">${esc(c || 'uncategorized')}</span>`;
+
+  const cache = new Map();
+  async function fetchText(url) {
+    if (!cache.has(url)) {
+      cache.set(url, fetch(url).then(r => {
+        if (!r.ok) throw new Error(`HTTP ${r.status} ${r.statusText} — ${url}`);
+        return r.text();
+      }));
+    }
+    try { return await cache.get(url); }
+    catch (e) { cache.delete(url); throw e; }
+  }
+
+  // ---------- State ----------
+  const state = {
+    data: null, ordered: [], opsById: {}, itemIndex: {}, edges: [],
+    tab: 'ops', selected: null, pendingItem: null,
+    filter: '', category: '', suspiciousOnly: false
+  };
+
+  // ---------- Loading ----------
+  async function load() {
+    renderHeader();
+    let data;
+    try {
+     data = EMBEDDED || JSON.parse(await fetchText(srcUrl.href));
+    } catch (e) {
+      $('content').innerHTML = `<div class="card"><h3>Failed to load analysis</h3><div class="err">${esc(e.message)}</div>
+        <p class="muted">Source: <code>${esc(srcUrl.href)}</code><br>Use <code>?src=path/to/graph.json&amp;base=../../..</code> to change.</p></div>`;
+      return;
+    }
+    state.data = data;
+    const ops = data.operations || [];
+    ops.forEach(op => {
+      state.opsById[op.id] = op;
+      (op.items || []).forEach(it => { state.itemIndex[it.id] = { item: it, op }; });
+    });
+    const seen = new Set();
+    (data.order || []).forEach(id => { if (state.opsById[id] && !seen.has(id)) { seen.add(id); state.ordered.push(state.opsById[id]); } });
+    ops.forEach(op => { if (!seen.has(op.id)) state.ordered.push(op); });
+    state.edges = data.edges || [];
+
+    const cats = [...new Set(ops.map(o => o.category || 'uncategorized'))].sort();
+    $('cat').innerHTML = '<option value="">All categories</option>' + cats.map(c => `<option>${esc(c)}</option>`).join('');
+
+    renderHeader();
+    renderSidebar();
+    applyHash();
+  }
+
+  // ---------- Header ----------
+  function renderHeader() {
+    const d = state.data;
+    const yesNo = (v, y, n) => v === true ? `<span class="badge ok">${y}</span>` : v === false ? `<span class="badge bad">${n}</span>` : '';
+    const ser = d?.series || {};
+    const ver = d?.verification || {};
+    $('hdr').innerHTML = `
+      <h1>${d ? esc(d.subject || '(no subject)') : 'Commit Analysis Viewer'}</h1>
+      <div class="hdr-meta">
+        ${d ? `
+          <span>commit <code title="${esc(d.commit)}">${esc(short(d.commit))}</code></span>
+          <span>parent <code title="${esc(d.parent)}">${esc(short(d.parent))}</code></span>
+          ${yesNo(d.exact_reconstruction, 'exact reconstruction', 'inexact reconstruction')}
+          ${yesNo(ser.tree_matches, 'tree matches', 'tree mismatch')}
+          ${ver.status ? `<span class="badge">verification: ${esc(ver.status)}</span>` : ''}
+          ${ser.branch ? `<span>branch <code>${esc(ser.branch)}</code></span>` : ''}
+          ${ser.head ? `<span>head <code title="${esc(ser.head)}">${esc(short(ser.head))}</code></span>` : ''}
+          ${ser.item_commits != null ? `<span>${esc(ser.item_commits)} item commits</span>` : ''}
+          ${ser.branch_error ? `<span class="badge warn">branch error: ${esc(ser.branch_error)}</span>` : ''}
+        ` : ''}
+        <form class="hdr-form" id="srcForm">
+          <label>src <input name="src" value="${esc(SRC)}"></label>
+          <label>base <input name="base" value="${esc(BASE)}" style="width:120px"></label>
+          <button type="submit">Load</button>
+        </form>
+      </div>`;
+    $('srcForm').addEventListener('submit', e => {
+      e.preventDefault();
+      const f = new FormData(e.target);
+      const p = new URLSearchParams();
+      p.set('src', f.get('src') || SRC);
+      p.set('base', f.get('base') || BASE);
+      location.search = p.toString();
+    });
+  }
+
+  // ---------- Sidebar ----------
+  function opMatches(op) {
+    if (state.suspiciousOnly && !op.suspicious) return false;
+    if (state.category && (op.category || 'uncategorized') !== state.category) return false;
+    const q = state.filter.trim().toLowerCase();
+    if (!q) return true;
+    const hay = [op.id, op.name, op.description, op.category, op.commit, op.suspicion_reason,
+      ...(op.files || []),
+      ...(op.items || []).flatMap(i => [i.id, i.kind, i.file, i.commit, ...(i.defines || []), ...(i.substitution || [])])
+    ].join('\n').toLowerCase();
+    return hay.includes(q);
+  }
+
+  function visibleOps() { return state.ordered.filter(opMatches); }
+
+  function renderSidebar() {
+    const ops = state.ordered;
+    const vis = visibleOps();
+    const items = ops.reduce((n, o) => n + (o.items || []).length, 0);
+    const files = new Set(ops.flatMap(o => o.files || []));
+    const sus = ops.filter(o => o.suspicious).length;
+    $('stats').innerHTML = `${ops.length} ops · ${items} items · ${files.size} files` +
+      (sus ? ` · <span style="color:var(--warn)">${sus} suspicious</span>` : '') +
+      (vis.length !== ops.length ? ` · showing ${vis.length}` : '');
+    $('oplist').innerHTML = vis.map(op => {
+      const i = state.ordered.indexOf(op) + 1;
+      return `<li data-op="${esc(op.id)}" class="${op.id === state.selected ? 'sel' : ''}">
+        <span class="idx">${i}</span>
+        <div style="min-width:0">
+          <div class="nm">${op.suspicious ? '<span title="Suspicious" style="color:var(--warn)">⚠ </span>' : ''}${esc(op.name)}</div>
+          <div class="sub">
+            ${catBadge(op.category)}
+            <span class="muted mono" style="font-size:11px">${esc(op.id)}</span>
+            <span class="muted" style="font-size:11.5px">${(op.items || []).length} item${(op.items || []).length === 1 ? '' : 's'}</span>
+            ${op.confidence != null ? `<span class="muted" style="font-size:11.5px">conf ${Math.round(op.confidence * 100)}%</span>` : ''}
+            ${op.mechanical ? '<span class="badge">mechanical</span>' : ''}
+          </div>
+        </div>
+      </li>`;
+    }).join('') || '<li class="muted">No matching operations.</li>';
+  }
+
+  $('oplist').addEventListener('click', e => {
+    const li = e.target.closest('li[data-op]');
+    if (li) navigate({ tab: 'ops', op: li.dataset.op });
+  });
+  $('q').addEventListener('input', e => { state.filter = e.target.value; renderSidebar(); });
+  $('cat').addEventListener('change', e => { state.category = e.target.value; renderSidebar(); });
+  $('susOnly').addEventListener('change', e => { state.suspiciousOnly = e.target.checked; renderSidebar(); });
+
+  // ---------- Navigation ----------
+  function navigate({ tab, op, item }) {
+    const p = new URLSearchParams();
+    p.set('tab', tab || state.tab);
+    if (op || state.selected) p.set('op', op || state.selected);
+    if (item) p.set('item', item);
+    const h = '#' + p.toString();
+    if (location.hash === h) applyHash(); else location.hash = h;
+  }
+
+  function applyHash() {
+    if (!state.data) return;
+    const p = new URLSearchParams(location.hash.slice(1));
+    state.tab = ['ops', 'graph', 'files', 'raw'].includes(p.get('tab')) ? p.get('tab') : 'ops';
+    let op = p.get('op');
+    const item = p.get('item');
+    if (item && state.itemIndex[item]) op = state.itemIndex[item].op.id;
+    state.selected = state.opsById[op] ? op : (state.selected || state.ordered[0]?.id);
+    state.pendingItem = item;
+    renderSidebar();
+    renderMain();
+    const li = document.querySelector(`#oplist li.sel`);
+    if (li) li.scrollIntoView({ block: 'nearest' });
+  }
+  window.addEventListener('hashchange', applyHash);
+
+  // ---------- Main ----------
+  function renderMain() {
+    const tabs = [['ops', 'Operation'], ['graph', 'Graph'], ['files', 'Files'], ['raw', 'Raw JSON']];
+    $('tabs').innerHTML = tabs.map(([k, l]) =>
+      `<a href="#tab=${k}${state.selected ? '&op=' + encodeURIComponent(state.selected) : ''}" class="${state.tab === k ? 'active' : ''}">${l}</a>`).join('');
+    const c = $('content');
+    c.innerHTML = '';
+    if (state.tab === 'graph') renderGraph(c);
+    else if (state.tab === 'files') renderFiles(c);
+    else if (state.tab === 'raw') renderRaw(c);
+    else renderOp(c, state.opsById[state.selected]);
+  }
+
+  function renderOp(c, op) {
+    if (!op) { c.innerHTML = '<div class="card muted">No operation selected.</div>'; return; }
+    const idx = state.ordered.indexOf(op);
+    const before = state.edges.filter(e => e.after === op.id);
+    const after = state.edges.filter(e => e.before === op.id);
+    const opLink = id => `<a href="#tab=ops&op=${encodeURIComponent(id)}">${esc(state.opsById[id]?.name || id)}</a> <span class="muted mono">${esc(id)}</span>`;
+    const prev = state.ordered[idx - 1], next = state.ordered[idx + 1];
+
+    c.innerHTML = `
+      <div class="card">
+        <div style="display:flex;gap:8px;align-items:center;flex-wrap:wrap">
+          <span class="muted">Step ${idx + 1} of ${state.ordered.length}</span>
+          ${catBadge(op.category)}
+          ${op.mechanical ? '<span class="badge">mechanical</span>' : ''}
+          ${op.suspicious ? '<span class="badge warn">⚠ suspicious</span>' : ''}
+          <span style="margin-left:auto;display:flex;gap:6px">
+            <button data-nav="${esc(prev?.id || '')}" ${prev ? '' : 'disabled'} title="Previous (k)">← Prev</button>
+            <button data-nav="${esc(next?.id || '')}" ${next ? '' : 'disabled'} title="Next (j)">Next →</button>
+          </span>
+        </div>
+        <h2 style="margin-top:8px">${esc(op.name)}</h2>
+        <p style="margin:0 0 10px">${esc(op.description || '')}</p>
+        ${op.suspicious ? `<div class="suspicious-box"><b>Suspicious:</b> ${esc(op.suspicion_reason || 'no reason given')}</div>` : ''}
+        <table class="kv">
+          <tr><td>id</td><td><code>${esc(op.id)}</code></td></tr>
+          <tr><td>commit</td><td><code>${esc(op.commit || '—')}</code></td></tr>
+          <tr><td>confidence</td><td>${op.confidence != null ? `${Math.round(op.confidence * 100)}%` : '—'}</td></tr>
+          <tr><td>rule</td><td>${op.rule ? `<code>${esc(op.rule)}</code>` : '—'}</td></tr>
+          <tr><td>verified</td><td>${op.verified == null ? '<span class="muted">not checked</span>' : op.verified ? '<span class="badge ok">yes</span>' : '<span class="badge bad">no</span>'}</td></tr>
+        </table>
+      </div>
+
+      ${before.length || after.length ? `
+      <div class="card">
+        <h3>Dependencies</h3>
+        <table class="list">
+          <tr><th>Relation</th><th>Operation</th><th>Kind</th><th>Reason</th></tr>
+          ${before.map(e => `<tr><td>after</td><td>${opLink(e.before)}</td><td>${esc(e.kind)}</td><td>${esc(e.reason)}</td></tr>`).join('')}
+          ${after.map(e => `<tr><td>before</td><td>${opLink(e.after)}</td><td>${esc(e.kind)}</td><td>${esc(e.reason)}</td></tr>`).join('')}
+        </table>
+      </div>` : ''}
+
+      <div class="card">
+        <h3>Files</h3>
+        <ul class="filelist">
+          ${(op.files || []).map(f => `<li><code>${esc(f)}</code> <a href="#" data-src="${esc(f)}">view source</a></li>`).join('') || '<li class="muted">none</li>'}
+        </ul>
+      </div>
+
+      <div class="card">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+          <h3 style="margin:0">Items (${(op.items || []).length})</h3>
+          <span style="margin-left:auto;display:flex;gap:6px">
+            <button id="expAll">Expand all</button><button id="colAll">Collapse all</button>
+          </span>
+        </div>
+        <div id="items"></div>
+      </div>`;
+
+    const itemsEl = c.querySelector('#items');
+    (op.items || []).forEach(it => itemsEl.appendChild(renderItem(it)));
+
+    c.querySelectorAll('button[data-nav]').forEach(b => b.addEventListener('click', () => b.dataset.nav && navigate({ tab: 'ops', op: b.dataset.nav })));
+    c.querySelectorAll('a[data-src]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); showSource(a.dataset.src); }));
+    c.querySelector('#expAll').addEventListener('click', () => itemsEl.querySelectorAll('details').forEach(d => d.open = true));
+    c.querySelector('#colAll').addEventListener('click', () => itemsEl.querySelectorAll('details').forEach(d => d.open = false));
+
+    if (state.pendingItem) {
+      const d = itemsEl.querySelector(`details[data-item="${CSS.escape(state.pendingItem)}"]`);
+      if (d) {
+        d.open = true;
+        d.classList.add('flash');
+        setTimeout(() => d.classList.remove('flash'), 1600);
+        requestAnimationFrame(() => d.scrollIntoView({ block: 'start', behavior: 'smooth' }));
+      }
+      state.pendingItem = null;
+    }
+  }
+
+  function renderItem(it) {
+    const d = document.createElement('details');
+    d.className = 'item';
+    d.dataset.item = it.id;
+    const range = it.line_start != null
+      ? `L${it.line_start} <span style="color:var(--warn)">−${it.old_line_count ?? 0}</span> <span style="color:#1a7f37">+${it.new_line_count ?? 0}</span>` : '';
+    const moved = it.old_path && it.old_path !== it.file ? ` <span class="muted">(from <code>${esc(it.old_path)}</code>)</span>` : '';
+    d.innerHTML = `
+      <summary>
+        <span class="badge">${esc(it.kind)}</span>
+        <code>${esc(it.id)}</code>
+        <code title="${esc(it.file)}">${esc(basename(it.file))}</code>${moved}
+        <span class="mono" style="font-size:12px">${range}</span>
+        ${(it.defines || []).map(x => `<span class="chip" title="defines">${esc(x)}</span>`).join(' ')}
+        ${Array.isArray(it.substitution) ? `<span class="chip" title="substitution">${esc(it.substitution[0])} → ${esc(it.substitution[1])}</span>` : ''}
+        <span class="muted mono" style="margin-left:auto;font-size:11.5px" title="${esc(it.commit)}">${esc(short(it.commit))}</span>
+      </summary>
+      <div class="item-toolbar">
+        <span class="muted mono" style="font-size:12px;flex:1">${esc(it.file)}</span>
+        <button data-act="src">View source</button>
+        ${it.diff ? `<a href="${esc(patchUrl(it))}" target="_blank" rel="noopener">raw patch</a>` : ''}
+        <a href="#tab=ops&op=${encodeURIComponent(state.itemIndex[it.id]?.op.id || '')}&item=${encodeURIComponent(it.id)}" title="Permalink">#</a>
+      </div>
+      <div class="diff-body"></div>`;
+    d.querySelector('[data-act=src]').addEventListener('click', () => {
+      const start = it.line_start || 1;
+      const end = start + Math.max((it.new_line_count || 0), 1) - 1;
+      showSource(it.file, { start, end });
+    });
+    d.addEventListener('toggle', () => { if (d.open) loadDiff(d, it); });
+    return d;
+  }
+
+  async function loadDiff(d, it) {
+    const body = d.querySelector('.diff-body');
+    if (body.dataset.loaded) return;
+    body.dataset.loaded = '1';
+    if (!it.diff) { body.innerHTML = '<div class="muted" style="padding:8px 10px">No patch file for this item.</div>'; return; }
+    body.innerHTML = '<div class="muted" style="padding:8px 10px">Loading patch…</div>';
+    try {
+      const t = await fetchText(patchUrl(it));
+      body.innerHTML = '';
+      body.appendChild(renderDiff(t));
+    } catch (e) {
+      delete body.dataset.loaded;
+      body.innerHTML = `<div class="err" style="margin:8px">${esc(e.message)}</div>`;
+    }
+  }
+
+  // ---------- Diff rendering ----------
+  function renderDiff(text) {
+    const lines = text.split('\n');
+    if (lines.length && lines[lines.length - 1] === '') lines.pop();
+    let o = 0, n = 0;
+    const rows = [];
+    const row = (cls, on, nn, sign, code) =>
+      `<tr class="${cls}"><td class="n">${on ?? ''}</td><td class="n">${nn ?? ''}</td><td class="s">${esc(sign)}</td><td>${esc(code)}</td></tr>`;
+    let inHeader = true;
+    for (const l of lines) {
+      if (l.startsWith('@@')) {
+        inHeader = false;
+        const m = /^@@ -(\d+)(?:,\d+)? \+(\d+)(?:,\d+)? @@/.exec(l);
+        if (m) { o = +m[1]; n = +m[2]; }
+        rows.push(`<tr class="hunk"><td class="n">…</td><td class="n">…</td><td class="s"></td><td>${esc(l)}</td></tr>`);
+      } else if (inHeader || l.startsWith('diff --git')) {
+        inHeader = true;
+        rows.push(`<tr class="meta"><td class="n"></td><td class="n"></td><td class="s"></td><td>${esc(l)}</td></tr>`);
+      } else if (l.startsWith('+')) {
+        rows.push(row('add', null, n++, '+', l.slice(1)));
+      } else if (l.startsWith('-')) {
+        rows.push(row('del', o++, null, '-', l.slice(1)));
+      } else if (l.startsWith('\\')) {
+        rows.push(`<tr class="note"><td class="n"></td><td class="n"></td><td class="s"></td><td>${esc(l)}</td></tr>`);
+      } else {
+        rows.push(row('ctx', o++, n++, ' ', l.startsWith(' ') ? l.slice(1) : l));
+      }
+    }
+    const t = document.createElement('table');
+    t.className = 'diff';
+    t.innerHTML = rows.join('');
+    return t;
+  }
+
+  // ---------- Source modal ----------
+  async function showSource(path, hl) {
+    const url = fileUrl(path);
+    $('mTitle').textContent = path + (hl ? `  (lines ${hl.start}–${hl.end})` : '');
+    $('mRaw').href = url;
+    $('mBody').innerHTML = '<div class="muted" style="padding:12px">Loading…</div>';
+    $('modal').classList.add('open');
+    try {
+      const t = await fetchText(url);
+      const lines = t.split('\n');
+      if (lines.length > 1 && lines[lines.length - 1] === '') lines.pop();
+      const note = hl ? `<div class="muted" style="padding:6px 12px;font-size:12px;border-bottom:1px solid var(--border)">
+        Showing the file from <code>${esc(baseUrl.href)}</code>. Highlighted lines refer to the item's position in the intermediate series state and may be offset from this version.</div>` : '';
+      $('mBody').innerHTML = note + `<table class="diff">${lines.map((l, i) => {
+        const ln = i + 1;
+        const on = hl && ln >= hl.start && ln <= hl.end;
+        return `<tr class="${on ? 'hl' : ''}" ${on && ln === hl.start ? 'id="hlStart"' : ''}><td class="n">${ln}</td><td>${esc(l)}</td></tr>`;
+      }).join('')}</table>`;
+      const s = document.getElementById('hlStart');
+      if (s) s.scrollIntoView({ block: 'center' });
+    } catch (e) {
+      $('mBody').innerHTML = `<div class="err" style="margin:12px">${esc(e.message)}</div>
+        <p class="muted" style="padding:0 12px">Adjust the <code>base</code> parameter (currently <code>${esc(BASE)}</code>) to point at the repository root.</p>`;
+    }
+  }
+  const closeModal = () => $('modal').classList.remove('open');
+  $('mClose').addEventListener('click', closeModal);
+  $('modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
+
+  // ---------- Graph ----------
+  function computeLevels() {
+    const ids = state.ordered.map(o => o.id);
+    const indeg = Object.fromEntries(ids.map(id => [id, 0]));
+    const out = Object.fromEntries(ids.map(id => [id, []]));
+    state.edges.forEach(e => {
+      if (indeg[e.after] == null || out[e.before] == null) return;
+      indeg[e.after]++; out[e.before].push(e.after);
+    });
+    const level = {};
+    const queue = ids.filter(id => indeg[id] === 0);
+    queue.forEach(id => level[id] = 0);
+    while (queue.length) {
+      const id = queue.shift();
+      for (const nx of out[id]) {
+        level[nx] = Math.max(level[nx] ?? 0, level[id] + 1);
+        if (--indeg[nx] === 0) queue.push(nx);
+      }
+    }
+    ids.forEach(id => { if (level[id] == null) level[id] = 0; }); // cycles: fallback
+    return level;
+  }
+
+  function renderGraph(c) {
+    const level = computeLevels();
+    const cols = [];
+    state.ordered.forEach(op => { (cols[level[op.id]] ||= []).push(op); });
+    const W = 250, H = 56, GX = 110, GY = 16, P = 20;
+    const pos = {};
+    cols.forEach((col, ci) => col.forEach((op, ri) => { pos[op.id] = { x: P + ci * (W + GX), y: P + ri * (H + GY) }; }));
+    const width = P * 2 + cols.length * W + Math.max(0, cols.length - 1) * GX;
+    const height = P * 2 + Math.max(...cols.map(c => c.length)) * (H + GY) - GY;
+    const trunc = (s, n) => s.length > n ? s.slice(0, n - 1) + '…' : s;
+
+    const edgesSvg = state.edges.filter(e => pos[e.before] && pos[e.after]).map(e => {
+      const a = pos[e.before], b = pos[e.after];
+      let d;
+      if (b.x > a.x) {
+        const x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x, y2 = b.y + H / 2, mx = (x1 + x2) / 2;
+        d = `M${x1},${y1} C${mx},${y1} ${mx},${y2} ${x2 - 2},${y2}`;
+      } else {
+        const x1 = a.x + W, y1 = a.y + H / 2, x2 = b.x + W, y2 = b.y + H / 2, bx = Math.max(x1, x2) + 50;
+        d = `M${x1},${y1} C${bx},${y1} ${bx},${y2} ${x2 + 2},${y2}`;
+      }
+      return `<path class="edge" d="${d}" marker-end="url(#arrow)"><title>${esc(e.before)} → ${esc(e.after)} (${esc(e.kind)}): ${esc(e.reason)}</title></path>`;
+    }).join('');
+
+    const nodesSvg = state.ordered.map((op, i) => {
+      const p = pos[op.id], col = catColor(op.category);
+      return `<g class="node ${op.id === state.selected ? 'sel' : ''} ${op.suspicious ? 'sus' : ''}" data-op="${esc(op.id)}" transform="translate(${p.x},${p.y})">
+        <title>${esc(op.name)}\n${esc(op.description || '')}</title>
+        <rect width="${W}" height="${H}" rx="8" fill="var(--panel)"></rect>
+        <rect width="6" height="${H}" rx="3" fill="${col}" stroke="none"></rect>
+        <text x="16" y="21" font-weight="600">${esc(trunc(`${i + 1}. ${op.name}`, 34))}</text>
+        <text x="16" y="40" style="fill:var(--muted);font-size:11px">${esc(op.id)} · ${esc(op.category || '')} · ${(op.items || []).length} items${op.suspicious ? ' · ⚠' : ''}</text>
+      </g>`;
+    }).join('');
+
+    c.innerHTML = `
+      <div class="card">
+        <h3>Operation dependency graph</h3>
+        <p class="muted" style="margin-top:0">Columns are dependency levels; click a node to open it. Hover edges for reasons.</p>
+        <div class="graph-wrap">
+          <svg width="${width + 60}" height="${height}" xmlns="http://www.w3.org/2000/svg">
+            <defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+              <path d="M0,0 L10,5 L0,10 z" fill="var(--muted)"></path></marker></defs>
+            ${edgesSvg}${nodesSvg}
+          </svg>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Edges (${state.edges.length})</h3>
+        <table class="list">
+          <tr><th>Before</th><th>After</th><th>Kind</th><th>Reason</th></tr>
+          ${state.edges.map(e => `<tr>
+            <td><a href="#tab=ops&op=${encodeURIComponent(e.before)}">${esc(state.opsById[e.before]?.name || e.before)}</a></td>
+            <td><a href="#tab=ops&op=${encodeURIComponent(e.after)}">${esc(state.opsById[e.after]?.name || e.after)}</a></td>
+            <td>${esc(e.kind)}</td><td>${esc(e.reason)}</td></tr>`).join('') || '<tr><td colspan="4" class="muted">No edges.</td></tr>'}
+        </table>
+      </div>
+      <div class="card">
+        <h3>Applied order</h3>
+        <ol style="margin:0">${state.ordered.map(op => `<li><a href="#tab=ops&op=${encodeURIComponent(op.id)}">${esc(op.name)}</a>
+          <span class="muted mono">${esc(op.id)} · ${esc(short(op.commit))}</span></li>`).join('')}</ol>
+      </div>`;
+    c.querySelectorAll('g.node').forEach(g => g.addEventListener('click', () => navigate({ tab: 'ops', op: g.dataset.op })));
+  }
+
+  // ---------- Files ----------
+  function renderFiles(c) {
+    const byFile = new Map();
+    state.ordered.forEach(op => (op.items || []).forEach(it => {
+      if (!byFile.has(it.file)) byFile.set(it.file, []);
+      byFile.get(it.file).push({ op, it });
+    }));
+    const files = [...byFile.keys()].sort();
+    c.innerHTML = files.map(f => {
+      const entries = byFile.get(f).sort((a, b) => (a.it.line_start || 0) - (b.it.line_start || 0));
+      const del = entries.reduce((s, e) => s + (e.it.old_line_count || 0), 0);
+      const add = entries.reduce((s, e) => s + (e.it.new_line_count || 0), 0);
+      return `<div class="card">
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:6px">
+          <h3 style="margin:0"><code>${esc(f)}</code></h3>
+          <span class="mono" style="font-size:12px"><span style="color:var(--warn)">−${del}</span> <span style="color:#1a7f37">+${add}</span></span>
+          <a href="#" data-src="${esc(f)}" style="margin-left:auto">view source</a>
+        </div>
+        <table class="list">
+          <tr><th>Item</th><th>Kind</th><th>Lines</th><th>Operation</th><th>Commit</th></tr>
+          ${entries.map(({ op, it }) => `<tr>
+            <td><a href="#tab=ops&op=${encodeURIComponent(op.id)}&item=${encodeURIComponent(it.id)}"><code>${esc(it.id)}</code></a></td>
+            <td>${esc(it.kind)}</td>
+            <td class="mono">L${esc(it.line_start)} −${esc(it.old_line_count)} +${esc(it.new_line_count)}</td>
+            <td>${op.suspicious ? '<span style="color:var(--warn)">⚠ </span>' : ''}${esc(op.name)} ${catBadge(op.category)}</td>
+            <td class="mono muted">${esc(short(it.commit))}</td></tr>`).join('')}
+        </table>
+      </div>`;
+    }).join('') || '<div class="card muted">No files.</div>';
+    c.querySelectorAll('a[data-src]').forEach(a => a.addEventListener('click', e => { e.preventDefault(); showSource(a.dataset.src); }));
+  }
+
+  // ---------- Raw ----------
+  function renderRaw(c) {
+    c.innerHTML = `<div class="card">
+      <div style="display:flex;align-items:center;margin-bottom:8px">
+        <h3 style="margin:0">Raw JSON</h3>
+        <a href="${esc(srcUrl.href)}" target="_blank" rel="noopener" style="margin-left:auto">open file</a>
+      </div>
+      <pre class="mono" style="margin:0;overflow:auto;white-space:pre">${esc(JSON.stringify(state.data, null, 2))}</pre>
+    </div>`;
+  }
+
+  // ---------- Keyboard ----------
+  document.addEventListener('keydown', e => {
+    if (e.key === 'Escape') { closeModal(); return; }
+    if (/^(INPUT|SELECT|TEXTAREA)$/.test(e.target.tagName) || e.metaKey || e.ctrlKey || e.altKey) return;
+    if ($('modal').classList.contains('open')) return;
+    const vis = visibleOps();
+    if (!vis.length) return;
+    const i = vis.findIndex(o => o.id === state.selected);
+    if (e.key === 'j' || e.key === 'ArrowDown') {
+      e.preventDefault(); navigate({ tab: 'ops', op: vis[Math.min(vis.length - 1, i + 1)].id });
+    } else if (e.key === 'k' || e.key === 'ArrowUp') {
+      e.preventDefault(); navigate({ tab: 'ops', op: vis[Math.max(0, i - 1)].id });
+    } else if (e.key === '/') {
+      e.preventDefault(); $('q').focus();
+    }
+  });
+
+  load();
+})();
+</script>
+</body>
+</html>
+  When emitted by CommitAnalyzerTask, the config block below is filled in with the default
+  src/base, a page title and the embedded graph data (used unless ?src= is given).
