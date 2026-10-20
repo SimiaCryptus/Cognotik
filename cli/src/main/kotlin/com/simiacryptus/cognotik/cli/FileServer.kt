@@ -359,14 +359,17 @@ open class FileServer {
     sessionInfo: SessionKeyFile
   ): UserSettingsInterface = object : UserSettingsInterface by inner {
     override fun getUserSettings(user: User): UserSettings {
-      return inner.getUserSettings(user).copy(
-        apis = mutableListOf(
-          ApiData(
-            provider = CoreProviders.HostedProxy,
-            key = SecureString(sessionInfo.sessionKey)
-          )
-        )
-      )
+       val base = inner.getUserSettings(user)
+       if (sessionInfo.sessionKey.isBlank()) return base
+       /* Resolve at call time so we always use the currently registered provider instance. */
+       val hosted = CoreProviders.HostedProxy
+       val others = base.apis.filter { it.provider?.name != hosted.name }
+       return base.copy(
+         apis = (others + ApiData(
+           provider = hosted,
+           key = SecureString(sessionInfo.sessionKey)
+         )).toMutableList()
+       )
     }
   }
 
