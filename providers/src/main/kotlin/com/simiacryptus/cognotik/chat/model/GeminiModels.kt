@@ -1050,6 +1050,37 @@ object GeminiModels {
     )
   }
 
+  // =========================================================
+  // Gemini 4 models
+  // =========================================================
+  @JvmStatic
+  val Gemini4_Argon by lazy {
+    ChatModel(
+      name = "Gemini4_Argon",
+      modelId = "gemini-4-argon",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 1048576,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.002,      // $2.00/1M through Nov 30, 2026 ($4.00 starting Dec 1, 2026)
+        TokenTypes.Completion to 0.01,   // $10.00/1M through Nov 30, 2026 ($20.00 starting Dec 1, 2026)
+        TokenTypes.Thinking to 0.01,     // thinking tokens billed at output rate
+        TokenTypes.Cached to 0.0001,     // $0.10/1M through Nov 30, 2026 ($0.20 starting Dec 1, 2026)
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.AUDIO,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
+  @JvmStatic
+  val Gemini_4_Argon by lazy { Gemini4_Argon }
+
 
   // =========================================================
   // Specialized / Tool & Agent models
