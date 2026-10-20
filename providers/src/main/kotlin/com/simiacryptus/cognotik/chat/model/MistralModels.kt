@@ -418,6 +418,10 @@ object MistralModels {
   val values by lazy {
     mapOf(
       // Featured
+      "MistralLarge4" to MistralLarge4,
+      "mistral-large-2610" to MistralLarge4,
+      "mistral-large-4-0" to MistralLarge4,
+      "mistral-large-latest" to MistralLarge4,
       "MistralMedium3_5" to MistralMedium3_5,
       "MistralSmall4" to MistralSmall4,
       "ZaiGlm5_3" to ZaiGlm5_3,
