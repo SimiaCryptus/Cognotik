@@ -453,6 +453,10 @@ open class UnifiedHarness(
     }
   }
 }
+/** Effective provider name: the APIProvider's name, falling back to the ApiData display name. */
+fun ApiChatModel.providerName(): String? =
+   provider?.provider?.name ?: model?.provider?.name ?: provider?.name
+
 
 fun ApiChatModel.findApi(user: User): ApiData? {
   val userSettings =
