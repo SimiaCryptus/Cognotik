@@ -131,8 +131,8 @@ object GroqModels {
       maxTotalTokens = 4000,
       maxOutTokens = 50000,
       provider = CoreProviders.Groq,
-      inputTokenPricePerK = 40.00,
-      outputTokenPricePerK = 40.00,
+      inputTokenPricePerK = 40.00 / 1000.0,
+      outputTokenPricePerK = 40.00 / 1000.0,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO)
     )
