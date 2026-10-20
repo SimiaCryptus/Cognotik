@@ -466,7 +466,7 @@ object MistralModels {
       // Legacy aliases for backward compatibility
       "MistralSmall" to MistralSmall4,
       "MistralMedium" to MistralMedium3_5,
-      "MistralLarge" to MistralLarge3,
+      "MistralLarge" to MistralLarge4,
       "MagistralMedium" to MagistralMedium1_2,
       "MagistralSmall" to MagistralSmall1_2,
     )
