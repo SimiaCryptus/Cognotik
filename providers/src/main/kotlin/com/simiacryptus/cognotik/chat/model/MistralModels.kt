@@ -445,6 +445,9 @@ object MistralModels {
       "MagistralMedium1_2" to MagistralMedium1_2,
       "MagistralSmall1_2" to MagistralSmall1_2,
       // Specialist
+      "Leanstral1_5" to Leanstral1_5,
+      "labs-leanstral-1-5" to Leanstral1_5,
+      "leanstral-1-5" to Leanstral1_5,
       "Leanstral" to Leanstral,
       "Codestral" to Codestral,
       "Devstral2" to Devstral2,
