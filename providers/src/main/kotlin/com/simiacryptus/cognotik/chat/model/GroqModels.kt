@@ -45,7 +45,7 @@ object GroqModels {
       provider = CoreProviders.Groq,
       inputTokenPricePerK = 0.15 / 1000.0,
       outputTokenPricePerK = 0.60 / 1000.0,
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
+      inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
