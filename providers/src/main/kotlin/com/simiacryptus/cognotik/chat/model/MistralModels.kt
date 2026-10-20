@@ -449,6 +449,7 @@ object MistralModels {
       "labs-leanstral-1-5" to Leanstral1_5,
       "leanstral-1-5" to Leanstral1_5,
       "Leanstral" to Leanstral,
+      "labs-leanstral-2603" to Leanstral,
       "Codestral" to Codestral,
       "Devstral2" to Devstral2,
       "DevstralSmall2" to DevstralSmall2,
