@@ -228,6 +228,22 @@ object MistralModels {
   // ============================================================
   // Frontier Specialist Models
   // ============================================================
+  /**
+   * Leanstral 1.5 (v1.5) - Open-source code agent for Lean 4 formal proof engineering.
+   */
+  val Leanstral1_5 by lazy {
+    ChatModel(
+      name = "Leanstral1_5",
+      modelId = "labs-leanstral-1-5",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
 
   /**
    * Leanstral (v26.03) - Open-source code agent for Lean 4 formal proof engineering.
