@@ -426,6 +426,11 @@ open class FileServer {
     defaultUser = User(
       email = email,
     )
+    /*
+     * Install the hosted services (UsageClient, proxied settings) BEFORE the balance
+     * check: otherwise the check hits the fresh local H2 usage DB, which always says 0.
+     */
+    setupServices(sessionInfo)
     try {
       require(ServiceRouter.getUserBalance(defaultUser!!) > 0.0) { "The default user has no balance; the hosted server will not work." }
     } catch (e: Exception) {
