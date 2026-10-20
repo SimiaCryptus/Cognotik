@@ -22,6 +22,23 @@ object MistralModels {
   // ============================================================
   // Featured Models
   // ============================================================
+  /**
+   * Mistral Large 4 (v26.10) - Featured.
+   * A state-of-the-art, open-weight, general-purpose multimodal model.
+   */
+  val MistralLarge4 by lazy {
+    ChatModel(
+      name = "MistralLarge4",
+      modelId = "mistral-large-2610",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.00068, // Sale price ($0.68/M tokens; standard $1.36/M)
+      outputTokenPricePerK = 0.00209, // Sale price ($2.09/M tokens; standard $4.18/M)
+      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
 
   /**
    * Mistral Medium 3.5 (v26.04) - Featured.
