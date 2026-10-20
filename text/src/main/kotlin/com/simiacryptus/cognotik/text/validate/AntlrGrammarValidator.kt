@@ -39,7 +39,8 @@ abstract class AntlrGrammarValidator<L : Lexer, P : Parser>(
 
     private val TYPE_KEYWORDS = setOf(
       "class", "interface", "enum", "record", "struct", "trait", "object",
-      "union", "module", "mod", "namespace", "annotation", "type", "typealias"
+      "union", "module", "mod", "namespace", "annotation", "type", "typealias",
+      "structure", "inductive", "coinductive", "abbrev", "theorem", "lemma", "def", "instance", "axiom", "opaque"
     )
 
     /** Kinds whose bodies may declare further public symbols. */
