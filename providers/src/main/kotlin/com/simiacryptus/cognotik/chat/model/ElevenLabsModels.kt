@@ -175,7 +175,6 @@ object ElevenLabsModels {
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO),
     )
-  }    // -------------------------------------------------------------------------
 
   /**
    * Scribe v2 Medical - Speech recognition fine-tuned for clinical audio.
