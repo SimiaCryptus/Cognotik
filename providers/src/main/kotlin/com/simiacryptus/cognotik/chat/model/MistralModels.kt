@@ -425,6 +425,7 @@ object MistralModels {
       "MistralMedium3_5" to MistralMedium3_5,
       "mistral-medium-2604" to MistralMedium3_5,
       "MistralSmall4" to MistralSmall4,
+      "mistral-small-2603" to MistralSmall4,
       "ZaiGlm5_3" to ZaiGlm5_3,
       "zai-glm-5-3" to ZaiGlm5_3,
       // Frontier Generalist
