@@ -256,7 +256,11 @@ object FileModificationTaskCli {
       log.info("Local mode: skipping hosted login")
     }
     val user = CliSupport.defaultUser ?: CognotikConfig.defaultUser
-    log.info("Using user: {} (source: {})", user, if (CliSupport.defaultUser != null) "CliSupport" else "CognotikConfig")
+    log.info(
+      "Using user: {} (source: {})",
+      user,
+      if (CliSupport.defaultUser != null) "CliSupport" else "CognotikConfig"
+    )
 
     /* Shared headless bootstrap (providers, tasks, plugins, orchestrator instanceFn, dynamic enums, permissive local auth). */
     try {

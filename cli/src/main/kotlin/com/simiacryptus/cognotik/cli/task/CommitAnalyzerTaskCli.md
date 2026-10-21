@@ -65,11 +65,11 @@ It can also be copied anywhere as a standalone file. In that case it downloads a
 
 ### Where the jar comes from
 
-| Situation                                      | Behavior                                                                                                                                  |
-|------------------------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------|
-| `COGNOTIK_JAR` is set                          | Uses that jar. No discovery, build or download.                                                                                           |
-| Inside a source checkout                       | Uses the newest `cli/build/libs/*-all.jar`. If none exists, runs `./gradlew :cli:shadowJar` first.                                        |
-| Standalone (no checkout found)                 | Uses the newest cached jar in `${COGNOTIK_HOME:-${XDG_CACHE_HOME:-~/.cache}/cognotik}/jars`. If none exists, downloads it from GitHub releases. |
+| Situation                      | Behavior                                                                                                                                        |
+|--------------------------------|-------------------------------------------------------------------------------------------------------------------------------------------------|
+| `COGNOTIK_JAR` is set          | Uses that jar. No discovery, build or download.                                                                                                 |
+| Inside a source checkout       | Uses the newest `cli/build/libs/*-all.jar`. If none exists, runs `./gradlew :cli:shadowJar` first.                                              |
+| Standalone (no checkout found) | Uses the newest cached jar in `${COGNOTIK_HOME:-${XDG_CACHE_HOME:-~/.cache}/cognotik}/jars`. If none exists, downloads it from GitHub releases. |
 
 A source checkout is detected by walking up from the script's location until a directory contains
 `../../../../../../../..` and a `settings.gradle(.kts)` file.
@@ -114,14 +114,14 @@ cognotik commit --update --local --commit HEAD
 
 ### Environment variables
 
-| Variable           | Description                                                                              |
-|--------------------|------------------------------------------------------------------------------------------|
-| `JAVA_HOME`        | If set and usable, `$JAVA_HOME/bin/java` is used. Otherwise `java` from `PATH`.          |
-| `JAVA_OPTS`        | Extra JVM options, word-split (e.g. `JAVA_OPTS="-Xmx2g -Dfoo=bar"`).                     |
-| `COGNOTIK_JAR`     | Path to an existing `*-all.jar`. Skips discovery, build and download.                    |
-| `COGNOTIK_HOME`    | Cache directory for downloaded jars (default `${XDG_CACHE_HOME:-~/.cache}/cognotik`).    |
-| `COGNOTIK_REPO`    | GitHub repo used for release downloads (default `SimiaCryptus/Cognotik`).                |
-| `COGNOTIK_VERSION` | Release tag to download (default `latest`).                                              |
+| Variable           | Description                                                                           |
+|--------------------|---------------------------------------------------------------------------------------|
+| `JAVA_HOME`        | If set and usable, `$JAVA_HOME/bin/java` is used. Otherwise `java` from `PATH`.       |
+| `JAVA_OPTS`        | Extra JVM options, word-split (e.g. `JAVA_OPTS="-Xmx2g -Dfoo=bar"`).                  |
+| `COGNOTIK_JAR`     | Path to an existing `*-all.jar`. Skips discovery, build and download.                 |
+| `COGNOTIK_HOME`    | Cache directory for downloaded jars (default `${XDG_CACHE_HOME:-~/.cache}/cognotik`). |
+| `COGNOTIK_REPO`    | GitHub repo used for release downloads (default `SimiaCryptus/Cognotik`).             |
+| `COGNOTIK_VERSION` | Release tag to download (default `latest`).                                           |
 
 Examples:
 
@@ -227,10 +227,10 @@ model is fixed to `GeminiModels.GeminiFlash_31_Image_Preview`.
 
 ### Misc
 
-| Option     | Description                                                                                                              |
-|------------|--------------------------------------------------------------------------------------------------------------------------|
-| `--hosted` | Use the hosted backend (default).                                                                                        |
-| `--local`  | Use locally configured API keys.                                                                                         |
+| Option     | Description                                                                                                               |
+|------------|---------------------------------------------------------------------------------------------------------------------------|
+| `--hosted` | Use the hosted backend (default).                                                                                         |
+| `--local`  | Use locally configured API keys.                                                                                          |
 | `--help`   | Print usage and exit. This is checked before any other parsing. When using `cognotik`, write `cognotik commit -- --help`. |
 
 ---
@@ -320,12 +320,12 @@ For example: `JAVA_OPTS="-Dlogback.configurationFile=/path/to/logback.xml" cogno
 
 ## Troubleshooting
 
-| Symptom                                                               | Likely cause / fix                                                                                              |
-|-----------------------------------------------------------------------|-----------------------------------------------------------------------------------------------------------------|
-| `cognotik: missing required action`                                   | You ran `cognotik` with no action. Use `cognotik commit ...`.                                                    |
-| `cognotik: no *-all.jar in ... (and --no-build was given)`            | No jar is available. Drop `--no-build`, or set `COGNOTIK_JAR`.                                                   |
-| `--build requires a Cognotik source checkout`                         | `--build` only works from a checkout. In standalone mode use `--update`.                                         |
-| `cognotik commit --help` prints the launcher help, not the CLI's      | Use `cognotik commit -- --help`.                                                                                 |
-| `Unknown option: --build` (or `--where`, `--update`, `--no-build`)    | Launcher options must come before CLI options. Move them directly after `commit`.                                |
-| Exit code `2` with a hosted login error                               | Check your hosted account balance, or re-run with `--local`.                                                     |
-| Unexpected files appear in the directory you ran from                 | The database root is the working directory. Run from a directory where this is acceptable.                       |
+| Symptom                                                            | Likely cause / fix                                                                         |
+|--------------------------------------------------------------------|--------------------------------------------------------------------------------------------|
+| `cognotik: missing required action`                                | You ran `cognotik` with no action. Use `cognotik commit ...`.                              |
+| `cognotik: no *-all.jar in ... (and --no-build was given)`         | No jar is available. Drop `--no-build`, or set `COGNOTIK_JAR`.                             |
+| `--build requires a Cognotik source checkout`                      | `--build` only works from a checkout. In standalone mode use `--update`.                   |
+| `cognotik commit --help` prints the launcher help, not the CLI's   | Use `cognotik commit -- --help`.                                                           |
+| `Unknown option: --build` (or `--where`, `--update`, `--no-build`) | Launcher options must come before CLI options. Move them directly after `commit`.          |
+| Exit code `2` with a hosted login error                            | Check your hosted account balance, or re-run with `--local`.                               |
+| Unexpected files appear in the directory you ran from              | The database root is the working directory. Run from a directory where this is acceptable. |

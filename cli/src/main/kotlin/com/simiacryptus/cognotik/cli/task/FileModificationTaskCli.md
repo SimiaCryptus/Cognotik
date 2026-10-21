@@ -16,19 +16,19 @@ or directly:
 
 Options accept `--key value` or `--key=value`.
 
-| Option                      | Description                                                              |
-|-----------------------------|--------------------------------------------------------------------------|
-| `--root <dir>`              | Workspace root; file paths resolve against it (default: `.`)             |
-| `--files <a,b,...>`         | Comma-separated files to modify or create (required)                     |
-| `--description <text>`      | Description of the modification(s)                                       |
-| `--description-file <path>` | Read the description from a file (use instead of `--description`)        |
-| `--include-git-diff`        | Include `git diff HEAD` for each input file in the prompt                |
-| `--timeout-minutes <n>`     | Harness timeout (default: 30)                                            |
-| `--smart-model <name>`      | Smart model (default: `GeminiFlash_38`)                                  |
-| `--fast-model <name>`       | Fast model (default: `GeminiFlash_38`)                                   |
-| `--hosted`                  | Use the hosted backend via device login (default)                        |
-| `--local`                   | Use locally configured API keys; skip hosted login                       |
-| `--help`                    | Show usage                                                               |
+| Option                      | Description                                                       |
+|-----------------------------|-------------------------------------------------------------------|
+| `--root <dir>`              | Workspace root; file paths resolve against it (default: `.`)      |
+| `--files <a,b,...>`         | Comma-separated files to modify or create (required)              |
+| `--description <text>`      | Description of the modification(s)                                |
+| `--description-file <path>` | Read the description from a file (use instead of `--description`) |
+| `--include-git-diff`        | Include `git diff HEAD` for each input file in the prompt         |
+| `--timeout-minutes <n>`     | Harness timeout (default: 30)                                     |
+| `--smart-model <name>`      | Smart model (default: `GeminiFlash_38`)                           |
+| `--fast-model <name>`       | Fast model (default: `GeminiFlash_38`)                            |
+| `--hosted`                  | Use the hosted backend via device login (default)                 |
+| `--local`                   | Use locally configured API keys; skip hosted login                |
+| `--help`                    | Show usage                                                        |
 
 One of `--description` / `--description-file` and `--files` are required.
 

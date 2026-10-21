@@ -16,6 +16,20 @@
 #   session          -> com.simiacryptus.cognotik.cli.SessionServerCli
 #   commit           -> com.simiacryptus.cognotik.cli.task.CommitAnalyzerTaskCli
 #
+# Task actions (com.simiacryptus.cognotik.cli.task.*):
+#   audio            -> AudioGenerationTaskCli
+#   autofix-task     -> AutoFixTaskCli
+#   brainstorm       -> BrainstormingTaskCli
+#   comic            -> ComicBookGenerationTaskCli
+#   commit           -> CommitAnalyzerTaskCli
+#   modify, filemod  -> FileModificationTaskCli
+#   gametheory       -> GameTheoryTaskCli
+#   illustrate       -> IllustrateDocumentTaskCli
+#   image            -> ImageGenerationTaskCli
+#   perspectives     -> MultiPerspectiveAnalysisTaskCli
+#   socratic         -> SocraticDialogueTaskCli
+#   html             -> WriteHtmlTaskCli
+#
 # Options:
 #   --build      Force a rebuild (:cli:shadowJar). Source checkout only.
 #   --no-build   Never build or download; fail if no jar is available.
@@ -71,12 +85,12 @@ have() { command -v "$1" >/dev/null 2>&1; }
 usage() {
   awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print; next } else exit }' "$self"
 }
+VALID_ACTIONS="fileserver|fs, keys, docops, autofix, session, commit, audio, autofix-task, brainstorm, comic, modify|filemod, gametheory, illustrate, image, perspectives, socratic, design|sdd, html"
 # --- Required action selects the main class -------------------------------------
 case "${1:-}" in
    -h|--help) usage; exit 0 ;;
 esac
-[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix, session, commit)"; }
-[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix, session, commit)"; }
+[[ $# -gt 0 ]] || { usage; die "missing required action ($VALID_ACTIONS)"; }
 ACTION="$1"; shift
 case "$ACTION" in
    fileserver|fs) MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli" ;;
@@ -85,7 +99,18 @@ case "$ACTION" in
    autofix)       MAIN_CLASS="com.simiacryptus.cognotik.cli.AutoFixCli" ;;
    session)       MAIN_CLASS="com.simiacryptus.cognotik.cli.SessionServerCli" ;;
    commit)        MAIN_CLASS="com.simiacryptus.cognotik.cli.task.CommitAnalyzerTaskCli" ;;
-   *) die "unknown action: '$ACTION' (expected: fileserver|fs, keys, docops, autofix, session, commit)" ;;
+    audio)         MAIN_CLASS="com.simiacryptus.cognotik.cli.task.AudioGenerationTaskCli" ;;
+    autofix-task)  MAIN_CLASS="com.simiacryptus.cognotik.cli.task.AutoFixTaskCli" ;;
+    brainstorm)    MAIN_CLASS="com.simiacryptus.cognotik.cli.task.BrainstormingTaskCli" ;;
+    comic)         MAIN_CLASS="com.simiacryptus.cognotik.cli.task.ComicBookGenerationTaskCli" ;;
+    modify|filemod) MAIN_CLASS="com.simiacryptus.cognotik.cli.task.FileModificationTaskCli" ;;
+    gametheory)    MAIN_CLASS="com.simiacryptus.cognotik.cli.task.GameTheoryTaskCli" ;;
+    illustrate)    MAIN_CLASS="com.simiacryptus.cognotik.cli.task.IllustrateDocumentTaskCli" ;;
+    image)         MAIN_CLASS="com.simiacryptus.cognotik.cli.task.ImageGenerationTaskCli" ;;
+    perspectives)  MAIN_CLASS="com.simiacryptus.cognotik.cli.task.MultiPerspectiveAnalysisTaskCli" ;;
+    socratic)      MAIN_CLASS="com.simiacryptus.cognotik.cli.task.SocraticDialogueTaskCli" ;;
+    html)          MAIN_CLASS="com.simiacryptus.cognotik.cli.task.WriteHtmlTaskCli" ;;
+    *) die "unknown action: '$ACTION' (expected: $VALID_ACTIONS)" ;;
 esac
 
 
