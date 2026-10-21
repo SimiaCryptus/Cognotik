@@ -14,6 +14,21 @@
 #   docops           -> com.simiacryptus.cognotik.cli.DocOpsCli
 #   autofix          -> com.simiacryptus.cognotik.cli.AutoFixCli
 #   session          -> com.simiacryptus.cognotik.cli.SessionServerCli
+#   commit           -> com.simiacryptus.cognotik.cli.task.CommitAnalyzerTaskCli
+#
+# Task actions (com.simiacryptus.cognotik.cli.task.*):
+#   audio            -> AudioGenerationTaskCli
+#   autofix-task     -> AutoFixTaskCli
+#   brainstorm       -> BrainstormingTaskCli
+#   comic            -> ComicBookGenerationTaskCli
+#   commit           -> CommitAnalyzerTaskCli
+#   modify, filemod  -> FileModificationTaskCli
+#   gametheory       -> GameTheoryTaskCli
+#   illustrate       -> IllustrateDocumentTaskCli
+#   image            -> ImageGenerationTaskCli
+#   perspectives     -> MultiPerspectiveAnalysisTaskCli
+#   socratic         -> SocraticDialogueTaskCli
+#   html             -> WriteHtmlTaskCli
 #
 # Options:
 #   --build      Force a rebuild (:cli:shadowJar). Source checkout only.
@@ -70,11 +85,12 @@ have() { command -v "$1" >/dev/null 2>&1; }
 usage() {
   awk 'NR>1 { if (/^#/) { sub(/^# ?/, ""); print; next } else exit }' "$self"
 }
+VALID_ACTIONS="fileserver|fs, keys, docops, autofix, session, commit, audio, autofix-task, brainstorm, comic, modify|filemod, gametheory, illustrate, image, perspectives, socratic, design|sdd, html"
 # --- Required action selects the main class -------------------------------------
 case "${1:-}" in
    -h|--help) usage; exit 0 ;;
 esac
-[[ $# -gt 0 ]] || { usage; die "missing required action (fileserver|fs, keys, docops, autofix, session)"; }
+[[ $# -gt 0 ]] || { usage; die "missing required action ($VALID_ACTIONS)"; }
 ACTION="$1"; shift
 case "$ACTION" in
    fileserver|fs) MAIN_CLASS="com.simiacryptus.cognotik.cli.FileServerCli" ;;
@@ -82,7 +98,19 @@ case "$ACTION" in
    docops)        MAIN_CLASS="com.simiacryptus.cognotik.cli.DocOpsCli" ;;
    autofix)       MAIN_CLASS="com.simiacryptus.cognotik.cli.AutoFixCli" ;;
    session)       MAIN_CLASS="com.simiacryptus.cognotik.cli.SessionServerCli" ;;
-   *) die "unknown action: '$ACTION' (expected: fileserver|fs, keys, docops, autofix, session)" ;;
+   commit)        MAIN_CLASS="com.simiacryptus.cognotik.cli.task.CommitAnalyzerTaskCli" ;;
+    audio)         MAIN_CLASS="com.simiacryptus.cognotik.cli.task.AudioGenerationTaskCli" ;;
+    autofix-task)  MAIN_CLASS="com.simiacryptus.cognotik.cli.task.AutoFixTaskCli" ;;
+    brainstorm)    MAIN_CLASS="com.simiacryptus.cognotik.cli.task.BrainstormingTaskCli" ;;
+    comic)         MAIN_CLASS="com.simiacryptus.cognotik.cli.task.ComicBookGenerationTaskCli" ;;
+    modify|filemod) MAIN_CLASS="com.simiacryptus.cognotik.cli.task.FileModificationTaskCli" ;;
+    gametheory)    MAIN_CLASS="com.simiacryptus.cognotik.cli.task.GameTheoryTaskCli" ;;
+    illustrate)    MAIN_CLASS="com.simiacryptus.cognotik.cli.task.IllustrateDocumentTaskCli" ;;
+    image)         MAIN_CLASS="com.simiacryptus.cognotik.cli.task.ImageGenerationTaskCli" ;;
+    perspectives)  MAIN_CLASS="com.simiacryptus.cognotik.cli.task.MultiPerspectiveAnalysisTaskCli" ;;
+    socratic)      MAIN_CLASS="com.simiacryptus.cognotik.cli.task.SocraticDialogueTaskCli" ;;
+    html)          MAIN_CLASS="com.simiacryptus.cognotik.cli.task.WriteHtmlTaskCli" ;;
+    *) die "unknown action: '$ACTION' (expected: $VALID_ACTIONS)" ;;
 esac
 
 
@@ -110,26 +138,7 @@ else
   JAVA_BIN="$(command -v java)"
 fi
 
-# --- Are we inside a Cognotik source checkout? ---------------------------------
-find_project_root() {
-  local dir="$SCRIPT_DIR"
-  while :; do
-    if [[ -d "$dir/cli" ]] \
-       && { [[ -f "$dir/settings.gradle.kts" ]] || [[ -f "$dir/settings.gradle" ]]; }; then
-      printf '%s\n' "$dir"; return 0
-    fi
-    [[ "$dir" == "/" ]] && return 1
-    dir="$(dirname -- "$dir")"
-  done
-}
 
-PROJECT_ROOT=""
-if PROJECT_ROOT="$(find_project_root)"; then
-  LIBS_DIR="$PROJECT_ROOT/cli/build/libs"
-else
-  PROJECT_ROOT=""
-  LIBS_DIR="$CACHE_DIR"
-fi
 
 # --- Build (source checkout only) ----------------------------------------------
 build() {

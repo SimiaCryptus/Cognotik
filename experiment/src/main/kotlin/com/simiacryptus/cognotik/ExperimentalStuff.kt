@@ -24,7 +24,6 @@ import com.simiacryptus.cognotik.platform.CognotikPlugin
         // --- Data & File Task Types ---
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.FileAppendTask.FileAppend)
         TaskType.registerTaskType(FileSearchTask.FileSearch)
-        TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DecisionTreeTask.DecisionTree)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.EntropyReductionTreeTask.EntropyReductionTree)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.JdbcSessionTask.JdbcSession)
         TaskType.registerTaskType(com.simiacryptus.cognotik.plan.tools.data.DataTableCompilationTask.DataTableCompilation)

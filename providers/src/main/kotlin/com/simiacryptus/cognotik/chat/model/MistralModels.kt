@@ -22,6 +22,23 @@ object MistralModels {
   // ============================================================
   // Featured Models
   // ============================================================
+  /**
+   * Mistral Large 4 (v26.10) - Featured.
+   * A state-of-the-art, open-weight, general-purpose multimodal model.
+   */
+  val MistralLarge4 by lazy {
+    ChatModel(
+      name = "MistralLarge4",
+      modelId = "mistral-large-2610",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.00068, // Sale price ($0.68/M tokens; standard $1.36/M)
+      outputTokenPricePerK = 0.00209, // Sale price ($2.09/M tokens; standard $4.18/M)
+      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
 
   /**
    * Mistral Medium 3.5 (v26.04) - Featured.
@@ -211,6 +228,22 @@ object MistralModels {
   // ============================================================
   // Frontier Specialist Models
   // ============================================================
+  /**
+   * Leanstral 1.5 (v1.5) - Open-source code agent for Lean 4 formal proof engineering.
+   */
+  val Leanstral1_5 by lazy {
+    ChatModel(
+      name = "Leanstral1_5",
+      modelId = "labs-leanstral-1-5",
+      maxTotalTokens = 131072,
+      provider = CoreProviders.Mistral,
+      inputTokenPricePerK = 0.0001,
+      outputTokenPricePerK = 0.0003,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
 
   /**
    * Leanstral (v26.03) - Open-source code agent for Lean 4 formal proof engineering.
@@ -385,22 +418,41 @@ object MistralModels {
   val values by lazy {
     mapOf(
       // Featured
+      "MistralLarge4" to MistralLarge4,
+      "mistral-large-2610" to MistralLarge4,
+      "mistral-large-4-0" to MistralLarge4,
+      "mistral-large-latest" to MistralLarge4,
       "MistralMedium3_5" to MistralMedium3_5,
+      "mistral-medium-2604" to MistralMedium3_5,
       "MistralSmall4" to MistralSmall4,
+      "mistral-small-2603" to MistralSmall4,
       "ZaiGlm5_3" to ZaiGlm5_3,
       "zai-glm-5-3" to ZaiGlm5_3,
       // Frontier Generalist
       "MistralLarge3" to MistralLarge3,
+      "mistral-large-2512" to MistralLarge3,
       "MistralMedium3_1" to MistralMedium3_1,
       "MistralSmall3_2" to MistralSmall3_2,
       "Ministral3_14B" to Ministral3_14B,
+      "ministral-14b-2512" to Ministral3_14B,
+      "ministral-3-14b-25-12" to Ministral3_14B,
       "Ministral3_8B" to Ministral3_8B,
+      "ministral-8b-2512" to Ministral3_8B,
+      "ministral-3-8b-25-12" to Ministral3_8B,
       "Ministral3_3B" to Ministral3_3B,
+      "ministral-3b-2512" to Ministral3_3B,
+      "ministral-3-3b-25-12" to Ministral3_3B,
       "MagistralMedium1_2" to MagistralMedium1_2,
       "MagistralSmall1_2" to MagistralSmall1_2,
       // Specialist
+      "Leanstral1_5" to Leanstral1_5,
+      "labs-leanstral-1-5" to Leanstral1_5,
+      "leanstral-1-5" to Leanstral1_5,
       "Leanstral" to Leanstral,
+      "labs-leanstral-2603" to Leanstral,
       "Codestral" to Codestral,
+      "codestral-2508" to Codestral,
+      "codestral-latest" to Codestral,
       "Devstral2" to Devstral2,
       "DevstralSmall2" to DevstralSmall2,
       // Other
@@ -412,9 +464,9 @@ object MistralModels {
       "MagistralMedium1_1" to MagistralMedium1_1,
       "MagistralSmall1_1" to MagistralSmall1_1,
       // Legacy aliases for backward compatibility
-      "MistralSmall" to MistralSmall3_2,
+      "MistralSmall" to MistralSmall4,
       "MistralMedium" to MistralMedium3_5,
-      "MistralLarge" to MistralLarge3,
+      "MistralLarge" to MistralLarge4,
       "MagistralMedium" to MagistralMedium1_2,
       "MagistralSmall" to MagistralSmall1_2,
     )
