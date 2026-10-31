@@ -273,10 +273,19 @@ fun Exec.configureNodeEnv() {
 }
 
 
-fun File.hasContent(): Boolean = isDirectory && (listFiles()?.isNotEmpty() ?: false)
+/* True only if the directory contains at least one regular file (recursively);
+  * empty directories / empty subdirectories do not count as "content". */
+fun File.hasContent(): Boolean = isDirectory && walkTopDown().any { it.isFile }
+
+/* Vite emits to `dist/` by default; older (CRA-style) setups used `build/`.
+  * Resolve lazily at execution time and prefer whichever was written most recently. */
+val webappOutputCandidates = listOf(File(webappDir, "dist"), File(webappDir, "build"))
+fun webappOutputDir(): File =
+   webappOutputCandidates.filter { it.hasContent() }.maxByOrNull { it.lastModified() }
+     ?: File(webappDir, "dist")
 
 val prebuiltWebappPresent =
-  File(webappDir, "build").hasContent() ||
+   webappOutputCandidates.any { it.hasContent() } ||
       File(projectDir, "src/main/resources/application").hasContent()
 
 /* Decide once, at configuration time, whether the frontend tasks can run. */
@@ -345,22 +354,40 @@ tasks.register<Exec>("buildWebapp") {
   commandLine(pnpm, "run", "build")
   inputs.dir(File(webappDir, "src"))
    inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"), File(webappDir, ".npmrc"))
-  outputs.dir(File(webappDir, "build"))
+   webappOutputCandidates.forEach { outputs.dir(it) }
+   doLast {
+     if (webappOutputCandidates.none { it.hasContent() }) {
+       throw GradleException(
+         "pnpm run build completed but produced no output in ${webappOutputCandidates.joinToString(" or ")}. " +
+             "Check the outDir in webapp-v2's vite config."
+       )
+     }
+     logger.lifecycle("webapp-v2 build output: ${webappOutputDir()}")
+   }
 }
 
 // Copy webapp build output to resources
 tasks.register<Copy>("copyWebappBuild") {
   dependsOn("buildWebapp")
   /* Nothing to copy when the frontend build was skipped and no output exists. */
-  onlyIf { !skipWebapp && File(webappDir, "build").hasContent() }
-  from("../webapp-v2/build")
+   onlyIf {
+     val ok = !skipWebapp && webappOutputDir().hasContent()
+     if (!ok && !skipWebapp && !File(projectDir, "src/main/resources/application").hasContent()) {
+       logger.warn(
+         "copyWebappBuild skipped: no webapp output found in ${webappOutputCandidates.joinToString(" or ")}; " +
+             "src/main/resources/application will be empty."
+       )
+     }
+     ok
+   }
+   from(provider { webappOutputDir() })
   into("src/main/resources/application")
 }
 
 tasks.register<Copy>("copyWebappStatic") {
   dependsOn("buildWebapp")
-  onlyIf { !skipWebapp && File(webappDir, "build/static").hasContent() }
-  from("../webapp-v2/build/static")
+   onlyIf { !skipWebapp && File(webappOutputDir(), "static").hasContent() }
+   from(provider { File(webappOutputDir(), "static") })
   into("src/main/resources/web/static")
 }
 
@@ -369,6 +396,7 @@ tasks.register<Delete>("cleanWebapp") {
   /* Never wipe pre-built output we cannot regenerate without pnpm. */
   onlyIf { pnpmExecutable != null }
   delete("../webapp-v2/build")
+   delete("../webapp-v2/dist")
   delete("src/main/resources/application/static")
   delete("src/main/resources/web/static")
 }
