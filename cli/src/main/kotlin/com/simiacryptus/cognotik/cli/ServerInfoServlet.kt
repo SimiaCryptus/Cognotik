@@ -3,6 +3,10 @@ package com.simiacryptus.cognotik.cli
   import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.FILES_PREFIX
   import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.ROOT_SEGMENT
   import com.simiacryptus.cognotik.cli.SimpleFileServlet.Companion.UI_PREFIX
+  import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
+  import com.simiacryptus.cognotik.fileserver.handler.FsErrors
+  import com.simiacryptus.cognotik.fileserver.handler.FsException
+  import com.simiacryptus.cognotik.webui.servlet.action.ModelSelection
   import jakarta.servlet.http.HttpServlet
   import jakarta.servlet.http.HttpServletRequest
   import jakarta.servlet.http.HttpServletResponse
@@ -19,11 +23,14 @@ package com.simiacryptus.cognotik.cli
     override fun doGet(request: HttpServletRequest, response: HttpServletResponse) {
       val info = FileServer.serverInfo
       val context = request.contextPath ?: ""
-      val smart = runCatching { ModelSelection.smart }.getOrNull()
-      val fast = runCatching { ModelSelection.fast }.getOrNull()
+      val user = runCatching { CliSupport.defaultUser }.getOrNull() ?: throw FsException(
+        FsErrorCode.ENOENT,
+        "No user is configured"
+      )
+      val smart = runCatching { ModelSelection.smartFor(user) }.getOrNull()
+      val fast = runCatching { ModelSelection.fastFor(user) }.getOrNull()
       val available = runCatching { ModelSelection.modelIds().size }.getOrNull()
         ?: FileServer.available.size
-      val user = runCatching { CliSupport.defaultUser?.email }.getOrNull()
 
       val json = buildString {
         append('{')
@@ -38,7 +45,7 @@ package com.simiacryptus.cognotik.cli
         field("execPermissive", info.execPermissive); comma()
         field("tasksEnabled", info.tasksEnabled); comma()
         field("modifyEnabled", info.modifyEnabled); comma()
-        field("user", user); comma()
+        field("user", user.email); comma()
         append("\"models\":{")
         field("smart", smart); comma()
         field("fast", fast); comma()

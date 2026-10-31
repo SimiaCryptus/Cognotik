@@ -96,10 +96,10 @@ object FsApiHandler {
       writeJson(ctx.resp, HttpServletResponse.SC_OK, describeActions(ctx.config))
     }
      read(
-       "chat", "Open the AI chat assistant for this mount",
+       "chat", "Open a plain AI chat (not tied to any file)",
        capability = "chat",
        ui = ActionUi(
-         title = "Chat…",
+         title = "Chat",
          icon = "comment-discussion",
          category = "AI",
          menus = listOf(ActionMenu("main/tools", "1_chat", 10)),

@@ -28,6 +28,8 @@ open class SimpleFileServlet(
   private val lineNumbers: Boolean = false,
   /** Symbol indexing / JSON describe / caveman: on unless explicitly disabled. */
   private val toolsEnabled: Boolean = true,
+  /** Server-absolute URL of the plain chat (null = no chat). */
+  private val chatUrl: String? = null,
 ) : FilesystemServlet() {
   override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
   override fun isGitEnabled(req: HttpServletRequest): Boolean = gitEnabled
@@ -60,6 +62,7 @@ open class SimpleFileServlet(
     symbolsEnabled = toolsEnabled,
     describeEnabled = toolsEnabled,
     cavemanEnabled = toolsEnabled,
+    chatUrl = chatUrl,
   )
 
   override fun getZipLink(req: HttpServletRequest, filePath: String): String {
@@ -80,11 +83,14 @@ open class SimpleFileServlet(
     /* One selection drives every agentic surface, so it sits next to them. */
     val models = if (!tasksEnabled && !modifyEnabled) "" else
       """<a class="zip-link" style="background-color:#0dcaf0;color:#000;" href="#" onclick="return cognotikModels(event)">🧠 Models…</a>"""
+    val chat = chatUrl?.let {
+      """<a class="zip-link" style="background-color:#20c997;color:#000;" href="$it" target="_blank" rel="noopener" title="Open a plain chat">💬 Chat</a>"""
+    } ?: ""
     /* Always chain: the base class contributes the symbols/index toolbar. */
-    if (!tasksEnabled) return ide + modify + models + super.getToolbarActions(req, currentPath)
+    if (!tasksEnabled) return ide + chat + modify + models + super.getToolbarActions(req, currentPath)
     val fix = if (readOnly) "" else
       """<a class="zip-link" style="background-color:#d63384;" href="#" onclick="return cognotikAutoFix(event)">🩺 AutoFix…</a>"""
-    return ide + modify + models +
+    return ide + chat + modify + models +
         """<a class="zip-link" style="background-color:#0d6efd;" href="#" onclick="return cognotikDocOps(event,'plan','')">📘 DocOps plan</a>""" +
         fix +
         """<a class="zip-link" style="background-color:#495057;" href="#" onclick="return cognotikTasks(event)">🗒 Tasks</a>""" +

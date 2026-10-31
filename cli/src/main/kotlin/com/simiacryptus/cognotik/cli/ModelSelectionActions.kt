@@ -1,5 +1,6 @@
 package com.simiacryptus.cognotik.cli
 
+import com.simiacryptus.cognotik.cli.CliSupport
 import com.simiacryptus.cognotik.fileserver.action.ActionMenu
 import com.simiacryptus.cognotik.fileserver.action.ActionOption
 import com.simiacryptus.cognotik.fileserver.action.ActionParam
@@ -11,6 +12,7 @@ import com.simiacryptus.cognotik.fileserver.handler.FsErrorCode
 import com.simiacryptus.cognotik.fileserver.handler.FsErrors
 import com.simiacryptus.cognotik.fileserver.handler.FsException
 import com.simiacryptus.cognotik.fileserver.util.FsJson
+import com.simiacryptus.cognotik.webui.servlet.action.ModelSelection
 import jakarta.servlet.http.HttpServletResponse
 
 /**
@@ -82,8 +84,8 @@ object ModelSelectionActions {
           sendSelection = "none",
         ),
         paramResolvers = mapOf<String, (FsActionContext) -> List<ActionOption>>(
-          "smart" to { ctx -> options(ModelSelection.smart, "smart", refresh(ctx)) },
-          "fast" to { ctx -> options(ModelSelection.fast, "fast", refresh(ctx)) },
+          "smart" to { ctx -> options(ModelSelection.smartFor(CliSupport.defaultUser!!), "smart", refresh(ctx)) },
+          "fast" to { ctx -> options(ModelSelection.fastFor(CliSupport.defaultUser!!), "fast", refresh(ctx)) },
         ),
         handler = { ctx -> post(ctx) },
       ),
@@ -111,12 +113,13 @@ object ModelSelectionActions {
         return
       }
     }
-    val changed = ModelSelection.update(smart, fast)
+    val user = CliSupport.defaultUser!!
+    val changed = ModelSelection.update(user, smart, fast)
     val payload = LinkedHashMap<String, Any?>()
     payload["kind"] = "toast"
-    payload["severity"] = if (ModelSelection.smart == null) "warn" else "info"
+    payload["severity"] = if (ModelSelection.smartFor(user) == null) "warn" else "info"
     payload["message"] = when {
-      ModelSelection.smart == null -> "No smart model selected — DocOps and the patch chat will refuse to run"
+      ModelSelection.smartFor(user) == null -> "No smart model selected — DocOps and the patch chat will refuse to run"
       changed -> "Models updated — ${ModelSelection.summary()}"
       else -> "Models unchanged — ${ModelSelection.summary()}"
     }

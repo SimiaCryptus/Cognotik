@@ -52,10 +52,12 @@ object FileServerCli : FileServer() {
   const val APP_PREFIX = "/app"
 
   const val PROXY_PREFIX = "/proxy"
+  /** Mount point of [ChatLauncherServlet] (plain, non-file chat). */
+  const val CHAT_PREFIX = "/chat"
+
 
   @JvmStatic
   fun main(args: Array<String>) {
     super.run(args)
   }
 }
-

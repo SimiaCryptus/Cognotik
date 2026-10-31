@@ -9,6 +9,8 @@ import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.models
 import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet.Companion.userSettings
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.CopyOnWriteArrayList
 
@@ -16,20 +18,20 @@ import java.util.concurrent.CopyOnWriteArrayList
  * The smart/fast model pair used by every agentic surface of the file server
  * (DocOps, AutoFix and the patch chat).
  *
-  * The selection is **per-user persistent state and nothing else**: it is read from and
-  * written to `UserSettings.smartModel` / `UserSettings.fastModel` through
-  * [CognotikPlatform.fileApplicationServices]'s `userSettingsManager`, so
+ * The selection is **per-user persistent state and nothing else**: it is read from and
+ * written to `UserSettings.smartModel` / `UserSettings.fastModel` through
+ * [CognotikPlatform.fileApplicationServices]'s `userSettingsManager`, so
  *
  *  * two users of the same app server no longer overwrite each other's choice,
  *  * the choice outlives a restart, and
  *  * there is exactly one writer ([update]) — the `models` action no longer keeps a
  *    private copy in sync.
  *
-  * Every action reads the value **at invocation time** ([smartFor]/[fastFor]), so a
-  * change takes effect on the next request with no re-binding. There is no in-memory
-  * fallback pair and no static/start-up default: the per-user settings service is the
-  * only source of a selection, so the only way to choose a model is to store one
-  * (the `models` action, or the settings UI).
+ * Every action reads the value **at invocation time** ([smartFor]/[fastFor]), so a
+ * change takes effect on the next request with no re-binding. There is no in-memory
+ * fallback pair and no static/start-up default: the per-user settings service is the
+ * only source of a selection, so the only way to choose a model is to store one
+ * (the `models` action, or the settings UI).
  *
  * The contract is deliberately the model **id**, exactly as on the command line,
  * so an id a provider knows but the local registry does not is still usable; the
@@ -43,6 +45,8 @@ import java.util.concurrent.CopyOnWriteArrayList
  * to the default user.
  */
 object ModelSelection {
+   private val log: Logger = LoggerFactory.getLogger(ModelSelection::class.java)
+
 
   private val listeners = CopyOnWriteArrayList<() -> Unit>()
 
@@ -54,20 +58,37 @@ object ModelSelection {
   /** Enumerating provider models costs a network round trip, so it is cached per user. */
   private val cache = ConcurrentHashMap<String, Map<String, ChatModel>>()
 
-  private fun settingsManager() =
-    ServiceRouter as UserSettingsInterface
+   /**
+    * The per-user settings service. Fails with a descriptive [IllegalStateException]
+    * (rather than a bare [ClassCastException]) if the platform router does not provide it.
+    */
+   private fun settingsManager(): UserSettingsInterface =
+     (ServiceRouter as Any) as? UserSettingsInterface
+       ?: throw IllegalStateException(
+         "ServiceRouter (${ServiceRouter::class.java.name}) does not implement " +
+           "${UserSettingsInterface::class.java.name}; model selection is unavailable"
+       )
+
+   /** Restores the interrupt flag and rethrows; otherwise a no-op. */
+   private fun rethrowIfInterrupted(e: Exception) {
+     if (e is InterruptedException) {
+       Thread.currentThread().interrupt()
+       throw e
+     }
+   }
 
   /**
-    * Publishes the request-scoped user resolver. Hosts (CLI, embedding servers) call
-    * this once at start-up.
+   * Publishes the request-scoped user resolver. Hosts (CLI, embedding servers) call
+   * this once at start-up.
    *
-    * Nothing about the *selection* is configured here: it is read from (and written to)
-    * the user settings service on demand.
+   * Nothing about the *selection* is configured here: it is read from (and written to)
+   * the user settings service on demand.
    */
   @Synchronized
   fun install(user: (FsActionContext?) -> User) {
     userFn = user
     cache.clear()
+     log.info("Installed request-scoped user resolver; model enumeration cache cleared")
   }
 
 
@@ -75,15 +96,16 @@ object ModelSelection {
   fun userFor(ctx: FsActionContext?): User = try {
     userFn(ctx)
   } catch (e: Exception) {
-    System.err.println("warning: could not resolve the request user: ${e.message}")
+     rethrowIfInterrupted(e)
+     log.warn("Could not resolve the request user (context={}); falling back to the local user", ctx, e)
     CognotikConfig.localUser
   }
 
   /* ---------------------------------------------------------------- reading */
 
-   fun smartFor(user: User): String? = stored(user, smart = true)
+  fun smartFor(user: User): String? = stored(user, smart = true)
 
-   fun fastFor(user: User): String? = stored(user, smart = false)
+  fun fastFor(user: User): String? = stored(user, smart = false)
 
   fun smartFor(ctx: FsActionContext?): String? = smartFor(userFor(ctx))
 
@@ -99,7 +121,11 @@ object ModelSelection {
     val settings = settingsManager().getUserSettings(user)
     (if (smart) settings.smartModel else settings.fastModel).normalize()
   } catch (e: Exception) {
-    System.err.println("warning: could not read the stored model selection: ${e.message}")
+     rethrowIfInterrupted(e)
+     log.warn(
+       "Could not read the stored {} model selection for user {}",
+       if (smart) "smart" else "fast", cacheKey(user), e
+     )
     null
   }
 
@@ -115,27 +141,51 @@ object ModelSelection {
    * two fields does not silently clear the other. Answers true when something
    * actually changed (listeners only fire then), in which case the new pair has
    * already been persisted for [user].
+    *
+    * @throws IllegalStateException if the settings could not be read or persisted; in
+    *   that case nothing was changed and no listener fired.
    */
   @Synchronized
   fun update(user: User, smart: String? = null, fast: String? = null): Boolean {
-    val settings = settingsManager().getUserSettings(user)
-     val currentSmart = settings.smartModel.normalize()
-     val currentFast = settings.fastModel.normalize()
+     val manager = settingsManager()
+     val settings = try {
+       manager.getUserSettings(user)
+     } catch (e: Exception) {
+       rethrowIfInterrupted(e)
+       throw IllegalStateException("Could not read settings for user ${cacheKey(user)}", e)
+     }
+    val currentSmart = settings.smartModel.normalize()
+    val currentFast = settings.fastModel.normalize()
     val nextSmart = smart.normalize() ?: currentSmart
     val nextFast = fast.normalize() ?: currentFast
-    if (nextSmart == currentSmart && nextFast == currentFast) return false
-    settingsManager().updateUserSettings(
-      user,
-      settings.copy(
-        smartModel = nextSmart ?: settings.smartModel,
-        fastModel = nextFast ?: settings.fastModel,
-      )
-    )
+     if (nextSmart == currentSmart && nextFast == currentFast) {
+       log.debug("Model selection unchanged for user {} ({})", cacheKey(user), "smart=$currentSmart fast=$currentFast")
+       return false
+     }
+     try {
+       manager.updateUserSettings(
+         user,
+         settings.copy(
+           smartModel = nextSmart ?: settings.smartModel,
+           fastModel = nextFast ?: settings.fastModel,
+         )
+       )
+     } catch (e: Exception) {
+       rethrowIfInterrupted(e)
+       throw IllegalStateException(
+         "Could not persist model selection (smart=$nextSmart fast=$nextFast) for user ${cacheKey(user)}", e
+       )
+     }
+     log.info(
+       "Model selection updated for user {}: smart {} -> {}, fast {} -> {}",
+       cacheKey(user), currentSmart, nextSmart, currentFast, nextFast
+     )
     for (listener in listeners) {
       try {
         listener()
       } catch (e: Exception) {
-        System.err.println("warning: model change listener failed: ${e.message}")
+         rethrowIfInterrupted(e)
+         log.warn("Model change listener {} failed; continuing with remaining listeners", listener, e)
       }
     }
     return true
@@ -150,7 +200,8 @@ object ModelSelection {
   fun availableModels(user: User): Map<String, ChatModel> = try {
     user.userSettings().models()
   } catch (e: Exception) {
-    System.err.println("warning: could not read user model settings: ${e.message}")
+     rethrowIfInterrupted(e)
+     log.warn("Could not enumerate available models for user {}", cacheKey(user), e)
     emptyMap()
   }
 
@@ -158,10 +209,23 @@ object ModelSelection {
   fun availableModels(ctx: FsActionContext?, refresh: Boolean): Map<String, ChatModel> {
     val user = userFor(ctx)
     val key = cacheKey(user)
-    if (!refresh) cache[key]?.takeIf { it.isNotEmpty() }?.let { return it }
+     if (!refresh) cache[key]?.takeIf { it.isNotEmpty() }?.let {
+       log.debug("Model list cache hit for user {} ({} models)", key, it.size)
+       return it
+     }
+     log.debug("Enumerating models for user {} (refresh={})", key, refresh)
     val fresh = availableModels(user)
-    if (fresh.isNotEmpty()) cache[key] = fresh
-    return if (fresh.isNotEmpty()) fresh else cache[key].orEmpty()
+     if (fresh.isNotEmpty()) {
+       cache[key] = fresh
+       return fresh
+     }
+     val stale = cache[key].orEmpty()
+     if (stale.isNotEmpty()) {
+       log.warn("Model enumeration for user {} returned nothing; serving {} cached models", key, stale.size)
+     } else {
+       log.debug("No models available for user {}", key)
+     }
+     return stale
   }
 
   fun availableModels(refresh: Boolean = false): Map<String, ChatModel> = availableModels(null, refresh)
@@ -172,10 +236,14 @@ object ModelSelection {
   fun modelIds(refresh: Boolean = false): List<String> = modelIds(null, refresh)
 
   /** Drops the enumeration cache (e.g. after API keys change). */
-  fun invalidate() = cache.clear()
+   fun invalidate() {
+     cache.clear()
+     log.debug("Model enumeration cache cleared for all users")
+   }
 
   fun invalidate(user: User) {
-    cache.remove(cacheKey(user))
+     val key = cacheKey(user)
+     if (cache.remove(key) != null) log.debug("Model enumeration cache cleared for user {}", key)
   }
 
   /* -------------------------------------------------------------- reporting */

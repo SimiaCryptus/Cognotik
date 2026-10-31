@@ -11,11 +11,14 @@ class ReadOnlyFileServlet(
   uiEnabled: Boolean = true,
   execPermissive: Boolean = false,
   tasksEnabled: Boolean = false,
+  chatUrl: String? = null,
 ) : SimpleFileServlet(
   baseDir, gitEnabled, readOnly = true, uiEnabled = uiEnabled,
   terminalEnabled = false, execPermissive = execPermissive, tasksEnabled = tasksEnabled,
   /* Patch chat writes files: never offered on a read-only mount. */
   modifyEnabled = false,
+  /* Plain chat never touches the workspace, so it stays available. */
+  chatUrl = chatUrl,
 ) {
   private fun deny(response: HttpServletResponse) {
     response.status = HttpServletResponse.SC_FORBIDDEN

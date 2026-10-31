@@ -25,6 +25,7 @@ import com.simiacryptus.cognotik.webui.servlet.ApiProviderServlet
 import com.simiacryptus.cognotik.webui.servlet.DocProcessorServlet
 import com.simiacryptus.cognotik.webui.servlet.UserSettingsServlet
 import com.simiacryptus.cognotik.webui.servlet.action.ExtractUtilsFsAction
+import com.simiacryptus.cognotik.webui.servlet.action.ModelSelection
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -78,6 +79,8 @@ open class FileServer {
     val landing: String? = null,
     /** false (default) = hosted: authenticate against the hosted proxy (device login). true = local, no hosted login. */
     val local: Boolean = false,
+    /** Plain (non-file) chat at /chat, surfaced as "Tools ▸ Chat". */
+    val chatEnabled: Boolean = true,
   ) {
     val baseDir: File get() = File(dir ?: ".").canonicalFile
     val taskRootDir: File get() = (taskRoot?.let { File(it) } ?: baseDir).canonicalFile
@@ -118,7 +121,8 @@ open class FileServer {
 
 
   /** Contexts that already had websocket support installed (weakly held). */
-  private val webSocketContexts: MutableSet<ServletContextHandler> = Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
+  private val webSocketContexts: MutableSet<ServletContextHandler> =
+    Collections.synchronizedSet(Collections.newSetFromMap(WeakHashMap()))
 
   /**
    * Embedded Jetty does not run `ServletContainerInitializer`s, so a plain
@@ -203,6 +207,7 @@ open class FileServer {
                       --shell <cmd>  Shell for new terminals (default: auto-detect)
                       --no-ui        Do not serve the SPA at all
                       --files        Make the classic listing the landing page
+                      --no-chat      Do not mount the plain chat (/chat, Tools ▸ Chat)
                      ('/' is only a gateway: it never serves the workspace, it redirects
                       to the landing page - /home/ by default - and '/?session=ID' is
                       forwarded to /proxy/.)
@@ -278,8 +283,8 @@ open class FileServer {
       return
     }
     CognotikPlatform.init()
-     /* Providers must be registered before the hosted login deserializes settings/ApiData. */
-     CoreProviders.init()
+    /* Providers must be registered before the hosted login deserializes settings/ApiData. */
+    CoreProviders.init()
     val globalRoot = DatabaseFacet.root.let { File(it) }
     DatabaseFacet.root = File(".").absolutePath
     if (!parsed.local) {
@@ -329,6 +334,7 @@ open class FileServer {
       login(baseUrl, sessionInfo, sessionFile)
     }
   }
+
   /** Thrown by [login] when the hosted server rejects the session key. */
   class SessionRejectedException(message: String) : IllegalStateException(message)
 
@@ -359,17 +365,17 @@ open class FileServer {
     sessionInfo: SessionKeyFile
   ): UserSettingsInterface = object : UserSettingsInterface by inner {
     override fun getUserSettings(user: User): UserSettings {
-       val base = inner.getUserSettings(user)
-       if (sessionInfo.sessionKey.isBlank()) return base
-       /* Resolve at call time so we always use the currently registered provider instance. */
-       val hosted = CoreProviders.HostedProxy
-       val others = base.apis.filter { it.provider?.name != hosted.name }
-       return base.copy(
-         apis = (others + ApiData(
-           provider = hosted,
-           key = SecureString(sessionInfo.sessionKey)
-         )).toMutableList()
-       )
+      val base = inner.getUserSettings(user)
+      if (sessionInfo.sessionKey.isBlank()) return base
+      /* Resolve at call time so we always use the currently registered provider instance. */
+      val hosted = CoreProviders.HostedProxy
+      val others = base.apis.filter { it.provider?.name != hosted.name }
+      return base.copy(
+        apis = (others + ApiData(
+          provider = hosted,
+          key = SecureString(sessionInfo.sessionKey)
+        )).toMutableList()
+      )
     }
   }
 
@@ -506,6 +512,8 @@ open class FileServer {
         "--task-monitor" -> c = c.copy(taskMonitor = true)
         "--fix-cmd" -> c = c.copy(fixCommand = value(arg))
         "--no-ui" -> c = c.copy(uiEnabled = false)
+        "--no-chat" -> c = c.copy(chatEnabled = false)
+        "--chat" -> c = c.copy(chatEnabled = true)
         "--ui" -> c = c.copy(uiEnabled = true, landing = "ui")
         "--no-home" -> c = c.copy(homeEnabled = false)
         "--home" -> c = c.copy(homeEnabled = true, landing = "home")
@@ -551,15 +559,15 @@ open class FileServer {
     }
     available = CliSupport.availableModels(cliUser)
     /* The pair is runtime state now: the web UI may replace it at any time. */
-    ModelSelection.install(user = { cliUser }, smart = config.smartModel, fast = config.fastModel)
+    ModelSelection.install(user = { cliUser })
     ModelSelectionActions.install()
     models = try {
-      when (ModelSelection.smart) {
+      when (ModelSelection.smartFor(cliUser)) {
         null -> null
         else -> CliSupport.resolveModels(
           user = cliUser,
-          smartModel = ModelSelection.smart,
-          fastModel = ModelSelection.fast,
+          smartModel = ModelSelection.smartFor(cliUser),
+          fastModel = ModelSelection.fastFor(cliUser),
           imageModel = config.imageModel,
           audioModel = config.audioModel,
         )
@@ -643,8 +651,8 @@ open class FileServer {
       models = try {
         CliSupport.resolveModels(
           user = defaultUser ?: throw IllegalStateException("No user available"),
-          smartModel = ModelSelection.smart,
-          fastModel = ModelSelection.fast,
+          smartModel = ModelSelection.smartFor(defaultUser!!),
+          fastModel = ModelSelection.fastFor(defaultUser!!),
           imageModel = config.imageModel,
           audioModel = config.audioModel,
           quiet = true,
@@ -691,6 +699,7 @@ open class FileServer {
       println("               GET/POST $origin/apiKeys")
     }
     if (config.uiEnabled) println("  IDE view  -> $origin${SimpleFileServlet.UI_PREFIX}/")
+    if (config.chatEnabled) println("  Chat      -> $origin${FileServerCli.CHAT_PREFIX}/ (Tools ▸ Chat in the IDE view)")
     println("  Classic   -> $origin${SimpleFileServlet.FILES_PREFIX}/${SimpleFileServlet.ROOT_SEGMENT}/")
     println("  Assets    -> $origin${FileServerCli.LIB_PREFIX}/ (classpath web/lib), ${FileServerCli.APP_PREFIX}/ (classpath web/app)")
     println("  Alias     -> $origin${FileServerCli.PROXY_PREFIX}/ (same as /, for ?session=... URLs)")
@@ -760,6 +769,7 @@ open class FileServer {
     lineNumbers = config.lineNumbers,
     homeEnabled = config.homeEnabled,
     landing = config.landing,
+    chatEnabled = config.chatEnabled,
   )
 
   fun start(
@@ -778,6 +788,7 @@ open class FileServer {
     lineNumbers: Boolean = false,
     homeEnabled: Boolean = true,
     landing: String? = null,
+    chatEnabled: Boolean = true,
   ): Server {
 
     val server = server(host, port)
@@ -803,13 +814,17 @@ open class FileServer {
       extractUtilsEnabled = ExtractUtilsFsAction.isEnabled && !readOnly,
       landingPath = landingPathFor(landing, homeEnabled, uiEnabled),
     )
+    val chatUrl = if (chatEnabled) "${FileServerCli.CHAT_PREFIX}/" else null
     registerFileServlets(
       context, baseDir, gitEnabled, readOnly, uiEnabled, terminalEnabled,
       execPermissive, shell, tasksEnabled && ServerTaskActions.isEnabled, defaultFixCommand,
-      modifyEnabled && !readOnly && ModifyFilesActions.isEnabled, lineNumbers
+      modifyEnabled && !readOnly && ModifyFilesActions.isEnabled, lineNumbers, chatUrl
     )
     registerDocOps(context)
     registerAssets(context, uiEnabled)
+    if (chatEnabled) {
+      register(context, ServletHolder("chat", ChatLauncherServlet(baseDir)), FileServerCli.CHAT_PREFIX)
+    }
     if (homeEnabled) registerHome(context)
     registerGateway(context)
     try {
@@ -876,14 +891,16 @@ open class FileServer {
     defaultFixCommand: String,
     showModify: Boolean,
     lineNumbers: Boolean,
+    chatUrl: String? = null,
   ) {
-    val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, showTasks)
-    else SimpleFileServlet(
-      baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled,
-      terminalEnabled = terminalEnabled, execPermissive = execPermissive, shell = shell,
-      tasksEnabled = showTasks, defaultFixCommand = defaultFixCommand,
-      modifyEnabled = showModify, lineNumbers = lineNumbers
-    )
+    val fileServlet =
+      if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, showTasks, chatUrl)
+      else SimpleFileServlet(
+        baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled,
+        terminalEnabled = terminalEnabled, execPermissive = execPermissive, shell = shell,
+        tasksEnabled = showTasks, defaultFixCommand = defaultFixCommand,
+        modifyEnabled = showModify, lineNumbers = lineNumbers, chatUrl = chatUrl
+      )
     val fileHolder = ServletHolder("files", fileServlet)
     /* @MultipartConfig is not honoured for programmatically registered instances. */
     fileHolder.registration.setMultipartConfig(
@@ -1038,5 +1055,3 @@ open class FileServer {
 
   }
 }
-
-private val log = LoggerFactory.getLogger(FileServerCli::class.java)
