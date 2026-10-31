@@ -13,6 +13,32 @@ npm run dev        # vite dev server
 npm run build      # -> build/ (base: './', safe under any path prefix)
 ./build.sh         # build + stage into ../webui/src/main/resources
 ```
+`@markdown2/core` is resolved from npm. To build against a local Markdown2 checkout instead:
+```bash
+MARKDOWN2_CORE=../Markdown2/packages/core/src/index.ts npm run dev
+```
+---
+## Rendering (Markdown2)
+All rendering goes through [Markdown2](https://md2.cognotik.com/) (`@markdown2/core`):
+`parse → resolveDocument → renderHtml`, producing the M2SS styling tree (`md2-document`,
+`md2-resource`, `md2-view`, `md2-fallback`). There is no `marked`, no hand-wired Mermaid and no
+CDN MathJax.
+* **Composer preview** and **non-HTML messages** are rendered as Markdown2 documents.
+* **Server HTML** is not reparsed (Markdown2 escapes raw HTML). Typed *islands* inside it are
+  lifted into Markdown2 resources and rendered by the matching handler (`render/islands.js`):
+  | server markup                                                      | Markdown2 type            |
+  |--------------------------------------------------------------------|---------------------------|
+  | `.mermaid`, `pre > code.language-mermaid`                          | `text/vnd.mermaid`        |
+  | `code.language-math\|tex\|latex`, `.math-display`, `<p>$$…$$</p>`  | `application/x-tex`       |
+  | `code.language-mathml`                                             | `application/mathml+xml`  |
+  | `code.language-wavedrom`                                           | `text/vnd.wavedrom`       |
+  | `code.language-markdown2`, `[data-markdown2]`                      | full Markdown2 document   |
+* **Handlers** (`render/markdown2/`): core defaults (text, JSON, YAML, images, CSV/TSV, nested
+  Markdown), WaveDrom, plus Mermaid and MathJax (bundled `mathjax-full`, `base`+`ams` only). Both
+  produce SVG shown through `<img>`, so nothing they emit can run.
+* Inline `$…$` maths is not supported: Markdown2 maths is block-level.
+* Rendering never reaches the network: `uri` resources stay locked, encrypted ones unsupported.
+* A handler failure leaves the original server markup in place, flagged `data-m2-island="error"`.
 
 ---
 
@@ -122,11 +148,12 @@ src/
     message-list.js      reconcile by id/version; delegate §7 interactions
     references.js        `z*` reference expansion
     pipeline.js          debounced tabs → collapsibles → Prism → Mermaid → MathJax
+  pipeline.js          debounced tabs → collapsibles → Markdown2 islands → Prism
+  islands.js           lift diagrams/maths/Markdown2 source out of server HTML
+  markdown2/           Markdown2 renderer, cache and app handlers (Mermaid, MathJax)
     tabs.js              nested tabs with sticky per-container state
     collapsible.js       expandable sections
     prism.js             syntax highlighting (lazy, IntersectionObserver)
-    mermaid.js           diagrams (initialised exactly once)
-    mathjax.js           math typesetting
     verbose.js           verbose-mode gating
   ui/                    chrome
     shell.js             mounts the app skeleton

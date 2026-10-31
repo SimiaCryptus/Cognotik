@@ -17,6 +17,8 @@ open class SimpleFileServlet(
   private val execPermissive: Boolean = true,
   private val maxTerminals: Int = 8,
   private val shell: List<String> = emptyList(),
+   /** Server-absolute URL of the chat assistant (null = no chat mounted). */
+   private val chatUrl: String? = null,
 ) : FilesystemServlet() {
   override fun getDir(request: HttpServletRequest, response: HttpServletResponse): File = baseDir
   override fun isGitEnabled(req: HttpServletRequest): Boolean = gitEnabled
@@ -41,6 +43,7 @@ open class SimpleFileServlet(
     terminalEnabled = terminalEnabled && !readOnly,
     maxTerminals = maxTerminals,
     terminalShell = shell,
+     chatUrl = chatUrl,
   )
 
   override fun getZipLink(req: HttpServletRequest, filePath: String): String {
@@ -51,9 +54,12 @@ open class SimpleFileServlet(
 
   /** docs/ui.md §21.3 — the classic listing links to the equivalent SPA path. */
   override fun getToolbarActions(req: HttpServletRequest, currentPath: String): String {
-    if (!uiEnabled) return ""
-    val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
-    return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}${FileServerCli.UI_PREFIX}/#$hash">🧭 Open in IDE view</a>""" +
-        super.getToolbarActions(req, currentPath)
+     val chat = chatUrl?.let {
+       """<a class="zip-link" style="background-color:#0dcaf0;color:#000;" href="$it" target="_blank" rel="noopener" title="Open the AI chat assistant">💬 Chat</a>"""
+     } ?: ""
+     if (!uiEnabled) return chat + super.getToolbarActions(req, currentPath)
+     val hash = if (currentPath.isBlank()) "/" else "/$currentPath/"
+     return """<a class="zip-link" style="background-color:#6f42c1;" href="${req.contextPath}${FileServerCli.UI_PREFIX}/#$hash">🧭 Open in IDE view</a>""" +
+         chat + super.getToolbarActions(req, currentPath)
   }
 }

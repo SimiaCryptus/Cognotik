@@ -1,0 +1,3 @@
+[submodule "webapp-v2/Markdown2"]
+	path = webapp-v2/Markdown2
+	url = git@github.com:SimiaCryptus/Markdown2.git

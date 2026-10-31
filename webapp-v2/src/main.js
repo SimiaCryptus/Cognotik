@@ -1,11 +1,11 @@
 /* Theme tokens first: base.css derives everything from the --color-* custom properties. */
 import './styles/theme-data.css';
 import './styles/base.css';
+import './styles/markdown2.css';
 
-/* Renderers must be initialised before any content is mounted (§1.2 step 2). */
+/* Prism.manual must be set before any content is mounted (§1.2 step 2).
+   Diagrams and maths are rendered by Markdown2 (render/markdown2/), lazily. */
 import './render/prism.js';
-import {initMermaid} from './render/mermaid.js';
-import {initMathJax} from './render/mathjax.js';
 
 import {APP_VERSION, IS_DEV} from './config/env.js';
 import {createLogger, dumpDiagnostics, installGlobalErrorHandlers, renderFatalError} from './util/logger.js';
@@ -56,9 +56,6 @@ export function boot(options = {}) {
     const sessionId = resolveSessionId(options.sessionId);
      log.info(`Starting Cognotik chat v${APP_VERSION}`, {sessionId, theme, archive: isArchive, dev: IS_DEV});
 
-    // 2. renderers
-    initMermaid();
-    initMathJax();
 
     // 3. shell DOM
      const shell = mountShell(root, {sessionId, version: APP_VERSION});

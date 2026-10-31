@@ -2,16 +2,11 @@ package com.simiacryptus.cognotik.webui.application
 
 import com.simiacryptus.cognotik.OutputInterceptor
 import com.simiacryptus.cognotik.auth.AuthCallbackServlet
-import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.CognotikConfig
+import com.simiacryptus.cognotik.platform.CognotikPlatform
 import com.simiacryptus.cognotik.platform.model.LOCAL_WORKER_ID
-import com.simiacryptus.cognotik.platform.ServiceRouter
-import com.simiacryptus.cognotik.platform.service.UsageInterface
 import com.simiacryptus.cognotik.webui.servlet.*
-import com.simiacryptus.cognotik.webui.servlet.action.DocOpsFsActions
-import com.simiacryptus.cognotik.webui.servlet.action.DocOpsServlets
-import com.simiacryptus.cognotik.webui.servlet.action.ModifyFilesFsAction
-import com.simiacryptus.cognotik.webui.servlet.action.SessionFsRoots
+import com.simiacryptus.cognotik.webui.servlet.action.*
 import com.simiacryptus.cognotik.webui.servlet.payment.NoOpPaymentProvider
 import com.simiacryptus.cognotik.webui.session.ChatServer
 import jakarta.servlet.DispatcherType
@@ -53,8 +48,7 @@ abstract class ApplicationDirectory(
 
   init {
     log.info(
-      "Creating ApplicationDirectory instance with localName='${this.localName}' (requested='$localName'), " +
-          "bindAddress='$bindAddress', publicName='${publicName ?: "null"}', port=$port"
+      "Creating ApplicationDirectory instance with localName='${this.localName}' (requested='$localName'), " + "bindAddress='$bindAddress', publicName='${publicName ?: "null"}', port=$port"
     )
     require(publicName != "localhost")
     LOCAL_WORKER_ID = "${this.localName}:$port"
@@ -78,41 +72,31 @@ abstract class ApplicationDirectory(
 
   open val welcomeResources: Resource = ResourceCollection(
     *allResources("web").map(Resource::newResource).toTypedArray()
-  )
-    .also { log.debug("Initialized web resources with ${allResources("web").size} resource(s)") }
+  ).also { log.debug("Initialized web resources with ${allResources("web").size} resource(s)") }
 
   open val metricsServlet by lazy { MetricServlet() }
-  open val userInfoServlet: HttpServlet = UserInfoServlet()
-    .also { log.debug("Initialized UserInfoServlet") }
-  open val userSettingsServlet: HttpServlet = UserSettingsServlet()
-    .also { log.debug("Initialized UserSettingsServlet") }
+  open val userInfoServlet: HttpServlet = UserInfoServlet().also { log.debug("Initialized UserInfoServlet") }
+  open val userSettingsServlet: HttpServlet =
+    UserSettingsServlet().also { log.debug("Initialized UserSettingsServlet") }
 
-  open val apiProviderServlet: HttpServlet = ApiProviderServlet()
-    .also { log.debug("Initialized ApiProviderServlet") }
-  open val logoutServlet: HttpServlet = LogoutServlet()
-    .also { log.debug("Initialized LogoutServlet") }
-  open val usageServlet: HttpServlet = UsageServlet()
-    .also { log.debug("Initialized UsageServlet") }
-  open val usageGraphQLServlet: HttpServlet = UsageGraphQLServlet()
-    .also { log.debug("Initialized UsageGraphQLServlet") }
+  open val apiProviderServlet: HttpServlet = ApiProviderServlet().also { log.debug("Initialized ApiProviderServlet") }
+  open val logoutServlet: HttpServlet = LogoutServlet().also { log.debug("Initialized LogoutServlet") }
+  open val usageServlet: HttpServlet = UsageServlet().also { log.debug("Initialized UsageServlet") }
+  open val usageGraphQLServlet: HttpServlet =
+    UsageGraphQLServlet().also { log.debug("Initialized UsageGraphQLServlet") }
 
-  open val usageStorageApiServlet: HttpServlet = UsageStorageApiServlet()
-    .also { log.debug("Initialized UsageStorageApiServlet") }
+  open val usageStorageApiServlet: HttpServlet =
+    UsageStorageApiServlet().also { log.debug("Initialized UsageStorageApiServlet") }
 
-  open val metadataStorageApiServlet: HttpServlet = MetadataStorageApiServlet()
-    .also { log.debug("Initialized MetadataStorageApiServlet") }
-  open val welcomeServlet: HttpServlet = WelcomeServlet(this)
-    .also { log.debug("Initialized WelcomeServlet") }
-  open val apiKeyServlet: HttpServlet = ApiKeyServlet()
-    .also { log.debug("Initialized ApiKeyServlet") }
-  open val taskConfigServlet: HttpServlet = TaskConfigServlet()
-    .also { log.debug("Initialized TaskConfigServlet") }
-  open val loginServlet: HttpServlet = LoginServlet()
-    .also { log.debug("Initialized SimpleLoginServlet") }
-  open val appDirectoryServlet: HttpServlet = AppDirectoryServlet()
-    .also { log.debug("Initialized AppDirectoryServlet") }
-  open val sitemapServlet: HttpServlet = SitemapServlet()
-    .also { log.debug("Initialized SitemapServlet") }
+  open val metadataStorageApiServlet: HttpServlet =
+    MetadataStorageApiServlet().also { log.debug("Initialized MetadataStorageApiServlet") }
+  open val welcomeServlet: HttpServlet = WelcomeServlet(this).also { log.debug("Initialized WelcomeServlet") }
+  open val apiKeyServlet: HttpServlet = ApiKeyServlet().also { log.debug("Initialized ApiKeyServlet") }
+  open val taskConfigServlet: HttpServlet = TaskConfigServlet().also { log.debug("Initialized TaskConfigServlet") }
+  open val loginServlet: HttpServlet = LoginServlet().also { log.debug("Initialized SimpleLoginServlet") }
+  open val appDirectoryServlet: HttpServlet =
+    AppDirectoryServlet().also { log.debug("Initialized AppDirectoryServlet") }
+  open val sitemapServlet: HttpServlet = SitemapServlet().also { log.debug("Initialized SitemapServlet") }
   open val pluginManagerServlet: HttpServlet? by lazy { PluginManagerServlet().also { log.debug("Initialized PluginManagerServlet") } }
   open val videoLandingServlet by lazy { VideoLandingServlet() }
 
@@ -121,17 +105,14 @@ abstract class ApplicationDirectory(
 
   protected open val docopsServlet: HttpServlet by lazy { DocProcessorServlet() }
 
-  open val cognitiveConfigServlet: HttpServlet = CognitiveConfigServlet()
-    .also { log.debug("Initialized CognitiveConfigServlet") }
+  open val cognitiveConfigServlet: HttpServlet =
+    CognitiveConfigServlet().also { log.debug("Initialized CognitiveConfigServlet") }
 
-  open val sessionsServlet: HttpServlet = SessionsServlet()
-    .also { log.debug("Initialized SessionsServlet") }
-  open val sessionUsageDetailsServlet by lazy { SessionUsageDetailsServlet() }
-    .also { log.debug("Initialized SessionUsageDetailsServlet") }
+  open val sessionsServlet: HttpServlet = SessionsServlet().also { log.debug("Initialized SessionsServlet") }
+  open val sessionUsageDetailsServlet by lazy { SessionUsageDetailsServlet() }.also { log.debug("Initialized SessionUsageDetailsServlet") }
 
   open val creditsServlet: CreditsServlet by lazy {
-    CreditsServlet(NoOpPaymentProvider())
-      .also { log.debug("Initialized CreditsServlet") }
+    CreditsServlet(NoOpPaymentProvider()).also { log.debug("Initialized CreditsServlet") }
   }
 
   open fun setupPlatform() {
@@ -162,7 +143,7 @@ abstract class ApplicationDirectory(
 
   /**
    * Publishes the DocOps endpoint and installs the extended FS API actions (DocOps,
-   * Tasks, Modify Files) that were previously CLI-only.
+   * Tasks, Modify Files, Chat) that were previously CLI-only.
    *
    * [docopsServlet] is resolved *lazily* through [DocOpsServlets]: in some deployments it is
    * overridden with a proxy implementation, and every doc-ops invocation (HTTP mount, the
@@ -187,20 +168,19 @@ abstract class ApplicationDirectory(
       ModifyFilesFsAction.Config(
         root = SessionFsRoots::rootOf,
         user = SessionFsRoots::userOf,
-        chatUri = {
-          URI(
-            domainName.ifBlank {
-              if (publicName != null) {
-                "http://$publicName"
-              } else {
-                "http://$localName:$port"
-              }
-            }
-          )
-        },
+        chatUri = { chatBaseUri() },
       )
     )
   }
+
+  /**
+   * Base URI for links back into this server (chat tabs, ModifyFiles chat, ...).
+   * Prefers the public name when one is configured; otherwise uses the local routable address.
+   */
+  private fun chatBaseUri(): URI = URI(
+    domainName.ifBlank {
+      if (publicName != null) "http://$publicName" else "http://$localName:$port"
+    })
 
   open fun webAppContexts(): Array<WebAppContext> {
     return listOfNotNull(
@@ -259,25 +239,19 @@ abstract class ApplicationDirectory(
   }
 
   protected open fun start(
-    port: Int,
-    host: String,
-    vararg webAppContexts: WebAppContext
+    port: Int, host: String, vararg webAppContexts: WebAppContext
   ): Server {
     log.info("Starting Jetty server on $host:$port with ${webAppContexts.size} web app contexts")
     val contexts = ContextHandlerCollection()
 
     log.info("Starting server on port: $port")
-    contexts.handlers = (
-        listOf(
-          run { log.debug("Adding statistics servlet context"); null },
-          newWebAppContext("/stats", StatisticsServlet())
-        ) +
-            webAppContexts.map {
-              log.debug("Adding CORS filter to context: ${it.contextPath}")
-              it.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
-              it
-            }
-        ).filterNotNull().toTypedArray()
+    contexts.handlers = (listOf(
+      run { log.debug("Adding statistics servlet context"); null }, newWebAppContext("/stats", StatisticsServlet())
+    ) + webAppContexts.map {
+      log.debug("Adding CORS filter to context: ${it.contextPath}")
+      it.addFilter(FilterHolder(CorsFilter()), "/*", EnumSet.of(DispatcherType.REQUEST))
+      it
+    }).filterNotNull().toTypedArray()
 
     log.debug("Created context handler collection with ${contexts.handlers.size} handlers")
     val server = Server(port)
@@ -317,8 +291,7 @@ abstract class ApplicationDirectory(
   }
 
   private fun createPathContext(
-    path: String,
-    resource: Resource?
+    path: String, resource: Resource?
   ): WebAppContext {
     var baseResource: Resource? = resource
     if (baseResource == null) {
@@ -336,10 +309,7 @@ abstract class ApplicationDirectory(
   }
 
   protected open fun newWebAppContext(
-    path: String,
-    baseResource: Resource?,
-    resourceBase: String,
-    indexServlet: Servlet? = null
+    path: String, baseResource: Resource?, resourceBase: String, indexServlet: Servlet? = null
   ): WebAppContext {
     log.debug("Creating WebAppContext: path=$path, resourceBase=$resourceBase, hasIndexServlet=${indexServlet != null}")
     val context = WebAppContext()
@@ -429,8 +399,7 @@ abstract class ApplicationDirectory(
       if (!isWildcardHost(trimmed)) return trimmed
       val resolved = detectRoutableIpv4() ?: "localhost"
       log.warn(
-        "Requested localName '$host' is a wildcard address and cannot be advertised to peers; " +
-            "using '$resolved' as the advertised address instead"
+        "Requested localName '$host' is a wildcard address and cannot be advertised to peers; " + "using '$resolved' as the advertised address instead"
       )
       return resolved
     }

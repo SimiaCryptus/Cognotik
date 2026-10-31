@@ -24,7 +24,9 @@ export default [
                     clearInterval: 'readonly',
                     console: 'readonly',
                     btoa: 'readonly',
-                    crypto: 'readonly'
+                    crypto: 'readonly',
+                    TextDecoder: 'readonly',
+                    TextEncoder: 'readonly'
                 }
             },
             rules: {

@@ -55,6 +55,8 @@ data class FsApiConfig(
   val maxTerminals: Int = 8,
   /** Empty = auto-detect an interactive login-less shell ($SHELL, bash, sh, cmd). */
   val terminalShell: List<String> = emptyList(),
+   /** Server-absolute URL of the chat assistant, or null when no chat is mounted. */
+   val chatUrl: String? = null,
 ) {
   /**
    * The view presented to a caller that may not write: every mutating

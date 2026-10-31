@@ -1,0 +1,119 @@
+/*
+ * Markdown2 styling tree (M2SS §4, Appendix A) over the app's theme tokens.
+ * Only `--color-*` tokens from theme-data.css — no literal colours.
+ */
+
+md2-document,
+md2-section,
+md2-resource,
+md2-view,
+md2-fallback {
+    display: block;
+}
+
+md2-resource[rel="metadata"],
+md2-resource[rel="stylesheet"] {
+    display: none;
+}
+
+md2-resource {
+    margin: var(--spacing-md) 0;
+}
+
+.m2-island {
+    margin: var(--spacing-sm) 0;
+}
+
+.m2-island > md2-document > md2-resource {
+    margin: 0;
+}
+
+md2-document > :first-child { margin-top: 0; }
+md2-document > :last-child { margin-bottom: 0; }
+
+md2-fallback {
+    display: block !important;
+    visibility: visible !important;
+    opacity: 1 !important;
+    padding: var(--spacing-sm) var(--spacing-md);
+    border: 1px dashed color-mix(in oklch, var(--color-text-muted) 60%, transparent);
+    border-radius: var(--radius-sm);
+    color: var(--color-text-muted);
+    font-family: var(--font-mono);
+    font-size: 0.8rem;
+}
+
+md2-label {
+    display: inline;
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+md2-detail {
+    display: block;
+    font-size: 0.875em;
+}
+
+md2-detail .m2-hint {
+    color: var(--color-accent);
+}
+
+.m2-diagram-block,
+.m2-math-block,
+.m2-wave-block {
+    text-align: center;
+    overflow-x: auto;
+}
+
+.m2-mermaid,
+.m2-math,
+.m2-wavedrom,
+.m2-image {
+    display: block;
+    max-width: 100%;
+    height: auto;
+    margin: 0 auto;
+}
+
+.m2-mermaid {
+    padding: var(--spacing-md);
+    border: 1px solid var(--line);
+    border-radius: var(--radius-sm);
+    background: color-mix(in oklch, var(--color-brand) 4%, transparent);
+}
+
+/* MathJax/WaveDrom SVGs are drawn in black; flip them on dark themes. */
+body.theme-dark .m2-math,
+body.theme-dark .m2-wavedrom {
+    filter: invert(0.9);
+}
+
+.m2-grid {
+    border-collapse: collapse;
+    font-size: 0.85rem;
+}
+
+.m2-grid th,
+.m2-grid td {
+    padding: 0.3em 0.7em;
+    border: 1px solid var(--line);
+}
+
+.m2-grid th {
+    background: color-mix(in oklch, var(--color-brand) 8%, transparent);
+}
+
+.m2-prose-image::before {
+    content: "🖼 ";
+}
+
+[data-m2-island="error"] {
+    outline: 1px dashed var(--color-danger);
+    outline-offset: 2px;
+}
+
+.composer-preview md2-document pre {
+    background: var(--color-code-bg);
+    padding: var(--spacing-sm);
+    border-radius: var(--radius-sm);
+}

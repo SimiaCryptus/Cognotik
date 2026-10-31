@@ -61,6 +61,8 @@ function shouldSkip(node) {
     return (
         node.classList.contains('language-none') ||
         node.classList.contains(PROCESSED) ||
+        // Claimed by a Markdown2 island; about to be replaced.
+        node.closest('[data-m2-island="pending"]') !== null ||
         node.querySelector('.token') !== null
     );
 }

@@ -1,7 +1,8 @@
-import {marked} from 'marked';
 import {el} from '../util/dom.js';
 import {createLogger} from '../util/logger.js';
+import {debounce} from '../util/debounce.js';
 import {highlightAllUnder} from '../render/prism.js';
+import {renderMarkdown2} from '../render/markdown2/index.js';
 import {Quip} from '../render/quips.js';
 import {getAppConfig} from '../config/app-config.js';
 
@@ -22,6 +23,8 @@ export const MARKDOWN_TOOLBAR = Object.freeze([
     {label: '☑', title: 'Task', template: '- [ ] $1'},
     {label: '🔗', title: 'Link', template: '[$1](url)'},
     {label: '🖼', title: 'Image', template: '![$1](image-url)'},
+    {label: '◇', title: 'Mermaid diagram', template: '```mermaid\n$1\n```'},
+    {label: '∑', title: 'Maths (TeX)', template: '```math\n$1\n```'},
     {
         label: '▦',
         title: 'Table',
@@ -40,6 +43,8 @@ export class Composer {
         this.previewOpen = false;
         /** Server-imposed visibility (ISessionTask.show/hideInput); null = inputCnt rules. */
         this.inputForced = null;
+        this.previewSeq = 0;
+        this._schedulePreview = debounce(() => this._renderPreview(), 150);
         this._build();
         this._updateState();
     }
@@ -160,19 +165,25 @@ export class Composer {
         if (this.previewOpen) this._renderPreview();
     }
 
-    _renderPreview() {
+    /** Preview is a Markdown2 rendering of the draft (sequence-guarded: async). */
+    async _renderPreview() {
         if (!this.previewOpen) return;
+        const seq = ++this.previewSeq;
+        const source = this.textarea.value || '';
         try {
-            this.preview.innerHTML = marked.parse(this.textarea.value || '', {gfm: true, breaks: false});
+            const {html} = await renderMarkdown2(source);
+            if (seq !== this.previewSeq || !this.previewOpen) return;
+            this.preview.innerHTML = html; // Markdown2 escapes everything it emits
+            highlightAllUnder(this.preview);
         } catch (err) {
+            if (seq !== this.previewSeq) return;
             log.warn('Preview render failed', err);
-            this.preview.textContent = this.textarea.value;
+            this.preview.textContent = source;
         }
-        highlightAllUnder(this.preview);
     }
 
     _onInput() {
-        this._renderPreview();
+        if (this.previewOpen) this._schedulePreview();
         this._updateState();
     }
 

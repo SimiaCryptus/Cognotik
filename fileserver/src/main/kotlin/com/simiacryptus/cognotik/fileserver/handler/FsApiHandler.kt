@@ -95,6 +95,19 @@ object FsApiHandler {
     read("actions", "Self-description of every registered file and git action") { ctx ->
       writeJson(ctx.resp, HttpServletResponse.SC_OK, describeActions(ctx.config))
     }
+     read(
+       "chat", "Open the AI chat assistant for this mount",
+       capability = "chat",
+       ui = ActionUi(
+         title = "Chat…",
+         icon = "comment-discussion",
+         category = "AI",
+         menus = listOf(ActionMenu("main/tools", "1_chat", 10)),
+         selection = ActionSelection(min = 0),
+         sendSelection = "none",
+         navigate = true
+       )
+     ) { ctx -> httpChat(ctx) }
     read(
       "stat", "fs.stat / fs.lstat",
       listOf(path, ActionParam("lstat", "boolean"), ActionParam("throwIfNoEntry", "boolean", default = true))
@@ -656,6 +669,7 @@ object FsApiHandler {
     "homedir" to "/",
     "root" to "/",
     "readOnly" to config.readOnly,
+     "chatUrl" to config.chatUrl,
     "limits" to linkedMapOf(
       "maxFileSize" to config.maxFileSize,
       "maxRequestSize" to config.maxRequestSize,
@@ -684,6 +698,7 @@ object FsApiHandler {
       "chmod" to false,
       "exec" to if (config.execAllowAny) listOf("*") else config.execAllowlist.keys.sorted(),
       "terminal" to config.terminalEnabled,
+       "chat" to (config.chatUrl != null),
       "sync" to config.syncStrategy,
       "crossOriginIsolated" to config.crossOriginIsolated
     )
@@ -1494,8 +1509,25 @@ object FsApiHandler {
     resp.status = HttpServletResponse.SC_NO_CONTENT
   }
 
-  /** Bridges the FS API onto the extensible [GitActions] registry. */
-  private fun httpGit(ctx: FsActionContext) {
+   /**
+    * Chat entry point: a browser navigation is redirected straight to the chat UI,
+    * a programmatic call gets the URL to open (the action is flagged `navigate`).
+    */
+   private fun httpChat(ctx: FsActionContext) {
+     val url = ctx.config.chatUrl
+       ?: throw FsException(FsErrorCode.ENOSYS, "chat", null, "chat is not available on this mount")
+     if (isNavigation(ctx.req)) {
+       ctx.resp.sendRedirect(url)
+       return
+     }
+     writeJson(
+       ctx.resp, HttpServletResponse.SC_OK,
+       linkedMapOf("url" to url, "open" to url, "message" to "Open the chat assistant at $url")
+     )
+   }
+
+    /** Bridges the FS API onto the extensible [GitActions] registry. */
+    private fun httpGit(ctx: FsActionContext) {
     if (!ctx.config.execAllowlist.containsKey("git")) {
       log.debug("git action rejected: capability disabled for this mount")
       throw FsException(FsErrorCode.ENOSYS, "git", null, "git capability disabled for this mount")

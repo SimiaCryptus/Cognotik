@@ -1,4 +1,5 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
+import java.util.concurrent.TimeUnit
 
 group = providers.gradleProperty("libraryGroup").get()
 version = providers.gradleProperty("libraryVersion").get()
@@ -185,6 +186,92 @@ val pnpm: String = pnpmExecutable ?: if (isWindows) "pnpm.cmd" else "pnpm"
 val skipWebapp = providers.gradleProperty("skipWebapp").isPresent
 val strictWebapp = providers.gradleProperty("strictWebapp").isPresent
 val sassVersion = "1.83.0"
+/* ---------------------------------------------------------------------------
+  * Node.js resolution. Vite 8 / rolldown require Node "^20.19.0 || >=22.12.0"
+  * (they import `styleText` from node:util, absent in Node 18). pnpm runs
+  * scripts with whatever `node` is first on PATH, so we locate a compatible
+  * Node and prepend its bin dir to PATH for every pnpm-driven task.
+  * Search order: -PnodeDir / NODE_DIR, PATH, then nvm/fnm/volta/pnpm-env/n dirs.
+  * ------------------------------------------------------------------------ */
+val explicitNodeDir: String? = (providers.gradleProperty("nodeDir").orNull
+    ?: System.getenv("NODE_DIR"))?.takeIf { it.isNotBlank() }
+val nodeExeName = if (isWindows) "node.exe" else "node"
+
+fun parseNodeVersion(s: String): List<Int>? =
+   Regex("""v?(\d+)\.(\d+)\.(\d+)""").find(s.trim())?.destructured
+     ?.let { (a, b, c) -> listOf(a.toInt(), b.toInt(), c.toInt()) }
+
+fun isSupportedNode(v: List<Int>): Boolean =
+   (v[0] == 20 && v[1] >= 19) || (v[0] == 22 && v[1] >= 12) || v[0] > 22
+
+fun probeNodeVersion(binDir: File): List<Int>? {
+   val exe = File(binDir, nodeExeName)
+   if (!exe.isFile || !exe.canExecute()) return null
+   return try {
+     val proc = ProcessBuilder(exe.absolutePath, "--version").redirectErrorStream(true).start()
+     if (!proc.waitFor(10, TimeUnit.SECONDS)) {
+       proc.destroyForcibly(); null
+     } else parseNodeVersion(proc.inputStream.bufferedReader().readText())
+   } catch (e: Exception) {
+     null
+   }
+}
+
+fun managedNodeBinDirs(): List<File> {
+   val home = System.getProperty("user.home") ?: return emptyList()
+   fun children(path: String, sub: String): List<File> =
+     File(home, path).listFiles()?.filter { it.isDirectory }?.map { File(it, sub) } ?: emptyList()
+   val binSub = if (isWindows) "" else "bin"
+   return buildList {
+     addAll(children(".nvm/versions/node", "bin"))                       // nvm
+     addAll(children(".local/share/fnm/node-versions", "installation/$binSub")) // fnm
+     addAll(children(".fnm/node-versions", "installation/$binSub"))
+     addAll(children(".local/share/pnpm/nodejs", binSub))                // pnpm env use
+     addAll(children("AppData/Local/pnpm/nodejs", ""))
+     addAll(children("n/versions/node", "bin"))                          // n (N_PREFIX=~/n)
+     add(File(home, ".volta/bin"))                                       // volta shim
+     addAll(children("AppData/Roaming/nvm", ""))                         // nvm-windows
+   }
+}
+
+data class NodeInstall(val binDir: File, val version: List<Int>)
+
+/* Returns the node found first on PATH (for diagnostics), regardless of version. */
+fun pathNode(): NodeInstall? =
+   (System.getenv("PATH") ?: "").split(File.pathSeparator).asSequence()
+     .filter { it.isNotBlank() }.map { File(it) }
+     .filter { File(it, nodeExeName).isFile }
+     .firstNotNullOfOrNull { dir -> probeNodeVersion(dir)?.let { NodeInstall(dir, it) } }
+
+fun locateCompatibleNode(): NodeInstall? {
+   explicitNodeDir?.let { File(it) }?.let { dir ->
+     val v = probeNodeVersion(dir)
+     if (v != null && isSupportedNode(v)) return NodeInstall(dir, v)
+     logger.warn("Configured nodeDir '$dir' has no compatible node (found ${v?.joinToString(".") ?: "none"}); searching elsewhere.")
+   }
+   pathNode()?.takeIf { isSupportedNode(it.version) }?.let { return it }
+   return managedNodeBinDirs()
+     .mapNotNull { dir -> probeNodeVersion(dir)?.let { NodeInstall(dir, it) } }
+     .filter { isSupportedNode(it.version) }
+     .maxWithOrNull(compareBy<NodeInstall>({ it.version[0] }, { it.version[1] }, { it.version[2] }))
+}
+
+/* Only probe when pnpm exists and the frontend is wanted (avoids work for -PskipWebapp). */
+val compatibleNode: NodeInstall? =
+   if (!skipWebapp && pnpmExecutable != null) locateCompatibleNode() else null
+
+fun nodeRequirementMessage(): String {
+   val found = pathNode()?.let { "v${it.version.joinToString(".")} at ${it.binDir}" } ?: "none"
+   return "webapp-v2 (Vite 8) requires Node.js ^20.19.0 || >=22.12.0, but no compatible Node was found " +
+       "(node on PATH: $found). Install one (e.g. `nvm install 22` or `pnpm env use --global 22`), " +
+       "or pass -PnodeDir=/path/to/node/bin (or NODE_DIR), or build with -PskipWebapp."
+}
+
+fun Exec.configureNodeEnv() {
+   val dir = compatibleNode?.binDir ?: return
+   environment("PATH", dir.absolutePath + File.pathSeparator + (System.getenv("PATH") ?: ""))
+}
+
 
 fun File.hasContent(): Boolean = isDirectory && (listFiles()?.isNotEmpty() ?: false)
 
@@ -195,7 +282,20 @@ val prebuiltWebappPresent =
 /* Decide once, at configuration time, whether the frontend tasks can run. */
 val webappBuildEnabled: Boolean = when {
   skipWebapp -> false
-  pnpmExecutable != null -> true
+   pnpmExecutable != null && compatibleNode != null -> {
+     logger.info("Using Node v${compatibleNode.version.joinToString(".")} from ${compatibleNode.binDir} for webapp-v2")
+     true
+   }
+
+   /* pnpm present but Node too old: reuse pre-built output if we have it,
+    * otherwise let buildWebapp fail with a clear message at execution time. */
+   pnpmExecutable != null && prebuiltWebappPresent -> {
+     logger.warn(nodeRequirementMessage() + " Reusing pre-built webapp resources.")
+     false
+   }
+
+   pnpmExecutable != null -> true
+
   prebuiltWebappPresent -> {
     logger.lifecycle(
       "pnpm executable not found; reusing pre-built webapp resources " +
@@ -222,9 +322,13 @@ tasks.register<Exec>("pnpmInstall") {
   group = "webapp"
   description = "Installs webapp-v2 dependencies via pnpm"
   onlyIf { webappBuildEnabled }
+   doFirst {
+     if (compatibleNode == null) throw GradleException(nodeRequirementMessage())
+   }
   workingDir = webappDir
+   configureNodeEnv()
   commandLine(pnpm, "install")
-  inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"))
+   inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"), File(webappDir, ".npmrc"))
   outputs.dir(File(webappDir, "node_modules"))
 }
 
@@ -233,10 +337,14 @@ tasks.register<Exec>("buildWebapp") {
   description = "Builds webapp-v2 via pnpm"
   onlyIf { webappBuildEnabled }
   dependsOn("pnpmInstall")
+   doFirst {
+     if (compatibleNode == null) throw GradleException(nodeRequirementMessage())
+   }
   workingDir = webappDir
+   configureNodeEnv()
   commandLine(pnpm, "run", "build")
   inputs.dir(File(webappDir, "src"))
-  inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"))
+   inputs.files(File(webappDir, "package.json"), File(webappDir, "pnpm-lock.yaml"), File(webappDir, ".npmrc"))
   outputs.dir(File(webappDir, "build"))
 }
 
@@ -275,6 +383,7 @@ tasks.register<Exec>("compileSass") {
   description = "Compiles shared SCSS to build/resources/main/css"
   onlyIf { webappBuildEnabled && File(projectDir, "src/main/resources/shared").hasContent() }
   workingDir = projectDir
+   configureNodeEnv()
   commandLine(
     pnpm, "dlx", "sass@$sassVersion",
     "src/main/resources/shared:build/resources/main/css",

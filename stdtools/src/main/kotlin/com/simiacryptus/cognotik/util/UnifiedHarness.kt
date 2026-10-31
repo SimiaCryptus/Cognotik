@@ -44,13 +44,8 @@ open class UnifiedHarness(
   val openBrowser: Boolean = false,
   val captureMessages: Boolean = serverless,
   val redirectData: Boolean = serverless,
-   val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { rawModel, session, user ->
-     val model = withResolvedKey(rawModel, user)
-    val api = model.provider
-    if (api == null) {
-      throw IllegalArgumentException("No API found for model: ${model.toJson()}")
-    }
-    model.instance(user = user,)
+  val modelInstanceFn: (ApiChatModel, Session, User) -> ChatInterface = { rawModel, _, user ->
+    defaultModelInstance(rawModel, user)
   },
   val smartModel: ChatModel,
   val fastModel: ChatModel = smartModel,
@@ -221,6 +216,9 @@ open class UnifiedHarness(
     onError: (Throwable) -> Unit = { _ -> },
     initSettings: (Session) -> OrchestrationConfig
   ): Session {
+    // Capture the original instance factory BEFORE SingleTaskApp installs our lambda globally,
+    // otherwise the default modelInstanceFn would call back into itself forever.
+    captureBaseInstanceFn()
     val completionLatch = CountDownLatch(1)
     var error: Throwable? = null
     val session = this.session
@@ -395,6 +393,37 @@ open class UnifiedHarness(
 
   companion object {
     private val log = getLogger(UnifiedHarness::class.java)
+    @Volatile
+    private var baseInstanceFn: ((ApiChatModel, User) -> ChatInterface)? = null
+    /**
+     * Remembers the instance factory that was registered before any harness-installed
+     * lambda replaces it. Only the first capture is kept.
+     */
+    @JvmStatic
+    fun captureBaseInstanceFn() {
+      if (baseInstanceFn == null) {
+        synchronized(this) {
+          if (baseInstanceFn == null) {
+            baseInstanceFn = OrchestrationConfig.instanceFn
+          }
+        }
+      }
+    }
+    /**
+     * Default model instantiation: resolves the key, then delegates to the captured base factory
+     * (never to the global instanceFn, which may point back to the harness => infinite recursion).
+     */
+    @JvmStatic
+    fun defaultModelInstance(rawModel: ApiChatModel, user: User): ChatInterface {
+      val model = withResolvedKey(rawModel, user)
+      if (model.provider == null) {
+        throw IllegalArgumentException("No API found for model: ${model.toJson()}")
+      }
+      val base = baseInstanceFn
+        ?: throw IllegalStateException("No base instance function available; call captureBaseInstanceFn() before the harness installs its own")
+      return base(model, user)
+    }
+
     fun time(): String {
       val sdf = SimpleDateFormat("yyyyMMdd_HHmmss")
       return sdf.format(System.currentTimeMillis())

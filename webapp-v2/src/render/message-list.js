@@ -4,6 +4,7 @@ import {expandReferences} from './references.js';
 import {applyVerboseWrappers} from './verbose.js';
 import {decorateSpinners} from './quips.js';
 import {runPipeline} from './pipeline.js';
+import {renderMarkdown2} from './markdown2/index.js';
 import {isReferenceId} from '../core/store.js';
 import {bus, Events} from '../core/bus.js';
 
@@ -164,8 +165,10 @@ export class MessageListView {
             body.innerHTML = html;
             this.store.setDependencies(message.id, refs);
         } else {
+            // Shown immediately as text, then replaced by its Markdown2 rendering.
             body.textContent = message.content;
             this.store.setDependencies(message.id, []);
+            this._renderPlain(wrapper, body, message);
         }
         applyVerboseWrappers(body);
          // Server spinners become parody "thinking" lines (render/quips.js).
@@ -173,6 +176,22 @@ export class MessageListView {
         wrapper.appendChild(body);
 
         return wrapper;
+    }
+    /** Non-HTML content is Markdown2 source. Async; dropped if the node was replaced meanwhile. */
+    _renderPlain(wrapper, body, message) {
+        renderMarkdown2(message.content).then(
+            ({html}) => {
+                if (this.nodes.get(message.id) !== wrapper) return;
+                body.innerHTML = html; // Markdown2 escapes everything it emits
+                body.classList.add('markdown2');
+                applyVerboseWrappers(body);
+                runPipeline();
+            },
+            (err) => {
+                log.count('markdown2-failures');
+                log.warn('Markdown2 render failed; keeping plain text', {id: message.id, error: err?.message});
+            }
+        );
     }
 
     /* --------------------------------------------------------------- scroll */

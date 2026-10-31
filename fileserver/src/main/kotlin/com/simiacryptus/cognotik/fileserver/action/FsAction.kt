@@ -126,6 +126,11 @@ data class ActionUi(
   val sendSelection: String = "none",
   /** Query parameter the selection is written to. */
   val selectionParam: String = "path",
+   /**
+    * true = the action opens a page: the client should navigate to (or open in a
+    * new tab) the `url` field of the JSON response instead of displaying it.
+    */
+   val navigate: Boolean = false,
 ) {
   fun describe(): Map<String, Any?> = linkedMapOf(
     "title" to title,
@@ -133,7 +138,8 @@ data class ActionUi(
     "category" to category,
     "paletteHidden" to paletteHidden,
      "hideWhenDisabled" to hideWhenDisabled,
-    "sendSelection" to sendSelection
+     "sendSelection" to sendSelection,
+     "navigate" to navigate
   )
 }
 
@@ -235,7 +241,8 @@ open class FsAction(
         "op" to op,
         "method" to method,
         "sendSelection" to presentation.sendSelection,
-        "selectionParam" to presentation.selectionParam
+         "selectionParam" to presentation.selectionParam,
+         "navigate" to presentation.navigate
       )
     )
   }
