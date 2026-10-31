@@ -15,6 +15,7 @@ import jakarta.servlet.Servlet
 import jakarta.servlet.http.HttpServlet
 import org.eclipse.jetty.server.*
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
+import org.eclipse.jetty.servlet.DefaultServlet
 import org.eclipse.jetty.servlet.FilterHolder
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.servlet.StatisticsServlet
@@ -191,6 +192,7 @@ abstract class ApplicationDirectory(
         ctx.addServlet(sitemapHolder, "/robots.txt")
         ctx.addServlet(sitemapHolder, "/sitemap.xml")
         ctx.addServlet(sitemapHolder, "/sitemap")
+         configureRootAssets(ctx)
       },
       newWebAppContext("/auth/*", authCallbackServlet),
       newWebAppContext("/logout", logoutServlet),
@@ -224,6 +226,26 @@ abstract class ApplicationDirectory(
       log.info("Created ${contexts.size} web app contexts total")
     }
   }
+   /**
+    * Serves `application/assets` at `/assets/` on the root context. Bundled frontends (e.g. Vite)
+    * reference their chunks with absolute `/assets/...` URLs, which arrive at the root context
+    * rather than the child app's context, so without this they 404 / hit the WelcomeServlet.
+    */
+   protected open fun configureRootAssets(ctx: WebAppContext) {
+     val url = allResources("application/assets").firstOrNull()
+     if (url == null) {
+       log.debug("No application/assets resource found; /assets not mounted on root context")
+       return
+     }
+     val base = url.toExternalForm().let { if (it.endsWith("/")) it else "$it/" }
+     val holder = ServletHolder("rootAssets", DefaultServlet())
+     holder.setInitParameter("resourceBase", base)
+     holder.setInitParameter("pathInfoOnly", "true")
+     holder.setInitParameter("dirAllowed", "false")
+     ctx.addServlet(holder, "/assets/*")
+     log.info("Mounted /assets on root context from {}", base)
+   }
+
 
   protected open fun WebAppContext.configureAuth(applicationClass: Class<ApplicationServer>): WebAppContext {
     log.debug("Adding authentication filter to context: ${this.contextPath}")

@@ -33,6 +33,7 @@ import jakarta.servlet.http.HttpServletResponse
 import org.eclipse.jetty.server.Server
 import org.eclipse.jetty.server.ServerConnector
 import org.eclipse.jetty.server.handler.ContextHandlerCollection
+import org.eclipse.jetty.servlet.DefaultServlet
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.websocket.server.config.JettyWebSocketServletContainerInitializer
@@ -947,6 +948,34 @@ open class FileServer {
     }
     register(context, ServletHolder("web-lib", WebUiServlet("web/lib")), FileServerCli.LIB_PREFIX)
     register(context, ServletHolder("web-app", WebUiServlet("web/app")), FileServerCli.APP_PREFIX)
+   registerRootAssets(context)
+}
+/**
+  * Serves classpath `application/assets` at `/assets/`. Bundled frontends (e.g. Vite) reference
+  * their chunks with absolute `/assets/...` URLs, so requests from the chat UI under /proxy/
+  * (and any other app page) land on the root context; without this mount they fall through to
+  * the gateway and 404.
+  */
+fun registerRootAssets(context: ServletContextHandler) {
+   val url = try {
+     Thread.currentThread().contextClassLoader.getResources("application/assets").toList().firstOrNull()
+       ?: FileServer::class.java.classLoader.getResources("application/assets").toList().firstOrNull()
+   } catch (e: Exception) {
+     log.warn("Could not look up classpath application/assets", e)
+     null
+   }
+   if (url == null) {
+     log.debug("No application/assets resource found; /assets not mounted")
+     return
+   }
+   val base = url.toExternalForm().let { if (it.endsWith("/")) it else "$it/" }
+   val holder = ServletHolder("root-assets", DefaultServlet())
+   holder.setInitParameter("resourceBase", base)
+   holder.setInitParameter("pathInfoOnly", "true")
+   holder.setInitParameter("dirAllowed", "false")
+   holder.setInitParameter("redirectWelcome", "false")
+   addServletSafely(context, holder, "/assets/*")
+   log.info("Mounted /assets from {}", base)
   }
 
   /**

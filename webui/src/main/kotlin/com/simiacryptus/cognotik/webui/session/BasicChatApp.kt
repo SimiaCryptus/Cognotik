@@ -50,8 +50,7 @@ class BasicChatApp(
       val userSettings =
         ServiceRouter.getUserSettings(user)
       val chatModel = userSettings.apis
-        .filter { it.provider != null && it.key != null && it.baseUrl != null }
-        .flatMap { it.provider!!.getChatModels(it.key!!, it.baseUrl!!) ?: emptyList() }
+        .flatMap { it.provider!!.getChatModels(it.key!!, it.apiBase) }
         .firstOrNull { it.modelId == model }
       return if (chatModel != null) {
         val api = userSettings.apis.find {

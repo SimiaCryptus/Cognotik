@@ -10,6 +10,7 @@ import org.eclipse.jetty.servlet.DefaultServlet
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import org.eclipse.jetty.util.resource.Resource
+import org.eclipse.jetty.util.resource.ResourceCollection
 import org.eclipse.jetty.websocket.server.JettyServerUpgradeRequest
 import org.eclipse.jetty.websocket.server.JettyWebSocketServlet
 import org.eclipse.jetty.websocket.server.JettyWebSocketServletFactory
@@ -74,17 +75,24 @@ abstract class ChatServer(
   }
 
   abstract fun newSession(user: User, session: Session): SocketManager?
+   /**
+    * Merges *every* classpath entry named [resourceBase] (e.g. `application/` from several jars
+    * or build output dirs) so sub-folders such as `assets/` are found wherever they were packaged.
+    */
 
   open val baseResource: Resource?
-    get() = javaClass.classLoader.getResource(resourceBase)?.let {
-      Resource.newResource(it).apply {
-        if (!exists()) {
-          val message = "Resource not found: $it"
-          trafficLog.error("Base resource not found: $it")
-          throw RuntimeException(message)
-        }
-      }
-    }
+     get() {
+       val urls = javaClass.classLoader.getResources(resourceBase).toList()
+       if (urls.isEmpty()) return null
+       val resources = urls.map { Resource.newResource(it) }.filter { it.exists() }
+       if (resources.isEmpty()) {
+         val message = "Resource not found: ${urls.joinToString()}"
+         trafficLog.error("Base resource not found: {}", urls.joinToString())
+         throw RuntimeException(message)
+       }
+       trafficLog.debug("Base resources for '{}': {}", resourceBase, resources.joinToString())
+       return if (resources.size == 1) resources.first() else ResourceCollection(*resources.toTypedArray())
+     }
   private val newSessionServlet by lazy { NewSessionServlet() }
   open val webSocketHandler : JettyWebSocketServlet by lazy { WebSocketHandler() }
   val defaultServlet by lazy { DefaultServlet() }
