@@ -581,11 +581,59 @@ class DatabaseFacet(
 
     var root: String = System.getProperty("cognotik.db.root")
       ?: File(System.getProperty("user.home", ".")).resolve(".cognotik").absolutePath
-    val dbName = System.getProperty("cognotik.db.dbName")
-    val serviceUrl: String? = System.getProperty("cognotik.db.serviceUrl")
-    val serviceUser: String = System.getProperty("cognotik.db.serviceUser", "SA")
-    val servicePassword: String = System.getProperty("cognotik.db.servicePassword", "")
-    val serverHost: String = System.getProperty("cognotik.db.serverHost") ?: "localhost"
+
+    /**
+     * Resolve a setting from a JVM system property first, then from the given
+     * environment variables. Blank values and unexpanded Kubernetes `$(VAR)`
+     * references count as unset. Returns the value and a description of its source.
+     */
+    private fun setting(prop: String, vararg envKeys: String): Pair<String, String>? {
+      fun usable(source: String, raw: String?): String? {
+        val v = raw?.trim()?.takeIf { it.isNotEmpty() } ?: return null
+        if (v.startsWith("$(")) {
+          log.warn("Ignoring unexpanded reference '{}' from {}", v, source)
+          return null
+        }
+        return v
+      }
+      usable("system property $prop", System.getProperty(prop))?.let { return it to "system property $prop" }
+      for (k in envKeys) {
+        usable("env $k", System.getenv(k))?.let { return it to "env $k" }
+      }
+      return null
+    }
+
+    val dbName: String? by lazy { setting("cognotik.db.dbName", "COGNOTIK_DB_DBNAME")?.first }
+
+    /** External JDBC URL. When null, an embedded H2 server is used (unless [serviceRequired]). */
+    val serviceUrl: String? by lazy {
+      val resolved = setting("cognotik.db.serviceUrl", "COGNOTIK_DB_SERVICEURL", "COGNOTIK_DB_URL")
+      if (resolved == null) {
+        log.info(
+          "No external database configured (cognotik.db.serviceUrl / COGNOTIK_DB_SERVICEURL / COGNOTIK_DB_URL); " +
+              "using embedded H2"
+        )
+        null
+      } else {
+        log.info("External database configured from {}: {}", resolved.second, resolved.first.substringBefore('?'))
+        resolved.first
+      }
+    }
+    val serviceUser: String by lazy {
+      setting("cognotik.db.serviceUser", "COGNOTIK_DB_SERVICEUSER", "COGNOTIK_DB_USER")?.first ?: "SA"
+    }
+    val servicePassword: String by lazy {
+      setting("cognotik.db.servicePassword", "COGNOTIK_DB_SERVICEPASSWORD", "COGNOTIK_DB_PASSWORD")?.first ?: ""
+    }
+    val serverHost: String by lazy { setting("cognotik.db.serverHost", "COGNOTIK_DB_SERVERHOST")?.first ?: "localhost" }
+
+    /**
+     * When true, a missing [serviceUrl] is a fatal error instead of a silent
+     * fallback to an embedded H2 database (hosted deployments).
+     */
+    val serviceRequired: Boolean by lazy {
+      setting("cognotik.db.required", "COGNOTIK_DB_REQUIRED")?.first?.toBoolean() ?: false
+    }
 
     @Volatile
     private var driverLoaded: Boolean = false
@@ -878,6 +926,11 @@ class DatabaseFacet(
 
     private fun startSharedServer(): Server {
       embeddedServer?.let { return it }
+      check(!serviceRequired) {
+        "An external database is required (cognotik.db.required / COGNOTIK_DB_REQUIRED=true) but no " +
+            "JDBC URL is configured. Set -Dcognotik.db.serviceUrl or COGNOTIK_DB_SERVICEURL / COGNOTIK_DB_URL. " +
+            "Refusing to start an embedded H2 database."
+      }
       synchronized(serverLock) {
         embeddedServer?.let { return it }
         val server = startServerLocked()
