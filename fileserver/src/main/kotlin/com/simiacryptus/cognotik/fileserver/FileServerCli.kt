@@ -1,5 +1,9 @@
 package com.simiacryptus.cognotik.fileserver
 
+import com.simiacryptus.cognotik.platform.ServiceKey
+import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.User
+import com.simiacryptus.cognotik.platform.service.StorageInterface
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -40,8 +44,9 @@ object FileServerCli {
   private const val ROOT_SEGMENT = "root"
   private const val FILES_PREFIX = "/files"
   const val UI_PREFIX = "/ui"
-   /** Mount point of the optional chat assistant (see [FileServerChat]). */
-   const val CHAT_PREFIX = "/chat"
+
+  /** Mount point of the optional chat assistant (see [FileServerChat]). */
+  const val CHAT_PREFIX = "/chat"
 
   /**
    * Shared web assets served straight from the classpath, independent of the served
@@ -66,10 +71,10 @@ object FileServerCli {
     gitEnabled: Boolean,
     uiEnabled: Boolean = true,
     execPermissive: Boolean = false,
-     chatUrl: String? = null,
+    chatUrl: String? = null,
   ) : SimpleFileServlet(
     baseDir, gitEnabled, readOnly = true, uiEnabled = uiEnabled,
-     terminalEnabled = false, execPermissive = execPermissive, chatUrl = chatUrl,
+    terminalEnabled = false, execPermissive = execPermissive, chatUrl = chatUrl,
   ) {
     private fun deny(response: HttpServletResponse) {
       response.status = HttpServletResponse.SC_FORBIDDEN
@@ -118,7 +123,7 @@ object FileServerCli {
     var terminalEnabled = true
     var execPermissive = true
     var shell: List<String> = emptyList()
-     var chatEnabled = true
+    var chatEnabled = true
     var dirArg: String? = null
 
     var i = 0
@@ -139,15 +144,16 @@ object FileServerCli {
         }
 
         "--no-git" -> gitEnabled = false
-         "--no-chat" -> chatEnabled = false
-         "--chat-model" -> {
-           val value = args.getOrNull(++i) ?: fail("Missing value for $arg")
-           System.setProperty(FileServerChat.MODEL_PROPERTY, value)
-         }
-         "--chat-fast-model" -> {
-           val value = args.getOrNull(++i) ?: fail("Missing value for $arg")
-           System.setProperty(FileServerChat.FAST_MODEL_PROPERTY, value)
-         }
+        "--no-chat" -> chatEnabled = false
+        "--chat-model" -> {
+          val value = args.getOrNull(++i) ?: fail("Missing value for $arg")
+          System.setProperty(FileServerChat.MODEL_PROPERTY, value)
+        }
+
+        "--chat-fast-model" -> {
+          val value = args.getOrNull(++i) ?: fail("Missing value for $arg")
+          System.setProperty(FileServerChat.FAST_MODEL_PROPERTY, value)
+        }
 
         "--read-only" -> readOnly = true
         "--no-terminal" -> terminalEnabled = false
@@ -181,7 +187,7 @@ object FileServerCli {
 
     val server = start(
       baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
-       terminalEnabled, execPermissive, shell, chatEnabled
+      terminalEnabled, execPermissive, shell, chatEnabled
     )
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
@@ -189,8 +195,8 @@ object FileServerCli {
     println("Serving ${baseDir.absolutePath}")
     println("  ->  http://$displayHost:$boundPort/")
     if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
-     if (chatMounted) println("  Chat      -> http://$displayHost:$boundPort$CHAT_PREFIX/")
-     else if (chatEnabled) println("  Chat      -> unavailable (no provider on the classpath or no --chat-model)")
+    if (chatMounted) println("  Chat      -> http://$displayHost:$boundPort$CHAT_PREFIX/")
+    else if (chatEnabled) println("  Chat      -> unavailable (no provider on the classpath or no --chat-model)")
     println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
     println("  Assets    -> http://$displayHost:$boundPort$LIB_PREFIX/ (classpath web/lib), $APP_PREFIX/ (classpath web/app)")
     println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
@@ -232,8 +238,46 @@ object FileServerCli {
     terminalEnabled: Boolean = true,
     execPermissive: Boolean = true,
     shell: List<String> = emptyList(),
-     chatEnabled: Boolean = true,
+    chatEnabled: Boolean = true,
   ): Server {
+//    Session.default_session = Session.newUserID()
+//    ServiceKey.DATA_STORAGE.defaultFactory = {
+//      object : StorageInterface {
+//        override fun deleteSessionData(
+//          user: User?,
+//          session: Session
+//        ) {
+//        }
+//
+//        override fun getUserDir(
+//          user: User?,
+//          session: Session
+//        ): File = baseDir
+//
+//        override fun getSystemDir(
+//          user: User?,
+//          session: Session
+//        ): File = baseDir
+//
+//        override fun updateMessage(
+//          user: User?,
+//          session: Session,
+//          messageId: String,
+//          value: String
+//        ) {
+//        }
+//
+//        override fun <T : Any> setJson(
+//          user: User?,
+//          session: Session,
+//          filename: String,
+//          settings: T
+//        ): T {
+//          return settings
+//        }
+//      }
+//
+//    }
     val server = Server()
     val connector = ServerConnector(server).apply {
       this.host = host
@@ -246,16 +290,16 @@ object FileServerCli {
       resourceBase = baseDir.absolutePath
     }
 
-     /* Optional chat assistant, mounted as its own context so it brings its own servlets/websockets. */
-     val chatContext = if (chatEnabled) FileServerChat.createContext(baseDir, CHAT_PREFIX) else null
-     val chatUrl = chatContext?.let { "$CHAT_PREFIX/" }
-     chatMounted = chatContext != null
+    /* Optional chat assistant, mounted as its own context so it brings its own servlets/websockets. */
+    val chatContext = if (chatEnabled) FileServerChat.createContext(baseDir, CHAT_PREFIX) else null
+    val chatUrl = chatContext?.let { "$CHAT_PREFIX/" }
+    chatMounted = chatContext != null
 
-     val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, chatUrl)
+    val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, chatUrl)
     else SimpleFileServlet(
       baseDir, gitEnabled, readOnly = false, uiEnabled = uiEnabled,
-       terminalEnabled = terminalEnabled, execPermissive = execPermissive, shell = shell,
-       chatUrl = chatUrl
+      terminalEnabled = terminalEnabled, execPermissive = execPermissive, shell = shell,
+      chatUrl = chatUrl
     )
     val fileHolder = ServletHolder("files", fileServlet)
     /* @MultipartConfig is not honoured for programmatically registered instances. */
@@ -292,15 +336,16 @@ object FileServerCli {
     context.addServlet(redirect, "")
     context.addServlet(redirect, FILES_PREFIX)
 
-     server.handler = if (chatContext == null) context else ContextHandlerCollection(chatContext, context)
+    server.handler = if (chatContext == null) context else ContextHandlerCollection(chatContext, context)
     server.stopAtShutdown = true
     server.start()
     return server
   }
-   /** Whether the last [start] mounted a chat assistant. */
-   @Volatile
-   var chatMounted: Boolean = false
-     private set
+
+  /** Whether the last [start] mounted a chat assistant. */
+  @Volatile
+  var chatMounted: Boolean = false
+    private set
 
   private fun fail(message: String): Nothing {
     System.err.println("error: $message")

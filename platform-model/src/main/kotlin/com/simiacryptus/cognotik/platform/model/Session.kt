@@ -41,6 +41,7 @@ open class Session(
 
   companion object {
 
+    var default_session: Session? = null
     private val secureRandom = SecureRandom()
 
     /** Alphabet used to generate session id suffixes; every character is valid in [SESSION_ID_REGEX]. */
@@ -112,7 +113,7 @@ open class Session(
   }
 
   internal open fun validateSessionId() {
-    if (!sessionId.isValidSession()) {
+    if (isValid(sessionId) == false) {
       throw IllegalArgumentException("Invalid session ID: $sessionId")
     }
   }
@@ -129,8 +130,4 @@ open class Session(
   override fun hashCode(): Int {
     return sessionId.hashCode()
   }
-}
-
-fun String.isValidSession(): Boolean {
-  return Session.SESSION_ID_REGEX.matches(this)
 }

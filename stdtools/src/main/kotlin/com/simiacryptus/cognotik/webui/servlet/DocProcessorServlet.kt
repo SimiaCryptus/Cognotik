@@ -10,6 +10,7 @@ import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ChatMessageModality
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.Session
+import com.simiacryptus.cognotik.platform.model.Session.Companion.default_session
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.service.SessionMetadataInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
@@ -348,6 +349,7 @@ open class DocProcessorServlet() : HttpServlet() {
     else log.warn("No sessionId parameter found in request; new sessions will be root sessions")
     return session
   }
+
   /**
    * The session explicitly named by the request (`sessionId`, or `session` as an alias).
    * Not overridable: used as the fallback when a subclass's [resolveSession] returns null.
@@ -370,18 +372,29 @@ open class DocProcessorServlet() : HttpServlet() {
     response: HttpServletResponse,
     user: User,
   ): File? {
-    val sessionId = request.getParameter("sessionId")
-    if (sessionId.isNullOrBlank()) {
+
+    var sessionId = request.getParameter("sessionId").let {
+      when {
+        it == null -> null
+        it == "null" -> null
+        it.isBlank() -> null
+        else -> it
+      }
+    }
+    if (sessionId == null) {
+      sessionId = default_session?.sessionId
+    }
+    if (sessionId == null) {
       writeError(response, HttpServletResponse.SC_BAD_REQUEST, "Missing required parameter: sessionId")
       return null
     }
     val session = Session(sessionId)
     val sessionDir = dataStorage.getUserDir(user, session)
-    val sessionOwner = metadataDB.getSessionOwner(session = session, user=user)
+    val sessionOwner = metadataDB.getSessionOwner(session = session, user = user)
     when {
       null == sessionOwner -> {
         log.info("Session '$session' not found in metadataDB... assuming new session for user '${user.id}'")
-        metadataDB.setSessionOwner(session = session, user=user)
+        metadataDB.setSessionOwner(session = session, user = user)
         return sessionDir
       }
 
@@ -553,7 +566,11 @@ open class DocProcessorServlet() : HttpServlet() {
       models.values.find { it.modelId == modelId }?.let { return it }
       models[modelId]?.let { return it }
       models.entries.firstOrNull { it.key.equals(modelId, ignoreCase = true) }?.let { return it.value }
-      log.warn("Model ID '{}' not found in registered models {}; creating unregistered model reference", modelId, models.keys)
+      log.warn(
+        "Model ID '{}' not found in registered models {}; creating unregistered model reference",
+        modelId,
+        models.keys
+      )
       return ChatModel(
         modelId = modelId,
         inputModalities = setOf(ChatMessageModality.TEXT),
