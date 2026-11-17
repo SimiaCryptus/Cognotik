@@ -93,6 +93,11 @@ class MetricAttribute<T : Any>(
      // --- Errors ---
      val ERROR_TYPE = of<String>("error_type")
      val FATAL = of<Boolean>("fatal")
+    // --- Tools (MCP) ---
+    /** Exposed tool name; bounded by the registered tools ("unknown" for unrecognised calls). */
+    val TOOL = of<String>("tool")
+    /** MCPToolProvider name (e.g. "local" or an MCP server name). */
+    val MCP_PROVIDER = of<String>("mcp_provider")
     // --- Authentication ---
     /** Login method name (e.g. password, github, google, qr). Bounded by the registered methods. */
     val LOGIN_METHOD = of<String>("login_method")
@@ -216,6 +221,25 @@ interface MetricType {
          MetricAttribute.PROVIDER, MetricAttribute.MODEL, MetricAttribute.ERROR_TYPE, MetricAttribute.FATAL,
        )
      }
+    // ---------------- Tools (MCP) ----------------
+    val TOOL_CALLS: CounterType by lazy {
+      CounterType.of(
+        "cognotik.tools.calls", MetricUnit.COUNT, "Tool calls executed by the MCP tool loop",
+        MetricAttribute.TOOL, MetricAttribute.MCP_PROVIDER, MetricAttribute.OUTCOME,
+      )
+    }
+    val TOOL_CALL_DURATION: DistributionType by lazy {
+      DistributionType.of(
+        "cognotik.tools.duration", MetricUnit.MILLISECONDS, "Tool call duration",
+        MetricAttribute.TOOL, MetricAttribute.MCP_PROVIDER, MetricAttribute.OUTCOME,
+      )
+    }
+    val TOOL_LOOP_ROUNDS: DistributionType by lazy {
+      DistributionType.of(
+        "cognotik.tools.loop_rounds", MetricUnit.COUNT, "Model rounds per tool loop",
+        MetricAttribute.OUTCOME, MetricAttribute.MODEL,
+      )
+    }
     // ---------------- Logging ----------------
     val LOG_MESSAGES: CounterType by lazy {
       CounterType.of(
@@ -428,6 +452,15 @@ interface EventType {
       "cognotik.event.ai_error", "An AI service call raised an error", MetricType.AI_ERRORS,
       MetricAttribute.PROVIDER, MetricAttribute.MODEL, MetricAttribute.ERROR_TYPE, MetricAttribute.FATAL,
     )
+    val TOOL_CALLED = of(
+      "cognotik.event.tool_called", "A tool was called by the MCP tool loop", MetricType.TOOL_CALLS,
+      MetricAttribute.TOOL, MetricAttribute.MCP_PROVIDER, MetricAttribute.OUTCOME,
+      MetricAttribute.USER, MetricAttribute.SESSION,
+    )
+    val TOOL_LOOP_LIMIT_REACHED = of(
+      "cognotik.event.tool_loop_limit_reached", "A tool loop hit its maxRounds limit", null,
+      MetricAttribute.MODEL, MetricAttribute.USER, MetricAttribute.SESSION,
+    )
     val APP_STARTED = of(
       "cognotik.event.app_started", "An app session was started", MetricType.APP_SESSIONS,
       MetricAttribute.APP, MetricAttribute.USER, MetricAttribute.SESSION, MetricAttribute.WORKER,
@@ -516,6 +549,8 @@ object Outcomes {
   const val SUCCESS = "success"
   const val FAILURE = "failure"
   const val CANCELLED = "cancelled"
+  const val TIMEOUT = "timeout"
+  const val DENIED = "denied"
 }
 /** Conventional (bounded) values for [MetricAttribute.REASON] in authentication metrics. */
 object AuthReasons {

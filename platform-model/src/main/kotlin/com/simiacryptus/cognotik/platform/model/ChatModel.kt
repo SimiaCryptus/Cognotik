@@ -30,6 +30,8 @@ class ChatModel(
   val inputModalities: Set<ChatMessageModality>,
   val outputModalities: Set<ChatMessageModality>,
   var reasoningLevel: ReasoningLevel? = null,
+  /** True if the model accepts tool definitions and can emit tool calls (MCP tool loop). Opt-in. */
+  val supportsTools: Boolean = false,
 ) : LLMModel(
     modelId = modelId,
     maxTotalTokens = maxTotalTokens,
@@ -70,6 +72,7 @@ class ChatModel(
         inputModalities: Set<ChatMessageModality>,
         outputModalities: Set<ChatMessageModality>,
         reasoningLevel: ReasoningLevel? = null,
+        supportsTools: Boolean = false,
     ) : this(
         name = name,
         modelId = modelId,
@@ -85,7 +88,8 @@ class ChatModel(
         deprecated = deprecated,
         inputModalities = inputModalities,
         outputModalities = outputModalities,
-        reasoningLevel = reasoningLevel
+        reasoningLevel = reasoningLevel,
+        supportsTools = supportsTools,
     )
 
     /**

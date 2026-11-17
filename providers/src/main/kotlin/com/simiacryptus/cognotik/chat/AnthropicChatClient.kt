@@ -2,6 +2,7 @@ package com.simiacryptus.cognotik.chat
 
 import com.fasterxml.jackson.annotation.JsonSubTypes
 import com.fasterxml.jackson.annotation.JsonTypeInfo
+import com.fasterxml.jackson.databind.JsonNode
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.chat.model.AnthropicModels
@@ -9,6 +10,7 @@ import com.simiacryptus.cognotik.exceptions.*
 import com.simiacryptus.cognotik.exceptions.ErrorUtil.checkError
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ChatModel.ReasoningLevel
+import com.simiacryptus.cognotik.platform.model.mcp.MCPContent
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -66,7 +68,8 @@ class AnthropicChatClient(
               provider = CoreProviders.Anthropic,
               outputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
               inputModalities = setOf(ChatMessageModality.TEXT),
-              outputModalities = setOf(ChatMessageModality.TEXT) // TODO: Set actual pricing if known
+              outputModalities = setOf(ChatMessageModality.TEXT), // TODO: Set actual pricing if known
+              supportsTools = true, // all current Anthropic chat models support tool use
             )
           }
         }.let { chatModel -> ReasoningVariants.expand(chatModel) }
@@ -113,118 +116,12 @@ class AnthropicChatClient(
     usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
+    check(chatRequest.toolProviders.isNullOrEmpty() || !chatRequest.tools.isNullOrEmpty()) {
+      TOOL_PROVIDERS_WITHOUT_TOOLS
+    }
     return withPerformanceLogging {
       val anthropicChatRequest = try {
-        val chatMessages = chatRequest.messages
-        require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
-        require(model.modelId.isNotBlank() == true) { "Model name cannot be blank" }
-         val rawModelId = chatRequest.model ?: model.modelId
-         val reasoningLevel = model.reasoningLevel ?: reasoningLevelFromSuffix(rawModelId)
-        val max_tokens = chatRequest.max_tokens ?: model.maxOutTokens
-        var temperature: Double? = if (model.supportsTemperature) chatRequest.temperature else null
-         val model = stemModelId(rawModelId)
-        val system = chatMessages
-          .firstOrNull { it.role == ModelSchema.Role.system }
-          ?.content
-          ?.joinToString("\n\n") { it.text.orEmpty() }
-        val messages = chatMessages
-          .filter { it.role != ModelSchema.Role.system }
-          .let {
-            if (it.isEmpty()) emptyList()
-            else {
-              val alternatingMessages = mutableListOf<AnthropicMessage>()
-              val remainingMessages = it.toMutableList()
-              while (remainingMessages.isNotEmpty()) {
-                val thisRole =
-                  remainingMessages.firstOrNull()?.role
-                val toConsolidate =
-                  remainingMessages.takeWhile { it.role == thisRole }
-                    .toTypedArray<ModelSchema.ChatMessage>()
-                remainingMessages.removeAll(toConsolidate)
-                val contentBlocks = mutableListOf<AnthropicContentInput>()
-                for (msg in toConsolidate) {
-                  msg.content?.forEach { part ->
-                    when {
-                      part.image_url != null -> {
-                        val imageUrl = part.image_url
-                        if (imageUrl != null && imageUrl.startsWith("data:")) {
-                          // data URI: data:<media_type>;base64,<data>
-                          val withoutScheme = imageUrl.removePrefix("data:")
-                          val semicolonIdx = withoutScheme.indexOf(';')
-                          val mediaType =
-                            if (semicolonIdx >= 0) withoutScheme.substring(0, semicolonIdx) else "image/jpeg"
-                          val base64Data = withoutScheme.substringAfter("base64,")
-                          contentBlocks += AnthropicImageContentBlock(
-                            source = AnthropicImageSource(
-                              type = "base64",
-                              media_type = mediaType,
-                              data = base64Data
-                            )
-                          )
-                        } else if (imageUrl != null) {
-                          contentBlocks += AnthropicImageContentBlock(
-                            source = AnthropicImageSource(
-                              type = "url",
-                              url = imageUrl
-                            )
-                          )
-                        }
-                      }
-
-                      !part.text.isNullOrBlank() -> {
-                        contentBlocks += AnthropicTextContentBlock(text = part.text ?: "")
-                      }
-                    }
-                  }
-                }
-                // If no structured blocks were produced, fall back to plain text
-                if (contentBlocks.isEmpty()) {
-                  val plainText = toConsolidate.joinToString("\n\n") {
-                    it.content?.joinToString("\n") { it.text.orEmpty() }.orEmpty()
-                  }
-                  if (plainText.isNotBlank()) {
-                    contentBlocks += AnthropicTextContentBlock(text = plainText)
-                  }
-                }
-                if (contentBlocks.isNotEmpty()) {
-                  alternatingMessages += AnthropicMessage(
-                    role = thisRole.toString(),
-                    content = contentBlocks
-                  )
-                }
-              }
-              alternatingMessages
-            }
-          }
-          .filter { !it.content.isNullOrEmpty() }
-        val thinking = reasoningLevel?.let {
-          when (it) {
-            ReasoningLevel.Low -> ThinkingConfig()
-            ReasoningLevel.Medium -> ThinkingConfig()
-            ReasoningLevel.High -> ThinkingConfig()
-            ReasoningLevel.X -> ThinkingConfig()
-          }
-        }
-        val outputConfig = reasoningLevel?.let {
-          OutputConfig(
-            effort = when (it) {
-              ReasoningLevel.Low -> EffortLevel.low
-              ReasoningLevel.Medium -> EffortLevel.medium
-              ReasoningLevel.High -> EffortLevel.high
-              ReasoningLevel.X -> EffortLevel.max
-            }
-          )
-        }
-        if (thinking != null) temperature = 1.0
-        AnthropicChatRequest(
-          model = model,
-          system = system,
-          messages = messages,
-          max_tokens = max_tokens,
-          temperature = temperature,
-          thinking = thinking,
-          output_config = outputConfig,
-        )
+        buildRequest(chatRequest, model)
       } catch (e: Exception) {
         log.error("Failed to map chat request to Anthropic format", e)
         // An invalid request will not succeed on retry
@@ -236,37 +133,11 @@ class AnthropicChatClient(
         post("${apiBase}/messages", json, model = model.modelId)
       checkAnthropicError(rawResponse, model)
       checkError(rawResponse, model)
-      val responseJson = try {
+      val response = try {
         require(rawResponse.isNotBlank()) { "Response cannot be blank" }
-        try {
-          val response = JsonUtil.objectMapper()
-            .readValue(
-              rawResponse,
-              AnthropicResponse::class.java
-            )
-          val chatResponse = ModelSchema.ChatResponse(
-            id = response.id, choices = listOf(
-              ModelSchema.ChatChoice(
-                message = ModelSchema.ChatMessageResponse(
-                  content = response.content?.joinToString(
-                    "\n"
-                  ) { it.text ?: "" },
-                ), index = 0
-              )
-            ), usage = ModelSchema.Usage(
-              prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
-              completion_tokens = response.usage?.output_tokens?.toLong() ?: 0,
-            )
-          )
-          JsonUtil.toJson(chatResponse)
-        } catch (e: IOException) {
-          // Typed provider errors (AIServiceException etc.) and parser errors propagate unchanged
-          throw e
-        } catch (e: Exception) {
-          log.error("Failed to parse Anthropic response", e)
-          throw RuntimeException("Error parsing Anthropic response", e)
-        }
+        toChatResponse(JsonUtil.objectMapper().readValue(rawResponse, AnthropicResponse::class.java))
       } catch (e: IOException) {
+        // Typed provider errors (AIServiceException etc.) and parser errors propagate unchanged
         throw e
       } catch (e: NonRetryableException) {
         throw e
@@ -274,27 +145,198 @@ class AnthropicChatClient(
         log.error("Failed to parse Anthropic response: $rawResponse", e)
         throw RuntimeException("Failed to parse Anthropic response: ${e.message}", e)
       }
-      val response = JsonUtil.objectMapper().readValue(
-        responseJson,
-        ModelSchema.ChatResponse::class.java
-      )
-      if (response.usage != null) {
+      response.usage?.let { usage ->
         usageHandler.onUsage(
-          model, response.usage!!, ModelSchema.UsageData(
+          model, usage, ModelSchema.UsageData(
             input_text = anthropicChatRequest.messages?.joinToString("\n\n") { msg ->
-              msg.content?.joinToString("\n") { part ->
-                when (part) {
-                  is AnthropicTextContentBlock -> part.text
-                  is AnthropicImageContentBlock -> "[Image: ${part.source.type}]"
-                  else -> ""
-                }
-              }.orEmpty()
+              msg.content?.joinToString("\n") { part -> describeBlock(part) }.orEmpty()
             }.orEmpty(),
             output_text = response.choices.joinToString("\n\n") { it.message?.content.orEmpty() }
           ))
       }
       response
     }
+  }
+
+  private fun buildRequest(chatRequest: ModelSchema.ChatRequest, model: ChatModel): AnthropicChatRequest {
+    val chatMessages = chatRequest.messages
+    require(chatMessages.isNotEmpty()) { "Messages cannot be empty" }
+    require(model.modelId.isNotBlank()) { "Model name cannot be blank" }
+    val rawModelId = chatRequest.model ?: model.modelId
+    val reasoningLevel = model.reasoningLevel ?: reasoningLevelFromSuffix(rawModelId)
+    val maxTokens = chatRequest.max_tokens ?: model.maxOutTokens
+    var temperature: Double? = if (model.supportsTemperature) chatRequest.temperature else null
+    val system = chatMessages
+      .firstOrNull { it.role == ModelSchema.Role.system }
+      ?.content
+      ?.joinToString("\n\n") { it.text.orEmpty() }
+    val messages = toAnthropicMessages(chatMessages.filter { it.role != ModelSchema.Role.system })
+      .filter { !it.content.isNullOrEmpty() }
+    // Adaptive thinking (implies interleaved thinking between tool calls on current models)
+    val thinking = reasoningLevel?.let { ThinkingConfig() }
+    val outputConfig = reasoningLevel?.let {
+      OutputConfig(
+        effort = when (it) {
+          ReasoningLevel.Low -> EffortLevel.low
+          ReasoningLevel.Medium -> EffortLevel.medium
+          ReasoningLevel.High -> EffortLevel.high
+          ReasoningLevel.X -> EffortLevel.max
+        }
+      )
+    }
+    if (thinking != null) temperature = 1.0
+    val tools = chatRequest.tools?.takeIf { it.isNotEmpty() }?.map {
+      AnthropicTool(name = it.name, description = it.description.ifBlank { null }, input_schema = it.inputSchema)
+    }
+    val toolChoice = if (tools != null) anthropicToolChoice(chatRequest.tool_choice, thinking != null) else null
+    return AnthropicChatRequest(
+      model = stemModelId(rawModelId),
+      system = system,
+      messages = messages,
+      max_tokens = maxTokens,
+      temperature = temperature,
+      thinking = thinking,
+      output_config = outputConfig,
+      tools = tools,
+      tool_choice = toolChoice,
+    )
+  }
+
+  /**
+   * Consolidates consecutive same-role messages into alternating Anthropic messages,
+   * preserving block order (thinking must precede tool_use) and placing tool_result
+   * blocks first within a message, as the API requires.
+   */
+  private fun toAnthropicMessages(chatMessages: List<ModelSchema.ChatMessage>): List<AnthropicMessage> {
+    val alternating = mutableListOf<AnthropicMessage>()
+    val remaining = chatMessages.toMutableList()
+    while (remaining.isNotEmpty()) {
+      val thisRole = remaining.first().role
+      val toConsolidate = remaining.takeWhile { it.role == thisRole }
+      repeat(toConsolidate.size) { remaining.removeAt(0) }
+      val blocks = mutableListOf<AnthropicContentInput>()
+      for (msg in toConsolidate) {
+        msg.content?.forEach { part -> blocks += toAnthropicBlocks(part) }
+      }
+      // If no structured blocks were produced, fall back to plain text (cannot contain tool blocks)
+      if (blocks.isEmpty()) {
+        val plainText = toConsolidate.joinToString("\n\n") {
+          it.content?.joinToString("\n") { p -> p.text.orEmpty() }.orEmpty()
+        }
+        if (plainText.isNotBlank()) blocks += AnthropicTextContentBlock(text = plainText)
+      }
+      val ordered = blocks.filterIsInstance<AnthropicToolResultBlock>() + blocks.filter { it !is AnthropicToolResultBlock }
+      if (ordered.isNotEmpty()) {
+        alternating += AnthropicMessage(role = thisRole.toString(), content = ordered)
+      }
+    }
+    return alternating
+  }
+
+  private fun toAnthropicBlocks(part: ModelSchema.ContentPart): List<AnthropicContentInput> {
+    val out = mutableListOf<AnthropicContentInput>()
+    val thinking = part.thinking
+    if (thinking != null) {
+      val origin = thinking.provider
+      if (origin == null || origin == PROVIDER_TAG) {
+        val redacted = thinking.redacted
+        val signature = thinking.signature
+        when {
+          redacted != null -> out += AnthropicRedactedThinkingBlock(data = redacted)
+          signature != null -> out += AnthropicThinkingBlock(thinking = thinking.text.orEmpty(), signature = signature)
+          else -> log.debug("Dropping unsigned thinking block")
+        }
+      } else {
+        log.debug("Dropping thinking block produced by provider {}", origin)
+      }
+    }
+    part.tool_use?.let { out += AnthropicToolUseBlock(id = it.id, name = it.name, input = it.input) }
+    part.tool_result?.let { result ->
+      out += AnthropicToolResultBlock(
+        tool_use_id = result.tool_use_id,
+        content = listOf(AnthropicTextContentBlock(text = toolResultText(result))),
+        is_error = if (result.is_error) true else null,
+      )
+    }
+    val imageUrl = part.image_url
+    when {
+      imageUrl != null && imageUrl.startsWith("data:") -> {
+        // data URI: data:<media_type>;base64,<data>
+        val withoutScheme = imageUrl.removePrefix("data:")
+        val semicolonIdx = withoutScheme.indexOf(';')
+        val mediaType = if (semicolonIdx >= 0) withoutScheme.substring(0, semicolonIdx) else "image/jpeg"
+        out += AnthropicImageContentBlock(
+          source = AnthropicImageSource(type = "base64", media_type = mediaType, data = withoutScheme.substringAfter("base64,"))
+        )
+      }
+
+      imageUrl != null -> out += AnthropicImageContentBlock(source = AnthropicImageSource(type = "url", url = imageUrl))
+
+      !part.text.isNullOrBlank() -> out += AnthropicTextContentBlock(text = part.text ?: "")
+    }
+    return out
+  }
+
+  private fun toolResultText(result: ModelSchema.ToolResultBlock): String {
+    val text = result.content.joinToString("\n") { (it as? MCPContent.Text)?.text ?: "[${it.javaClass.simpleName}]" }
+    return text.ifBlank { result.structured?.toString() ?: "(no output)" }
+  }
+
+  private fun toChatResponse(response: AnthropicResponse): ModelSchema.ChatResponse {
+    val blocks = toNeutralBlocks(response.content)
+    return ModelSchema.ChatResponse(
+      id = response.id,
+      choices = listOf(
+        ModelSchema.ChatChoice(
+          message = ModelSchema.ChatMessageResponse(
+            content = blocks.mapNotNull { it.text }.joinToString("\n"),
+            blocks = blocks,
+          ),
+          index = 0,
+          finish_reason = if (response.stop_reason == "tool_use") "tool_calls" else response.stop_reason,
+        )
+      ),
+      usage = ModelSchema.Usage(
+        prompt_tokens = response.usage?.input_tokens?.toLong() ?: 0,
+        completion_tokens = response.usage?.output_tokens?.toLong() ?: 0,
+      )
+    )
+  }
+
+  private fun toNeutralBlocks(content: List<AnthropicContentBlock>?): List<ModelSchema.ContentPart> =
+    content.orEmpty().mapNotNull { block ->
+      when (block.type) {
+        "text" -> ModelSchema.ContentPart(text = block.text.orEmpty())
+        "thinking" -> ModelSchema.ContentPart(
+          thinking = ModelSchema.ThinkingBlock(text = block.thinking, signature = block.signature, provider = PROVIDER_TAG)
+        )
+
+        "redacted_thinking" -> ModelSchema.ContentPart(
+          thinking = ModelSchema.ThinkingBlock(redacted = block.data, provider = PROVIDER_TAG)
+        )
+
+        "tool_use" -> ModelSchema.ContentPart(
+          tool_use = ModelSchema.ToolUseBlock(
+            id = block.id ?: "toolu_missing_${System.nanoTime()}",
+            name = block.name.orEmpty(),
+            input = block.input ?: JsonUtil.objectMapper().createObjectNode(),
+          )
+        )
+
+        else -> {
+          log.warn("Ignoring unsupported Anthropic content block type: {}", block.type)
+          null
+        }
+      }
+    }
+
+  private fun describeBlock(part: AnthropicContentInput): String = when (part) {
+    is AnthropicTextContentBlock -> part.text
+    is AnthropicImageContentBlock -> "[Image: ${part.source.type}]"
+    is AnthropicToolUseBlock -> "[tool_use ${part.name}: ${part.input}]"
+    is AnthropicToolResultBlock -> "[tool_result ${part.tool_use_id}: ${part.content.joinToString(" ") { describeBlock(it) }}]"
+    is AnthropicThinkingBlock -> "[thinking]"
+    is AnthropicRedactedThinkingBlock -> "[redacted thinking]"
   }
 
   /**
@@ -343,11 +385,33 @@ class AnthropicChatClient(
   companion object {
     private val log = getLogger(AnthropicChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
-     /** Returns the reasoning level encoded as a suffix on the model id, if any. */
-     fun reasoningLevelFromSuffix(modelId: String): ReasoningLevel? =
-       ReasoningVariants.levelFromModelId(modelId)
-     /** Strips a reasoning level suffix (e.g. "-high") from the model id, if present. */
-     fun stemModelId(modelId: String): String = ReasoningVariants.stem(modelId)
+    /** Origin tag for thinking blocks; thinking from other providers is never sent to Anthropic. */
+    const val PROVIDER_TAG = "anthropic"
+    private const val TOOL_PROVIDERS_WITHOUT_TOOLS =
+      "ChatRequest.toolProviders is set but tools is empty: tool requests must go through ChatInterface " +
+          "(McpToolLoop); provider clients do not execute tools"
+
+    /** Returns the reasoning level encoded as a suffix on the model id, if any. */
+    fun reasoningLevelFromSuffix(modelId: String): ReasoningLevel? =
+      ReasoningVariants.levelFromModelId(modelId)
+
+    /** Strips a reasoning level suffix (e.g. "-high") from the model id, if present. */
+    fun stemModelId(modelId: String): String = ReasoningVariants.stem(modelId)
+
+    /** With thinking enabled only auto/none are accepted, so forced choices are downgraded. */
+    private fun anthropicToolChoice(choice: String?, thinkingEnabled: Boolean): AnthropicToolChoice? =
+      when (val c = choice?.trim()?.takeIf { it.isNotEmpty() }) {
+        null, "auto" -> null
+        "none" -> AnthropicToolChoice(type = "none")
+        else -> if (thinkingEnabled) {
+          log.warn("tool_choice '{}' is not supported with extended thinking; using auto", c)
+          null
+        } else if (c == "any") {
+          AnthropicToolChoice(type = "any")
+        } else {
+          AnthropicToolChoice(type = "tool", name = c)
+        }
+      }
 
     data class AnthropicChatRequest(
       val model: String? = null,
@@ -358,7 +422,20 @@ class AnthropicChatClient(
       val top_p: Double? = null,
       val top_k: Int? = null,
       val thinking: ThinkingConfig? = null,
-      val output_config: OutputConfig? = null
+      val output_config: OutputConfig? = null,
+      val tools: List<AnthropicTool>? = null,
+      val tool_choice: AnthropicToolChoice? = null,
+    )
+
+    data class AnthropicTool(
+      val name: String,
+      val description: String? = null,
+      val input_schema: JsonNode,
+    )
+
+    data class AnthropicToolChoice(
+      val type: String,
+      val name: String? = null,
     )
 
     data class OutputConfig(
@@ -396,7 +473,11 @@ class AnthropicChatClient(
     )
     @JsonSubTypes(
       JsonSubTypes.Type(value = AnthropicTextContentBlock::class, name = "text"),
-      JsonSubTypes.Type(value = AnthropicImageContentBlock::class, name = "image")
+      JsonSubTypes.Type(value = AnthropicImageContentBlock::class, name = "image"),
+      JsonSubTypes.Type(value = AnthropicToolUseBlock::class, name = "tool_use"),
+      JsonSubTypes.Type(value = AnthropicToolResultBlock::class, name = "tool_result"),
+      JsonSubTypes.Type(value = AnthropicThinkingBlock::class, name = "thinking"),
+      JsonSubTypes.Type(value = AnthropicRedactedThinkingBlock::class, name = "redacted_thinking"),
     )
     sealed class AnthropicContentInput
     data class AnthropicTextContentBlock(
@@ -405,6 +486,28 @@ class AnthropicChatClient(
 
     data class AnthropicImageContentBlock(
       val source: AnthropicImageSource
+    ) : AnthropicContentInput()
+
+    data class AnthropicToolUseBlock(
+      val id: String,
+      val name: String,
+      val input: JsonNode,
+    ) : AnthropicContentInput()
+
+    data class AnthropicToolResultBlock(
+      val tool_use_id: String,
+      val content: List<AnthropicContentInput>,
+      val is_error: Boolean? = null,
+    ) : AnthropicContentInput()
+
+    /** Must be replayed exactly as received (signature is opaque). */
+    data class AnthropicThinkingBlock(
+      val thinking: String,
+      val signature: String,
+    ) : AnthropicContentInput()
+
+    data class AnthropicRedactedThinkingBlock(
+      val data: String,
     ) : AnthropicContentInput()
 
     data class AnthropicImageSource(
@@ -426,8 +529,16 @@ class AnthropicChatClient(
       val usage: AnthropicUsage? = null
     )
 
+    /** Tolerant response block: covers text, thinking, redacted_thinking and tool_use. */
     data class AnthropicContentBlock(
-      val type: String? = null, val text: String? = null
+      val type: String? = null,
+      val text: String? = null,
+      val id: String? = null,
+      val name: String? = null,
+      val input: JsonNode? = null,
+      val thinking: String? = null,
+      val signature: String? = null,
+      val data: String? = null,
     )
 
     data class AnthropicUsage(

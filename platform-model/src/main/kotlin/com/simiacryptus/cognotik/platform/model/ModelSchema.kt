@@ -1,7 +1,12 @@
 package com.simiacryptus.cognotik.platform.model
 
 import com.fasterxml.jackson.annotation.JsonIgnore
+import com.fasterxml.jackson.databind.JsonNode
 import com.fasterxml.jackson.databind.node.ObjectNode
+import com.simiacryptus.cognotik.platform.model.mcp.MCPContent
+import com.simiacryptus.cognotik.platform.model.mcp.MCPToolDefinition
+import com.simiacryptus.cognotik.platform.model.mcp.MCPToolProvider
+import com.simiacryptus.cognotik.platform.model.mcp.ToolLoopOptions
 import org.slf4j.LoggerFactory
 import java.awt.image.BufferedImage
 import java.io.ByteArrayOutputStream
@@ -163,9 +168,16 @@ interface ModelSchema {
     var modalities: List<String>? = null,
     var audio: Map<String, String>? = null,
     var reasoning_effort: String? = null,
+    /** Tool definitions for this round; populated by the tool loop, read by provider clients. */
+    var tools: List<MCPToolDefinition>? = null,
+    /** "auto" (default) | "none" | "any" | a tool name. */
+    var tool_choice: String? = null,
+    /** Live tool sources set by the caller; executed by ChatInterface's tool loop. Not serialized. */
+    @get:JsonIgnore var toolProviders: List<MCPToolProvider>? = null,
+    @get:JsonIgnore var toolOptions: ToolLoopOptions? = null,
   ) {
     fun toRequestData() = UsageData(
-        input_text = messages.joinToString("\n") { "${it.role}: ${it.content?.joinToString(" ") { part -> part.text ?: "" }}" }
+        input_text = messages.joinToString("\n") { "${it.role}: ${it.content?.joinToString(" ") { part -> part.usageText() }}" }
       )
   }
 
@@ -205,7 +217,11 @@ interface ModelSchema {
   data class ContentPart(
     var text: String? = null,
     var image_url: String? = null,
-    var input_audio: AudioSegment? = null
+    var input_audio: AudioSegment? = null,
+    /** Reasoning block (Anthropic thinking/redacted, Gemini thought/signature); replayed verbatim. */
+    var thinking: ThinkingBlock? = null,
+    var tool_use: ToolUseBlock? = null,
+    var tool_result: ToolResultBlock? = null,
   ) {
     var image_data: ByteArray?
       @JsonIgnore
@@ -260,6 +276,18 @@ interface ModelSchema {
                     null
                 }
             }
+    /** Plain-text rendering for usage accounting and logs; includes tool and thinking blocks. */
+    fun usageText(): String = listOfNotNull(
+      text,
+      thinking?.let { "[thinking]" },
+      tool_use?.let { "[tool_use ${it.name}: ${it.input}]" },
+      tool_result?.let { r ->
+        "[tool_result ${r.name}${if (r.is_error) " (error)" else ""}: ${
+          r.content.joinToString(" ") { c -> (c as? MCPContent.Text)?.text ?: "[${c.javaClass.simpleName}]" }
+        }]"
+      },
+    ).joinToString(" ")
+
 
     companion object {
       private var log = LoggerFactory.getLogger(ContentPart::class.java)
@@ -317,7 +345,13 @@ interface ModelSchema {
     var audio_channels: Int? = null,
 
     var audio_sample_rate: Int? = null,
+    /** Ordered raw blocks (text, thinking, tool_use) as returned by the provider; `content` stays the joined text. */
+    var blocks: List<ContentPart>? = null,
   ) {
+    /** Tool calls requested in this message (empty if none). */
+    val toolCalls: List<ToolUseBlock>
+      @JsonIgnore get() = blocks?.mapNotNull { it.tool_use } ?: emptyList()
+
     var image: BufferedImage?
       @JsonIgnore
       get() {
@@ -364,6 +398,32 @@ interface ModelSchema {
   enum class Role {
     assistant, user, system
   }
+  /**
+   * Opaque reasoning block. [signature] / [redacted] must round-trip unmodified and are
+   * never sent to a provider other than [provider] ("anthropic", "gemini").
+   */
+  data class ThinkingBlock(
+    val text: String? = null,
+    val signature: String? = null,
+    val redacted: String? = null,
+    val provider: String? = null,
+  )
+  /** A tool call requested by the model. [signature] carries a Gemini thoughtSignature (base64). */
+  data class ToolUseBlock(
+    val id: String,
+    val name: String,
+    val input: JsonNode,
+    val signature: String? = null,
+  )
+  /** The result of a tool call; sent back in a user message. */
+  data class ToolResultBlock(
+    val tool_use_id: String,
+    val name: String,
+    val content: List<MCPContent>,
+    val structured: JsonNode? = null,
+    val is_error: Boolean = false,
+  )
+
 
   data class FunctionCall(
     var name: String? = null,

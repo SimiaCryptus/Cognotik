@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.platform
 import com.fasterxml.jackson.annotation.JsonIgnore
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.platform.model.*
+import com.simiacryptus.cognotik.platform.model.mcp.McpToolLoop
 import com.simiacryptus.cognotik.util.SecureString
 import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
@@ -28,21 +29,44 @@ class ChatInterface(
             else -> field
         }
 
-    fun chat(chatRequest: ModelSchema.ChatRequest): ModelSchema.ChatResponse = provider.getChatClient(
-        key = key,
-        logLevel = logLevel,
-        session = session,
-        logStreams = logStreams,
-        workPool = workPool,
-        scheduledPool = scheduledPool,
-    ).chat(
-        chatRequest = chatRequest,
-        model = model,
-        logStreams = logStreams,
-        usageHandler = UsageListener.fn(session) { model, usage, data ->
+    /**
+     * Sends a chat request. If [ModelSchema.ChatRequest.toolProviders] is non-empty, the request
+     * runs through the MCP tool loop (multiple provider rounds); otherwise it is a single round trip.
+     */
+    fun chat(chatRequest: ModelSchema.ChatRequest): ModelSchema.ChatResponse {
+        val streams = logStreams
+        // Obtain the client once; the tool loop reuses it for every round.
+        val client = provider.getChatClient(
+            key = key,
+            logLevel = logLevel,
+            session = session,
+            logStreams = streams,
+            workPool = workPool,
+            scheduledPool = scheduledPool,
+        )
+        val usageHandler = UsageListener.fn(session) { model, usage, data ->
             ServiceRouter.incrementUsage(session, user, model, usage, data)
         }
-    )
+        return if (chatRequest.toolProviders.isNullOrEmpty()) {
+            client.chat(
+                chatRequest = chatRequest,
+                model = model,
+                logStreams = streams,
+                usageHandler = usageHandler
+            )
+        } else {
+            McpToolLoop().run(
+                client = client,
+                request = chatRequest,
+                model = model,
+                session = session,
+                user = user,
+                logStreams = streams,
+                usageHandler = usageHandler,
+            )
+        }
+    }
+
     fun getChildClient(task: ISessionTask) = getChildClient(task.sessionId).apply { logStreams += task.newLogStream() }
 
     @JsonIgnore

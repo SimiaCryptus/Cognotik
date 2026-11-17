@@ -46,7 +46,8 @@ object ReasoningVariants {
     deprecated = model.deprecated,
     inputModalities = model.inputModalities,
     outputModalities = model.outputModalities,
-    reasoningLevel = level
+    reasoningLevel = level,
+    supportsTools = model.supportsTools,
   )
 
   /**
