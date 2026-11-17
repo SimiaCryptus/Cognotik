@@ -5,6 +5,18 @@ import com.simiacryptus.cognotik.platform.model.ChatMessageModality
 import com.simiacryptus.cognotik.platform.model.ChatModel
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 
+/**
+ * Anthropic model definitions.
+ *
+ * Prices are expressed per 1k tokens, derived from the published per-MTok prices
+ * (price per MTok / 1000.0), as a map keyed by [TokenTypes]:
+ *  - Prompt        : base input tokens
+ *  - Completion    : base output tokens
+ *  - CacheWrite5m  : 5-minute prompt cache write (1.25x base input)
+ *  - CacheWrite1h  : 1-hour prompt cache write (2x base input)
+ *  - Cached        : prompt cache read / hit (0.1x base input on most models; see per-model notes)
+ *  - Thinking      : reasoning tokens, billed at the output token rate
+ */
 object AnthropicModels {
   @JvmStatic
   val ClaudeHaiku3 by lazy {
@@ -17,6 +29,8 @@ object AnthropicModels {
       tokenPricingPerK = mapOf(
         TokenTypes.Prompt to 0.25 / 1000.0,
         TokenTypes.Completion to 1.25 / 1000.0,
+        TokenTypes.CacheWrite5m to 0.30 / 1000.0,
+        TokenTypes.CacheWrite1h to 0.50 / 1000.0,
         TokenTypes.Cached to 0.025 / 1000.0,
         TokenTypes.Thinking to 1.25 / 1000.0,
       ),
@@ -64,11 +78,13 @@ object AnthropicModels {
         TokenTypes.Cached to 0.10 / 1000.0,
         TokenTypes.Thinking to 5.0 / 1000.0,
       ),
+      deprecated = true,
       supportsReasoning = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
   }
+
   @JvmStatic
   val Claude55Haiku by lazy {
     ChatModel(
@@ -78,6 +94,9 @@ object AnthropicModels {
       maxOutTokens = 128000,
       provider = CoreProviders.Anthropic,
       tokenPricingPerK = mapOf(
+        // Prices for prompts up to 100,000 tokens. Prompts over 100,000 tokens are
+        // billed at higher rates ($0.50 in / $2.50 out / $0.625 5m write / $1 1h write /
+        // $0.05 cache read per MTok), which a single price map cannot express.
         TokenTypes.Prompt to 0.10 / 1000.0,
         TokenTypes.Completion to 0.50 / 1000.0,
         TokenTypes.CacheWrite5m to 0.125 / 1000.0,
@@ -85,8 +104,10 @@ object AnthropicModels {
         TokenTypes.Cached to 0.01 / 1000.0,
         TokenTypes.Thinking to 0.50 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
+      supportsInteractiveTools = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
@@ -109,6 +130,7 @@ object AnthropicModels {
         TokenTypes.CacheWrite5m to 3.75 / 1000.0,
         TokenTypes.CacheWrite1h to 6.0 / 1000.0,
         TokenTypes.Cached to 0.30 / 1000.0,
+        TokenTypes.Thinking to 15.0 / 1000.0,
       ),
       deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -130,6 +152,7 @@ object AnthropicModels {
         TokenTypes.CacheWrite5m to 3.75 / 1000.0,
         TokenTypes.CacheWrite1h to 6.0 / 1000.0,
         TokenTypes.Cached to 0.30 / 1000.0,
+        TokenTypes.Thinking to 15.0 / 1000.0,
       ),
       deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -151,7 +174,9 @@ object AnthropicModels {
         TokenTypes.CacheWrite5m to 3.75 / 1000.0,
         TokenTypes.CacheWrite1h to 6.0 / 1000.0,
         TokenTypes.Cached to 0.30 / 1000.0,
+        TokenTypes.Thinking to 15.0 / 1000.0,
       ),
+      deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
@@ -171,7 +196,9 @@ object AnthropicModels {
         TokenTypes.CacheWrite5m to 3.75 / 1000.0,
         TokenTypes.CacheWrite1h to 6.0 / 1000.0,
         TokenTypes.Cached to 0.30 / 1000.0,
+        TokenTypes.Thinking to 15.0 / 1000.0,
       ),
+      deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
@@ -191,6 +218,7 @@ object AnthropicModels {
         TokenTypes.CacheWrite5m to 18.75 / 1000.0,
         TokenTypes.CacheWrite1h to 30.0 / 1000.0,
         TokenTypes.Cached to 1.50 / 1000.0,
+        TokenTypes.Thinking to 75.0 / 1000.0,
       ),
       deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -212,6 +240,7 @@ object AnthropicModels {
         TokenTypes.CacheWrite5m to 18.75 / 1000.0,
         TokenTypes.CacheWrite1h to 30.0 / 1000.0,
         TokenTypes.Cached to 1.50 / 1000.0,
+        TokenTypes.Thinking to 75.0 / 1000.0,
       ),
       deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -233,6 +262,7 @@ object AnthropicModels {
         TokenTypes.CacheWrite5m to 6.25 / 1000.0,
         TokenTypes.CacheWrite1h to 10.0 / 1000.0,
         TokenTypes.Cached to 0.50 / 1000.0,
+        TokenTypes.Thinking to 25.0 / 1000.0,
       ),
       deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -256,6 +286,7 @@ object AnthropicModels {
         TokenTypes.Cached to 0.50 / 1000.0,
         TokenTypes.Thinking to 25.0 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -279,6 +310,7 @@ object AnthropicModels {
         TokenTypes.Cached to 0.50 / 1000.0,
         TokenTypes.Thinking to 25.0 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -302,6 +334,7 @@ object AnthropicModels {
         TokenTypes.Cached to 0.50 / 1000.0,
         TokenTypes.Thinking to 25.0 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -325,6 +358,7 @@ object AnthropicModels {
         TokenTypes.Cached to 0.50 / 1000.0,
         TokenTypes.Thinking to 25.0 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -352,6 +386,7 @@ object AnthropicModels {
       ),
       supportsTemperature = false,
       supportsReasoning = true,
+      supportsInteractiveTools = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
@@ -375,6 +410,7 @@ object AnthropicModels {
         TokenTypes.Cached to 0.20 / 1000.0,
         TokenTypes.Thinking to 10.0 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
@@ -395,11 +431,14 @@ object AnthropicModels {
         TokenTypes.Completion to 10.0 / 1000.0,
         TokenTypes.CacheWrite5m to 2.50 / 1000.0,
         TokenTypes.CacheWrite1h to 4.0 / 1000.0,
-        TokenTypes.Cached to 0.20 / 1000.0,
+        // Cache hits/refreshes on Sonnet 5.5 use a 0.05x multiplier instead of
+        // the standard 0.1x multiplier used by other models.
+        TokenTypes.Cached to 0.10 / 1000.0,
         TokenTypes.Thinking to 10.0 / 1000.0,
       ),
       supportsTemperature = false,
       supportsReasoning = true,
+      supportsInteractiveTools = true,
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
@@ -422,9 +461,9 @@ object AnthropicModels {
         TokenTypes.Cached to 1.0 / 1000.0,
         TokenTypes.Thinking to 50.0 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
-      deprecated = true, // Currently disabled due to political shenanigans
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
@@ -446,9 +485,9 @@ object AnthropicModels {
         TokenTypes.Cached to 1.0 / 1000.0,
         TokenTypes.Thinking to 50.0 / 1000.0,
       ),
+      deprecated = true,
       supportsTemperature = false,
       supportsReasoning = true,
-      deprecated = true, // Currently disabled due to political shenanigans
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.TEXT),
     )
@@ -506,6 +545,57 @@ object AnthropicModels {
   }
 
   @JvmStatic
+  val ClaudeFable52 by lazy {
+    ChatModel(
+      name = "Claude Fable 5.2",
+      modelId = "claude-fable-5-2",
+      maxTotalTokens = 1000000,
+      maxOutTokens = 128000,
+      provider = CoreProviders.Anthropic,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 8.0 / 1000.0,
+        TokenTypes.Completion to 40.0 / 1000.0,
+        TokenTypes.CacheWrite5m to 10.0 / 1000.0,
+        TokenTypes.CacheWrite1h to 16.0 / 1000.0,
+        // Cache hits/refreshes on Fable 5.2 & Mythos 5.2 use a 0.025x multiplier
+        // instead of the standard 0.1x multiplier used by other models.
+        TokenTypes.Cached to 0.20 / 1000.0,
+        TokenTypes.Thinking to 40.0 / 1000.0,
+      ),
+      supportsTemperature = false,
+      supportsReasoning = true,
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT),
+    )
+  }
+
+  @JvmStatic
+  val ClaudeMythos52 by lazy {
+    ChatModel(
+      name = "Claude Mythos 5.2",
+      modelId = "claude-mythos-5-2",
+      maxTotalTokens = 1000000,
+      maxOutTokens = 128000,
+      provider = CoreProviders.Anthropic,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 8.0 / 1000.0,
+        TokenTypes.Completion to 40.0 / 1000.0,
+        TokenTypes.CacheWrite5m to 10.0 / 1000.0,
+        TokenTypes.CacheWrite1h to 16.0 / 1000.0,
+        // Cache hits/refreshes on Fable 5.2 & Mythos 5.2 use a 0.025x multiplier
+        // instead of the standard 0.1x multiplier used by other models.
+        TokenTypes.Cached to 0.20 / 1000.0,
+        TokenTypes.Thinking to 40.0 / 1000.0,
+      ),
+      supportsTemperature = false,
+      supportsReasoning = true,
+      deprecated = true, // Limited availability
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT),
+    )
+  }
+
+  @JvmStatic
   val values by lazy {
     mapOf(
       "ClaudeHaiku3" to ClaudeHaiku3,
@@ -530,6 +620,8 @@ object AnthropicModels {
       "ClaudeMythos5" to ClaudeMythos5,
       "ClaudeFable51" to ClaudeFable51,
       "ClaudeMythos51" to ClaudeMythos51,
+      "ClaudeFable52" to ClaudeFable52,
+      "ClaudeMythos52" to ClaudeMythos52,
     )
   }
 

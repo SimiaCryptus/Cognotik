@@ -43,7 +43,7 @@ class McpToolLoop(
     logStreams: MutableList<BufferedOutputStream>,
     usageHandler: UsageListener,
   ): ModelSchema.ChatResponse {
-    require(model.supportsTools) {
+    require(model.supportsInteractiveTools) {
       "Model ${model.modelId} does not support tools (ChatModel.supportsTools=false); cannot run MCP tool loop"
     }
     val options = request.toolOptions ?: ToolLoopOptions()

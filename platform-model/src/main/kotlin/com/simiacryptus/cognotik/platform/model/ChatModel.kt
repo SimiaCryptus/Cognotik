@@ -2,7 +2,6 @@ package com.simiacryptus.cognotik.platform.model
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.platform.ChatInterface
-import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.ThreadPoolManager
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 import com.simiacryptus.cognotik.platform.model.ModelSchema.Usage
@@ -19,11 +18,11 @@ class ChatModel(
   maxOutTokens: Int = maxTotalTokens,
   provider: APIProvider? = null,
   /**
-     * Pricing per 1k tokens, keyed by token type.
-     * Any token type not present in this map will be treated as having an average price
-     * (computed from the prices that are present) when encountered in usage.
-     */
-    val tokenPricingPerK: Map<TokenTypes, Double> = emptyMap(),
+   * Pricing per 1k tokens, keyed by token type.
+   * Any token type not present in this map will be treated as having an average price
+   * (computed from the prices that are present) when encountered in usage.
+   */
+  val tokenPricingPerK: Map<TokenTypes, Double> = emptyMap(),
   val supportsTemperature: Boolean = true,
   val supportsReasoning: Boolean = false,
   val deprecated: Boolean = false,
@@ -31,148 +30,149 @@ class ChatModel(
   val outputModalities: Set<ChatMessageModality>,
   var reasoningLevel: ReasoningLevel? = null,
   /** True if the model accepts tool definitions and can emit tool calls (MCP tool loop). Opt-in. */
-  val supportsTools: Boolean = false,
+  val supportsInteractiveTools: Boolean = false,
 ) : LLMModel(
+  modelId = modelId,
+  maxTotalTokens = maxTotalTokens,
+  maxOutTokens = maxOutTokens,
+  provider = provider,
+) {
+
+  enum class ReasoningLevel {
+    Low, Medium, High, X
+  }
+
+  fun priceStructure(): Map<TokenTypes, Double> {
+    return TokenTypes.values().associateWith { type ->
+      var type: TokenTypes? = type
+      var value = tokenPricingPerK[type]
+      while (value == null) {
+        type = type?.parent
+        if (type == null) break
+        value = tokenPricingPerK[type]
+      }
+      value ?: 0.0
+    }
+  }
+
+  /**
+   * Backwards-compatible constructor using explicit prompt/completion prices.
+   */
+  constructor(
+    name: String = "",
+    modelId: String = name,
+    maxTotalTokens: Int = -1,
+    maxOutTokens: Int = maxTotalTokens,
+    provider: APIProvider? = null,
+    inputTokenPricePerK: Double = 0.0,
+    outputTokenPricePerK: Double = inputTokenPricePerK,
+    supportsTemperature: Boolean = true,
+    supportsReasoning: Boolean = false,
+    deprecated: Boolean = false,
+    inputModalities: Set<ChatMessageModality>,
+    outputModalities: Set<ChatMessageModality>,
+    reasoningLevel: ReasoningLevel? = null,
+    supportsTools: Boolean = false,
+  ) : this(
+    name = name,
     modelId = modelId,
     maxTotalTokens = maxTotalTokens,
     maxOutTokens = maxOutTokens,
     provider = provider,
-) {
+    tokenPricingPerK = mapOf(
+      TokenTypes.Prompt to inputTokenPricePerK,
+      TokenTypes.Completion to outputTokenPricePerK,
+    ),
+    supportsTemperature = supportsTemperature,
+    supportsReasoning = supportsReasoning,
+    deprecated = deprecated,
+    inputModalities = inputModalities,
+    outputModalities = outputModalities,
+    reasoningLevel = reasoningLevel,
+    supportsInteractiveTools = supportsTools,
+  )
 
-    enum class ReasoningLevel {
-        Low, Medium, High, X
-    }
+  /**
+   * Backwards-compatible accessor for the prompt (input) token price per 1k tokens.
+   */
+  val inputTokenPricePerK: Double
+    get() = tokenPricingPerK[TokenTypes.Prompt] ?: 0.0
 
-    fun priceStructure() : Map<TokenTypes, Double> {
-        return TokenTypes.values().associateWith { type ->
-            var type: TokenTypes? = type
-            var value = tokenPricingPerK[type]
-            while(value == null) {
-                type = type?.parent
-                if(type == null) break
-                value = tokenPricingPerK[type]
-            }
-            value ?: 0.0
-        }
+  /**
+   * Backwards-compatible accessor for the completion (output) token price per 1k tokens.
+   */
+  val outputTokenPricePerK: Double
+    get() = tokenPricingPerK[TokenTypes.Completion] ?: 0.0
+
+  override fun toString() = modelId
+
+  override fun pricing(usage: Usage): Double {
+    val counts = usage.counts
+    // Compute cost for each accounted token type using the pricing map.
+    val priceStructure = priceStructure()
+    val perTypeCosts: Map<TokenTypes, Double> = counts.mapValues { (type, count) ->
+      (priceStructure[type] ?: 0.0) * count
     }
-    /**
-     * Backwards-compatible constructor using explicit prompt/completion prices.
-     */
-    constructor(
-        name: String = "",
-        modelId: String = name,
-        maxTotalTokens: Int = -1,
-        maxOutTokens: Int = maxTotalTokens,
-        provider: APIProvider? = null,
-        inputTokenPricePerK: Double = 0.0,
-        outputTokenPricePerK: Double = inputTokenPricePerK,
-        supportsTemperature: Boolean = true,
-        supportsReasoning: Boolean = false,
-        deprecated: Boolean = false,
-        inputModalities: Set<ChatMessageModality>,
-        outputModalities: Set<ChatMessageModality>,
-        reasoningLevel: ReasoningLevel? = null,
-        supportsTools: Boolean = false,
-    ) : this(
-        name = name,
-        modelId = modelId,
-        maxTotalTokens = maxTotalTokens,
-        maxOutTokens = maxOutTokens,
-        provider = provider,
-        tokenPricingPerK = mapOf(
-            TokenTypes.Prompt to inputTokenPricePerK,
-            TokenTypes.Completion to outputTokenPricePerK,
-        ),
-        supportsTemperature = supportsTemperature,
-        supportsReasoning = supportsReasoning,
-        deprecated = deprecated,
-        inputModalities = inputModalities,
-        outputModalities = outputModalities,
-        reasoningLevel = reasoningLevel,
-        supportsTools = supportsTools,
+    val accountedTokens = counts.entries.filter { priceStructure.containsKey(it.key) }.sumOf { it.value }
+    val accountedCost = perTypeCosts.values.sum()
+
+    // Estimate cost for any unaccounted tokens using the average of known prices.
+    val unaccountedTokens = (usage.total_tokens - accountedTokens).coerceAtLeast(0)
+    val averagePricePerK = if (priceStructure.isNotEmpty()) {
+      priceStructure.values.average()
+    } else 0.0
+    val estimatedUnaccountedCost = unaccountedTokens * averagePricePerK
+
+    val totalCost = (accountedCost + estimatedUnaccountedCost) / 1000.0
+    // TODO: Downgrade this to debug once we have more confidence in the accuracy of the cost estimation
+    log.debug(
+      "Calculating cost for model ${modelId}: " +
+          perTypeCosts.entries.joinToString(", ") { (type, cost) ->
+            val count = counts.getOrDefault(type, 0)
+            val price = priceStructure[type] ?: 0.0
+            "$type Tokens: $count at ${price}/k = ${String.format("%.4f", cost / 1000.0)}"
+          } +
+          ", Unaccounted Tokens: $unaccountedTokens estimated at ${
+            String.format("%.4f", estimatedUnaccountedCost / 1000.0)
+          }, Total Cost: ${String.format("%.4f", totalCost)}; " +
+          "for token counts ${counts.entries.joinToString(", ") { "${it.key}: ${it.value}" }}"
     )
+    return totalCost
+  }
 
-    /**
-     * Backwards-compatible accessor for the prompt (input) token price per 1k tokens.
-     */
-    val inputTokenPricePerK: Double
-        get() = tokenPricingPerK[TokenTypes.Prompt] ?: 0.0
+  fun instance(
+    key: SecureString,
+    base: String = provider?.base!!,
+    logLevel: Level = Level.DEBUG,
+    logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
+    session: Session,
+    workPool: ExecutorService = ThreadPoolManager.newFixedThreadPool(4, session),
+    scheduledPool: ListeningScheduledExecutorService = ThreadPoolManager.newScheduledThreadPool(1, session),
+    user: User,
+  ): ChatInterface = ChatInterface(
+    logStreams = logStreams,
+    key = key,
+    base = base,
+    logLevel = logLevel,
+    provider = provider!!,
+    model = this,
+    workPool = workPool,
+    scheduledPool = scheduledPool,
+    session = session,
+    user = user,
+  )
 
-    /**
-     * Backwards-compatible accessor for the completion (output) token price per 1k tokens.
-     */
-    val outputTokenPricePerK: Double
-        get() = tokenPricingPerK[TokenTypes.Completion] ?: 0.0
-
-    override fun toString() = modelId
-
-    override fun pricing(usage: Usage): Double {
-        val counts = usage.counts
-        // Compute cost for each accounted token type using the pricing map.
-        val priceStructure = priceStructure()
-        val perTypeCosts: Map<TokenTypes, Double> = counts.mapValues { (type, count) ->
-            (priceStructure[type] ?: 0.0) * count
-        }
-        val accountedTokens = counts.entries.filter { priceStructure.containsKey(it.key) }.sumOf { it.value }
-        val accountedCost = perTypeCosts.values.sum()
-
-        // Estimate cost for any unaccounted tokens using the average of known prices.
-        val unaccountedTokens = (usage.total_tokens - accountedTokens).coerceAtLeast(0)
-        val averagePricePerK = if (priceStructure.isNotEmpty()) {
-            priceStructure.values.average()
-        } else 0.0
-        val estimatedUnaccountedCost = unaccountedTokens * averagePricePerK
-
-        val totalCost = (accountedCost + estimatedUnaccountedCost) / 1000.0
-        // TODO: Downgrade this to debug once we have more confidence in the accuracy of the cost estimation
-        log.debug(
-            "Calculating cost for model ${modelId}: " +
-                    perTypeCosts.entries.joinToString(", ") { (type, cost) ->
-                        val count = counts.getOrDefault(type, 0)
-                        val price = priceStructure[type] ?: 0.0
-                        "$type Tokens: $count at ${price}/k = ${String.format("%.4f", cost / 1000.0)}"
-                    } +
-                    ", Unaccounted Tokens: $unaccountedTokens estimated at ${
-                        String.format("%.4f", estimatedUnaccountedCost / 1000.0)
-                    }, Total Cost: ${String.format("%.4f", totalCost)}; " +
-                    "for token counts ${counts.entries.joinToString(", ") { "${it.key}: ${it.value}" }}"
-        )
-        return totalCost
-    }
-
-    fun instance(
-        key: SecureString,
-        base: String = provider?.base!!,
-        logLevel: Level = Level.DEBUG,
-        logStreams: MutableList<BufferedOutputStream> = mutableListOf(),
-        session: Session,
-        workPool: ExecutorService = ThreadPoolManager.newFixedThreadPool(4, session),
-        scheduledPool: ListeningScheduledExecutorService = ThreadPoolManager.newScheduledThreadPool(1, session),
-        user: User,
-    ): ChatInterface = ChatInterface(
-        logStreams = logStreams,
-        key = key,
-        base = base,
-        logLevel = logLevel,
-        provider = provider!!,
-        model = this,
-        workPool = workPool,
-        scheduledPool = scheduledPool,
-        session = session,
-        user = user,
+  companion object {
+    val NULL: ChatModel = ChatModel(
+      name = "NULL",
+      modelId = "NULL",
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.0,
+        TokenTypes.Completion to 0.0,
+      ),
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.TEXT)
     )
-
-    companion object {
-        val NULL: ChatModel = ChatModel(
-            name = "NULL",
-            modelId = "NULL",
-            tokenPricingPerK = mapOf(
-                TokenTypes.Prompt to 0.0,
-                TokenTypes.Completion to 0.0,
-            ),
-            inputModalities = setOf(ChatMessageModality.TEXT),
-            outputModalities = setOf(ChatMessageModality.TEXT)
-        )
-        val log = getLogger(ChatModel::class.java)
-    }
+    val log = getLogger(ChatModel::class.java)
+  }
 }

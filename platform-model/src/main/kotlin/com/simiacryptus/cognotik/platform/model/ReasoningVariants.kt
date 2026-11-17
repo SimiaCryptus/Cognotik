@@ -47,7 +47,7 @@ object ReasoningVariants {
     inputModalities = model.inputModalities,
     outputModalities = model.outputModalities,
     reasoningLevel = level,
-    supportsTools = model.supportsTools,
+    supportsInteractiveTools = model.supportsInteractiveTools,
   )
 
   /**

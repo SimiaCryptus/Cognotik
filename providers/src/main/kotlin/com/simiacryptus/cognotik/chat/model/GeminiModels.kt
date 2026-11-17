@@ -18,445 +18,14 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
  *
  * Where Google publishes tiered pricing (e.g. prompts <= 200k vs > 200k tokens), the
  * lower/base tier is used, matching the most common usage pattern.
+ *
+ * Any [TokenTypes] not listed for a model is resolved by [ChatModel.priceStructure] via the
+ * token type's parent chain (falling back to 0.0 if no ancestor is priced), so entries are only
+ * required where Google publishes a distinct rate. Thinking and Cached entries are declared
+ * explicitly wherever a rate is known.
  */
 @Suppress("unused")
 object GeminiModels {
-  // =========================================================
-  // Deprecated 1.x models - kept for backward compatibility
-  // =========================================================
-
-  @JvmStatic
-  val GeminiPro_15 by lazy {
-    ChatModel(
-      name = "GeminiPro_15",
-      modelId = "gemini-1.5-pro",
-      maxTotalTokens = 2097152,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00125,
-        TokenTypes.Completion to 0.005,
-      ),
-      deprecated = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT),
-    )
-  }
-
-  @JvmStatic
-  val GeminiPro_10 by lazy {
-    ChatModel(
-      name = "GeminiPro_10",
-      modelId = "gemini-1.0-pro",
-      maxTotalTokens = 2097152,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00025,
-        TokenTypes.Completion to 0.0005,
-      ),
-      deprecated = true,
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_15 by lazy {
-    ChatModel(
-      name = "GeminiFlash_15",
-      modelId = "gemini-1.5-flash",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.000075,
-        TokenTypes.Completion to 0.0003,
-      ),
-      deprecated = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_15_8B by lazy {
-    ChatModel(
-      name = "GeminiFlash_15_8B",
-      modelId = "gemini-1.5-flash-8b",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0000375,
-        TokenTypes.Completion to 0.00015,
-      ),
-      deprecated = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  // =========================================================
-  // Gemini 2.0 models - Shut down
-  // =========================================================
-
-  @JvmStatic
-  val GeminiFlash_20 by lazy {
-    ChatModel(
-      name = "GeminiFlash_20",
-      modelId = "gemini-2.0-flash",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0001,      // $0.10/1M text/image/video
-        TokenTypes.Cached to 0.000025,    // $0.025/1M cached input
-        TokenTypes.Completion to 0.0004,  // $0.40/1M
-      ),
-      deprecated = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_20_Lite by lazy {
-    ChatModel(
-      name = "GeminiFlash_20_Lite",
-      modelId = "gemini-2.0-flash-lite",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.000075,    // $0.075/1M
-        TokenTypes.Completion to 0.0003,  // $0.30/1M
-      ),
-      deprecated = true,
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE, ChatMessageModality.VIDEO),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_20_Live by lazy {
-    ChatModel(
-      name = "GeminiFlash_20_Live",
-      modelId = "gemini-2.0-flash-live-001",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0001,
-        TokenTypes.Completion to 0.0004,
-      ),
-      deprecated = true,
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO, ChatMessageModality.VIDEO),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_20_Preview_Image_Generation by lazy {
-    ChatModel(
-      name = "GeminiFlash_20_Preview_Image_Generation",
-      modelId = "gemini-2.0-flash-exp-image-generation",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0001,
-        TokenTypes.Completion to 0.0004,
-      ),
-      deprecated = true,
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
-    )
-  }
-
-  // =========================================================
-  // Gemini 2.5 models
-  // =========================================================
-
-  @JvmStatic
-  val GeminiFlash_25_Image_Generation by lazy {
-    ChatModel(
-      name = "GeminiFlash_25_Image_Generation",
-      modelId = "gemini-2.5-flash-image",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 32768,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0003,     // $0.30/1M text/image input
-        TokenTypes.Completion to 0.0025, // text output priced as 2.5 Flash
-        TokenTypes.Image to 0.03,        // $30/1M image output tokens; $0.039/image (1024x1024)
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
-    )
-  }
-
-  @JvmStatic
-  val GeminiPro_25 by lazy {
-    ChatModel(
-      name = "GeminiPro_25",
-      modelId = "gemini-2.5-pro",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00125,    // $1.25/1M (prompts <= 200k tokens)
-        TokenTypes.Completion to 0.01,   // $10.00/1M (prompts <= 200k tokens)
-        TokenTypes.Thinking to 0.01,     // thinking tokens billed at output rate
-        TokenTypes.Cached to 0.000125,   // $0.125/1M cached input (prompts <= 200k)
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_25 by lazy {
-    ChatModel(
-      name = "GeminiFlash_25",
-      modelId = "gemini-2.5-flash",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0003,     // $0.30/1M text/image/video
-        TokenTypes.Completion to 0.0025, // $2.50/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.0025,
-        TokenTypes.Cached to 0.00003,    // $0.03/1M cached input text/image/video
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_25_Lite by lazy {
-    ChatModel(
-      name = "GeminiFlash_25_Lite",
-      modelId = "gemini-2.5-flash-lite",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0001,     // $0.10/1M text/image/video
-        TokenTypes.Completion to 0.0004, // $0.40/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.0004,
-        TokenTypes.Cached to 0.00001,    // $0.01/1M cached input text/image/video
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_25_Lite_Preview by lazy {
-    ChatModel(
-      name = "GeminiFlash_25_Lite_Preview",
-      modelId = "gemini-2.5-flash-lite-preview-09-2025",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0001,
-        TokenTypes.Completion to 0.0004,
-        TokenTypes.Thinking to 0.0004,
-        TokenTypes.Cached to 0.00001,
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_25_Live by lazy {
-    ChatModel(
-      name = "GeminiFlash_25_Live",
-      modelId = "gemini-2.5-flash-native-audio-preview-12-2025",
-      maxTotalTokens = 131072,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0005,     // $0.50/1M text input ($3.00/1M audio/video)
-        TokenTypes.Completion to 0.002,  // $2.00/1M text output ($12.00/1M audio)
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO, ChatMessageModality.VIDEO),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_25_Preview_TTS by lazy {
-    ChatModel(
-      name = "GeminiFlash_25_Preview_TTS",
-      modelId = "gemini-2.5-flash-preview-tts",
-      maxTotalTokens = 8192,
-      maxOutTokens = 16384,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0005,     // $0.50/1M text input
-        TokenTypes.Completion to 0.01,   // $10.00/1M audio output
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.AUDIO)
-    )
-  }
-
-  @JvmStatic
-  val GeminiPro_25_Preview_TTS by lazy {
-    ChatModel(
-      name = "GeminiPro_25_Preview_TTS",
-      modelId = "gemini-2.5-pro-preview-tts",
-      maxTotalTokens = 8192,
-      maxOutTokens = 16384,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.001,      // $1.00/1M text input
-        TokenTypes.Completion to 0.02,   // $20.00/1M audio output
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.AUDIO)
-    )
-  }
-
-  @JvmStatic
-  val GeminiComputerUse_25 by lazy {
-    ChatModel(
-      name = "GeminiComputerUse_25",
-      modelId = "gemini-2.5-computer-use-preview-10-2025",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00125,    // $1.25/1M (prompts <= 200k tokens)
-        TokenTypes.Completion to 0.01,   // $10.00/1M (prompts <= 200k tokens)
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  // =========================================================
-  // Embedding models
-  // =========================================================
-
-  @JvmStatic
-  val GeminiEmbedding_2 by lazy {
-    ChatModel(
-      name = "GeminiEmbedding_2",
-      modelId = "gemini-embedding-2",
-      maxTotalTokens = 8192,
-      maxOutTokens = 0,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0002,     // $0.20/1M text input
-        TokenTypes.Completion to 0.0,
-      ),
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf()
-    )
-  }
-
-  @JvmStatic
-  val GeminiEmbedding_001 by lazy {
-    ChatModel(
-      name = "GeminiEmbedding_001",
-      modelId = "gemini-embedding-001",
-      maxTotalTokens = 8192,
-      maxOutTokens = 0,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00015,    // $0.15/1M text input
-        TokenTypes.Completion to 0.0,
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf()
-    )
-  }
-
-  // =========================================================
-  // Gemini 3 models
-  // Note: gemini-3-pro-preview was shut down; retained for compatibility.
-  // =========================================================
-
-  @JvmStatic
-  val GeminiPro_30_Preview by lazy {
-    ChatModel(
-      name = "GeminiPro_30_Preview",
-      modelId = "gemini-3-pro-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.002,
-        TokenTypes.Completion to 0.012,
-        TokenTypes.Thinking to 0.012,
-        TokenTypes.Cached to 0.0002,
-      ),
-      supportsReasoning = true,
-      deprecated = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
 
   /** Nano Banana Pro (GA). */
   @JvmStatic
@@ -497,111 +66,6 @@ object GeminiModels {
       deprecated = true,
       inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE),
       outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_30_Preview by lazy {
-    ChatModel(
-      name = "GeminiFlash_30_Preview",
-      modelId = "gemini-3-flash-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0005,     // $0.50/1M text/image/video ($1.00/1M audio)
-        TokenTypes.Completion to 0.003,  // $3.00/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.003,
-        TokenTypes.Cached to 0.00005,    // $0.05/1M cached input text/image/video
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  // =========================================================
-  // Gemini 3.1 models
-  // =========================================================
-
-  @JvmStatic
-  val GeminiPro_31_Preview by lazy {
-    ChatModel(
-      name = "GeminiPro_31_Preview",
-      modelId = "gemini-3.1-pro-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.002,      // $2.00/1M (prompts <= 200k tokens)
-        TokenTypes.Completion to 0.012,  // $12.00/1M (prompts <= 200k tokens)
-        TokenTypes.Thinking to 0.012,
-        TokenTypes.Cached to 0.0002,     // $0.20/1M cached input (prompts <= 200k)
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_31_Lite by lazy {
-    ChatModel(
-      name = "GeminiFlash_31_Lite",
-      modelId = "gemini-3.1-flash-lite",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00025,    // $0.25/1M text/image/video ($0.50/1M audio)
-        TokenTypes.Completion to 0.0015, // $1.50/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.0015,
-        TokenTypes.Cached to 0.000025,   // $0.025/1M cached input text/image/video
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_31_Lite_Preview by lazy {
-    ChatModel(
-      name = "GeminiFlash_31_Lite_Preview",
-      modelId = "gemini-3.1-flash-lite-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00025,
-        TokenTypes.Completion to 0.0015,
-        TokenTypes.Thinking to 0.0015,
-        TokenTypes.Cached to 0.000025,
-      ),
-      supportsReasoning = true,
-      deprecated = true, // Shut down per Gemini deprecations page
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
     )
   }
 
@@ -696,50 +160,6 @@ object GeminiModels {
     )
   }
 
-
-  @JvmStatic
-  val GeminiFlash_31_Live_Preview by lazy {
-    ChatModel(
-      name = "GeminiFlash_31_Live_Preview",
-      modelId = "gemini-3.1-flash-live-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 32768,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00075,    // $0.75/1M text ($3.00/1M audio, $1.00/1M image/video)
-        TokenTypes.Completion to 0.0045, // $4.50/1M text ($12.00/1M audio)
-      ),
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_31_TTS_Preview by lazy {
-    ChatModel(
-      name = "GeminiFlash_31_TTS_Preview",
-      modelId = "gemini-3.1-flash-tts-preview",
-      maxTotalTokens = 8192,
-      maxOutTokens = 16384,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.001,      // $1.00/1M text input
-        TokenTypes.Completion to 0.02,   // $20.00/1M audio output
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT),
-      outputModalities = setOf(ChatMessageModality.AUDIO)
-    )
-  }
-
-  // =========================================================
-  // Gemini 3.5 / 3.6 models - Current flagship tier
-  // =========================================================
-
   @JvmStatic
   val GeminiFlash_36 by lazy {
     ChatModel(
@@ -766,7 +186,7 @@ object GeminiModels {
   }
 
   // =========================================================
-  // Gemini 3.7 Flash - latest, most capable Flash model
+  // Gemini 3.8 Flash / Live / TTS - latest Flash tier
   // =========================================================
   @JvmStatic
   val GeminiFlash_38 by lazy {
@@ -850,7 +270,6 @@ object GeminiModels {
       tokenPricingPerK = mapOf(
         TokenTypes.Prompt to 0.0005,     // $0.50/1M text through Dec 31, 2026 ($1.00 starting 2027)
         TokenTypes.Completion to 0.009,  // $9.00/1M audio through Dec 31, 2026 ($18.00 starting 2027)
-        TokenTypes.Cached to 0.000125,   // $0.125/1M through Dec 31, 2026 ($0.25 starting 2027)
       ),
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO)
@@ -868,187 +287,12 @@ object GeminiModels {
       tokenPricingPerK = mapOf(
         TokenTypes.Prompt to 0.0005,     // $0.50/1M text through Dec 31, 2026 ($1.00 starting 2027)
         TokenTypes.Completion to 0.006,  // $6.00/1M audio through Dec 31, 2026 ($12.00 starting 2027)
-        TokenTypes.Cached to 0.000125,   // $0.125/1M through Dec 31, 2026 ($0.25 starting 2027)
       ),
       inputModalities = setOf(ChatMessageModality.TEXT),
       outputModalities = setOf(ChatMessageModality.AUDIO)
     )
   }
 
-
-  @JvmStatic
-  val GeminiFlash_37 by lazy {
-    ChatModel(
-      name = "GeminiFlash_37",
-      modelId = "gemini-3.7-flash",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.00075,    // $0.75/1M through Dec 31, 2026
-        TokenTypes.Completion to 0.00375, // $3.75/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.00375,
-        TokenTypes.Cached to 0.000075,   // $0.075/1M cached input
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_35 by lazy {
-    ChatModel(
-      name = "GeminiFlash_35",
-      modelId = "gemini-3.5-flash",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0015,     // $1.50/1M
-        TokenTypes.Completion to 0.009,  // $9.00/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.009,
-        TokenTypes.Cached to 0.00015,    // $0.15/1M cached input
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiFlash_35_Lite by lazy {
-    ChatModel(
-      name = "GeminiFlash_35_Lite",
-      modelId = "gemini-3.5-flash-lite",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0003,     // $0.30/1M text/image/video/audio
-        TokenTypes.Completion to 0.0025, // $2.50/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.0025,
-        TokenTypes.Cached to 0.00003,    // $0.03/1M cached input
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiLiveTranslate_35_Preview by lazy {
-    ChatModel(
-      name = "GeminiLiveTranslate_35_Preview",
-      modelId = "gemini-3.5-live-translate-preview",
-      maxTotalTokens = 131072,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0035,     // $3.50/1M audio input (~$0.0053/min)
-        TokenTypes.Completion to 0.021,  // $21.00/1M audio output (~$0.0315/min)
-      ),
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.AUDIO)
-    )
-  }
-
-  @JvmStatic
-  val GeminiTranscribe_35 by lazy {
-    ChatModel(
-      name = "GeminiTranscribe_35",
-      modelId = "gemini-3.5-transcribe",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.002,      // $2.00/1M audio input
-        TokenTypes.Completion to 0.012,  // $12.00/1M text output
-      ),
-      inputModalities = setOf(ChatMessageModality.AUDIO),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiTranscribeLive_35 by lazy {
-    ChatModel(
-      name = "GeminiTranscribeLive_35",
-      modelId = "gemini-3.5-transcribe-live",
-      maxTotalTokens = 131072,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0035,     // $3.50/1M audio input
-        TokenTypes.Completion to 0.021,  // $21.00/1M text output
-      ),
-      inputModalities = setOf(ChatMessageModality.AUDIO),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-
-  @JvmStatic
-  val GeminiOmniFlash_Preview by lazy {
-    ChatModel(
-      name = "GeminiOmniFlash_Preview",
-      modelId = "gemini-omni-flash-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0015,     // $1.50/1M text/image/video/audio input
-        TokenTypes.Completion to 0.009,  // $9.00/1M text output ($17.50/1M video output)
-      ),
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.VIDEO)
-    )
-  }
-
-  // =========================================================
-  // Gemini Omni Flash - stable release
-  // =========================================================
-  @JvmStatic
-  val GeminiOmniFlash by lazy {
-    ChatModel(
-      name = "GeminiOmniFlash",
-      modelId = "gemini-omni-1.1-flash",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 65536,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0015,     // $1.50/1M text/image/video/audio input
-        TokenTypes.Completion to 0.009,  // $9.00/1M text output ($17.50/1M video output)
-      ),
-      inputModalities = setOf(
-        ChatMessageModality.TEXT,
-        ChatMessageModality.IMAGE,
-        ChatMessageModality.AUDIO,
-        ChatMessageModality.VIDEO
-      ),
-      outputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.VIDEO)
-    )
-  }
 
   // =========================================================
   // Gemini 4 models
@@ -1074,31 +318,88 @@ object GeminiModels {
         ChatMessageModality.AUDIO,
         ChatMessageModality.VIDEO
       ),
-      outputModalities = setOf(ChatMessageModality.TEXT)
+      outputModalities = setOf(ChatMessageModality.TEXT),
+      supportsInteractiveTools = true,
     )
   }
 
   @JvmStatic
   val Gemini_4_Argon by lazy { Gemini4_Argon }
 
-
-  // =========================================================
-  // Specialized / Tool & Agent models
-  // =========================================================
-
+  /** Our strongest reasoning model (complex software engineering, multimodal work, science, cybersecurity). */
   @JvmStatic
-  val GeminiRobotics_2_Preview by lazy {
+  val Gemini4_Carbon by lazy {
     ChatModel(
-      name = "GeminiRobotics_2_Preview",
-      modelId = "gemini-robotics-er-2-preview",
+      name = "Gemini4_Carbon",
+      modelId = "gemini-4-carbon",
       maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
+      maxOutTokens = 1048576, // 64K default / up to 1M long decodes
       provider = CoreProviders.Gemini,
       tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.001,      // $1.00/1M through Dec 31, 2026 ($2.00 starting 2027)
-        TokenTypes.Completion to 0.005,  // $5.00/1M through Dec 31, 2026 ($10.00 starting 2027)
-        TokenTypes.Thinking to 0.005,
-        TokenTypes.Cached to 0.0001,     // $0.10/1M through Dec 31, 2026 ($0.20 starting 2027)
+        TokenTypes.Prompt to 0.002,      // $2.00/1M through Nov 30, 2026 ($4.00 starting Dec 1, 2026)
+        TokenTypes.Completion to 0.01,   // $10.00/1M through Nov 30, 2026 ($20.00 starting Dec 1, 2026)
+        TokenTypes.Thinking to 0.01,
+        TokenTypes.Cached to 0.0001,     // $0.10/1M through Nov 30, 2026 ($0.20 starting Dec 1, 2026)
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.AUDIO,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT),
+      supportsInteractiveTools = true,
+    )
+  }
+
+  @JvmStatic
+  val Gemini_4_Carbon by lazy { Gemini4_Carbon }
+
+  /** Fast, efficient Gemini 4 model for everyday coding and agentic workflows. */
+  @JvmStatic
+  val Gemini4_Hydrogen by lazy {
+    ChatModel(
+      name = "Gemini4_Hydrogen",
+      modelId = "gemini-4-hydrogen",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 1048576, // 64K default / up to 1M long decodes
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.0015,     // $1.50/1M
+        TokenTypes.Completion to 0.0075, // $7.50/1M (including thinking tokens)
+        TokenTypes.Thinking to 0.0075,
+        TokenTypes.Cached to 0.000075,   // $0.075/1M cached input
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.AUDIO,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT),
+      supportsInteractiveTools = true,
+    )
+  }
+
+  @JvmStatic
+  val Gemini_4_Hydrogen by lazy { Gemini4_Hydrogen }
+
+  /** Fastest, most cost-effective 3.5 model for high-throughput execution. */
+  @JvmStatic
+  val GeminiFlash_35_Lite by lazy {
+    ChatModel(
+      name = "GeminiFlash_35_Lite",
+      modelId = "gemini-3.5-flash-lite",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 65536,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.0003,     // $0.30/1M (text / image / video / audio)
+        TokenTypes.Completion to 0.0025, // $2.50/1M (including thinking tokens)
+        TokenTypes.Thinking to 0.0025,
+        TokenTypes.Cached to 0.00003,    // $0.03/1M cached input
       ),
       supportsReasoning = true,
       inputModalities = setOf(
@@ -1111,18 +412,22 @@ object GeminiModels {
     )
   }
 
+  /** Frontier-class performance at a fraction of the cost. */
   @JvmStatic
-  val GeminiRobotics_2_Streaming_Preview by lazy {
+  val GeminiFlash_31_Lite by lazy {
     ChatModel(
-      name = "GeminiRobotics_2_Streaming_Preview",
-      modelId = "gemini-robotics-er-2-streaming-preview",
+      name = "GeminiFlash_31_Lite",
+      modelId = "gemini-3.1-flash-lite",
       maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
+      maxOutTokens = 65536,
       provider = CoreProviders.Gemini,
       tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.001,      // $1.00/1M through Dec 31, 2026 ($2.00 starting 2027)
-        TokenTypes.Completion to 0.005,  // $5.00/1M through Dec 31, 2026 ($10.00 starting 2027)
+        TokenTypes.Prompt to 0.00025,    // $0.25/1M text/image/video ($0.50/1M audio)
+        TokenTypes.Completion to 0.0015, // $1.50/1M (including thinking tokens)
+        TokenTypes.Thinking to 0.0015,
+        TokenTypes.Cached to 0.000025,   // $0.025/1M text/image/video ($0.05/1M audio)
       ),
+      supportsReasoning = true,
       inputModalities = setOf(
         ChatMessageModality.TEXT,
         ChatMessageModality.IMAGE,
@@ -1133,42 +438,6 @@ object GeminiModels {
     )
   }
 
-  @JvmStatic
-  val GeminiRobotics_16_Preview by lazy {
-    ChatModel(
-      name = "GeminiRobotics_16_Preview",
-      modelId = "gemini-robotics-er-1.6-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.001,      // $1.00/1M text/image/video ($2.00/1M audio)
-        TokenTypes.Completion to 0.005,  // $5.00/1M (including thinking tokens)
-        TokenTypes.Thinking to 0.005,
-      ),
-      supportsReasoning = true,
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE, ChatMessageModality.VIDEO),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
-
-  @JvmStatic
-  val GeminiRobotics_15_Preview by lazy {
-    ChatModel(
-      name = "GeminiRobotics_15_Preview",
-      modelId = "gemini-robotics-er-1.5-preview",
-      maxTotalTokens = 1048576,
-      maxOutTokens = 8192,
-      provider = CoreProviders.Gemini,
-      tokenPricingPerK = mapOf(
-        TokenTypes.Prompt to 0.0003,
-        TokenTypes.Completion to 0.0025,
-      ),
-      deprecated = true,
-      inputModalities = setOf(ChatMessageModality.TEXT, ChatMessageModality.IMAGE, ChatMessageModality.VIDEO),
-      outputModalities = setOf(ChatMessageModality.TEXT)
-    )
-  }
 
   @JvmStatic
   val GeminiDeepResearch by lazy {
@@ -1231,76 +500,115 @@ object GeminiModels {
     )
   }
 
+  /** Gemini 3.1 Pro Preview (also serves gemini-3.1-pro-preview-customtools). */
+  @JvmStatic
+  val GeminiPro_31_Preview by lazy {
+    ChatModel(
+      name = "GeminiPro_31_Preview",
+      modelId = "gemini-3.1-pro-preview",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 65536,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.002,      // $2.00/1M prompts <= 200k ($4.00 > 200k)
+        TokenTypes.Completion to 0.012,  // $12.00/1M prompts <= 200k ($18.00 > 200k)
+        TokenTypes.Thinking to 0.012,
+        TokenTypes.Cached to 0.0002,     // $0.20/1M prompts <= 200k ($0.40 > 200k)
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.AUDIO,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
+  /** Legacy Flash model. */
+  @JvmStatic
+  val GeminiFlash_30_Preview by lazy {
+    ChatModel(
+      name = "GeminiFlash_30_Preview",
+      modelId = "gemini-3-flash-preview",
+      maxTotalTokens = 1048576,
+      maxOutTokens = 65536,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.0005,     // $0.50/1M text/image/video ($1.00 audio)
+        TokenTypes.Completion to 0.003,  // $3.00/1M (including thinking tokens)
+        TokenTypes.Thinking to 0.003,
+        TokenTypes.Cached to 0.00005,    // $0.05/1M text/image/video ($0.10 audio)
+      ),
+      supportsReasoning = true,
+      inputModalities = setOf(
+        ChatMessageModality.TEXT,
+        ChatMessageModality.IMAGE,
+        ChatMessageModality.AUDIO,
+        ChatMessageModality.VIDEO
+      ),
+      outputModalities = setOf(ChatMessageModality.TEXT)
+    )
+  }
+
+  @JvmStatic
+  val GeminiFlash_31_TTS_Preview by lazy {
+    ChatModel(
+      name = "GeminiFlash_31_TTS_Preview",
+      modelId = "gemini-3.1-flash-tts-preview",
+      maxTotalTokens = 8192,
+      maxOutTokens = 16384,
+      provider = CoreProviders.Gemini,
+      tokenPricingPerK = mapOf(
+        TokenTypes.Prompt to 0.001,      // $1.00/1M text
+        TokenTypes.Completion to 0.02,   // $20.00/1M audio
+      ),
+      inputModalities = setOf(ChatMessageModality.TEXT),
+      outputModalities = setOf(ChatMessageModality.AUDIO)
+    )
+  }
+
+
   @JvmStatic
   val values by lazy {
     mapOf(
-      // Legacy 1.x models
-      "GeminiPro_15" to GeminiPro_15,
-      "GeminiFlash_15" to GeminiFlash_15,
-      "GeminiFlash_15_8B" to GeminiFlash_15_8B,
-      "GeminiPro" to GeminiPro_10,
-      // 2.0 models (shut down)
-      "GeminiFlash_20" to GeminiFlash_20,
-      "GeminiFlash_20_Lite" to GeminiFlash_20_Lite,
-      "GeminiFlash_20_Live" to GeminiFlash_20_Live,
-      "GeminiFlash_20_Preview_Image_Generation" to GeminiFlash_20_Preview_Image_Generation,
-      // 2.5 models
-      "GeminiPro_25" to GeminiPro_25,
-      "GeminiFlash_25" to GeminiFlash_25,
-      "GeminiFlash_25_Lite" to GeminiFlash_25_Lite,
-      "GeminiFlash_25_Lite_Preview" to GeminiFlash_25_Lite_Preview,
-      "GeminiFlash_25_Live" to GeminiFlash_25_Live,
-      "GeminiFlash_25_Image_Generation" to GeminiFlash_25_Image_Generation,
-      "GeminiFlash_25_Preview_TTS" to GeminiFlash_25_Preview_TTS,
-      "GeminiPro_25_Preview_TTS" to GeminiPro_25_Preview_TTS,
-      "GeminiComputerUse_25" to GeminiComputerUse_25,
-      "GeminiEmbedding_2" to GeminiEmbedding_2,
-      "GeminiEmbedding_001" to GeminiEmbedding_001,
-      // 3.0 models
-      "GeminiPro_30_Preview" to GeminiPro_30_Preview,
       "GeminiPro_30_Image" to GeminiPro_30_Image,
       "GeminiPro_30_Image_Preview" to GeminiPro_30_Image_Preview,
-      "GeminiFlash_30_Preview" to GeminiFlash_30_Preview,
-      // 3.1 models
-      "GeminiPro_31_Preview" to GeminiPro_31_Preview,
-      "GeminiFlash_31_Lite" to GeminiFlash_31_Lite,
-      "GeminiFlash_31_Lite_Preview" to GeminiFlash_31_Lite_Preview,
       "GeminiFlash_31_Image" to GeminiFlash_31_Image,
       "GeminiFlash_31_Image_Preview" to GeminiFlash_31_Image_Preview,
       "GeminiFlash_31_Lite_Image" to GeminiFlash_31_Lite_Image,
       "GeminiNanoBanana_21" to GeminiNanoBanana_21,
       "GeminiNanoBanana_2_1" to GeminiNanoBanana_21,
       "gemini-nano-banana-2.1" to GeminiNanoBanana_21,
-      "GeminiFlash_31_Live_Preview" to GeminiFlash_31_Live_Preview,
-      "GeminiFlash_31_TTS_Preview" to GeminiFlash_31_TTS_Preview,
-      // 3.5 / 3.6 models
       "GeminiFlash_38" to GeminiFlash_38,
       "GeminiLive_38" to GeminiLive_38,
       "GeminiLive_38_ExtendedThinking" to GeminiLive_38_ExtendedThinking,
       "GeminiFlash_38_TTS" to GeminiFlash_38_TTS,
       "GeminiFlash_38_Lite_TTS" to GeminiFlash_38_Lite_TTS,
-      "GeminiFlash_37" to GeminiFlash_37,
       "GeminiFlash_36" to GeminiFlash_36,
-      "GeminiFlash_35" to GeminiFlash_35,
-      "GeminiFlash_35_Lite" to GeminiFlash_35_Lite,
-      "GeminiLiveTranslate_35_Preview" to GeminiLiveTranslate_35_Preview,
-      "GeminiTranscribe_35" to GeminiTranscribe_35,
-      "GeminiTranscribeLive_35" to GeminiTranscribeLive_35,
-      "GeminiOmniFlash_Preview" to GeminiOmniFlash_Preview,
-      "GeminiOmniFlash" to GeminiOmniFlash,
-      "gemini-omni-flash" to GeminiOmniFlash,
-      // Gemini 4 models
       "Gemini4_Argon" to Gemini4_Argon,
       "Gemini_4_Argon" to Gemini4_Argon,
       "gemini-4-argon" to Gemini4_Argon,
-      // Specialized models
-      "GeminiRobotics_2_Preview" to GeminiRobotics_2_Preview,
-      "GeminiRobotics_2_Streaming_Preview" to GeminiRobotics_2_Streaming_Preview,
-      "GeminiRobotics_16_Preview" to GeminiRobotics_16_Preview,
-      "GeminiRobotics_15_Preview" to GeminiRobotics_15_Preview,
+      "Gemini4_Carbon" to Gemini4_Carbon,
+      "Gemini_4_Carbon" to Gemini4_Carbon,
+      "gemini-4-carbon" to Gemini4_Carbon,
+      "Gemini4_Hydrogen" to Gemini4_Hydrogen,
+      "Gemini_4_Hydrogen" to Gemini4_Hydrogen,
+      "gemini-4-hydrogen" to Gemini4_Hydrogen,
+      "GeminiFlash_35_Lite" to GeminiFlash_35_Lite,
+      "gemini-3.5-flash-lite" to GeminiFlash_35_Lite,
+      "GeminiFlash_31_Lite" to GeminiFlash_31_Lite,
+      "gemini-3.1-flash-lite" to GeminiFlash_31_Lite,
       "GeminiDeepResearch" to GeminiDeepResearch,
       "GeminiDeepResearchMax" to GeminiDeepResearchMax,
       "GeminiAntigravityAgent" to GeminiAntigravityAgent,
+      "GeminiPro_31_Preview" to GeminiPro_31_Preview,
+      "gemini-3.1-pro-preview" to GeminiPro_31_Preview,
+      "GeminiFlash_30_Preview" to GeminiFlash_30_Preview,
+      "gemini-3-flash-preview" to GeminiFlash_30_Preview,
+      "GeminiFlash_31_TTS_Preview" to GeminiFlash_31_TTS_Preview,
+      "gemini-3.1-flash-tts-preview" to GeminiFlash_31_TTS_Preview,
     )
   }
 }
