@@ -4,5 +4,3 @@ specifies: ../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/
 related:
   - https://console.groq.com/docs/models
 ---
-
-# [Groq Models](../../providers/src/main/kotlin/com/simiacryptus/cognotik/chat/model/GroqModels.kt)

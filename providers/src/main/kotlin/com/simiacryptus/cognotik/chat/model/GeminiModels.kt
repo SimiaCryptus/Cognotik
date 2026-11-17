@@ -27,6 +27,7 @@ import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
 @Suppress("unused")
 object GeminiModels {
 
+
   /** Nano Banana Pro (GA). */
   @JvmStatic
   val GeminiPro_30_Image by lazy {
@@ -569,6 +570,8 @@ object GeminiModels {
     )
   }
 
+
+  val DEFAULT: ChatModel = GeminiFlash_38
 
   @JvmStatic
   val values by lazy {
