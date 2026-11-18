@@ -3,6 +3,7 @@ package com.simiacryptus.cognotik.agents
 import com.simiacryptus.cognotik.platform.ChatInterface
 import com.simiacryptus.cognotik.platform.model.ModelSchema
 import com.simiacryptus.cognotik.platform.model.ModelSchema.ChatRequest
+import com.simiacryptus.cognotik.platform.model.mcp.MCPToolProvider
 import com.simiacryptus.cognotik.util.toContentList
 
 open class ChatAgent(
@@ -10,6 +11,7 @@ open class ChatAgent(
   name: String? = null,
   model: ChatInterface,
   temperature: Double = 0.3,
+   val toolProviders: List<MCPToolProvider> = emptyList(),
 ) : BaseAgent<List<String>, String>(
   prompt = prompt,
   name = name,
@@ -24,6 +26,7 @@ open class ChatAgent(
         messages = messages.toList(),
         temperature = temperature,
         audio = model.audio,
+       toolProviders = toolProviders,
       )
     ).choices.first().message?.content ?: throw RuntimeException("No response")
 

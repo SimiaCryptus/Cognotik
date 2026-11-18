@@ -72,7 +72,7 @@ class ChatModel(
     inputModalities: Set<ChatMessageModality>,
     outputModalities: Set<ChatMessageModality>,
     reasoningLevel: ReasoningLevel? = null,
-    supportsTools: Boolean = false,
+    supportsInteractiveTools: Boolean = false,
   ) : this(
     name = name,
     modelId = modelId,
@@ -89,7 +89,7 @@ class ChatModel(
     inputModalities = inputModalities,
     outputModalities = outputModalities,
     reasoningLevel = reasoningLevel,
-    supportsInteractiveTools = supportsTools,
+    supportsInteractiveTools = supportsInteractiveTools,
   )
 
   /**

@@ -1,10 +1,12 @@
 package com.simiacryptus.cognotik.chat
+import com.fasterxml.jackson.databind.JsonNode
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.simiacryptus.cognotik.CoreProviders
 import com.simiacryptus.cognotik.exceptions.*
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.mcp.MCPContent
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import org.apache.hc.core5.http.HttpRequest
@@ -12,6 +14,7 @@ import org.slf4j.LoggerFactory
 import org.slf4j.event.Level
 import software.amazon.awssdk.auth.credentials.AwsCredentialsProviderChain
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
+import software.amazon.awssdk.core.document.Document
 import software.amazon.awssdk.regions.Region
 import software.amazon.awssdk.services.bedrock.BedrockClient
 import software.amazon.awssdk.services.bedrock.model.CustomModelSummary
@@ -303,6 +306,9 @@ class AwsChatClient(
     usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
     validateChatRequest(chatRequest, model)
+     check(chatRequest.toolProviders.isNullOrEmpty() || !chatRequest.tools.isNullOrEmpty()) {
+       TOOL_PROVIDERS_WITHOUT_TOOLS
+     }
 
     val messageCount = chatRequest.messages.size
     val totalContentLength = chatRequest.messages.sumOf { msg ->
@@ -383,6 +389,9 @@ class AwsChatClient(
   companion object {
     private val log = LoggerFactory.getLogger(AwsChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+     private const val TOOL_PROVIDERS_WITHOUT_TOOLS =
+       "ChatRequest.toolProviders is set but tools is empty: tool requests must go through ChatInterface " +
+           "(McpToolLoop); provider clients do not execute tools"
 
     private data class ModelSpecs(
       val maxTotalTokens: Int,
@@ -468,16 +477,17 @@ class AwsChatClient(
 
         logStreams.debug("Flattened converse request: 1 message, flattenedLength=${flattenedText.length}, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
 
-        return ConverseRequest.builder()
+         val builder = ConverseRequest.builder()
           .modelId(model.modelId)
           .messages(messages)
           .inferenceConfig(inferenceConfig)
-          .build()
+         buildToolConfiguration(chatRequest, hasToolBlocks = false)?.let { builder.toolConfig(it) }
+         return builder.build()
       } else {
         val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
-        val nonSystemMessages = alternateMessagesRoles(chatRequest.messages).filter {
-          it.role != ModelSchema.Role.system
-        }
+         val nonSystemMessages = alternateMessagesRoles(
+           chatRequest.messages.filter { it.role != ModelSchema.Role.system }
+         )
 
         val systemContent = systemMessages.flatMap { msg ->
           msg.content?.mapNotNull { part ->
@@ -485,10 +495,10 @@ class AwsChatClient(
           } ?: emptyList()
         }
 
-        val messages = nonSystemMessages.map { msg ->
-          val contentBlocks = msg.content?.mapNotNull { part ->
-            part.text?.takeIf { it.isNotEmpty() }?.let { ContentBlock.fromText(it) }
-          } ?: emptyList()
+         val messages = nonSystemMessages.mapNotNull { msg ->
+           val rawBlocks = msg.content?.flatMap { toConverseContentBlocks(it) } ?: emptyList()
+           val contentBlocks = rawBlocks.filter { it.toolResult() != null } + rawBlocks.filter { it.toolResult() == null }
+           if (contentBlocks.isEmpty()) return@mapNotNull null
           val role = when (msg.role) {
             ModelSchema.Role.assistant -> ConversationRole.ASSISTANT
             else -> ConversationRole.USER
@@ -504,7 +514,15 @@ class AwsChatClient(
           .temperature(chatRequest.temperature.toFloat())
           .build()
 
-        logStreams.debug("Converse request: ${messages.size} messages, ${systemContent.size} system blocks, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}")
+         val hasToolBlocks = messages.any { msg ->
+           msg.content().any { it.toolUse() != null || it.toolResult() != null }
+         }
+         val toolConfig = buildToolConfiguration(chatRequest, hasToolBlocks = hasToolBlocks)
+
+         logStreams.debug(
+           "Converse request: ${messages.size} messages, ${systemContent.size} system blocks, " +
+               "${toolConfig?.tools()?.size ?: 0} tools, maxTokens=${model.maxOutTokens}, temperature=${chatRequest.temperature}"
+         )
 
         val builder = ConverseRequest.builder()
           .modelId(model.modelId)
@@ -514,6 +532,9 @@ class AwsChatClient(
         if (systemContent.isNotEmpty()) {
           builder.system(systemContent)
         }
+         if (toolConfig != null) {
+           builder.toolConfig(toolConfig)
+         }
 
         return builder.build()
       }
@@ -522,24 +543,48 @@ class AwsChatClient(
     fun fromConverseResponse(response: ConverseResponse): ModelSchema.ChatResponse {
       log.debug("Parsing converse response: stopReason=${response.stopReason()}")
       val outputMessage = response.output()?.message()
-      val contentText = outputMessage?.content()?.joinToString("") { block ->
-        block.text() ?: ""
-      } ?: ""
+       val blocks = outputMessage?.content().orEmpty().mapNotNull { block ->
+         when {
+           block.text() != null -> ModelSchema.ContentPart(text = block.text())
+           block.toolUse() != null -> {
+             val toolUse = block.toolUse()
+             ModelSchema.ContentPart(
+               tool_use = ModelSchema.ToolUseBlock(
+                 id = toolUse.toolUseId() ?: "tooluse_missing_${System.nanoTime()}",
+                 name = toolUse.name().orEmpty(),
+                 input = documentToJsonNode(toolUse.input()),
+               )
+             )
+           }
+           else -> {
+             log.warn("Ignoring unsupported Bedrock Converse content block type: {}", block.type())
+             null
+           }
+         }
+       }
+       val contentText = blocks.mapNotNull { it.text }.joinToString("\n")
+       val finishReason = when (response.stopReason()) {
+         StopReason.TOOL_USE -> "tool_calls"
+         null -> null
+         else -> response.stopReasonAsString() ?: response.stopReason()?.toString()
+       }
 
       val usage = response.usage()
       val promptTokens = usage?.inputTokens()?.toLong() ?: 0
       val completionTokens = usage?.outputTokens()?.toLong() ?: 0
       val totalTokens = usage?.totalTokens()?.toLong() ?: (promptTokens + completionTokens)
 
-      log.debug("Converse response: contentLength=${contentText.length}, promptTokens=$promptTokens, completionTokens=$completionTokens, totalTokens=$totalTokens")
+       log.debug("Converse response: contentLength=${contentText.length}, blocks=${blocks.size}, finishReason=$finishReason, promptTokens=$promptTokens, completionTokens=$completionTokens, totalTokens=$totalTokens")
 
       return ModelSchema.ChatResponse(
         choices = listOf(
           ModelSchema.ChatChoice(
             message = ModelSchema.ChatMessageResponse(
               content = contentText,
+               blocks = blocks,
             ),
-            index = 0
+             index = 0,
+             finish_reason = finishReason,
           )
         ),
         usage = ModelSchema.Usage(
@@ -560,7 +605,7 @@ class AwsChatClient(
         val consolidatedMessage = takeAll(messagesCopy, thisRole)
         if (isFirst) {
           isFirst = false
-          if ((consolidatedMessage?.role ?: "") != "user") {
+           if (consolidatedMessage?.role != ModelSchema.Role.user) {
             val chatMessage = takeAll(messagesCopy, ModelSchema.Role.user)
             alternatingMessages.add(
               concat(
@@ -592,14 +637,151 @@ class AwsChatClient(
 
     fun concat(
       acc: ModelSchema.ChatMessage, chatMessage: ModelSchema.ChatMessage
-    ) = ModelSchema.ChatMessage(
-      role = acc.role, content = listOf(
-        ModelSchema.ContentPart(
-          text = (acc.content?.plus(chatMessage.content ?: emptyList()) ?: chatMessage.content)?.joinToString(
-            "\n"
-          ) { it.text ?: "" })
-      )
-    )
+     ): ModelSchema.ChatMessage {
+       val combined = acc.content.orEmpty() + chatMessage.content.orEmpty()
+       val hasStructured = combined.any {
+         it.tool_use != null || it.tool_result != null || it.image_url != null || it.thinking != null
+       }
+       return if (hasStructured) {
+         ModelSchema.ChatMessage(role = acc.role, content = combined)
+       } else {
+         ModelSchema.ChatMessage(
+           role = acc.role,
+           content = listOf(ModelSchema.ContentPart(text = combined.joinToString("\n") { it.text ?: "" }))
+         )
+       }
+     }
+
+     private fun buildToolConfiguration(
+       chatRequest: ModelSchema.ChatRequest,
+       hasToolBlocks: Boolean
+     ): ToolConfiguration? {
+       val tools = chatRequest.tools?.takeIf { it.isNotEmpty() } ?: return null
+       val trimmedChoice = chatRequest.tool_choice?.trim()?.takeIf { it.isNotEmpty() }
+       if (trimmedChoice == "none") {
+         if (!hasToolBlocks) {
+           log.debug("tool_choice='none' with no tool blocks in history; omitting toolConfig")
+           return null
+         }
+         log.warn("AWS Bedrock Converse does not support tool_choice='none' when tool blocks are present in history; omitting toolChoice")
+       }
+       val bedrockTools = tools.map { toolDef ->
+         val schemaDoc = if (toolDef.inputSchema.isObject) {
+           jsonNodeToDocument(toolDef.inputSchema)
+         } else {
+           Document.fromMap(emptyMap())
+         }
+         val specBuilder = ToolSpecification.builder()
+           .name(toolDef.name)
+           .inputSchema(ToolInputSchema.fromJson(schemaDoc))
+         toolDef.description.takeIf { it.isNotBlank() }?.let { specBuilder.description(it) }
+         Tool.fromToolSpec(specBuilder.build())
+       }
+       val configBuilder = ToolConfiguration.builder().tools(bedrockTools)
+       bedrockToolChoice(trimmedChoice)?.let { configBuilder.toolChoice(it) }
+       return configBuilder.build()
+     }
+
+     private fun bedrockToolChoice(choice: String?): ToolChoice? =
+       when (choice) {
+         null, "none" -> null
+         "auto" -> ToolChoice.fromAuto(AutoToolChoice.builder().build())
+         "any" -> ToolChoice.fromAny(AnyToolChoice.builder().build())
+         else -> ToolChoice.fromTool(SpecificToolChoice.builder().name(choice).build())
+       }
+
+     private fun toConverseContentBlocks(part: ModelSchema.ContentPart): List<ContentBlock> {
+       val out = mutableListOf<ContentBlock>()
+       part.tool_use?.let { toolUse ->
+         val inputDoc = if (toolUse.input.isObject) {
+           jsonNodeToDocument(toolUse.input)
+         } else {
+           Document.fromMap(emptyMap())
+         }
+         out += ContentBlock.fromToolUse(
+           ToolUseBlock.builder()
+             .toolUseId(toolUse.id)
+             .name(toolUse.name)
+             .input(inputDoc)
+             .build()
+         )
+       }
+       part.tool_result?.let { result ->
+         val resultBuilder = ToolResultBlock.builder()
+           .toolUseId(result.tool_use_id)
+           .content(toolResultContentBlocks(result))
+         if (result.is_error) {
+           resultBuilder.status(ToolResultStatus.ERROR)
+         }
+         out += ContentBlock.fromToolResult(resultBuilder.build())
+       }
+       part.text?.takeIf { it.isNotEmpty() }?.let {
+         out += ContentBlock.fromText(it)
+       }
+       return out
+     }
+
+     private fun toolResultContentBlocks(result: ModelSchema.ToolResultBlock): List<ToolResultContentBlock> {
+       val text = result.content.joinToString("\n") {
+         (it as? MCPContent.Text)?.text ?: "[${it.javaClass.simpleName}]"
+       }
+       val resolvedText = text.ifBlank { result.structured?.toString() ?: "(no output)" }
+       return listOf(ToolResultContentBlock.fromText(resolvedText))
+     }
+
+     fun jsonNodeToDocument(node: JsonNode?): Document {
+       if (node == null || node.isNull || node.isMissingNode) return Document.fromNull()
+       return when {
+         node.isBoolean -> Document.fromBoolean(node.booleanValue())
+         node.isTextual -> Document.fromString(node.textValue())
+         node.isIntegralNumber -> {
+           if (node.canConvertToLong()) Document.fromNumber(node.longValue())
+           else Document.fromNumber(node.bigIntegerValue())
+         }
+         node.isNumber -> Document.fromNumber(node.decimalValue())
+         node.isArray -> Document.fromList(node.map { jsonNodeToDocument(it) })
+         node.isObject -> {
+           val map = linkedMapOf<String, Document>()
+           val fields = node.fields()
+           while (fields.hasNext()) {
+             val (k, v) = fields.next()
+             map[k] = jsonNodeToDocument(v)
+           }
+           Document.fromMap(map)
+         }
+         else -> Document.fromString(node.asText())
+       }
+     }
+
+     fun documentToJsonNode(doc: Document?): JsonNode {
+       val mapper = JsonUtil.objectMapper()
+       if (doc == null || doc.isNull) return mapper.nullNode()
+       return when {
+         doc.isBoolean -> mapper.nodeFactory.booleanNode(doc.asBoolean())
+         doc.isString -> mapper.nodeFactory.textNode(doc.asString())
+         doc.isNumber -> {
+           val bd = doc.asNumber().bigDecimalValue()
+           if (bd.scale() <= 0) {
+             try {
+               val l = bd.longValueExact()
+               if (l in Int.MIN_VALUE..Int.MAX_VALUE) mapper.nodeFactory.numberNode(l.toInt())
+               else mapper.nodeFactory.numberNode(l)
+             } catch (_: ArithmeticException) {
+               mapper.nodeFactory.numberNode(bd.toBigIntegerExact())
+             }
+           } else {
+             mapper.nodeFactory.numberNode(bd)
+           }
+         }
+         doc.isList -> mapper.createArrayNode().apply {
+           doc.asList().forEach { add(documentToJsonNode(it)) }
+         }
+         doc.isMap -> mapper.createObjectNode().apply {
+           doc.asMap().forEach { (k, v) -> set<JsonNode>(k, documentToJsonNode(v)) }
+         }
+         else -> mapper.nullNode()
+       }
+     }
 
   }
 }

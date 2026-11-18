@@ -16,4 +16,5 @@ data class UserSettings(
   val internalToken: String? = null,
   val smartModel: String? = null,
   val fastModel: String? = null,
+  val etc: MutableMap<String, Any> = mutableMapOf(),
 )

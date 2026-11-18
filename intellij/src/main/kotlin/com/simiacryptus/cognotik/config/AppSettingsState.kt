@@ -80,6 +80,9 @@ data class AppSettingsState(
   var diffLoggingEnabled: Boolean = false,
   var listeningPort: Int = Random.nextInt(3000, 9000),
   var listeningEndpoint: String = "localhost",
+  var mcpServerEnabled: Boolean = false,
+  var mcpServerPath: String = "/mcp",
+  var mcpRequireAuth: Boolean = true,
   var apiThreads: Int = 4,
   var modalTasks: Boolean = false,
   var suppressErrors: Boolean = false,
@@ -147,6 +150,9 @@ data class AppSettingsState(
     }
 
     XmlSerializerUtil.copyBean(fromJson, this)
+    mcpServerEnabled = fromJson.mcpServerEnabled
+    mcpServerPath = fromJson.mcpServerPath
+    mcpRequireAuth = fromJson.mcpRequireAuth
 
     /* Copy savedCommandConfigsJson */
 //        savedCommandConfigsJson?.clear()
@@ -211,6 +217,9 @@ data class AppSettingsState(
     if (diffLoggingEnabled != other.diffLoggingEnabled) return false
     if (listeningPort != other.listeningPort) return false
     if (listeningEndpoint != other.listeningEndpoint) return false
+    if (mcpServerEnabled != other.mcpServerEnabled) return false
+    if (mcpServerPath != other.mcpServerPath) return false
+    if (mcpRequireAuth != other.mcpRequireAuth) return false
     if (apiThreads != other.apiThreads) return false
     if (modalTasks != other.modalTasks) return false
     if (suppressErrors != other.suppressErrors) return false
@@ -258,6 +267,9 @@ data class AppSettingsState(
     result = 31 * result + diffLoggingEnabled.hashCode()
     result = 31 * result + listeningPort
     result = 31 * result + listeningEndpoint.hashCode()
+    result = 31 * result + mcpServerEnabled.hashCode()
+    result = 31 * result + mcpServerPath.hashCode()
+    result = 31 * result + mcpRequireAuth.hashCode()
     result = 31 * result + apiThreads
     result = 31 * result + modalTasks.hashCode()
     result = 31 * result + suppressErrors.hashCode()

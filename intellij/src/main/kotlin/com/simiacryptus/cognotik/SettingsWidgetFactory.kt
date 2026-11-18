@@ -260,7 +260,98 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             panel
         }
 
-        private fun createServerControlPanel(): JPanel {
+         private data class McpClientProviderStatus(
+             val name: String,
+             val endpoint: String?,
+             val status: String
+         )
+
+         private fun getMcpEndpointPath(): String {
+             val rawPath = AppSettingsState.instance.mcpServerPath.trim().ifBlank { "/mcp" }
+             return if (rawPath.startsWith("/")) rawPath else "/$rawPath"
+         }
+
+         private fun getMcpServerUrl(): String {
+             val (host, port) = if (CognotikAppServer.isRunning()) {
+                 try {
+                     val running = CognotikAppServer.getServer(
+                         AppSettingsState.instance.listeningEndpoint,
+                         AppSettingsState.instance.listeningPort
+                     )
+                     running.publicHost to running.port
+                 } catch (_: Exception) {
+                     CognotikAppServer.displayHostFor(AppSettingsState.instance.listeningEndpoint) to
+                         AppSettingsState.instance.listeningPort
+                 }
+             } else {
+                 CognotikAppServer.displayHostFor(AppSettingsState.instance.listeningEndpoint) to
+                     AppSettingsState.instance.listeningPort
+             }
+             return "http://$host:$port${getMcpEndpointPath()}"
+         }
+
+         private fun loadMcpClientStatuses(settings: UserSettings): List<McpClientProviderStatus> {
+             val mcpApis = settings.apis.filter { apiData ->
+                 val providerName = apiData.provider?.name.orEmpty()
+                 val base = apiData.apiBase.orEmpty()
+                 providerName.contains("mcp", ignoreCase = true) ||
+                     base.contains("mcp", ignoreCase = true)
+             }
+             return mcpApis.map { apiData ->
+                 val name = apiData.provider?.name ?: "MCP"
+                 val endpoint = apiData.apiBase?.takeIf { it.isNotBlank() }
+                 val key = apiData.key
+                 val status = when {
+                     key?.decrypt == null && endpoint == null -> "Not configured"
+                     endpoint == null -> "Missing endpoint"
+                     key == null -> "Configured (no auth key)"
+                     else -> try {
+                         val models = apiData.provider?.getChatModels(key, endpoint)
+                         if (models != null) {
+                             "Connected (${models.size} model${if (models.size == 1) "" else "s"})"
+                         } else {
+                             "Configured"
+                         }
+                     } catch (e: Exception) {
+                         val detail = e.message?.take(60)?.takeIf { it.isNotBlank() }
+                         if (detail != null) "Disconnected ($detail)" else "Disconnected"
+                     }
+                 }
+                 McpClientProviderStatus(name, endpoint, status)
+             }
+         }
+
+         private fun refreshMcpClientStatuses(container: JPanel, settings: UserSettings) {
+             container.removeAll()
+             container.add(JLabel("MCP Client Providers: Checking..."))
+             container.revalidate()
+             container.repaint()
+
+             Thread({
+                 val statuses = try {
+                     loadMcpClientStatuses(settings)
+                 } catch (e: Exception) {
+                     log.warn("Failed to load MCP client provider status", e)
+                     emptyList()
+                 }
+                 SwingUtilities.invokeLater {
+                     container.removeAll()
+                     if (statuses.isEmpty()) {
+                         container.add(JLabel("MCP Client Providers: None configured"))
+                     } else {
+                         container.add(JLabel("MCP Client Providers:"))
+                         statuses.forEach { entry ->
+                             val endpointSuffix = entry.endpoint?.let { " ($it)" } ?: ""
+                             container.add(JLabel("  • ${entry.name}$endpointSuffix: ${entry.status}"))
+                         }
+                     }
+                     container.revalidate()
+                     container.repaint()
+                 }
+             }, "Cognotik-McpClientStatus").apply { isDaemon = true }.start()
+         }
+
+         private fun createServerControlPanel(onServerStateChanged: () -> Unit = {}): JPanel {
             val panel = JPanel(BorderLayout())
             panel.accessibleContext.accessibleDescription = getMessage("panel.server.description")
             sessionsList.accessibleContext.accessibleDescription = getMessage("list.sessions.description")
@@ -275,6 +366,63 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
             startButton.isEnabled = !CognotikAppServer.isRunning()
             stopButton.isEnabled = CognotikAppServer.isRunning()
+             val mcpStatusLabel = JLabel()
+             val mcpEndpointField = JTextField().apply {
+                 isEditable = false
+                 border = BorderFactory.createEmptyBorder(2, 4, 2, 4)
+             }
+             val copyMcpUrlButton = JButton("Copy MCP URL")
+             copyMcpUrlButton.addActionListener {
+                 val selection = StringSelection(getMcpServerUrl())
+                 Toolkit.getDefaultToolkit().systemClipboard.setContents(selection, null)
+             }
+             val mcpEndpointPanel = JPanel(BorderLayout(5, 0)).apply {
+                 add(mcpEndpointField, BorderLayout.CENTER)
+                 add(copyMcpUrlButton, BorderLayout.EAST)
+             }
+             val updateMcpServerStatus = {
+                 val serverRunning = CognotikAppServer.isRunning()
+                 val mcpEnabled = AppSettingsState.instance.mcpServerEnabled
+                 val authLabel = if (AppSettingsState.instance.mcpRequireAuth) "Auth required" else "No auth"
+                 when {
+                     serverRunning && mcpEnabled -> {
+                         mcpStatusLabel.text = "MCP Server: Active ($authLabel)"
+                         mcpEndpointField.text = getMcpServerUrl()
+                         mcpEndpointPanel.isVisible = true
+                         copyMcpUrlButton.isEnabled = true
+                     }
+                     mcpEnabled -> {
+                         mcpStatusLabel.text = "MCP Server: Enabled (Server stopped, $authLabel)"
+                         mcpEndpointField.text = getMcpServerUrl()
+                         mcpEndpointPanel.isVisible = true
+                         copyMcpUrlButton.isEnabled = false
+                     }
+                     else -> {
+                         mcpStatusLabel.text = "MCP Server: Disabled (${getMcpEndpointPath()})"
+                         mcpEndpointField.text = ""
+                         mcpEndpointPanel.isVisible = false
+                         copyMcpUrlButton.isEnabled = false
+                     }
+                 }
+                 mcpEndpointPanel.revalidate()
+             }
+             updateMcpServerStatus()
+             val mcpClientsPanel = JPanel().apply {
+                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
+             }
+             refreshMcpClientStatuses(mcpClientsPanel, this@SettingsWidget.settings)
+             val mcpPanel = JPanel().apply {
+                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                 border = BorderFactory.createTitledBorder("MCP Status")
+                 mcpStatusLabel.alignmentX = Component.LEFT_ALIGNMENT
+                 mcpEndpointPanel.alignmentX = Component.LEFT_ALIGNMENT
+                 mcpClientsPanel.alignmentX = Component.LEFT_ALIGNMENT
+                 add(mcpStatusLabel)
+                 add(mcpEndpointPanel)
+                 add(Box.createVerticalStrut(4))
+                 add(mcpClientsPanel)
+             }
+
 
             startButton.addActionListener {
                 CognotikAppServer.getServer(
@@ -284,6 +432,9 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 startButton.isEnabled = false
                 stopButton.isEnabled = true
                 updateSessionsList()
+                 updateMcpServerStatus()
+                 onServerStateChanged()
+                 statusBar?.updateWidget(ID())
             }
             stopButton.addActionListener {
                 CognotikAppServer.getServer(
@@ -293,10 +444,20 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
                 startButton.isEnabled = true
                 stopButton.isEnabled = false
                 updateSessionsList()
+                 updateMcpServerStatus()
+                 onServerStateChanged()
+                 statusBar?.updateWidget(ID())
             }
             buttonPanel.add(startButton)
             buttonPanel.add(stopButton)
-            panel.add(buttonPanel, BorderLayout.NORTH)
+             val topPanel = JPanel().apply {
+                 layout = BoxLayout(this, BoxLayout.Y_AXIS)
+                 buttonPanel.alignmentX = Component.LEFT_ALIGNMENT
+                 mcpPanel.alignmentX = Component.LEFT_ALIGNMENT
+                 add(buttonPanel)
+                 add(mcpPanel)
+             }
+             panel.add(topPanel, BorderLayout.NORTH)
 
             sessionsList.model = sessionsListModel
             sessionsList.cellRenderer = SessionListRenderer()
@@ -458,11 +619,18 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
 
         }
 
-        private fun createHeader(): JPanel {
-            val appname = JPanel(FlowLayout(FlowLayout.LEFT, 10, 10))
-            appname.add(JLabel("Cognotik"), FlowLayout.LEFT)
-            appname.add(JLabel(MyIcons.icon), FlowLayout.LEFT)
-            return appname
+         private fun createHeader(mcpHeaderLabel: JLabel? = null): JPanel {
+             val header = JPanel(BorderLayout())
+             val appname = JPanel(FlowLayout(FlowLayout.LEFT, 10, 10))
+             appname.add(JLabel("Cognotik"))
+             appname.add(JLabel(MyIcons.icon))
+             header.add(appname, BorderLayout.WEST)
+             if (mcpHeaderLabel != null) {
+                 val statusPanel = JPanel(FlowLayout(FlowLayout.RIGHT, 10, 10))
+                 statusPanel.add(mcpHeaderLabel)
+                 header.add(statusPanel, BorderLayout.EAST)
+             }
+             return header
         }
 
         private fun setSelectedModel(tree: JTree, modelName: String) {
@@ -500,7 +668,22 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             updateSessionsList()
             val panel = JPanel(BorderLayout())
             panel.accessibleContext.accessibleDescription = getMessage("popup.description")
-            panel.add(createHeader(), BorderLayout.NORTH)
+             val mcpHeaderLabel = JLabel()
+             val updateHeaderMcpStatus = {
+                 val mcpActive = CognotikAppServer.isRunning() && AppSettingsState.instance.mcpServerEnabled
+                 mcpHeaderLabel.text = when {
+                     mcpActive -> "MCP: ${getMcpServerUrl()}"
+                     AppSettingsState.instance.mcpServerEnabled -> "MCP: Enabled (stopped)"
+                     else -> "MCP: Disabled"
+                 }
+                 mcpHeaderLabel.foreground = if (mcpActive) {
+                     UIManager.getColor("Label.foreground")
+                 } else {
+                     UIManager.getColor("Label.disabledForeground")
+                 }
+             }
+             updateHeaderMcpStatus()
+             panel.add(createHeader(mcpHeaderLabel), BorderLayout.NORTH)
 
             val tabbedPane = JTabbedPane()
             tabbedPane.accessibleContext.accessibleDescription = getMessage("tabs.description")
@@ -526,7 +709,7 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             tabbedPane.addTab(getMessage("tab.imageChatModel"), imageChatModelPanel)
             tabbedPane.addTab("Audio Model", audioModelPanel)
             tabbedPane.addTab("Patch Processor", patchProcessorPanel)
-            tabbedPane.addTab(getMessage("tab.server"), createServerControlPanel())
+             tabbedPane.addTab(getMessage("tab.server"), createServerControlPanel(updateHeaderMcpStatus))
             tabbedPane.addTab(getMessage("tab.usage"), usagePanel)
 
             panel.add(tabbedPane, BorderLayout.CENTER)
@@ -562,6 +745,16 @@ class SettingsWidgetFactory : StatusBarWidgetFactory {
             } else {
                 "Server stopped"
             }
+         }<br/>
+     ${
+             when {
+                 CognotikAppServer.isRunning() && AppSettingsState.instance.mcpServerEnabled ->
+                     "MCP Server: ${getMcpServerUrl()}"
+                 AppSettingsState.instance.mcpServerEnabled ->
+                     "MCP Server: Enabled (Server stopped)"
+                 else ->
+                     "MCP Server: Disabled"
+             }
         }
     """.trimIndent().trim()
 

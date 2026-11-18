@@ -23,7 +23,8 @@ object OpenAIModels {
     inputTokenPricePerK = 0.010,
     outputTokenPricePerK = 0.030,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val GPT4o = ChatModel(
@@ -34,7 +35,8 @@ object OpenAIModels {
     inputTokenPricePerK = 0.0025,
     outputTokenPricePerK = 0.010,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val GPT45 = ChatModel(
@@ -45,7 +47,8 @@ object OpenAIModels {
     inputTokenPricePerK = 0.075,
     outputTokenPricePerK = 0.150,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val GPT4oMini = ChatModel(
@@ -56,7 +59,8 @@ object OpenAIModels {
     inputTokenPricePerK = 0.00015,
     outputTokenPricePerK = 0.00060,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val O1Preview = ChatModel(
@@ -79,6 +83,7 @@ object OpenAIModels {
     outputTokenPricePerK = 0.060,
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val O1Mini = ChatModel(
@@ -101,6 +106,7 @@ object OpenAIModels {
     outputTokenPricePerK = 0.00440,
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val O4Mini = ChatModel(
     name = "O4Mini",
@@ -111,6 +117,7 @@ object OpenAIModels {
     outputTokenPricePerK = 0.00440,
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val O3 = ChatModel(
     name = "O3",
@@ -120,6 +127,7 @@ object OpenAIModels {
     outputTokenPricePerK = 0.010,
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val GPT52 = ChatModel(
     name = "GPT-5.2",
@@ -129,7 +137,8 @@ object OpenAIModels {
     inputTokenPricePerK = 1.75 / 1000,
     outputTokenPricePerK = 14.00 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val GPT52Pro = ChatModel(
     name = "GPT-5.2 Pro",
@@ -139,7 +148,8 @@ object OpenAIModels {
     inputTokenPricePerK = 21.00 / 1000,
     outputTokenPricePerK = 168.00 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val GPT5Mini = ChatModel(
     name = "GPT-5 Mini",
@@ -149,7 +159,8 @@ object OpenAIModels {
     inputTokenPricePerK = 0.25 / 1000,
     outputTokenPricePerK = 2.00 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val GPT54 = ChatModel(
     name = "GPT-5.4",
@@ -160,7 +171,8 @@ object OpenAIModels {
     inputTokenPricePerK = 2.50 / 1000,
     outputTokenPricePerK = 15.00 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val GPT54Mini = ChatModel(
     name = "GPT-5.4 Mini",
@@ -171,7 +183,8 @@ object OpenAIModels {
     inputTokenPricePerK = 0.75 / 1000,
     outputTokenPricePerK = 4.50 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
   val GPT54Nano = ChatModel(
     name = "GPT-5.4 Nano",
@@ -182,7 +195,8 @@ object OpenAIModels {
     inputTokenPricePerK = 0.20 / 1000,
     outputTokenPricePerK = 1.25 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
-    outputModalities = setOf(ChatMessageModality.TEXT)
+     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
 
@@ -195,6 +209,7 @@ object OpenAIModels {
     outputTokenPricePerK = 8.00 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val GPT41Mini = ChatModel(
@@ -206,6 +221,7 @@ object OpenAIModels {
     outputTokenPricePerK = 1.60 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val GPT41Nano = ChatModel(
@@ -217,6 +233,7 @@ object OpenAIModels {
     outputTokenPricePerK = 0.40 / 1000,
     inputModalities = setOf(ChatMessageModality.TEXT),
     outputModalities = setOf(ChatMessageModality.TEXT),
+     supportsInteractiveTools = true,
   )
 
   val values: Map<String, ChatModel> = mapOf(

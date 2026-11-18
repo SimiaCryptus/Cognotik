@@ -13,10 +13,7 @@ import com.simiacryptus.cognotik.platform.ServiceRouter
 import com.simiacryptus.cognotik.platform.client.UsageClient
 import com.simiacryptus.cognotik.platform.h2.DatabaseFacet
 import com.simiacryptus.cognotik.platform.model.*
-import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
-import com.simiacryptus.cognotik.platform.service.AuthorizationInterface
-import com.simiacryptus.cognotik.platform.service.UserProvider
-import com.simiacryptus.cognotik.platform.service.UserSettingsInterface
+import com.simiacryptus.cognotik.platform.service.*
 import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.webui.application.CognotikAppServer
@@ -286,6 +283,53 @@ open class FileServer {
     CognotikPlatform.init()
     /* Providers must be registered before the hosted login deserializes settings/ApiData. */
     CoreProviders.init()
+    Session.default_session = Session.newUserID()
+    ServiceKey.DATA_STORAGE.factory = {
+      object : StorageInterface {
+        override fun deleteSessionData(
+          user: User?,
+          session: Session
+        ) {
+        }
+
+        override fun getUserDir(
+          user: User?,
+          session: Session
+        ): File = parsed.baseDir
+
+        override fun getSystemDir(
+          user: User?,
+          session: Session
+        ): File = parsed.baseDir
+
+        override fun updateMessage(
+          user: User?,
+          session: Session,
+          messageId: String,
+          value: String
+        ) {
+        }
+        override fun getMessageMap(
+          user: User?,
+          session: Session
+        ): Map<String, String> = emptyMap()
+        override fun listSessionsForUser(
+          user: User?,
+          path: String
+        ): List<Session> = emptyList()
+
+
+        override fun <T : Any> setJson(
+          user: User?,
+          session: Session,
+          filename: String,
+          settings: T
+        ): T {
+          return settings
+        }
+      }
+
+    }
     val globalRoot = DatabaseFacet.root.let { File(it) }
     DatabaseFacet.root = File(".").absolutePath
     if (!parsed.local) {
@@ -948,34 +992,35 @@ open class FileServer {
     }
     register(context, ServletHolder("web-lib", WebUiServlet("web/lib")), FileServerCli.LIB_PREFIX)
     register(context, ServletHolder("web-app", WebUiServlet("web/app")), FileServerCli.APP_PREFIX)
-   registerRootAssets(context)
-}
-/**
-  * Serves classpath `application/assets` at `/assets/`. Bundled frontends (e.g. Vite) reference
-  * their chunks with absolute `/assets/...` URLs, so requests from the chat UI under /proxy/
-  * (and any other app page) land on the root context; without this mount they fall through to
-  * the gateway and 404.
-  */
-fun registerRootAssets(context: ServletContextHandler) {
-   val url = try {
-     Thread.currentThread().contextClassLoader.getResources("application/assets").toList().firstOrNull()
-       ?: FileServer::class.java.classLoader.getResources("application/assets").toList().firstOrNull()
-   } catch (e: Exception) {
-     log.warn("Could not look up classpath application/assets", e)
-     null
-   }
-   if (url == null) {
-     log.debug("No application/assets resource found; /assets not mounted")
-     return
-   }
-   val base = url.toExternalForm().let { if (it.endsWith("/")) it else "$it/" }
-   val holder = ServletHolder("root-assets", DefaultServlet())
-   holder.setInitParameter("resourceBase", base)
-   holder.setInitParameter("pathInfoOnly", "true")
-   holder.setInitParameter("dirAllowed", "false")
-   holder.setInitParameter("redirectWelcome", "false")
-   addServletSafely(context, holder, "/assets/*")
-   log.info("Mounted /assets from {}", base)
+    registerRootAssets(context)
+  }
+
+  /**
+   * Serves classpath `application/assets` at `/assets/`. Bundled frontends (e.g. Vite) reference
+   * their chunks with absolute `/assets/...` URLs, so requests from the chat UI under /proxy/
+   * (and any other app page) land on the root context; without this mount they fall through to
+   * the gateway and 404.
+   */
+  fun registerRootAssets(context: ServletContextHandler) {
+    val url = try {
+      Thread.currentThread().contextClassLoader.getResources("application/assets").toList().firstOrNull()
+        ?: FileServer::class.java.classLoader.getResources("application/assets").toList().firstOrNull()
+    } catch (e: Exception) {
+      log.warn("Could not look up classpath application/assets", e)
+      null
+    }
+    if (url == null) {
+      log.debug("No application/assets resource found; /assets not mounted")
+      return
+    }
+    val base = url.toExternalForm().let { if (it.endsWith("/")) it else "$it/" }
+    val holder = ServletHolder("root-assets", DefaultServlet())
+    holder.setInitParameter("resourceBase", base)
+    holder.setInitParameter("pathInfoOnly", "true")
+    holder.setInitParameter("dirAllowed", "false")
+    holder.setInitParameter("redirectWelcome", "false")
+    addServletSafely(context, holder, "/assets/*")
+    log.info("Mounted /assets from {}", base)
   }
 
   /**

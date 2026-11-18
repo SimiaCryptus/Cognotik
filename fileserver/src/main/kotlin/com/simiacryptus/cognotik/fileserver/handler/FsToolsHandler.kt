@@ -113,8 +113,8 @@ object FsToolsHandler {
   }
 
   // ------------------------------------------------------------- core ops
-  // HTTP-agnostic apart from the write-permission check, so /batch can reuse
-  // them verbatim (the batch op object *is* the option map).
+   // HTTP-agnostic when request/response are omitted, so /batch and MCP tools
+   // can reuse them verbatim (the batch op object *is* the option map).
 
   /** Reads a previously built index; never touches the filesystem beyond `.data`. */
   fun symbols(root: File, config: FsApiConfig, options: Map<String, Any?>): Map<String, Any?> {
@@ -153,20 +153,38 @@ object FsToolsHandler {
 
   /** Builds/refreshes the index. Mutating: writes `.data/<name>.json` sidecars. */
   fun indexSymbols(
-    request: HttpServletRequest, response: HttpServletResponse,
+     root: File,
+     config: FsApiConfig,
+     options: Map<String, Any?>,
+     writeAllowed: Boolean,
+     readOnly: Boolean = config.readOnly,
+   ): Map<String, Any?> = indexSymbols(
+     request = null,
+     response = null,
+     root = root,
+     config = if (readOnly && !config.readOnly) config.copy(readOnly = true) else config,
+     options = options,
+     writeAllowed = writeAllowed,
+   )
+
+   /** Builds/refreshes the index. Mutating: writes `.data/<name>.json` sidecars. */
+   fun indexSymbols(
+     request: HttpServletRequest?, response: HttpServletResponse?,
     root: File,
     config: FsApiConfig,
     options: Map<String, Any?>,
     writeAllowed: Boolean,
   ): Map<String, Any?> {
     requireCapability(config.symbolsEnabled, "symbols")
-    if (!writeAllowed) {
-      throw FsException(FsErrorCode.EACCES, "symbols", null, "authentication required to build an index")
-    }
-    if (config.readOnly) throw FsException(FsErrorCode.EROFS, "symbols", null)
+     requireWritable(
+       config = config,
+       syscall = "symbols",
+       authorized = writeAllowed,
+       authMessage = "authentication required to build an index",
+     )
     val target = visible(root, str(options, "path") ?: "/", "symbols")
     if (!target.file.exists()) throw FsException(FsErrorCode.ENOENT, "symbols", target.virtual)
-    if (FileAccessControl.isReadOnly(root, target.file) || !isWriteAllowed(getUser(request, response), request)) {
+     if (FileAccessControl.isReadOnly(root, target.file) || !isServletWriteAllowed(request, response)) {
       throw FsException(FsErrorCode.EACCES, "symbols", target.virtual, "target is read-only")
     }
     val indexerConfig = indexerConfig(config, options)
@@ -200,6 +218,24 @@ object FsToolsHandler {
    * Describes one JSON file or every matching file in a subtree, writing
    * `<name>.describe.md` beside each input. Returns the run manifest.
    */
+   fun describe(
+     root: File,
+     config: FsApiConfig,
+     options: Map<String, Any?>,
+     writeAllowed: Boolean,
+     readOnly: Boolean = config.readOnly,
+   ): Map<String, Any?> = describe(
+     request = null,
+     response = null,
+     root = root,
+     config = if (readOnly && !config.readOnly) config.copy(readOnly = true) else config,
+     options = options,
+     writeAllowed = writeAllowed,
+   )
+   /**
+    * Describes one JSON file or every matching file in a subtree, writing
+    * `<name>.describe.md` beside each input. Returns the run manifest.
+    */
   fun describe(
     request: HttpServletRequest?, response: HttpServletResponse?,
     root: File,
@@ -248,6 +284,24 @@ object FsToolsHandler {
    * Compresses one text file or every matching file in a subtree, writing
    * `<name>.caveman.txt` beside each input. Returns the run manifest.
    */
+   fun caveman(
+     root: File,
+     config: FsApiConfig,
+     options: Map<String, Any?>,
+     writeAllowed: Boolean,
+     readOnly: Boolean = config.readOnly,
+   ): Map<String, Any?> = caveman(
+     request = null,
+     response = null,
+     root = root,
+     config = if (readOnly && !config.readOnly) config.copy(readOnly = true) else config,
+     options = options,
+     writeAllowed = writeAllowed,
+   )
+   /**
+    * Compresses one text file or every matching file in a subtree, writing
+    * `<name>.caveman.txt` beside each input. Returns the run manifest.
+    */
   fun caveman(
     request: HttpServletRequest?, response: HttpServletResponse?,
     root: File,
@@ -368,7 +422,7 @@ object FsToolsHandler {
       } else {
         val out = resolveOutput(root, destination, syscall)
         if (!dryRun) {
-          requireWritable(request, response, config, syscall, writeAllowed)
+           requireWritable(config, syscall, writeAllowed, request = request, response = response)
           if (FileAccessControl.isReadOnly(root, out.file)) {
             throw FsException(FsErrorCode.EACCES, syscall, out.virtual, "target is read-only")
           }
@@ -391,7 +445,7 @@ object FsToolsHandler {
       val target = visible(root, requested, syscall)
       if (!target.file.exists()) throw FsException(FsErrorCode.ENOENT, syscall, target.virtual)
       scope = target.virtual
-      if (!dryRun) requireWritable(request, response, config, syscall, writeAllowed)
+       if (!dryRun) requireWritable(config, syscall, writeAllowed, request = request, response = response)
 
       val inputs = collectInputs(root, target, options, syscall, suffix)
       if (inputs.isEmpty()) {
@@ -569,23 +623,31 @@ object FsToolsHandler {
 
   /** Same gate as [indexSymbols]; `dryRun` callers skip it entirely. */
   private fun requireWritable(
-    request: HttpServletRequest?,
-    response: HttpServletResponse?,
     config: FsApiConfig,
     syscall: String,
-    writeAllowed: Boolean,
+     authorized: Boolean,
+     readOnly: Boolean = config.readOnly,
+     request: HttpServletRequest? = null,
+     response: HttpServletResponse? = null,
+     authMessage: String = "authentication required to write results",
   ) {
-    if (!writeAllowed) {
-      throw FsException(FsErrorCode.EACCES, syscall, null, "authentication required to write results")
+     if (!authorized) {
+       throw FsException(FsErrorCode.EACCES, syscall, null, authMessage)
     }
-    if (config.readOnly) throw FsException(FsErrorCode.EROFS, syscall, null)
-    if (request == null || response == null) {
-      throw FsException(FsErrorCode.EACCES, syscall, null, "no request context; retry with dryRun=true")
-    }
-    if (!isWriteAllowed(getUser(request, response), request)) {
+     if (config.readOnly || readOnly) throw FsException(FsErrorCode.EROFS, syscall, null)
+     if (!isServletWriteAllowed(request, response)) {
       throw FsException(FsErrorCode.EACCES, syscall, null, "write access denied")
     }
   }
+   private fun isServletWriteAllowed(
+     request: HttpServletRequest?,
+     response: HttpServletResponse?,
+   ): Boolean {
+     if (request == null && response == null) return true
+     if (request == null || response == null) return false
+     return isWriteAllowed(getUser(request, response), request)
+   }
+
 
   private fun visible(root: File, path: String, syscall: String): FsTarget {
     val resolved = FsPath.resolve(root, path, syscall)

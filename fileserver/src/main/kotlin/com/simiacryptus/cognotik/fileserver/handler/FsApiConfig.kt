@@ -57,6 +57,10 @@ data class FsApiConfig(
   val terminalShell: List<String> = emptyList(),
    /** Server-absolute URL of the chat assistant, or null when no chat is mounted. */
    val chatUrl: String? = null,
+  /** Whether MCP (Model Context Protocol) tool access is enabled. */
+  val mcpEnabled: Boolean = true,
+  /** Server-absolute URL of the MCP endpoint, or null when no MCP server is mounted. */
+  val mcpUrl: String? = null,
 ) {
   /**
    * The view presented to a caller that may not write: every mutating
@@ -67,6 +71,8 @@ data class FsApiConfig(
     execAllowlist = emptyMap(),
     execAllowAny = false,
     terminalEnabled = false,
+    mcpEnabled = false,
+    mcpUrl = null,
   )
 
 

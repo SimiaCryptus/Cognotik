@@ -48,8 +48,7 @@ interface StorageInterface : SessionFileStore, SessionContentStore, MessageStore
    * @param path The path filter for sessions (implementation-specific)
    * @return A list of Session objects
    */
-  @Suppress("DEPRECATION")
-  fun listSessionsForUser(user: User?, path: String): List<Session> = listSessionsForUser(user, path)
+  fun listSessionsForUser(user: User?, path: String): List<Session> = emptyList()
 
   /**
    * Paged variant of [listSessionsForUser].
@@ -182,9 +181,7 @@ interface MessageStore {
    *
    * @return an immutable-by-contract map of message id to content
    */
-  @Suppress("DEPRECATION")
-  fun getMessageMap(user: User?, session: Session): Map<String, String> =
-    getMessageMap(user, session).toMap(LinkedHashMap())
+  fun getMessageMap(user: User?, session: Session): Map<String, String> = emptyMap()
 
   /**
    * Retrieves a single message.
@@ -322,8 +319,8 @@ interface SessionFileStore {
   /**
    * Gets the root directory for a user's data, with null-safety enforced by the type system.
    */
-  @Suppress("DEPRECATION")
-  fun userRootFor(user: User): File = userRootFor(user)
+  fun userRootFor(user: User): File =
+    throw UnsupportedOperationException("userRootFor is not implemented by ${this.javaClass.name}")
 }
 /**
  * Resolves [path] beneath [root], rejecting traversal outside the session root.

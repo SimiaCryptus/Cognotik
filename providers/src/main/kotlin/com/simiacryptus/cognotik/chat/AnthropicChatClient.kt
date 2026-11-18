@@ -69,7 +69,7 @@ class AnthropicChatClient(
               outputTokenPricePerK = 0.0, // TODO: Set actual pricing if known
               inputModalities = setOf(ChatMessageModality.TEXT),
               outputModalities = setOf(ChatMessageModality.TEXT), // TODO: Set actual pricing if known
-              supportsTools = true, // all current Anthropic chat models support tool use
+              supportsInteractiveTools = true,
             )
           }
         }.let { chatModel -> ReasoningVariants.expand(chatModel) }
@@ -225,7 +225,8 @@ class AnthropicChatClient(
         }
         if (plainText.isNotBlank()) blocks += AnthropicTextContentBlock(text = plainText)
       }
-      val ordered = blocks.filterIsInstance<AnthropicToolResultBlock>() + blocks.filter { it !is AnthropicToolResultBlock }
+      val ordered =
+        blocks.filterIsInstance<AnthropicToolResultBlock>() + blocks.filter { it !is AnthropicToolResultBlock }
       if (ordered.isNotEmpty()) {
         alternating += AnthropicMessage(role = thisRole.toString(), content = ordered)
       }
@@ -254,7 +255,7 @@ class AnthropicChatClient(
     part.tool_result?.let { result ->
       out += AnthropicToolResultBlock(
         tool_use_id = result.tool_use_id,
-        content = listOf(AnthropicTextContentBlock(text = toolResultText(result))),
+        content = toToolResultContent(result),
         is_error = if (result.is_error) true else null,
       )
     }
@@ -266,7 +267,11 @@ class AnthropicChatClient(
         val semicolonIdx = withoutScheme.indexOf(';')
         val mediaType = if (semicolonIdx >= 0) withoutScheme.substring(0, semicolonIdx) else "image/jpeg"
         out += AnthropicImageContentBlock(
-          source = AnthropicImageSource(type = "base64", media_type = mediaType, data = withoutScheme.substringAfter("base64,"))
+          source = AnthropicImageSource(
+            type = "base64",
+            media_type = mediaType,
+            data = withoutScheme.substringAfter("base64,")
+          )
         )
       }
 
@@ -277,9 +282,55 @@ class AnthropicChatClient(
     return out
   }
 
-  private fun toolResultText(result: ModelSchema.ToolResultBlock): String {
-    val text = result.content.joinToString("\n") { (it as? MCPContent.Text)?.text ?: "[${it.javaClass.simpleName}]" }
-    return text.ifBlank { result.structured?.toString() ?: "(no output)" }
+  private fun toToolResultContent(result: ModelSchema.ToolResultBlock): List<AnthropicContentInput> {
+    val blocks = result.content.mapNotNull { item ->
+      when (item) {
+        is MCPContent.Text -> item.text.takeIf { it.isNotBlank() }?.let { AnthropicTextContentBlock(text = it) }
+        is MCPContent.Image -> AnthropicImageContentBlock(
+          source = AnthropicImageSource(
+            type = "base64",
+            media_type = item.mimeType.ifBlank { "image/png" },
+            data = item.data,
+          )
+        )
+
+        is MCPContent.Audio -> AnthropicTextContentBlock(
+          text = "[Audio (${item.mimeType}): ${item.data.length} base64 chars]"
+        )
+
+        is MCPContent.ResourceLink -> {
+          val desc = buildString {
+            append("[ResourceLink: ")
+            item.name?.let { append(it).append(" — ") }
+            append(item.uri)
+            item.mimeType?.let { append(" (").append(it).append(")") }
+            append("]")
+          }
+          AnthropicTextContentBlock(text = desc)
+        }
+
+        is MCPContent.Resource -> {
+          val header = buildString {
+            append("[Resource: ").append(item.uri)
+            item.mimeType?.let { append(" (").append(it).append(")") }
+            append("]")
+          }
+          val text = item.text
+          val blob = item.blob
+          val body = when {
+            !text.isNullOrBlank() -> text
+            !blob.isNullOrBlank() -> "[binary blob: ${blob.length} base64 chars]"
+            else -> null
+          }
+          AnthropicTextContentBlock(
+            text = if (body != null) "$header\n$body" else header
+          )
+        }
+      }
+    }
+    return blocks.ifEmpty {
+      listOf(AnthropicTextContentBlock(text = result.structured?.toString() ?: "(no output)"))
+    }
   }
 
   private fun toChatResponse(response: AnthropicResponse): ModelSchema.ChatResponse {
@@ -308,7 +359,11 @@ class AnthropicChatClient(
       when (block.type) {
         "text" -> ModelSchema.ContentPart(text = block.text.orEmpty())
         "thinking" -> ModelSchema.ContentPart(
-          thinking = ModelSchema.ThinkingBlock(text = block.thinking, signature = block.signature, provider = PROVIDER_TAG)
+          thinking = ModelSchema.ThinkingBlock(
+            text = block.thinking,
+            signature = block.signature,
+            provider = PROVIDER_TAG
+          )
         )
 
         "redacted_thinking" -> ModelSchema.ContentPart(
@@ -334,7 +389,14 @@ class AnthropicChatClient(
     is AnthropicTextContentBlock -> part.text
     is AnthropicImageContentBlock -> "[Image: ${part.source.type}]"
     is AnthropicToolUseBlock -> "[tool_use ${part.name}: ${part.input}]"
-    is AnthropicToolResultBlock -> "[tool_result ${part.tool_use_id}: ${part.content.joinToString(" ") { describeBlock(it) }}]"
+    is AnthropicToolResultBlock -> "[tool_result ${part.tool_use_id}: ${
+      part.content.joinToString(" ") {
+        describeBlock(
+          it
+        )
+      }
+    }]"
+
     is AnthropicThinkingBlock -> "[thinking]"
     is AnthropicRedactedThinkingBlock -> "[redacted thinking]"
   }
@@ -385,6 +447,7 @@ class AnthropicChatClient(
   companion object {
     private val log = getLogger(AnthropicChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+
     /** Origin tag for thinking blocks; thinking from other providers is never sent to Anthropic. */
     const val PROVIDER_TAG = "anthropic"
     private const val TOOL_PROVIDERS_WITHOUT_TOOLS =

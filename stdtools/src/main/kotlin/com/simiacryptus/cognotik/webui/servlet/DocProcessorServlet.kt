@@ -356,8 +356,14 @@ open class DocProcessorServlet() : HttpServlet() {
    */
   protected fun requestSession(request: HttpServletRequest): Session? =
     (request.getParameter("sessionId")?.trim()?.ifBlank { null }
-      ?: request.getParameter("session")?.trim()?.ifBlank { null })
-      ?.let { Session(it) }
+      ?: request.getParameter("session")?.trim()?.ifBlank { null }).let {
+      when {
+        it == null -> null
+        it == "null" -> null
+        it.isBlank() -> null
+        else -> it
+      }
+    }?.let { Session(it) } ?: default_session
 
 
   protected open fun resolveDocsFolder(request: HttpServletRequest, root: File): File = root

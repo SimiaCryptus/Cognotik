@@ -22,9 +22,21 @@ import com.simiacryptus.cognotik.platform.model.EmbeddingModel
 import com.simiacryptus.cognotik.platform.model.ImageModel
 import com.simiacryptus.cognotik.text.patch.PatchProcessors
 import com.simiacryptus.cognotik.util.BrowseUtil
+import com.simiacryptus.cognotik.util.JsonUtil
 import org.slf4j.LoggerFactory
 import java.awt.*
 import java.awt.event.ActionEvent
+import java.io.BufferedReader
+import java.io.InputStreamReader
+import java.io.OutputStreamWriter
+import java.net.URI
+import java.net.http.HttpClient
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.nio.charset.StandardCharsets
+import java.time.Duration
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.TimeUnit
 import javax.swing.*
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
@@ -342,6 +354,162 @@ class AppSettingsComponent : Disposable {
         buttonPanel.add(editButton)
         add(buttonPanel, BorderLayout.SOUTH)
     }
+     @Name("Enable MCP Server")
+     val mcpServerEnabled = JBCheckBox()
+     @Name("MCP Server Path")
+     val mcpServerPath = JBTextField()
+     @Name("MCP Servers")
+     val mcpServers = JBTable(
+         object : DefaultTableModel(
+             arrayOf("Enabled", "Name", "Type", "Command / URL", "Args", "Env", "Headers"),
+             0
+         ) {
+             override fun getColumnClass(columnIndex: Int): Class<*> {
+                 return if (columnIndex == 0) Boolean::class.javaObjectType else String::class.java
+             }
+             override fun isCellEditable(row: Int, column: Int): Boolean {
+                 return column == 0
+             }
+         }
+     ).apply {
+         columnModel.getColumn(0).preferredWidth = 60
+         columnModel.getColumn(0).maxWidth = 70
+         columnModel.getColumn(1).preferredWidth = 130
+         columnModel.getColumn(2).preferredWidth = 110
+         columnModel.getColumn(3).preferredWidth = 200
+         columnModel.getColumn(4).preferredWidth = 140
+         columnModel.getColumn(5).preferredWidth = 120
+         columnModel.getColumn(6).preferredWidth = 150
+         columnModel.getColumn(3).cellRenderer = object : DefaultTableCellRenderer() {
+             override fun setValue(value: Any?) {
+                 text = maskSensitiveUrlTokens(value?.toString() ?: "")
+             }
+         }
+         columnModel.getColumn(5).cellRenderer = object : DefaultTableCellRenderer() {
+             override fun setValue(value: Any?) {
+                 text = maskSensitiveKeyValuePairs(value?.toString() ?: "", separator = '=')
+             }
+         }
+         columnModel.getColumn(6).cellRenderer = object : DefaultTableCellRenderer() {
+             override fun setValue(value: Any?) {
+                 text = maskSensitiveKeyValuePairs(value?.toString() ?: "", separator = ':')
+             }
+         }
+     }
+     @Name("MCP Server Management")
+     val mcpServerManagementPanel = JPanel(BorderLayout()).apply {
+         val scrollPane = JScrollPane(mcpServers)
+         scrollPane.preferredSize = Dimension(600, 250)
+         add(scrollPane, BorderLayout.CENTER)
+         val buttonPanel = JPanel(FlowLayout(FlowLayout.LEFT))
+         val addButton = JButton("Add MCP Server")
+         val removeButton = JButton("Remove")
+         val editButton = JButton("Edit")
+         val testButton = JButton("Test Connection")
+         removeButton.isEnabled = false
+         editButton.isEnabled = false
+         testButton.isEnabled = false
+         addButton.addActionListener {
+             val model = mcpServers.model as DefaultTableModel
+             showMcpServerDialog(
+                 parent = this,
+                 title = "Add MCP Server Configuration"
+             ) { enabled, name, type, commandOrUrl, args, env, headers ->
+                 model.addRow(arrayOf(enabled, name, type, commandOrUrl, args, env, headers))
+                 log.debug("Added MCP server configuration: $name ($type)")
+             }
+         }
+         removeButton.addActionListener {
+             try {
+                 val selectedRows = mcpServers.selectedRows
+                 if (selectedRows.isEmpty()) {
+                     log.warn("No MCP server configurations selected for removal")
+                     return@addActionListener
+                 }
+                 val model = mcpServers.model as DefaultTableModel
+                 for (i in selectedRows.reversed()) {
+                     val name = model.getValueAt(i, 1) as? String
+                     val type = model.getValueAt(i, 2) as? String
+                     model.removeRow(i)
+                     log.debug("Removed MCP server configuration: $name ($type)")
+                 }
+             } catch (e: Exception) {
+                 log.error("Unexpected error removing MCP server configuration: ${e.message}", e)
+                 JOptionPane.showMessageDialog(
+                     this, "Failed to remove MCP server configuration: ${e.message}", "Error", JOptionPane.ERROR_MESSAGE
+                 )
+             }
+         }
+         editButton.addActionListener {
+             val selectedRow = mcpServers.selectedRow
+             if (selectedRow != -1) {
+                 val model = mcpServers.model as DefaultTableModel
+                 val currentEnabled = (model.getValueAt(selectedRow, 0) as? Boolean)
+                     ?: (model.getValueAt(selectedRow, 0)?.toString()?.toBoolean() ?: true)
+                 val currentName = model.getValueAt(selectedRow, 1)?.toString() ?: ""
+                 val currentType = model.getValueAt(selectedRow, 2)?.toString() ?: MCP_TYPE_STDIO
+                 val currentCommandOrUrl = model.getValueAt(selectedRow, 3)?.toString() ?: ""
+                 val currentArgs = model.getValueAt(selectedRow, 4)?.toString() ?: ""
+                 val currentEnv = model.getValueAt(selectedRow, 5)?.toString() ?: ""
+                 val currentHeaders = model.getValueAt(selectedRow, 6)?.toString() ?: ""
+                 showMcpServerDialog(
+                     parent = this,
+                     title = "Edit MCP Server Configuration",
+                     initialEnabled = currentEnabled,
+                     initialName = currentName,
+                     initialType = currentType,
+                     initialCommandOrUrl = currentCommandOrUrl,
+                     initialArgs = currentArgs,
+                     initialEnv = currentEnv,
+                     initialHeaders = currentHeaders
+                 ) { enabled, name, type, commandOrUrl, args, env, headers ->
+                     model.setValueAt(enabled, selectedRow, 0)
+                     model.setValueAt(name, selectedRow, 1)
+                     model.setValueAt(type, selectedRow, 2)
+                     model.setValueAt(commandOrUrl, selectedRow, 3)
+                     model.setValueAt(args, selectedRow, 4)
+                     model.setValueAt(env, selectedRow, 5)
+                     model.setValueAt(headers, selectedRow, 6)
+                     log.debug("Updated MCP server configuration: $name ($type)")
+                 }
+             }
+         }
+         testButton.addActionListener {
+             val selectedRow = mcpServers.selectedRow
+             if (selectedRow != -1) {
+                 val model = mcpServers.model as DefaultTableModel
+                 val type = model.getValueAt(selectedRow, 2)?.toString() ?: MCP_TYPE_STDIO
+                 val commandOrUrl = model.getValueAt(selectedRow, 3)?.toString() ?: ""
+                 val args = model.getValueAt(selectedRow, 4)?.toString() ?: ""
+                 val env = model.getValueAt(selectedRow, 5)?.toString() ?: ""
+                 val headers = model.getValueAt(selectedRow, 6)?.toString() ?: ""
+                 testButton.isEnabled = false
+                 testButton.text = "Testing..."
+                 testMcpConnection(type, commandOrUrl, args, env, headers) { success, message ->
+                     testButton.isEnabled = mcpServers.selectedRow != -1
+                     testButton.text = "Test Connection"
+                     JOptionPane.showMessageDialog(
+                         this,
+                         message,
+                         if (success) "Connection Successful" else "Connection Failed",
+                         if (success) JOptionPane.INFORMATION_MESSAGE else JOptionPane.ERROR_MESSAGE
+                     )
+                 }
+             }
+         }
+         mcpServers.selectionModel.addListSelectionListener {
+             val hasSelection = mcpServers.selectedRow != -1
+             removeButton.isEnabled = hasSelection
+             editButton.isEnabled = hasSelection
+             testButton.isEnabled = hasSelection
+         }
+         buttonPanel.add(addButton)
+         buttonPanel.add(removeButton)
+         buttonPanel.add(editButton)
+         buttonPanel.add(testButton)
+         add(buttonPanel, BorderLayout.SOUTH)
+     }
+
 
     @Name("Editor Actions")
     var usage =

@@ -1,4 +1,6 @@
 package com.simiacryptus.cognotik.chat
+import com.fasterxml.jackson.core.type.TypeReference
+import com.fasterxml.jackson.databind.JsonNode
 
 import com.google.common.util.concurrent.ListeningScheduledExecutorService
 import com.google.genai.Client
@@ -13,6 +15,8 @@ import com.simiacryptus.cognotik.exceptions.*
 import com.simiacryptus.cognotik.platform.model.*
 import com.simiacryptus.cognotik.platform.model.ChatModel.ReasoningLevel
 import com.simiacryptus.cognotik.platform.model.ModelSchema.TokenTypes
+import com.simiacryptus.cognotik.platform.model.mcp.MCPContent
+import com.simiacryptus.cognotik.util.JsonUtil
 import com.simiacryptus.cognotik.util.SecureString
 import com.simiacryptus.cognotik.util.toJson
 import okio.ByteString.Companion.decodeBase64
@@ -156,6 +160,9 @@ class GeminiSdkChatClient(
     logStreams: MutableList<BufferedOutputStream>,
     usageHandler: UsageListener
   ): ModelSchema.ChatResponse {
+    check(chatRequest.toolProviders.isNullOrEmpty() || !chatRequest.tools.isNullOrEmpty()) {
+      TOOL_PROVIDERS_WITHOUT_TOOLS
+    }
     val requestID = UUID.randomUUID().toString()
     val startTime = System.currentTimeMillis()
     log.debug("Starting Gemini chat request {} for model {}", requestID, model.modelId)
@@ -360,6 +367,22 @@ class GeminiSdkChatClient(
               .append(text.indent("    "))
               .append("\n```\n")
           }
+          part.functionCall().getOrNull()?.let { fc ->
+            sb
+              .append("\n**Function Call:** `")
+              .append(fc.name().orElse(""))
+              .append("`\n```json\n")
+              .append(fc.args().orElse(emptyMap()).toJson().indent("    "))
+              .append("\n```\n")
+          }
+          part.functionResponse().getOrNull()?.let { fr ->
+            sb
+              .append("\n**Function Response:** `")
+              .append(fr.name().orElse(""))
+              .append("`\n```json\n")
+              .append(fr.response().orElse(emptyMap()).toJson().indent("    "))
+              .append("\n```\n")
+          }
           part.inlineData().getOrNull()?.let { inlineData ->
             val rawMime = inlineData.mimeType().getOrNull()
             when (val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()) {
@@ -536,6 +559,53 @@ class GeminiSdkChatClient(
         log.warn("Failed to configure speech config for TTS: {}", e.message, e)
       }
     }
+    // Configure function-calling tools and tool_choice
+    chatRequest.tools?.takeIf { it.isNotEmpty() }?.let { tools ->
+      try {
+        val functionDeclarations = tools.map { tool ->
+          val fnBuilder = FunctionDeclaration.builder()
+            .name(tool.name)
+          if (tool.description.isNotBlank()) {
+            fnBuilder.description(tool.description)
+          }
+          toGeminiParametersSchema(tool.inputSchema)?.let { schema ->
+            fnBuilder.parameters(schema)
+          }
+          fnBuilder.build()
+        }
+        builder.tools(
+          listOf(
+            Tool.builder()
+              .functionDeclarations(functionDeclarations)
+              .build()
+          )
+        )
+        chatRequest.tool_choice?.trim()?.takeIf { it.isNotEmpty() }?.let { choice ->
+          val fcConfig = when (choice.lowercase()) {
+            "auto" -> FunctionCallingConfig.builder()
+              .mode(FunctionCallingConfigMode.Known.AUTO)
+              .build()
+            "none" -> FunctionCallingConfig.builder()
+              .mode(FunctionCallingConfigMode.Known.NONE)
+              .build()
+            "any", "required" -> FunctionCallingConfig.builder()
+              .mode(FunctionCallingConfigMode.Known.ANY)
+              .build()
+            else -> FunctionCallingConfig.builder()
+              .mode(FunctionCallingConfigMode.Known.ANY)
+              .allowedFunctionNames(listOf(choice))
+              .build()
+          }
+          builder.toolConfig(
+            ToolConfig.builder()
+              .functionCallingConfig(fcConfig)
+              .build()
+          )
+        }
+      } catch (e: Exception) {
+        log.warn("Failed to configure tools/toolConfig: {}", e.message, e)
+      }
+    }
     val systemMessages = chatRequest.messages.filter { it.role == ModelSchema.Role.system }
     if (systemMessages.isNotEmpty() && supportsSystemInstruction) {
       try {
@@ -571,44 +641,78 @@ class GeminiSdkChatClient(
     messages: List<ModelSchema.ChatMessage>,
     supportsSystemInstruction: Boolean = true
   ): List<Content> {
-    if (supportsSystemInstruction) {
-      return messages
-        .filter { it.role != ModelSchema.Role.system }
-        .mapNotNull { it.toContent() }
-    }
-    // Model does not support system instructions: merge system messages
-    // into the first user message (or prepend as a user message).
-    val systemContent = messages
-      .filter { it.role == ModelSchema.Role.system }
-      .flatMap { it.content ?: emptyList() }
-    val nonSystem = messages.filter { it.role != ModelSchema.Role.system }
-    if (systemContent.isEmpty()) {
-      return nonSystem.mapNotNull { it.toContent() }
-    }
-    val firstUserIdx = nonSystem.indexOfFirst { it.role == ModelSchema.Role.user }
-    return if (firstUserIdx >= 0) {
-      nonSystem.mapIndexedNotNull { idx, msg ->
-        if (idx == firstUserIdx) {
-          ModelSchema.ChatMessage(
-            role = ModelSchema.Role.user,
-            content = mergeTextParts(systemContent + (msg.content ?: emptyList()))
-          ).toContent()
-        } else {
-          msg.toContent()
+
+    val toolNames = mutableMapOf<String, String>()
+    messages.forEach { msg ->
+      msg.content?.forEach { part ->
+        part.tool_use?.let { toolUse ->
+          if (toolUse.id.isNotBlank() && toolUse.name.isNotBlank()) {
+            toolNames[toolUse.id] = toolUse.name
+          }
         }
       }
-    } else {
-      // No user message exists; prepend system content as a user message
-      listOfNotNull(
-        ModelSchema.ChatMessage(
-          role = ModelSchema.Role.user,
-          content = mergeTextParts(systemContent)
-        ).toContent()
-      ) + nonSystem.mapNotNull { it.toContent() }
     }
+    val rawContents = if (supportsSystemInstruction) {
+      messages
+        .filter { it.role != ModelSchema.Role.system }
+        .mapNotNull { it.toContent(toolNames) }
+    } else {
+      // Model does not support system instructions: merge system messages
+      // into the first user message (or prepend as a user message).
+      val systemContent = messages
+        .filter { it.role == ModelSchema.Role.system }
+        .flatMap { it.content ?: emptyList() }
+      val nonSystem = messages.filter { it.role != ModelSchema.Role.system }
+      if (systemContent.isEmpty()) {
+        nonSystem.mapNotNull { it.toContent(toolNames) }
+      } else {
+        val firstUserIdx = nonSystem.indexOfFirst { it.role == ModelSchema.Role.user }
+        if (firstUserIdx >= 0) {
+          nonSystem.mapIndexedNotNull { idx, msg ->
+            if (idx == firstUserIdx) {
+              ModelSchema.ChatMessage(
+                role = ModelSchema.Role.user,
+                content = mergeTextParts(systemContent + (msg.content ?: emptyList()))
+              ).toContent(toolNames)
+            } else {
+              msg.toContent(toolNames)
+            }
+          }
+        } else {
+          // No user message exists; prepend system content as a user message
+          listOfNotNull(
+            ModelSchema.ChatMessage(
+              role = ModelSchema.Role.user,
+              content = mergeTextParts(systemContent)
+            ).toContent(toolNames)
+          ) + nonSystem.mapNotNull { it.toContent(toolNames) }
+        }
+      }
+    }
+    return mergeConsecutiveSameRoleContents(rawContents)
   }
 
-  private fun ModelSchema.ChatMessage.toContent() = builder()
+  private fun mergeConsecutiveSameRoleContents(contents: List<Content>): List<Content> {
+    if (contents.size <= 1) return contents
+    val merged = mutableListOf<Content>()
+    for (content in contents) {
+      val prev = merged.lastOrNull()
+      val prevRole = prev?.role()?.getOrNull()
+      val currRole = content.role().getOrNull()
+      if (prev != null && prevRole != null && prevRole == currRole) {
+        val combinedParts = prev.parts().orElse(emptyList()) + content.parts().orElse(emptyList())
+        merged[merged.lastIndex] = builder()
+          .role(currRole)
+          .parts(combinedParts)
+          .build()
+      } else {
+        merged.add(content)
+      }
+    }
+    return merged
+  }
+
+  private fun ModelSchema.ChatMessage.toContent(toolNames: Map<String, String> = emptyMap()) = builder()
     .role(
       when (this.role) {
         ModelSchema.Role.system -> "user" // Gemini does not have a system role, treat as user
@@ -617,7 +721,7 @@ class GeminiSdkChatClient(
         else -> "user"
       }
     )
-    .parts(content?.flatMap { it.parts() } ?: listOf(fromText("")))
+    .parts(content?.flatMap { it.parts(toolNames) } ?: listOf(fromText("")))
     .build()
 
   /**
@@ -637,7 +741,8 @@ class GeminiSdkChatClient(
       }
     }
     for (part in parts) {
-      val isTextOnly = part.text != null && part.image_url == null && part.input_audio == null
+      val isTextOnly = part.text != null && part.image_url == null && part.input_audio == null &&
+        part.tool_use == null && part.tool_result == null
       if (isTextOnly) {
         if (textBuffer.isNotEmpty()) textBuffer.append("\n")
         textBuffer.append(part.text)
@@ -651,7 +756,46 @@ class GeminiSdkChatClient(
   }
 
 
-  fun ModelSchema.ContentPart.part(): Part? = when {
+  fun ModelSchema.ContentPart.part(): Part? = part(emptyMap())
+
+  fun ModelSchema.ContentPart.part(toolNames: Map<String, String>): Part? = when {
+    tool_use != null -> {
+      val tu = tool_use!!
+      val argsMap: Map<String, Any> = if (tu.input.isObject) {
+        JsonUtil.objectMapper().convertValue(
+          tu.input,
+          object : TypeReference<Map<String, Any>>() {}
+        )
+      } else {
+        emptyMap()
+      }
+      val fcBuilder = FunctionCall.builder()
+        .name(tu.name)
+        .args(argsMap)
+      if (tu.id.isNotBlank()) {
+        fcBuilder.id(tu.id)
+      }
+       val partBuilder = Part.builder().functionCall(fcBuilder.build())
+       if (tu.id.isNotBlank()) {
+         thoughtSignatures[thoughtSignatureKey(tu.id, tu.name)]?.let { sig ->
+           partBuilder.thoughtSignature(sig)
+         }
+       }
+       partBuilder.build()
+    }
+
+    tool_result != null -> {
+      val tr = tool_result!!
+      val fnName = toolNames[tr.tool_use_id] ?: tr.tool_use_id.ifBlank { "unknown" }
+      val frBuilder = FunctionResponse.builder()
+        .name(fnName)
+        .response(toolResultResponse(tr))
+      if (tr.tool_use_id.isNotBlank()) {
+        frBuilder.id(tr.tool_use_id)
+      }
+      Part.builder().functionResponse(frBuilder.build()).build()
+    }
+
     image_url != null -> {
       try {
         // Handle image URLs
@@ -733,48 +877,272 @@ class GeminiSdkChatClient(
     else -> fromText("")
   }
 
-  fun ModelSchema.ContentPart.parts(): List<Part> = when {
-    image_url != null && text != null -> listOfNotNull(
-      copy(text = null).part(),
-      copy(image_url = null).part()
-    )
-
-    input_audio != null && text != null -> listOfNotNull(
-      copy(text = null).part(),
-      copy(input_audio = null).part()
-    )
 
 
-    else -> listOfNotNull(
-      this.part()
-    )
+
+  fun ModelSchema.ContentPart.parts(): List<Part> = parts(emptyMap())
+
+  fun ModelSchema.ContentPart.parts(toolNames: Map<String, String>): List<Part> {
+    val hasMultiple = listOf(
+      image_url != null,
+      input_audio != null,
+      tool_use != null,
+      tool_result != null,
+      text != null
+    ).count { it } > 1
+    if (!hasMultiple) {
+      return listOfNotNull(this.part(toolNames))
+    }
+    val out = mutableListOf<Part>()
+    if (image_url != null) {
+      copy(text = null, input_audio = null, tool_use = null, tool_result = null).part(toolNames)?.let(out::add)
+    }
+    if (input_audio != null) {
+      copy(text = null, image_url = null, tool_use = null, tool_result = null).part(toolNames)?.let(out::add)
+    }
+    if (text != null) {
+      copy(image_url = null, input_audio = null, tool_use = null, tool_result = null).part(toolNames)?.let(out::add)
+    }
+    if (tool_use != null) {
+      copy(text = null, image_url = null, input_audio = null, tool_result = null).part(toolNames)?.let(out::add)
+    }
+    if (tool_result != null) {
+      copy(text = null, image_url = null, input_audio = null, tool_use = null).part(toolNames)?.let(out::add)
+    }
+    return out
+  }
+
+  private fun toolResultResponse(result: ModelSchema.ToolResultBlock): Map<String, Any> {
+    val text = result.content.joinToString("\n") {
+      (it as? MCPContent.Text)?.text ?: "[${it.javaClass.simpleName}]"
+    }
+    val structured = result.structured
+    val key = if (result.is_error) "error" else "output"
+    if (text.isBlank() && structured != null) {
+      val structuredValue: Any = if (structured is JsonNode) {
+        JsonUtil.objectMapper().convertValue(structured, Any::class.java)
+      } else {
+        structured
+      }
+      return if (!result.is_error && structuredValue is Map<*, *>) {
+        @Suppress("UNCHECKED_CAST")
+        structuredValue as Map<String, Any>
+      } else {
+        mapOf(key to structuredValue)
+      }
+    }
+    val value = text.ifBlank { structured?.toString() ?: "(no output)" }
+    return mapOf(key to value)
+  }
+
+  private fun toGeminiParametersSchema(inputSchema: JsonNode?): Schema? {
+    if (inputSchema == null || inputSchema.isNull || inputSchema.isMissingNode) return null
+    val resolved = if (inputSchema.hasNonNull("\$ref")) {
+      resolveRef(inputSchema.get("\$ref").asText(), inputSchema) ?: inputSchema
+    } else {
+      inputSchema
+    }
+    val props = resolved.path("properties")
+    val hasStructure = resolved.hasNonNull("type") || resolved.has("anyOf") || resolved.has("oneOf") || props.isObject
+    if (!hasStructure) return null
+    if (resolved.path("type").asText().equals("object", ignoreCase = true) &&
+      (!props.isObject || props.isEmpty)
+    ) {
+      return null
+    }
+    return toGeminiSchema(resolved, root = inputSchema)
+  }
+
+  private fun resolveRef(ref: String, root: JsonNode): JsonNode? {
+    if (!ref.startsWith("#/")) return null
+    var current: JsonNode = root
+    for (rawSeg in ref.removePrefix("#/").split("/")) {
+      val seg = rawSeg.replace("~1", "/").replace("~0", "~")
+      current = current.path(seg)
+      if (current.isMissingNode) return null
+    }
+    return current
+  }
+
+  private fun toGeminiSchema(
+    node: JsonNode,
+    root: JsonNode = node,
+    visitedRefs: Set<String> = emptySet(),
+    forceNullable: Boolean = false,
+  ): Schema? {
+    if (node.isNull || node.isMissingNode) return null
+    if (node.hasNonNull("\$ref")) {
+      val ref = node.get("\$ref").asText()
+      if (ref in visitedRefs) return null
+      val target = resolveRef(ref, root) ?: return null
+      return toGeminiSchema(target, root, visitedRefs + ref, forceNullable)
+    }
+
+    val unionNode = node.get("anyOf") ?: node.get("oneOf")
+    if (unionNode != null && unionNode.isArray) {
+      val branches = unionNode.toList()
+      val nonNullBranches = branches.filterNot {
+        it.path("type").asText().equals("null", ignoreCase = true)
+      }
+      val hasNull = nonNullBranches.size < branches.size
+      if (nonNullBranches.size == 1) {
+        return toGeminiSchema(nonNullBranches.first(), root, visitedRefs, forceNullable || hasNull)
+      }
+      if (nonNullBranches.isNotEmpty()) {
+        val converted = nonNullBranches.mapNotNull { toGeminiSchema(it, root, visitedRefs) }
+        if (converted.isNotEmpty()) {
+          val sb = Schema.builder().anyOf(converted)
+          if (forceNullable || hasNull || node.path("nullable").asBoolean(false)) {
+            sb.nullable(true)
+          }
+          if (node.hasNonNull("description")) sb.description(node.get("description").asText())
+          return sb.build()
+        }
+      }
+    }
+
+    var nullable = forceNullable || node.path("nullable").asBoolean(false)
+    var rawType: String? = null
+    val typeNode = node.get("type")
+    if (typeNode != null) {
+      when {
+        typeNode.isTextual -> {
+          val t = typeNode.asText()
+          if (t.equals("null", ignoreCase = true)) nullable = true else rawType = t
+        }
+
+        typeNode.isArray -> {
+          val types = typeNode.mapNotNull { if (it.isTextual) it.asText() else null }
+          if (types.any { it.equals("null", ignoreCase = true) }) nullable = true
+          rawType = types.firstOrNull { !it.equals("null", ignoreCase = true) }
+        }
+      }
+    }
+    if (rawType == null) {
+      rawType = when {
+        node.has("properties") -> "object"
+        node.has("items") -> "array"
+        node.has("enum") -> "string"
+        else -> "string"
+      }
+    }
+
+    val knownType = when (rawType.lowercase()) {
+      "string" -> com.google.genai.types.Type.Known.STRING
+      "number" -> com.google.genai.types.Type.Known.NUMBER
+      "integer" -> com.google.genai.types.Type.Known.INTEGER
+      "boolean" -> com.google.genai.types.Type.Known.BOOLEAN
+      "array" -> com.google.genai.types.Type.Known.ARRAY
+      "object" -> com.google.genai.types.Type.Known.OBJECT
+      else -> com.google.genai.types.Type.Known.STRING
+    }
+
+    val builder = Schema.builder().type(knownType)
+    if (nullable) builder.nullable(true)
+    if (node.hasNonNull("description")) builder.description(node.get("description").asText())
+    if (node.hasNonNull("title")) builder.title(node.get("title").asText())
+    if (node.hasNonNull("format")) builder.format(node.get("format").asText())
+    if (node.hasNonNull("pattern")) builder.pattern(node.get("pattern").asText())
+    if (node.has("minimum") && node.get("minimum").isNumber) builder.minimum(node.get("minimum").asDouble())
+    if (node.has("maximum") && node.get("maximum").isNumber) builder.maximum(node.get("maximum").asDouble())
+    if (node.has("minLength") && node.get("minLength").isIntegralNumber) builder.minLength(node.get("minLength").asLong())
+    if (node.has("maxLength") && node.get("maxLength").isIntegralNumber) builder.maxLength(node.get("maxLength").asLong())
+    if (node.has("minItems") && node.get("minItems").isIntegralNumber) builder.minItems(node.get("minItems").asLong())
+    if (node.has("maxItems") && node.get("maxItems").isIntegralNumber) builder.maxItems(node.get("maxItems").asLong())
+
+    node.get("enum")?.takeIf { it.isArray }?.let { enumNode ->
+      val values = enumNode.mapNotNull {
+        when {
+          it.isNull -> null
+          it.isTextual -> it.asText()
+          else -> it.toString()
+        }
+      }
+      if (values.isNotEmpty()) {
+        if (knownType != com.google.genai.types.Type.Known.STRING) {
+          builder.type(com.google.genai.types.Type.Known.STRING)
+        }
+        builder.enum_(values)
+      }
+    }
+
+    if (knownType == com.google.genai.types.Type.Known.OBJECT) {
+      val propsNode = node.get("properties")
+      if (propsNode != null && propsNode.isObject) {
+        val propsMap = linkedMapOf<String, Schema>()
+        propsNode.fields().forEach { (key, value) ->
+          toGeminiSchema(value, root, visitedRefs)?.let { propsMap[key] = it }
+        }
+        if (propsMap.isNotEmpty()) {
+          builder.properties(propsMap)
+        }
+        node.get("required")?.takeIf { it.isArray }?.let { reqNode ->
+          val req = reqNode.mapNotNull { if (it.isTextual) it.asText() else null }
+            .filter { it in propsMap }
+          if (req.isNotEmpty()) builder.required(req)
+        }
+      }
+    }
+
+    if (knownType == com.google.genai.types.Type.Known.ARRAY) {
+      val itemsNode = node.get("items")
+      if (itemsNode != null && itemsNode.isObject) {
+        toGeminiSchema(itemsNode, root, visitedRefs)?.let { builder.items(it) }
+      }
+    }
+
+    return builder.build()
   }
 
   private fun convertFromGeminiResponse(response: GenerateContentResponse): ModelSchema.ChatResponse {
     val choices = response.candidates().orElse(emptyList()).mapIndexed { index, candidate ->
       try {
         val content = candidate.content().orElse(null)
-        val text = content?.parts()?.orElse(emptyList())
-          ?.mapNotNull {
-            try {
-              it.text().getOrNull()
-            } catch (e: Exception) {
-              log.warn("Failed to extract text from response part at choice {}: {}", index, e.message, e)
-              null
+
+        val parts = content?.parts()?.orElse(emptyList()).orEmpty()
+        val blocks = mutableListOf<ModelSchema.ContentPart>()
+        val textParts = mutableListOf<String>()
+        parts.forEach { part ->
+          try {
+            part.text().getOrNull()?.let { t ->
+               if (part.thought().getOrNull() != true) {
+                 textParts.add(t)
+                 blocks.add(ModelSchema.ContentPart(text = t))
+               }
             }
-          }?.joinToString("\n")?.let {
-            when (it) {
-              "" -> null
-              else -> it
+            part.functionCall().getOrNull()?.let { fc ->
+              val name = fc.name().getOrNull().orEmpty()
+              val id = fc.id().getOrNull()?.takeIf { it.isNotBlank() } ?: "gemini_call_${UUID.randomUUID()}"
+               part.thoughtSignature().getOrNull()?.takeIf { it.isNotEmpty() }?.let { sig ->
+                 thoughtSignatures[thoughtSignatureKey(id, name)] = sig
+               }
+              val argsNode: JsonNode = fc.args().getOrNull()?.let {
+                JsonUtil.objectMapper().valueToTree<JsonNode>(it)
+              } ?: JsonUtil.objectMapper().createObjectNode()
+              blocks.add(
+                ModelSchema.ContentPart(
+                  tool_use = ModelSchema.ToolUseBlock(
+                    id = id,
+                    name = name,
+                    input = argsNode,
+                  )
+                )
+              )
             }
+          } catch (e: Exception) {
+            log.warn("Failed to extract text/functionCall from response part at choice {}: {}", index, e.message, e)
           }
+        }
+        val text = textParts.joinToString("\n").ifEmpty { null }
+        val hasToolCalls = blocks.any { it.tool_use != null }
 
         val chatMessageResponse = ModelSchema.ChatMessageResponse(
           content = text,
+          blocks = blocks,
         )
-        content?.parts()?.orElse(emptyList())?.forEach { part ->
+        parts.forEach { part ->
           try {
-            part.inlineData()?.getOrNull()?.apply {
+           part.inlineData().getOrNull()?.apply {
               val rawMime = mimeType().getOrNull()
               when (val baseMime = rawMime?.substringBefore(";")?.trim()?.lowercase()) {
                 "image/png", "image/jpeg", "image/jpg", "image/gif" -> {
@@ -835,7 +1203,7 @@ class GeminiSdkChatClient(
         ModelSchema.ChatChoice(
           message = chatMessageResponse,
           index = index,
-          finish_reason = candidate.finishReason().orElse(null)?.toString()
+          finish_reason = if (hasToolCalls) "tool_calls" else candidate.finishReason().orElse(null)?.toString()
         )
       } catch (e: Exception) {
         log.error("Failed to convert candidate at index {}: {}", index, e.message, e)
@@ -881,6 +1249,18 @@ class GeminiSdkChatClient(
   companion object {
     private val log = LoggerFactory.getLogger(GeminiSdkChatClient::class.java)
     private val modelsCache = ConcurrentHashMap<String, List<ChatModel>>()
+     private const val MAX_THOUGHT_SIGNATURES = 10_000
+     private val thoughtSignatures: MutableMap<String, ByteArray> =
+       Collections.synchronizedMap(object : LinkedHashMap<String, ByteArray>(256, 0.75f, true) {
+         override fun removeEldestEntry(eldest: MutableMap.MutableEntry<String, ByteArray>?): Boolean {
+           return size > MAX_THOUGHT_SIGNATURES
+         }
+       })
+     private fun thoughtSignatureKey(toolUseId: String, toolName: String): String = "$toolUseId\u0000$toolName"
+
+    private const val TOOL_PROVIDERS_WITHOUT_TOOLS =
+      "ChatRequest.toolProviders is set but tools is empty: tool requests must go through ChatInterface " +
+          "(McpToolLoop); provider clients do not execute tools"
 
     init {
       // The Gemini SDK uses Jackson internally to parse responses. Audio/image

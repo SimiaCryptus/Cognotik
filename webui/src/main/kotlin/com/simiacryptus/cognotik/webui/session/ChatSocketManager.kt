@@ -272,7 +272,7 @@ open class ChatSocketManager(
           match,
           transcriptStream
         ) { msg, tsk, msgs ->
-          processMsgRecursive(msg, tsk, msgs, transcriptStream, this@ChatSocketManager.smartModel)
+           processMsgRecursive(msg, tsk, msgs, transcriptStream, this@ChatSocketManager.smartModel.getChildClient(tsk))
         }
       }
     }
@@ -393,12 +393,13 @@ open class ChatSocketManager(
     val messages = baseMessages.dropLast(1).toMutableList()
     for (item in items) {
       val newMessage = currentMessage.replaceFirst(expression, item)
+       val subTask = this.newTask(cancelable = false, root = false).apply { tabs[item] = placeholder }
       val subTaskFunctions = processMsgRecursive(
         currentMessage = newMessage,
-        task = this.newTask(cancelable = false, root = false).apply { tabs[item] = placeholder },
+         task = subTask,
         baseMessages = messages.filter { it.content?.any { it.text?.contains(expression) == true } != true },
         transcriptStream = transcriptStream,
-        model = this@ChatSocketManager.smartModel
+         model = this@ChatSocketManager.smartModel.getChildClient(subTask)
       )
       val subAggregate = StringBuilder()
       runAll(subTaskFunctions, subAggregate)

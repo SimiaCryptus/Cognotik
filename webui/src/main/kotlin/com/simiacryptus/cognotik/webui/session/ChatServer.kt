@@ -5,6 +5,8 @@ import com.simiacryptus.cognotik.platform.service.AuthenticationInterface
 import com.simiacryptus.cognotik.platform.service.StorageInterface
 import com.simiacryptus.cognotik.platform.model.User
 import com.simiacryptus.cognotik.platform.ServiceRouter
+import com.simiacryptus.cognotik.platform.model.mcp.MCPTool
+import com.simiacryptus.cognotik.webui.servlet.McpServerServlet
 import com.simiacryptus.cognotik.webui.servlet.NewSessionServlet
 import org.eclipse.jetty.servlet.DefaultServlet
 import org.eclipse.jetty.servlet.ServletContextHandler
@@ -28,6 +30,8 @@ abstract class ChatServer(
   open val inputCnt = 1
   open val stickyInput = false
   open val dataStorage: StorageInterface? = null
+   open val mcpTools: List<MCPTool> = emptyList()
+   open val mcpToolsProvider: ((User, Session) -> List<MCPTool>)? = null
   val sessions: ConcurrentHashMap<Session, SocketManager> = ConcurrentHashMap()
 
   inner class WebSocketHandler : JettyWebSocketServlet() {
@@ -96,12 +100,27 @@ abstract class ChatServer(
   private val newSessionServlet by lazy { NewSessionServlet() }
   open val webSocketHandler : JettyWebSocketServlet by lazy { WebSocketHandler() }
   val defaultServlet by lazy { DefaultServlet() }
+   open val mcpServerServlet: McpServerServlet? by lazy {
+     val provider = mcpToolsProvider
+     when {
+       provider != null -> McpServerServlet(
+         toolsProvider = provider,
+         serverName = applicationName,
+       )
+       mcpTools.isNotEmpty() -> McpServerServlet(
+         tools = mcpTools,
+         serverName = applicationName,
+       )
+       else -> null
+     }
+   }
 
   open fun configure(webAppContext: ServletContextHandler) {
     trafficLog.info("Configuring web app context for ${javaClass.simpleName}")
     configure_home(webAppContext)
     configure_ws(webAppContext)
     configure_newSession(webAppContext)
+     configure_mcp(webAppContext)
     trafficLog.debug("Servlets registered: default(/), ws(/ws), newSession(/newSession)")
   }
 
@@ -116,6 +135,14 @@ abstract class ChatServer(
   protected open fun configure_ws(webAppContext: ServletContextHandler) {
     webAppContext.addServlet(ServletHolder(javaClass.simpleName + "/ws", webSocketHandler), "/ws")
   }
+   protected open fun configure_mcp(webAppContext: ServletContextHandler) {
+     val servlet = mcpServerServlet ?: return
+     val holder = ServletHolder(javaClass.simpleName + "/mcp", servlet).apply {
+       isAsyncSupported = true
+     }
+     webAppContext.addServlet(holder, "/mcp")
+     trafficLog.debug("Registered MCP servlet at /mcp for {}", javaClass.simpleName)
+   }
 
   companion object {
     private val log = LoggerFactory.getLogger(ChatServer::class.java)

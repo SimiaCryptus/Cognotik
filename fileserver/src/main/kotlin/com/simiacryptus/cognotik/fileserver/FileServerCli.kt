@@ -1,9 +1,7 @@
 package com.simiacryptus.cognotik.fileserver
+import com.simiacryptus.cognotik.fileserver.handler.FsApiConfig
+import com.simiacryptus.cognotik.fileserver.mcp.FileServerMcpTools
 
-import com.simiacryptus.cognotik.platform.ServiceKey
-import com.simiacryptus.cognotik.platform.model.Session
-import com.simiacryptus.cognotik.platform.model.User
-import com.simiacryptus.cognotik.platform.service.StorageInterface
 import jakarta.servlet.MultipartConfigElement
 import jakarta.servlet.http.HttpServlet
 import jakarta.servlet.http.HttpServletRequest
@@ -14,6 +12,8 @@ import org.eclipse.jetty.server.handler.ContextHandlerCollection
 import org.eclipse.jetty.servlet.ServletContextHandler
 import org.eclipse.jetty.servlet.ServletHolder
 import java.io.File
+import java.io.InputStream
+import java.io.PrintStream
 import kotlin.system.exitProcess
 
 /**
@@ -47,6 +47,9 @@ object FileServerCli {
 
   /** Mount point of the optional chat assistant (see [FileServerChat]). */
   const val CHAT_PREFIX = "/chat"
+   /** Mount point of the optional MCP HTTP / Streamable HTTP / SSE endpoint (see [FileServerMcp]). */
+   const val MCP_PREFIX = "/mcp"
+
 
   /**
    * Shared web assets served straight from the classpath, independent of the served
@@ -101,6 +104,9 @@ object FileServerCli {
                      --chat-model <id>       Model for the chat assistant (or env COGNOTIK_CHAT_MODEL)
                      --chat-fast-model <id>  Fast model for the chat (defaults to --chat-model)
                      --no-chat      Do not mount the chat assistant
+                     --mcp          Mount the HTTP/SSE MCP endpoint at $MCP_PREFIX/
+                     --no-mcp       Do not mount the HTTP/SSE MCP endpoint (default)
+                     --mcp-stdio    Run an MCP server over stdin/stdout (logs to stderr)
                     --ui           Make the IDE-style SPA (/ui/) the landing page
                     --no-ui        Do not serve the SPA at all
                     --help         Show this message
@@ -114,6 +120,25 @@ object FileServerCli {
 
   @JvmStatic
   fun main(args: Array<String>) {
+     val stdioRequested = args.any { it == "--mcp-stdio" } && args.none { it == "--help" }
+     val stdioOut = System.out
+     val stdioIn = System.`in`
+     if (stdioRequested) {
+       /*
+        * Redirect stdout -> stderr before any logger/SLF4J class initializes so
+        * console appenders and stray prints cannot corrupt JSON-RPC on stdioOut.
+        */
+       System.setOut(System.err)
+     }
+     try {
+       runMain(args, stdioIn, stdioOut)
+     } finally {
+       if (stdioRequested) {
+         System.setOut(stdioOut)
+       }
+     }
+   }
+   private fun runMain(args: Array<String>, stdioIn: InputStream, stdioOut: PrintStream) {
     var port = 8081
     var host = "127.0.0.1"
     var gitEnabled = true
@@ -124,6 +149,8 @@ object FileServerCli {
     var execPermissive = true
     var shell: List<String> = emptyList()
     var chatEnabled = true
+     var mcpEnabled = false
+     var mcpStdio = false
     var dirArg: String? = null
 
     var i = 0
@@ -145,6 +172,9 @@ object FileServerCli {
 
         "--no-git" -> gitEnabled = false
         "--no-chat" -> chatEnabled = false
+         "--mcp" -> mcpEnabled = true
+         "--no-mcp" -> mcpEnabled = false
+         "--mcp-stdio" -> mcpStdio = true
         "--chat-model" -> {
           val value = args.getOrNull(++i) ?: fail("Missing value for $arg")
           System.setProperty(FileServerChat.MODEL_PROPERTY, value)
@@ -184,10 +214,27 @@ object FileServerCli {
     if (!baseDir.exists() || !baseDir.isDirectory) {
       fail("Not a directory: ${baseDir.absolutePath}")
     }
+     if (mcpStdio) {
+       val handled = runStdio(
+         baseDir = baseDir,
+         readOnly = readOnly,
+         terminalEnabled = terminalEnabled,
+         execPermissive = execPermissive,
+         shell = shell,
+         input = stdioIn,
+         output = stdioOut,
+       )
+       if (!handled) {
+         System.err.println("error: MCP stdio mode is unavailable (no FileServerMcpProvider on the classpath)")
+         exitProcess(1)
+       }
+       return
+     }
+
 
     val server = start(
       baseDir, host, port, gitEnabled, readOnly, uiEnabled, uiDefault,
-      terminalEnabled, execPermissive, shell, chatEnabled
+       terminalEnabled, execPermissive, shell, chatEnabled, mcpEnabled
     )
     val boundPort = (server.connectors.first() as ServerConnector).localPort
     val displayHost = if (host == "0.0.0.0" || host == "::") "localhost" else host
@@ -197,6 +244,8 @@ object FileServerCli {
     if (uiEnabled) println("  IDE view  -> http://$displayHost:$boundPort$UI_PREFIX/")
     if (chatMounted) println("  Chat      -> http://$displayHost:$boundPort$CHAT_PREFIX/")
     else if (chatEnabled) println("  Chat      -> unavailable (no provider on the classpath or no --chat-model)")
+     if (mcpMounted) println("  MCP       -> http://$displayHost:$boundPort$MCP_PREFIX/ (${if (readOnly) "read-only" else "read-write"})")
+     else if (mcpEnabled) println("  MCP       -> unavailable (no FileServerMcpProvider on the classpath)")
     println("  Classic   -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/")
     println("  Assets    -> http://$displayHost:$boundPort$LIB_PREFIX/ (classpath web/lib), $APP_PREFIX/ (classpath web/app)")
     println("  FS API v1 -> http://$displayHost:$boundPort$FILES_PREFIX/$ROOT_SEGMENT/.fsapi/v1/meta")
@@ -239,45 +288,8 @@ object FileServerCli {
     execPermissive: Boolean = true,
     shell: List<String> = emptyList(),
     chatEnabled: Boolean = true,
+     mcpEnabled: Boolean = false,
   ): Server {
-//    Session.default_session = Session.newUserID()
-//    ServiceKey.DATA_STORAGE.defaultFactory = {
-//      object : StorageInterface {
-//        override fun deleteSessionData(
-//          user: User?,
-//          session: Session
-//        ) {
-//        }
-//
-//        override fun getUserDir(
-//          user: User?,
-//          session: Session
-//        ): File = baseDir
-//
-//        override fun getSystemDir(
-//          user: User?,
-//          session: Session
-//        ): File = baseDir
-//
-//        override fun updateMessage(
-//          user: User?,
-//          session: Session,
-//          messageId: String,
-//          value: String
-//        ) {
-//        }
-//
-//        override fun <T : Any> setJson(
-//          user: User?,
-//          session: Session,
-//          filename: String,
-//          settings: T
-//        ): T {
-//          return settings
-//        }
-//      }
-//
-//    }
     val server = Server()
     val connector = ServerConnector(server).apply {
       this.host = host
@@ -294,6 +306,23 @@ object FileServerCli {
     val chatContext = if (chatEnabled) FileServerChat.createContext(baseDir, CHAT_PREFIX) else null
     val chatUrl = chatContext?.let { "$CHAT_PREFIX/" }
     chatMounted = chatContext != null
+     /* Optional MCP server endpoint, mounted as its own context via ServiceLoader. */
+     val mcpContext = if (mcpEnabled) {
+       val mcpConfig = buildMcpConfig(
+         readOnly = readOnly,
+         terminalEnabled = terminalEnabled,
+         execPermissive = execPermissive,
+         shell = shell,
+         chatUrl = chatUrl,
+         mcpUrl = "$MCP_PREFIX/",
+       )
+       val mcpTools = FileServerMcpTools(baseDir, mcpConfig, writeAllowed = !readOnly)
+       FileServerMcp.createContext(baseDir, MCP_PREFIX, mcpConfig, mcpTools)
+     } else {
+       null
+     }
+     mcpMounted = mcpContext != null
+
 
     val fileServlet = if (readOnly) ReadOnlyFileServlet(baseDir, gitEnabled, uiEnabled, execPermissive, chatUrl)
     else SimpleFileServlet(
@@ -336,16 +365,65 @@ object FileServerCli {
     context.addServlet(redirect, "")
     context.addServlet(redirect, FILES_PREFIX)
 
-    server.handler = if (chatContext == null) context else ContextHandlerCollection(chatContext, context)
+     val contexts = listOfNotNull(chatContext, mcpContext, context)
+     server.handler = if (contexts.size == 1) context else ContextHandlerCollection(*contexts.toTypedArray())
     server.stopAtShutdown = true
     server.start()
     return server
   }
+   /**
+    * Runs an MCP server over [input]/[output] against [baseDir] using [FileServerMcp].
+    * Callers invoking this outside [main] should redirect stdout to stderr beforehand if
+    * [output] is the process stdout.
+    */
+   fun runStdio(
+     baseDir: File,
+     readOnly: Boolean = false,
+     terminalEnabled: Boolean = true,
+     execPermissive: Boolean = true,
+     shell: List<String> = emptyList(),
+     input: InputStream = System.`in`,
+     output: PrintStream = System.out,
+   ): Boolean {
+     val mcpConfig = buildMcpConfig(
+       readOnly = readOnly,
+       terminalEnabled = terminalEnabled,
+       execPermissive = execPermissive,
+       shell = shell,
+       chatUrl = null,
+       mcpUrl = null,
+     )
+     val mcpTools = FileServerMcpTools(baseDir, mcpConfig, writeAllowed = !readOnly)
+     return FileServerMcp.runStdio(baseDir, mcpConfig, mcpTools, input, output)
+   }
+   private fun buildMcpConfig(
+     readOnly: Boolean,
+     terminalEnabled: Boolean,
+     execPermissive: Boolean,
+     shell: List<String>,
+     chatUrl: String?,
+     mcpUrl: String?,
+   ): FsApiConfig = FsApiConfig(
+     readOnly = readOnly,
+     execAllowAny = !readOnly && execPermissive,
+     execRestrictArguments = readOnly || !execPermissive,
+     terminalEnabled = !readOnly && terminalEnabled,
+     terminalShell = shell,
+     chatUrl = chatUrl,
+     mcpEnabled = true,
+     mcpUrl = mcpUrl,
+   )
+
 
   /** Whether the last [start] mounted a chat assistant. */
   @Volatile
   var chatMounted: Boolean = false
     private set
+   /** Whether the last [start] mounted an MCP endpoint. */
+   @Volatile
+   var mcpMounted: Boolean = false
+     private set
+
 
   private fun fail(message: String): Nothing {
     System.err.println("error: $message")
